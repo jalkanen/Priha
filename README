@@ -1,0 +1,48 @@
+This is Priha, a JSR-170 Java Content Repository implementation. 
+
+GOALS
+=====
+
+The goals of the project are:
+
+    * Provide a "good enough" implementation to ship with JSPWiki 3.0.
+    
+    * Optimize for fast fetching of medium-sized text objects (i.e.
+      wikipages)
+      
+    * Provide integrated versioning
+    
+    * Provide an SPI so that different types of providers can be used
+      without hiding the JSR structure to something which cannot be
+      understood by a mortal man.
+      
+    * Provide an SPI so powerful that JSPWiki can be easily migrated
+      and keep the existing clarity of its Providers.
+      
+    * Scalability up to medium size systems (200 wikis, each with 2000 pages,
+      total of 400,000 nodes).
+    
+    * Ships with as few external libraries as possible
+    
+The anti-goals (i.e. the things I don't particularly want to pay attention
+to, because they are not useful (yet) in JSPWiki context) are:
+
+    * Class 1 or Class 2 compliancy.  If it's not useful in JSPWiki context,
+      it will be on the back burner.
+      
+    * Transactions support
+    
+    * XML import/export
+    
+    * HA or clustering support.  These should be left to an industrial-scale
+      JSR implementation.
+
+REQUIREMENTS
+============
+
+Priha requires and takes advantage of Java 5 (JDK 1.5).
+
+LICENSE
+=======
+
+Priha licensing is currently open.  It will either be LGPL or Apache 2.0.
