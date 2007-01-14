@@ -1,0 +1,10 @@
+
+Some errors noticed in the JCR TCK.
+
+* AbstractJCRTest.setUp() does not check descriptor Repository.LEVEL_2_SUPPORTED 
+  return value (only non-nullity).  Therefore returning "false" is interpreted as "true".
+  
+* Namespace "sv:" is not on the list of required prefixes in chapter 4.5, but TCK
+  requires it in NamespaceRegistryReadMethodsTest.testGetNamespacePrefixes().
+  
+  

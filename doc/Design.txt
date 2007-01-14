@@ -1,0 +1,16 @@
+This is a light-weight, non-compliant implementation of the JSR-170 Java Content Repository API.
+
+DATA MODEL
+==========
+
+The data model is rather straightforward.
+
+REPOSITORY MODEL
+================
+
+Each repository may contain multiple workspaces.  In JSPWiki data model, 
+all wikis are in a single workspace, so we don't in particular need multiple
+workspaces.
+
+A Session presents one particular set of credentials to the workspace.  In Priha,
+there is a single provider instance which is used to manage all of the sessions.
