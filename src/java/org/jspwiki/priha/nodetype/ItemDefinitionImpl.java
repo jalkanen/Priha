@@ -2,15 +2,22 @@ package org.jspwiki.priha.nodetype;
 
 import javax.jcr.nodetype.ItemDefinition;
 import javax.jcr.nodetype.NodeType;
+import javax.jcr.version.OnParentVersionAction;
 
 public class ItemDefinitionImpl implements ItemDefinition
 {
-    private NodeType m_nodeType;
+    protected NodeType m_nodeType;
+    protected String   m_name; 
+    protected boolean  m_isAutoCreated = false;
+    protected boolean  m_isMandatory   = false;
+    protected boolean  m_isProtected   = false;
+    protected int      m_onParentVersion = OnParentVersionAction.COMPUTE;
     
-    public ItemDefinitionImpl( NodeType nt )
+    public ItemDefinitionImpl( NodeType nt, String name )
     {
         super();
         m_nodeType = nt;
+        m_name     = name;
     }
 
     public NodeType getDeclaringNodeType()
@@ -20,32 +27,27 @@ public class ItemDefinitionImpl implements ItemDefinition
 
     public String getName()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return m_name;
     }
 
     public int getOnParentVersion()
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return m_onParentVersion;
     }
 
     public boolean isAutoCreated()
     {
-        // TODO Auto-generated method stub
-        return false;
+        return m_isAutoCreated;
     }
 
     public boolean isMandatory()
     {
-        // TODO Auto-generated method stub
-        return false;
+        return m_isMandatory;
     }
 
     public boolean isProtected()
     {
-        // TODO Auto-generated method stub
-        return false;
+        return m_isProtected;
     }
     
 }

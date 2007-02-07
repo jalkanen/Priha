@@ -5,24 +5,28 @@ import javax.jcr.nodetype.NodeType;
 
 public class NodeDefinitionImpl extends ItemDefinitionImpl implements NodeDefinition
 {
-    public NodeDefinitionImpl(NodeType type)
+    protected boolean  m_allowsSameNameSiblings = false;
+    protected NodeType m_defaultPrimaryType     = null;
+    protected NodeType[] m_requiredPrimaryTypes = new NodeType[0];
+    
+    public NodeDefinitionImpl(NodeType type, String name)
     {
-        super(type);
+        super(type,name);
     }
 
     public boolean allowsSameNameSiblings()
     {
-        return false;
+        return m_allowsSameNameSiblings;
     }
 
     public NodeType getDefaultPrimaryType()
     {
-        return null;
+        return m_defaultPrimaryType;
     }
 
     public NodeType[] getRequiredPrimaryTypes()
     {
-        return null;
+        return m_requiredPrimaryTypes;
     }
 
 }

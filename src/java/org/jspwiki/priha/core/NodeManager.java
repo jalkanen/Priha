@@ -9,6 +9,12 @@ import javax.jcr.RepositoryException;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 
+/**
+ *  Is responsible for storing the nodes in memory.
+ *  
+ *  @author jalkanen
+ *
+ */
 public class NodeManager
 {
     private HashMap<String,NodeImpl> m_nodeReferences = new HashMap<String,NodeImpl>();

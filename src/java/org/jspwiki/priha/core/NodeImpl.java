@@ -10,10 +10,7 @@ import java.util.regex.Pattern;
 import javax.jcr.*;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
-import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NoSuchNodeTypeException;
-import javax.jcr.nodetype.NodeDefinition;
-import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.*;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
@@ -31,9 +28,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     private NodeDefinition m_definition;
     
-    private enum NodeState { EXISTS, REMOVED };
+    private enum NodeState { NEW, EXISTS, REMOVED };
     
-    private NodeState m_state = NodeState.EXISTS;
+    private NodeState m_state = NodeState.NEW;
     
     public NodeImpl( SessionImpl session, String path )
     {
@@ -204,11 +201,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public NodeDefinition getDefinition() throws RepositoryException
     {
-        if( m_definition == null )
-        {
-            m_definition = new NodeDefinitionImpl(m_session.getWorkspace().getNodeTypeManager().getNodeType("nt:base"));
-        }
-            
         return m_definition;
     }
 
@@ -238,10 +230,31 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         throw new UnsupportedRepositoryOperationException();
     }
 
+    // FIXME: Highly inefficient; the values should be cached
     public NodeType[] getMixinNodeTypes() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        try
+        {
+            Property p = getChildProperty("jcr:mixinTypes");
+        
+            NodeTypeManager mgr = getSession().getWorkspace().getNodeTypeManager();
+        
+            Value[] v = p.getValues();
+        
+            NodeType[] types = new NodeType[v.length];
+        
+            for( int i = 0; i < v.length; i++ )
+            {
+                types[i] = mgr.getNodeType( v[i].getString() );
+            }
+        
+            return types;
+        }
+        catch( PathNotFoundException e )
+        {
+            // TODO: Should return a ref to a static object instead of creating a new one
+            return new NodeType[0];
+        }
     }
 
     public Node getNode(String relPath) throws PathNotFoundException, RepositoryException
@@ -331,14 +344,31 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public Item getPrimaryItem() throws ItemNotFoundException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        NodeType nd = getPrimaryNodeType();
+        
+        String primaryItem = nd.getPrimaryItemName();
+        
+        if( primaryItem != null )
+        {
+            return getChildProperty( primaryItem );
+        }
+        
+        throw new ItemNotFoundException( getPath()+" does not declare a primary item" );
     }
 
     public NodeType getPrimaryNodeType() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        try
+        {
+            Property p = getChildProperty("jcr:primaryType");
+        
+            NodeTypeManager mgr = getSession().getWorkspace().getNodeTypeManager();
+            return mgr.getNodeType( p.getString() );
+        }
+        catch( PathNotFoundException e )
+        {
+            throw new RepositoryException("Mandatory property 'jcr:primaryType' not found!");
+        }
     }
 
     public PropertyIterator getProperties() throws RepositoryException
@@ -458,8 +488,24 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public boolean isNodeType(String nodeTypeName) throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        NodeType primary = getPrimaryNodeType();
+        
+        if( !primary.isNodeType( nodeTypeName ) )
+        {
+            NodeType[] mixins = getMixinNodeTypes();
+            
+            for( int i = 0; i < mixins.length; i++ )
+            {
+                if( mixins[i].isNodeType(nodeTypeName) ) return true;
+            }
+            
+            //
+            //  Not a primary, nor any of the mixins
+            //
+            return false;
+        }
+        
+        return true;
     }
 
     public Lock lock(boolean isDeep, boolean isSessionScoped)
@@ -585,8 +631,20 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         
         if( prop == null )
         {
+            
             Path propertypath = m_path.resolve(name);
-            prop = new PropertyImpl( m_session, propertypath.toString() );
+            
+            PropertyDefinition[] defs = getPrimaryNodeType().getDeclaredPropertyDefinitions();
+            PropertyDefinition   propDef = null;
+            
+            for( PropertyDefinition p : defs )
+            {
+                if( p.getName().equals( name ) ) propDef = p;
+            }
+            
+            // FIXME: What to do here if there is no such property definition?
+            
+            prop = new PropertyImpl( m_session, propertypath.toString(), propDef );
             m_properties.add(prop);
             markModified();
         }
@@ -822,6 +880,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return true;
     }
     
+    /**
+     *  Just simply puts a node in the repository, but does not affect anything
+     *  else, except Nodes own state.
+     *  
+     *  @throws RepositoryException
+     */
     private void saveNodeOnly() throws RepositoryException
     {
         WorkspaceImpl ws = (WorkspaceImpl)m_session.getWorkspace();
@@ -843,6 +907,20 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                NoSuchNodeTypeException,
                RepositoryException
     {
+        List<String> modifications = saveNodeAndChildren();
+
+        m_session.nodesSaved(modifications);
+    }
+
+    /**
+     *  Saves the node and all its children that need modification, returning
+     *  a list of the node paths.
+     *  
+     *  @return
+     *  @throws RepositoryException
+     */
+    protected List<String> saveNodeAndChildren() throws RepositoryException
+    {
         List<String> modifications = new ArrayList<String>();
         
         WorkspaceImpl ws = (WorkspaceImpl)m_session.getWorkspace();
@@ -861,8 +939,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 modifications.add(getPath());
             }
         }
-
-        m_session.nodesSaved(modifications);
+        return modifications;
     }
 
     public int compareTo(Object o)

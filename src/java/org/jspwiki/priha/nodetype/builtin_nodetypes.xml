@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+
+<nodetypes>
+   <nodetype>
+      <name>nt:base</name> 
+      <supertypes/> 
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName/>
+      
+      <propertydefinition>
+         <name>jcr:primaryType</name>
+         <requiredType>Name</requiredType>
+         <valueConstraints/>
+         <defaultValues/>
+         <autoCreated>true</autoCreated>
+         <mandatory>true</mandatory>
+         <onParentVersion>COMPUTE</onParentVersion>
+         <protected>true</protected>
+         <multiple>false</multiple>  
+      </propertydefinition>
+
+      <propertydefinition>
+         <name>jcr:mixinTypes</name>
+         <requiredType>Name</requiredType>
+         <valueConstraints/>
+         <defaultValues/>
+         <autoCreated>false</autoCreated>
+         <mandatory>false</mandatory>
+         <onParentVersion>COMPUTE</onParentVersion>
+         <protected>true</protected>
+         <multiple>true</multiple>  
+      </propertydefinition>
+      
+   </nodetype>
+</nodetypes>

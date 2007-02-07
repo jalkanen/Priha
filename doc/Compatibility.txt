@@ -1,0 +1,6 @@
+Things that Priha does not even attempt to currently do:
+
+* Multiple inheritance of NodeTypes - single parent only
+
+* Property constraints
+

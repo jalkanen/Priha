@@ -6,23 +6,34 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 
 /**
- *  Implements the nt:base type.
+ *  Stores the Node Types.
  *  
  *  @author jalkanen
  *
  */
-public class BaseNodeType 
+public class GenericNodeType 
      implements NodeType
 {
-    protected NodeType[]           m_superTypes            = new NodeType[0];
+    /**
+     *  Priha does not support multiple inheritance.
+     */
+    protected NodeType             m_parent;
     protected PropertyDefinition[] m_propertyDefinitions;
     protected NodeDefinition[]     m_childNodeDefinitions;
 
-    public BaseNodeType()
+    protected String               m_primaryItemName = null;
+    protected String               m_name; 
+    
+    protected boolean              m_ismixin;
+    public boolean m_hasOrderableChildNodes;
+    
+    public GenericNodeType(String name)
     {
+        m_name = name;
         m_propertyDefinitions = new PropertyDefinition[2];
         // FIXME: Add definitions
     }
+    
     public boolean canAddChildNode(String childNodeName)
     {
         return true;
@@ -50,7 +61,7 @@ public class BaseNodeType
 
     public NodeDefinition[] getChildNodeDefinitions()
     {
-        return     m_childNodeDefinitions;
+        return m_childNodeDefinitions;
     }
 
     public NodeDefinition[] getDeclaredChildNodeDefinitions()
@@ -65,17 +76,17 @@ public class BaseNodeType
 
     public NodeType[] getDeclaredSupertypes()
     {
-        return m_superTypes;
+        return getSupertypes();
     }
 
     public String getName()
     {
-        return "nt:base";
+        return m_name;
     }
 
     public String getPrimaryItemName()
     {
-        return null;
+        return m_primaryItemName;
     }
 
     public PropertyDefinition[] getPropertyDefinitions()
@@ -85,22 +96,40 @@ public class BaseNodeType
 
     public NodeType[] getSupertypes()
     {
-        return m_superTypes ;
+        NodeType[] res;
+        
+        if( m_parent != null )
+        {
+            res = new NodeType[] { m_parent } ;
+        }
+        else
+        {
+            res = new NodeType[0];
+        }
+        
+        return res;
     }
 
     public boolean hasOrderableChildNodes()
     {
-        return false;
+        return m_hasOrderableChildNodes;
     }
 
     public boolean isMixin()
     {
-        return false;
+        return m_ismixin;
     }
 
     public boolean isNodeType(String nodeTypeName)
     {
-        return true;
+        if( m_name.equals(nodeTypeName) ) return true;
+        
+        if( m_parent != null )
+        {
+            return m_parent.isNodeType(nodeTypeName);
+        }
+        
+        return false;
     }
 
 }

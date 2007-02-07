@@ -1,21 +1,26 @@
 package org.jspwiki.priha.nodetype;
 
+import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 
 public class PropertyDefinitionImpl extends ItemDefinitionImpl implements PropertyDefinition
 {
-    public PropertyDefinitionImpl(NodeType type)
+    protected Value[] m_defaults   = new Value[0];
+    protected boolean m_isMultiple = false;
+    
+    protected int     m_requiredType = PropertyType.UNDEFINED;
+    
+    public PropertyDefinitionImpl(NodeType type, String name)
     {
-        super(type);
+        super(type,name);
         // TODO Auto-generated constructor stub
     }
 
     public Value[] getDefaultValues()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return m_defaults;
     }
 
     public int getRequiredType()
@@ -32,8 +37,7 @@ public class PropertyDefinitionImpl extends ItemDefinitionImpl implements Proper
 
     public boolean isMultiple()
     {
-        // TODO Auto-generated method stub
-        return false;
+        return m_isMultiple;
     }
     
 }

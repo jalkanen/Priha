@@ -21,9 +21,10 @@ public class PropertyImpl extends ItemImpl implements Property
     private Multi              m_multi = Multi.UNDEFINED;
     private PropertyDefinition m_definition;
     
-    public PropertyImpl( SessionImpl session, String path )
+    public PropertyImpl( SessionImpl session, String path, PropertyDefinition propDef )
     {
         super( session, path );
+        m_definition = propDef;
     }
     
     public boolean getBoolean() throws ValueFormatException, RepositoryException
@@ -40,10 +41,6 @@ public class PropertyImpl extends ItemImpl implements Property
 
     public PropertyDefinition getDefinition() throws RepositoryException
     {
-        if( m_definition == null )
-        {
-            m_definition = new PropertyDefinitionImpl( m_session.getWorkspace().getNodeTypeManager().getNodeType("nt:base"));
-        }
         return m_definition;
     }
 

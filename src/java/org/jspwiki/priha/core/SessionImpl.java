@@ -328,7 +328,7 @@ public class SessionImpl implements Session
         {
             for( NodeImpl ni : m_updateList )
             {
-                ni.save();
+                ni.saveNodeAndChildren();
             }
             
             m_updateList.clear();

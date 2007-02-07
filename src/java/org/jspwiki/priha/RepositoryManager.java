@@ -22,12 +22,26 @@ package org.jspwiki.priha;
 import org.jspwiki.priha.core.RepositoryImpl;
 
 
+/**
+ *  This is the main API for getting yourself a Repository object
+ *  
+ *  @author jalkanen
+ *
+ */
 public class RepositoryManager
 {
     public static final String DEFAULT_PROVIDER = "org.jspwiki.priha.providers.FileProvider";
     
     private static RepositoryImpl m_repository = null;
     
+    /**
+     *  Returns a default repository object for no-pain setup.
+     *  
+     *  @return
+     *  @throws ClassNotFoundException
+     *  @throws InstantiationException
+     *  @throws IllegalAccessException
+     */
     public static RepositoryImpl getRepository() throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
         if( m_repository == null )
