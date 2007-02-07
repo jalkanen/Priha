@@ -43,7 +43,7 @@ public class Release
     
     public static final int    VERSION       = 0;
     public static final int    REVISION      = 0;
-    public static final int    MINORREVISION = 1;
+    public static final int    MINORREVISION = 2;
     
     public static final String VERSTR        = VERSION+"."+REVISION+"."+MINORREVISION;
     
