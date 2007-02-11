@@ -3,6 +3,7 @@ package org.jspwiki.priha.core;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
 
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
@@ -15,6 +16,7 @@ import javax.jcr.version.VersionException;
 
 import org.jspwiki.priha.nodetype.NodeTypeManagerImpl;
 import org.jspwiki.priha.providers.RepositoryProvider;
+import org.jspwiki.priha.util.PropertyList;
 import org.xml.sax.ContentHandler;
 
 public class WorkspaceImpl
@@ -26,10 +28,19 @@ public class WorkspaceImpl
     private NodeTypeManagerImpl m_nodeTypeManager;
     
     public WorkspaceImpl( SessionImpl session, String name, RepositoryProvider provider )
+        throws RepositoryException
     {
         m_session  = session;
         m_name     = name;
         m_provider = provider;
+        m_nodeTypeManager = NodeTypeManagerImpl.getInstance(this);
+    }
+        
+    public PropertyImpl createPropertyImpl( String path )
+    {
+        PropertyImpl pi = new PropertyImpl( m_session, path );
+        
+        return pi;
     }
     
     /**
@@ -45,9 +56,18 @@ public class WorkspaceImpl
     
     NodeImpl loadNode( String path ) throws RepositoryException
     {
-        return m_provider.getNode( this, path );
+        NodeImpl nd = new NodeImpl( m_session, path );
+        
+        PropertyList properties = m_provider.getProperties( this, path );
+        
+        for( PropertyImpl p : properties )
+        {
+            nd.addChildProperty( p );
+        }
+        
+        return nd;
     }
-    
+        
     public void clone(String srcWorkspace, String srcAbsPath, String destAbsPath, boolean removeExisting) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         // TODO Auto-generated method stub
@@ -150,6 +170,11 @@ public class WorkspaceImpl
     public void logout()
     {
         m_provider.close(this);
+    }
+
+    public void removeNode(NodeImpl impl) throws RepositoryException
+    {
+        m_provider.remove( this, impl.getPath() );
     }
 
 }

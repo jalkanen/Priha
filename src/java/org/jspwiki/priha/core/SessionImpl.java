@@ -35,6 +35,7 @@ public class SessionImpl implements Session
     private TreeSet<NodeImpl> m_updateList = new TreeSet<NodeImpl>();
     
     public SessionImpl( RepositoryImpl rep, Credentials creds, String name, RepositoryProvider provider )
+        throws RepositoryException
     {
         m_repository = rep;
         m_workspace  = new WorkspaceImpl( this, name, provider );
@@ -205,7 +206,7 @@ public class SessionImpl implements Session
 
     public Node getRootNode() throws RepositoryException
     {
-        return (Node)getItem("/"); // FIXME: Should cache this value somewhere
+        return m_nodeManager.getOrCreateNode( new Path("/") );
     }
 
     public String getUserID()
@@ -287,13 +288,15 @@ public class SessionImpl implements Session
             NodeImpl nd = m_workspace.loadNode(path);
             nd.m_new = false;
             
+            nd.sanitize();
+            
             try
             {
                 m_nodeManager.addNode( nd );
             }
             catch (InvalidPathException e)
             {
-                throw new RepositoryException( e.getMessage() );
+                throw new RepositoryException( e.getMessage(), e );
             }
         }
         m_updateList.clear();
@@ -363,6 +366,17 @@ public class SessionImpl implements Session
     public NodeManager getNodeManager()
     {
         return m_nodeManager;
+    }
+
+    public boolean itemExists(Path absPath) 
+        throws RepositoryException
+    {
+        return itemExists( absPath.toString() );
+    }
+
+    public ItemImpl getItem(Path path) throws PathNotFoundException, RepositoryException
+    {
+        return (ItemImpl) getItem( path.toString() );
     }
 
 }

@@ -1,6 +1,8 @@
 package org.jspwiki.priha.util;
 
+import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class PathUtilTest extends TestCase
 {
@@ -33,5 +35,10 @@ public class PathUtilTest extends TestCase
             fail("No exception");
         }
         catch( IllegalArgumentException e ) {}
+    }
+
+    public static Test suite()
+    {
+        return new TestSuite( PathUtilTest.class );
     }
 }

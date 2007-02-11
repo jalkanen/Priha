@@ -2,9 +2,9 @@ package org.jspwiki.priha.core;
 
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import javax.jcr.*;
-import javax.jcr.nodetype.NodeTypeManager;
 
 import org.jspwiki.priha.Release;
 import org.jspwiki.priha.providers.RepositoryProvider;
@@ -39,13 +39,15 @@ public class RepositoryImpl implements Repository
     
     private Properties m_properties = new Properties();
     
+    private Logger log = Logger.getLogger( getClass().getName() );
+    
     public RepositoryImpl( String className ) throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
-        Class cl = Class.forName(className);
+        Class cl = Class.forName( className );
         
         m_provider = (RepositoryProvider) cl.newInstance();
         
-        System.out.println("Initialized Priha");
+        log.info("G'day, Matilda!  Priha has been initialized.");
     }
     
     public String getProperty(String key)

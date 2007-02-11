@@ -40,4 +40,12 @@ public class PropertyDefinitionImpl extends ItemDefinitionImpl implements Proper
         return m_isMultiple;
     }
     
+    /**
+     *  Returns a human-readable description string.  Useful only for debugging
+     *  purposes.
+     */
+    public String toString()
+    {
+        return "PropertyDefinition: "+m_name;
+    }
 }

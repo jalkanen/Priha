@@ -19,6 +19,7 @@ public class GenericNodeType
      */
     protected NodeType             m_parent;
     protected PropertyDefinition[] m_propertyDefinitions;
+    protected PropertyDefinition[] m_declaredPropertyDefinitions;
     protected NodeDefinition[]     m_childNodeDefinitions;
 
     protected String               m_primaryItemName = null;
@@ -30,8 +31,6 @@ public class GenericNodeType
     public GenericNodeType(String name)
     {
         m_name = name;
-        m_propertyDefinitions = new PropertyDefinition[2];
-        // FIXME: Add definitions
     }
     
     public boolean canAddChildNode(String childNodeName)
@@ -71,7 +70,7 @@ public class GenericNodeType
 
     public PropertyDefinition[] getDeclaredPropertyDefinitions()
     {
-        return m_propertyDefinitions;
+        return m_declaredPropertyDefinitions;
     }
 
     public NodeType[] getDeclaredSupertypes()
@@ -132,4 +131,35 @@ public class GenericNodeType
         return false;
     }
 
+    
+    public NodeDefinition findNodeDefinition( String name )
+    {
+        for( NodeDefinition nd : m_childNodeDefinitions )
+        {
+            if( nd.getName().equals(name) || nd.getName().equals("*") )
+            {
+                return nd;
+            }
+        }
+        
+        return null;
+    }
+
+    public PropertyDefinition findPropertyDefinition( String name )
+    {
+        for( PropertyDefinition pd : m_propertyDefinitions )
+        {
+            if( pd.getName().equals(name) || pd.getName().equals("*") )
+            {
+                return pd;
+            }
+        }
+        
+        return null;
+    }
+    
+    public String toString()
+    {
+        return "NodeType: "+m_name;
+    }
 }

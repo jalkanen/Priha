@@ -1,6 +1,9 @@
 <?xml version="1.0"?>
 
 <nodetypes>
+   <!-- PRIMARY TYPES -->
+
+   <!-- Define nt:base type -->
    <nodetype>
       <name>nt:base</name> 
       <supertypes/> 
@@ -8,7 +11,7 @@
       <hasOrderableChildNodes>false</hasOrderableChildNodes>
       <primaryItemName/>
       
-      <propertydefinition>
+      <propertyDefinition>
          <name>jcr:primaryType</name>
          <requiredType>Name</requiredType>
          <valueConstraints/>
@@ -18,9 +21,9 @@
          <onParentVersion>COMPUTE</onParentVersion>
          <protected>true</protected>
          <multiple>false</multiple>  
-      </propertydefinition>
+      </propertyDefinition>
 
-      <propertydefinition>
+      <propertyDefinition>
          <name>jcr:mixinTypes</name>
          <requiredType>Name</requiredType>
          <valueConstraints/>
@@ -30,7 +33,51 @@
          <onParentVersion>COMPUTE</onParentVersion>
          <protected>true</protected>
          <multiple>true</multiple>  
-      </propertydefinition>
-      
+      </propertyDefinition>  
    </nodetype>
+
+   <!-- Define nt:unstructured -->
+   <nodetype>
+      <name>nt:unstructured</name> 
+      <supertypes>nt:base</supertypes> 
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>true</hasOrderableChildNodes>
+      <primaryItemName/>
+      
+      <childNodeDefinition>
+         <name>*</name>
+         <requiredPrimaryTypes>[nt:base]</requiredPrimaryTypes>
+         <autoCreated>false</autoCreated>
+         <mandatory>false</mandatory>
+         <onParentVersion>VERSION</onParentVersion>
+         <protected>false</protected>
+         <sameNameSiblings>true</sameNameSiblings>
+      </childNodeDefinition>
+      
+      <propertyDefinition>
+         <name>*</name>
+         <requiredType>undefined</requiredType>
+         <valueConstraints/>
+         <defaultValues/>
+         <autoCreated>false</autoCreated>
+         <mandatory>false</mandatory>
+         <onParentVersion>COPY</onParentVersion>
+         <protected>false</protected>
+         <multiple>true</multiple>  
+      </propertyDefinition>
+
+      <propertyDefinition>
+         <name>*</name>
+         <requiredType>undefined</requiredType>
+         <valueConstraints/>
+         <defaultValues/>
+         <autoCreated>false</autoCreated>
+         <mandatory>false</mandatory>
+         <onParentVersion>COPY</onParentVersion>
+         <protected>false</protected>
+         <multiple>false</multiple>  
+      </propertyDefinition>  
+   </nodetype>
+   
+   <!-- MIXIN TYPES -->
 </nodetypes>

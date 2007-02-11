@@ -4,6 +4,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,12 +17,14 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 
+import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.nodetype.NodeDefinitionImpl;
+import org.jspwiki.priha.nodetype.PropertyDefinitionImpl;
 import org.jspwiki.priha.util.*;
 
 public class NodeImpl extends ItemImpl implements Node, Comparable
 {
-    private ArrayList<Property> m_properties = new ArrayList<Property>();
+    private PropertyList m_properties = new PropertyList();
     
     private ArrayList<NodeImpl> m_children = new ArrayList<NodeImpl>();
     
@@ -32,16 +36,20 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     
     private NodeState m_state = NodeState.NEW;
     
-    public NodeImpl( SessionImpl session, String path )
+    Logger log = Logger.getLogger( getClass().getName() );
+
+    private NodeType m_primaryType;
+    
+    protected NodeImpl( SessionImpl session, String path )
     {
         super( session, path );
     }
     
-    public NodeImpl( SessionImpl session, Path path )
+    protected NodeImpl( SessionImpl session, Path path )
     {
         super( session, path );
     }
-    
+
     void markModified()
     {
         m_modified = true;
@@ -59,6 +67,20 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         throw new UnsupportedRepositoryOperationException("Node.addMixin()");
     }
 
+    private NodeType assignChildType(String relpath) throws RepositoryException
+    {
+        NodeType mytype = m_session.getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
+
+        // FIXME: Should really look through the child definitions
+        /*
+        for( NodeDefinition nd : mytype.getChildNodeDefinitions() )
+        {
+            
+        }
+        */
+        return mytype;
+    }
+    
     public Node addNode(String relPath)
                                        throws ItemExistsException,
                                            PathNotFoundException,
@@ -74,6 +96,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             throw new RepositoryException("Cannot add an indexed entry");
         }
         
+        if( m_session.itemExists(absPath) ) throw new ItemExistsException("Node "+absPath+" already exists!");
+        
         NodeImpl ni = null;
         try
         {
@@ -88,8 +112,18 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         
             ni = new NodeImpl(m_session,absPath.toString());
 
-            ni.setProperty( "jcr:primaryType", "nt:base" );
-
+            //
+            //  Figure out the node type
+            //
+            
+            NodeImpl parent = (NodeImpl) item;
+            
+            NodeType assignedType = parent.assignChildType(relPath);
+            
+            ni.setProperty( "jcr:primaryType", assignedType.getName() );
+            
+            ni.sanitize();
+            
             ni.markModified();
             m_session.addNode( ni );
         }
@@ -360,14 +394,20 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         try
         {
-            Property p = getChildProperty("jcr:primaryType");
+            if( m_primaryType == null )
+            {
+                Property p = getChildProperty("jcr:primaryType");
         
-            NodeTypeManager mgr = getSession().getWorkspace().getNodeTypeManager();
-            return mgr.getNodeType( p.getString() );
+                NodeTypeManager mgr = getSession().getWorkspace().getNodeTypeManager();
+                
+                m_primaryType = mgr.getNodeType( p.getString() );
+            }
+            
+            return m_primaryType;
         }
         catch( PathNotFoundException e )
         {
-            throw new RepositoryException("Mandatory property 'jcr:primaryType' not found!");
+            throw new PathNotFoundException("Mandatory property 'jcr:primaryType' not found!",e);
         }
     }
 
@@ -423,6 +463,26 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         throw new PathNotFoundException( abspath.toString() );
     }
 
+    void autoCreateProperties()
+    {
+        log.finer( "Autocreating properties for "+m_path );
+        
+        for( PropertyDefinition pd : m_definition.getDeclaringNodeType().getPropertyDefinitions() )
+        {
+            if( pd.isAutoCreated() && !m_properties.hasProperty(pd.getName()) )
+            {
+                log.finer("Autocreating property "+pd.getName());
+                
+                String path = m_path + "/" + pd.getName();
+                PropertyImpl pi = new PropertyImpl(m_session,path,pd);
+                
+                // FIXME: Add default value generation
+                
+                addChildProperty( pi );
+            }
+        }
+    }
+    
     public PropertyIterator getReferences() throws RepositoryException
     {
         // TODO Auto-generated method stub
@@ -610,6 +670,31 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     }
 
     /**
+     *  Always finds a property definition.  If a suitable definition cannot be found
+     *  for this Node, then returns null.
+     *  
+     *  @param name
+     *  @return
+     * @throws RepositoryException 
+     */
+    private PropertyDefinition findDefinition( NodeType type, String name ) throws RepositoryException
+    {
+        // Check primary type
+        
+        PropertyDefinition[] defs = type.getPropertyDefinitions();
+        PropertyDefinition   propDef = null;
+        
+        for( PropertyDefinition p : defs )
+        {
+            // FIXME: This does not take into account the multiplicity
+            //        of the node types, and might return the wrong one
+            if( p.getName().equals( name ) || p.getName().equals("*") ) propDef = p;
+        }
+                
+        return propDef;
+    }
+    
+    /**
      *  Finds a property and checks if we're supposed to remove it or not.  It also creates
      *  the property if it does not exist.
      *  
@@ -621,11 +706,36 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
      */
     private Property prepareProperty( String name, Object value ) throws PathNotFoundException, RepositoryException
     {
-        Property prop = null;
+        PropertyImpl prop = null;
     
+        //
+        //  Because we rely quite a lot on the primary property, we need to go and
+        //  handle it separately.
+        //
+        if( name.equals("jcr:primaryType") )
+        {
+            if( m_properties.hasProperty("jcr:primaryType") )
+            {
+                throw new RepositoryException("The object has already been assigned a primary type!");
+            }
+
+            //  We know where this belongs to.
+            GenericNodeType gnt = (GenericNodeType)m_session.getWorkspace().getNodeTypeManager().getNodeType("nt:base");
+            
+            PropertyDefinition primaryDef = gnt.findPropertyDefinition("jcr:primaryType");
+                        
+            prop = new PropertyImpl( m_session, 
+                                     m_path.resolve(name).toString(),
+                                     primaryDef );
+    
+            m_properties.add( prop );
+            
+            return prop;
+        }
+        
         try
         {
-            prop = getProperty(name);
+            prop = (PropertyImpl) getProperty(name);
         }
         catch( PathNotFoundException e ){}
         
@@ -633,18 +743,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         {
             
             Path propertypath = m_path.resolve(name);
+     
+            // PropertyDefinition propDef = findDefinition( getPrimaryNodeType(),name );
+
+            // if( propDef == null ) throw new RepositoryException("No match for such property type: "+name);
             
-            PropertyDefinition[] defs = getPrimaryNodeType().getDeclaredPropertyDefinitions();
-            PropertyDefinition   propDef = null;
-            
-            for( PropertyDefinition p : defs )
-            {
-                if( p.getName().equals( name ) ) propDef = p;
-            }
-            
-            // FIXME: What to do here if there is no such property definition?
-            
-            prop = new PropertyImpl( m_session, propertypath.toString(), propDef );
+            prop = new PropertyImpl( m_session, propertypath.toString() );
             m_properties.add(prop);
             markModified();
         }
@@ -890,9 +994,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         WorkspaceImpl ws = (WorkspaceImpl)m_session.getWorkspace();
         
-        ws.saveNode(this);
-        m_modified = false;
-        m_new      = false;
+        switch( m_state )
+        {
+            case REMOVED:
+                ws.removeNode(this);
+                break;
+            default:
+                ws.saveNode(this);
+                m_modified = false;
+                m_new      = false;
+        }
     }
     
     // FIXME: No rollback support
@@ -963,12 +1074,68 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         m_session.getNodeManager().remove( this );
         markModified();
+        m_state = NodeState.REMOVED;
     }
 
     public void addChildProperty(PropertyImpl property)
     {
         m_properties.add( property );
         property.m_parent = this;
+    }
+
+    /**
+     *  Assumes nothing, goes through the properties, makes sure all things are correct
+     *
+     *
+     */
+    public void sanitize() throws RepositoryException
+    {
+        log.finest("Sanitizing node "+m_path);
+        
+        if( m_definition == null )
+        {
+            PropertyImpl primarytype = m_properties.find( "jcr:primaryType" );
+
+            if( primarytype == null )
+            {
+                if( m_path.isRoot() )
+                {
+                    setProperty( "jcr:primaryType", "nt:unstructured");
+                }
+                else
+                {
+                    setProperty( "jcr:primaryType", assignChildType( m_path.getLastComponent() ).toString() );
+                }
+            }
+
+            if( m_parent != null )
+            {
+                NodeDefinition[] defs = m_parent.getPrimaryNodeType().getChildNodeDefinitions();
+                NodeType mytype = getPrimaryNodeType();
+            
+                for( NodeDefinition nd : defs )
+                {
+                    if( nd.getName().equals(mytype.getName()) || nd.getName().equals("*") )
+                    {
+                        m_definition = nd;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                // FIXME: Not correct
+                m_definition = new NodeDefinitionImpl( getPrimaryNodeType(), "nt:unstructured" );
+            }
+            
+            if( m_definition == null )
+            {
+                throw new RepositoryException("Cannot assign a node definition!");
+            }
+            
+        }
+
+        autoCreateProperties(); 
     }
 
 }

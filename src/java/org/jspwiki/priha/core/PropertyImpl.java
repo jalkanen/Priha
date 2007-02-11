@@ -27,6 +27,11 @@ public class PropertyImpl extends ItemImpl implements Property
         m_definition = propDef;
     }
     
+    public PropertyImpl( SessionImpl session, String path )
+    {
+        this( session, path, null );
+    }
+    
     public boolean getBoolean() throws ValueFormatException, RepositoryException
     {
         if( m_multi != Multi.SINGLE ) throw new ValueFormatException();

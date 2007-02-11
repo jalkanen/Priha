@@ -22,6 +22,7 @@ public class NodeManager
     private SessionImpl m_session;
     
     public NodeManager( SessionImpl session )
+        throws RepositoryException
     {
         m_session = session;
         
@@ -90,18 +91,19 @@ public class NodeManager
                 node.m_path = new Path(newpath);
             }
         }
-
+        
         m_nodeReferences.put( node.getPath(), node );
     }
     
-    protected void reset()
+    protected void reset() throws RepositoryException
     {
         m_nodeReferences.clear();
-        try
-        {
-            getOrCreateNode( new Path("/") );
-        }
-        catch( Exception e ) {} // SHould not fail 
+        
+        NodeImpl ni = new NodeImpl(m_session,"/");
+        
+        ni.sanitize();
+        
+        m_nodeReferences.put( "/",ni );
     }
 
     public void remove( NodeImpl node ) throws RepositoryException
@@ -110,7 +112,6 @@ public class NodeManager
         
         m_nodeReferences.remove( node.getPath() );
         node.m_parent.removeChildNode(node);
-        node.m_parent = null;
         
         for( NodeIterator ndi = node.getNodes(); ndi.hasNext(); )
         {

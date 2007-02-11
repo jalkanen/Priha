@@ -28,16 +28,18 @@ import org.xml.sax.SAXException;
 
 public class NodeTypeManagerImpl implements NodeTypeManager
 {
-    private Workspace m_workspace;
     private SortedMap<String,NodeType> m_primaryTypes = new TreeMap<String,NodeType>();
     private SortedMap<String,NodeType> m_mixinTypes   = new TreeMap<String,NodeType>();
     
     private Logger log = Logger.getLogger( getClass().getName() );
+
+    private static NodeTypeManagerImpl c_instance;
     
-    public NodeTypeManagerImpl(Workspace ws)
+    // TODO: When created, there is no Session object available.
+    
+    private NodeTypeManagerImpl()
+        throws RepositoryException
     {
-        m_workspace = ws;
-        
         try
         {
             initializeNodeTypeList();
@@ -45,14 +47,21 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         catch( Exception e )
         {
             e.printStackTrace();
+            throw new RepositoryException("Cannot start NodeTypeManager",e);
         }
     }
-    
+
     // FIXME: Should really return only a singleton per Repository.  Now, clashes are possible,
     //        when multiple sessions are opened.
-    public static NodeTypeManagerImpl getInstance( Workspace ws )
+    public static NodeTypeManagerImpl getInstance(Workspace ws)
+        throws RepositoryException
     {
-        return new NodeTypeManagerImpl( ws );
+        if( c_instance == null )
+        {
+            c_instance = new NodeTypeManagerImpl();
+        }
+        
+        return c_instance;
     }
     
     private void initializeNodeTypeList() throws ParserConfigurationException, IOException
@@ -117,6 +126,9 @@ public class NodeTypeManagerImpl implements NodeTypeManager
 
         GenericNodeType gnt = new GenericNodeType(name);
         
+        //
+        //  Basic Node Type properties
+        //
         gnt.m_ismixin = getBooleanProperty(xpath,"isMixin", node );
         
         gnt.m_hasOrderableChildNodes = getBooleanProperty(xpath, "hasOrderableChildNodes", node );
@@ -131,16 +143,32 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         if( superNode != null && superNode.length() > 0 )
             gnt.m_parent = getNodeType( superNode );
         
-        NodeList propertyDefinitions = (NodeList) xpath.evaluate( "propertydefinition", node, XPathConstants.NODESET );
+        //
+        //  Property definitions
+        //
+        NodeList propertyDefinitions = (NodeList) xpath.evaluate( "propertyDefinition", node, XPathConstants.NODESET );
         
-        ArrayList pdlist = new ArrayList();
+        ArrayList<PropertyDefinition> pdlist = new ArrayList<PropertyDefinition>();
         for( int i = 0; i < propertyDefinitions.getLength(); i++ )
         {
             PropertyDefinition p = parsePropertyDefinition( gnt, propertyDefinitions.item(i) );
             pdlist.add( p );
         }
         
-        gnt.m_childNodeDefinitions = (NodeDefinition[]) pdlist.toArray();
+        gnt.m_declaredPropertyDefinitions = (PropertyDefinition[]) pdlist.toArray(new PropertyDefinition[0]);
+        
+        //  Add parent definitions
+
+        if( gnt.m_parent != null )
+        {
+            for( PropertyDefinition p : gnt.m_parent.getPropertyDefinitions() )
+            {
+                pdlist.add( p );
+            }
+        }
+        
+        gnt.m_propertyDefinitions = (PropertyDefinition[]) pdlist.toArray(new PropertyDefinition[0]);
+        
         //
         //  Add it to the proper place
         //

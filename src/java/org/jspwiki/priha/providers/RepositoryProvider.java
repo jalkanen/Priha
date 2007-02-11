@@ -5,7 +5,9 @@ import java.util.List;
 import javax.jcr.*;
 
 import org.jspwiki.priha.core.NodeImpl;
+import org.jspwiki.priha.core.PropertyImpl;
 import org.jspwiki.priha.core.WorkspaceImpl;
+import org.jspwiki.priha.util.PropertyList;
 
 public abstract class RepositoryProvider
 {
@@ -40,32 +42,35 @@ public abstract class RepositoryProvider
     {
     }
     
-    public void close( Workspace ws )
+    public void close( WorkspaceImpl ws )
     {
     }
     
     /**
-     *  This must return a Node with all the metadata filled in, except
-     *  for jcr:content (which is optional).
+     *  Returns a list of properties for a Node.
+     *  
      *  @param ws
      *  @param path
      *  @return
+     *  @throws RepositoryException
      */
-    public abstract NodeImpl getNode( Workspace ws, String path ) throws RepositoryException;
+    public abstract PropertyList getProperties( WorkspaceImpl ws, String path ) throws RepositoryException;
     
-    public boolean nodeExists( Workspace ws, String path )
+    public abstract PropertyImpl getProperty( WorkspaceImpl ws, String path ) throws RepositoryException;
+    
+    public boolean nodeExists( WorkspaceImpl ws, String path )
     {
         return false;
     }
     
-    public abstract void putNode( Workspace ws, NodeImpl node ) throws RepositoryException;
+    public abstract void putNode( WorkspaceImpl ws, NodeImpl node ) throws RepositoryException;
     
-    public void copy( Workspace ws, String srcpath, String destpath ) throws RepositoryException
+    public void copy( WorkspaceImpl ws, String srcpath, String destpath ) throws RepositoryException
     {
         
     }
     
-    public void move( Workspace ws, String srcpath, String destpath ) throws RepositoryException
+    public void move( WorkspaceImpl ws, String srcpath, String destpath ) throws RepositoryException
     {
         
     }
@@ -73,4 +78,6 @@ public abstract class RepositoryProvider
     public abstract List<String> listNodePaths(Workspace ws);
     
     public abstract List<String> listWorkspaces();
+
+    public abstract void remove( WorkspaceImpl ws, String path );
 }

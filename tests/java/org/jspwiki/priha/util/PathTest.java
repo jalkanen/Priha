@@ -1,6 +1,8 @@
 package org.jspwiki.priha.util;
 
+import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class PathTest extends TestCase
 {
@@ -38,5 +40,10 @@ public class PathTest extends TestCase
         Path p = new Path("/test/root");
         
         assertFalse(p.isRoot());
+    }
+
+    public static Test suite()
+    {
+        return new TestSuite( PathTest.class );
     }
 }

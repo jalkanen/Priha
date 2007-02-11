@@ -1,6 +1,8 @@
 package org.jspwiki.priha.util;
 
-public class InvalidPathException extends Exception
+import javax.jcr.RepositoryException;
+
+public class InvalidPathException extends RepositoryException
 {
     public InvalidPathException(String msg)
     {

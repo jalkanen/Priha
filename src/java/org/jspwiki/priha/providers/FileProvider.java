@@ -2,22 +2,26 @@ package org.jspwiki.priha.providers;
 
 import java.io.*;
 import java.util.*;
+import java.util.logging.Logger;
 
 import javax.jcr.*;
 
-import org.jspwiki.priha.core.NamespaceRegistryImpl;
-import org.jspwiki.priha.core.NodeImpl;
-import org.jspwiki.priha.core.RepositoryImpl;
-import org.jspwiki.priha.core.SessionImpl;
+import org.jspwiki.priha.core.*;
+import org.jspwiki.priha.util.PropertyList;
+
+import com.sun.org.apache.xml.internal.utils.UnImplNode;
 
 public class FileProvider extends RepositoryProvider
 {
     private File m_root;
     
+    private Logger log = Logger.getLogger( getClass().getName() );
+    
     public FileProvider()
     {
         m_root = new File("/tmp/priha/fileprovider");
-        
+    
+        log.fine("Initializing FileProvider with root "+m_root);
         File wsroot = getWorkspaceRoot();
         
         if( !wsroot.exists() )
@@ -118,7 +122,7 @@ public class FileProvider extends RepositoryProvider
                 return p.getString();
         }
     }
-    public void putNode(Workspace ws, NodeImpl node) throws RepositoryException
+    public void putNode(WorkspaceImpl ws, NodeImpl node) throws RepositoryException
     {
         File nodeDir = getNodeDir( ws, node.getPath() );
 
@@ -152,12 +156,16 @@ public class FileProvider extends RepositoryProvider
         }
     }
 
-    public NodeImpl getNode(Workspace ws, String path)
+    public PropertyImpl getProperty(WorkspaceImpl ws, String path) throws RepositoryException
+    {
+        throw new UnsupportedRepositoryOperationException("getProperty()");
+    }
+
+    public PropertyList getProperties(WorkspaceImpl ws, String path)
         throws RepositoryException
     {
         File nodeDir = getNodeDir( ws, path );
-   
-        NodeImpl n = new NodeImpl( (SessionImpl)ws.getSession(), path ); // FIXME: Should set m_new to false
+        PropertyList proplist = new PropertyList();
         
         Properties props = new Properties();
         
@@ -165,7 +173,7 @@ public class FileProvider extends RepositoryProvider
         
         if( !propertyFile.exists() )
         {
-            return n;
+            return proplist;
         }
         
         InputStream in = null;
@@ -184,43 +192,55 @@ public class FileProvider extends RepositoryProvider
                     String propName = key.substring(0,key.length()-".value".length());
                     String propVal  = (String) entry.getValue();                    
                     String propType = props.getProperty(propName+".type");
+         
+                    String propertyPath = path + "/" + propName;
+                    
+                    PropertyImpl pi = ws.createPropertyImpl( propertyPath );
                     
                     if( propType.equals(PropertyType.TYPENAME_STRING) )
-                        n.setProperty( propName, propVal );
+                        pi.setValue( (String) propVal );
                     else if( propType.equals(PropertyType.TYPENAME_BOOLEAN) )
-                        n.setProperty( propName, Boolean.parseBoolean(propVal) );
+                        pi.setValue( Boolean.parseBoolean(propVal) );
                     else if( propType.equals(PropertyType.TYPENAME_DOUBLE) )
-                        n.setProperty( propName, Double.parseDouble(propVal) );
+                        pi.setValue( Double.parseDouble(propVal) );
                     else if( propType.equals(PropertyType.TYPENAME_LONG) )
-                        n.setProperty( propName, Long.parseLong(propVal) );
+                        pi.setValue( Long.parseLong(propVal) );
                     else if( propType.equals(PropertyType.TYPENAME_DATE) )
                     {
                         Calendar c = Calendar.getInstance();
                         c.setTimeInMillis( Long.parseLong(propVal) );
+                        pi.setValue( c );
                     }
                     else if( propType.equals(PropertyType.TYPENAME_NAME) ||
                         propType.equals(PropertyType.TYPENAME_PATH ))
                     {
                         propVal = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName( propVal );
-                        n.setProperty( propName, propVal );
+                        pi.setValue( propVal );
+                        // FIXME: Does not set NAME property correctly
                     }
                     else if( propType.equals(PropertyType.TYPENAME_BINARY) )
                     {
+                        // FIXME: Should not absolutely do this
                         InputStream input = new FileInputStream( new File(nodeDir, propVal) );
-                        n.setProperty( propName, input );
+                        pi.setValue( input );
                     }
                     else
                         throw new RepositoryException("Cannot deserialize property type "+propType);
+        
+                    proplist.add( pi );
                 }
             }
         }
         catch( IOException e )
         {
-            if( in != null ) try { in.close(); } catch(IOException ex) {}
             throw new RepositoryException("Thingy said booboo", e);
         }
+        finally
+        {
+            if( in != null ) try { in.close(); } catch(IOException ex) {}            
+        }
         
-        return n;
+        return proplist;
     }
 
     public boolean nodeExists(Workspace ws, String path)
@@ -287,7 +307,35 @@ public class FileProvider extends RepositoryProvider
         
         if( wsnames.indexOf(workspaceName) == -1 )
             throw new NoSuchWorkspaceException(workspaceName);
+        
+        log.fine("Repository has been opened.");
     }
-    
-   
+
+    @Override
+    public void remove( WorkspaceImpl ws, String path )
+    {
+        File nodeDir = getNodeDir( ws, path );
+
+        log.fine("Deleting path and all subdirectories: "+path);
+        
+        if( nodeDir != null && nodeDir.exists() )
+        {
+            deleteContents( nodeDir );
+        
+            nodeDir.delete();
+        }
+    }
+
+    private void deleteContents( File dir )
+    {
+        for( File f : dir.listFiles() )
+        {
+            if( f.isDirectory() )
+            {
+                deleteContents( f );
+            }
+            
+            f.delete();
+        }
+    }
 }

@@ -29,4 +29,8 @@ public class NodeDefinitionImpl extends ItemDefinitionImpl implements NodeDefini
         return m_requiredPrimaryTypes;
     }
 
+    public String toString()
+    {
+        return "NodeType: "+getName();
+    }
 }

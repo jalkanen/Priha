@@ -1,8 +1,8 @@
 package org.jspwiki.priha.core;
 
-import org.jspwiki.priha.core.NamespaceRegistryImpl;
-
+import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class NamespaceRegistryImplTest extends TestCase
 {
@@ -30,6 +30,11 @@ public class NamespaceRegistryImplTest extends TestCase
         throws Exception
     {
         assertEquals( "test", m_reg.fromQName("test") );
+    }
+
+    public static Test suite()
+    {
+        return new TestSuite( NamespaceRegistryImplTest.class );
     }
 
 }
