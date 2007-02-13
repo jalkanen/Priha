@@ -47,6 +47,7 @@
       <childNodeDefinition>
          <name>*</name>
          <requiredPrimaryTypes>[nt:base]</requiredPrimaryTypes>
+         <defaultPrimaryType>nt:unstructured</defaultPrimaryType>
          <autoCreated>false</autoCreated>
          <mandatory>false</mandatory>
          <onParentVersion>VERSION</onParentVersion>

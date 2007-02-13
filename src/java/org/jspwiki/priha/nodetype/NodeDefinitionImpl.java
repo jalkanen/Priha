@@ -5,9 +5,9 @@ import javax.jcr.nodetype.NodeType;
 
 public class NodeDefinitionImpl extends ItemDefinitionImpl implements NodeDefinition
 {
-    protected boolean  m_allowsSameNameSiblings = false;
-    protected NodeType m_defaultPrimaryType     = null;
-    protected NodeType[] m_requiredPrimaryTypes = new NodeType[0];
+    protected boolean           m_allowsSameNameSiblings = false;
+    protected GenericNodeType   m_defaultPrimaryType     = null;
+    protected GenericNodeType[] m_requiredPrimaryTypes = new GenericNodeType[0];
     
     public NodeDefinitionImpl(NodeType type, String name)
     {

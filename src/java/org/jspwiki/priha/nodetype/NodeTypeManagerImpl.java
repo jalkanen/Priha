@@ -168,7 +168,20 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         }
         
         gnt.m_propertyDefinitions = (PropertyDefinition[]) pdlist.toArray(new PropertyDefinition[0]);
+
+        //
+        //  Child node definitions
+        NodeList nodeDefinitions = (NodeList) xpath.evaluate( "childNodeDefinition", node, XPathConstants.NODESET );
         
+        ArrayList<NodeDefinition> ndlist = new ArrayList<NodeDefinition>();
+        for( int i = 0; i < nodeDefinitions.getLength(); i++ )
+        {
+            NodeDefinition p = parseChildNodeDefinition( gnt, nodeDefinitions.item(i) );
+            ndlist.add( p );
+        }
+        
+        gnt.m_childNodeDefinitions = (NodeDefinition[]) ndlist.toArray(new NodeDefinition[0]);
+
         //
         //  Add it to the proper place
         //
@@ -208,6 +221,79 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         pdi.m_onParentVersion  = OnParentVersionAction.valueFromName( onParentVersion );
         
         return pdi;
+    }
+
+    private NodeDefinition parseChildNodeDefinition( GenericNodeType parent, Node node) throws XPathExpressionException, NoSuchNodeTypeException, RepositoryException
+    {
+        XPath xpath = XPathFactory.newInstance().newXPath();
+        
+        String name = xpath.evaluate( "name", node );
+        log.finest("Loading node definition "+name);
+        
+        NodeDefinitionImpl nd = new NodeDefinitionImpl( parent, name );
+
+        String requiredType = xpath.evaluate( "requiredType", node );
+        
+        if( requiredType != null && requiredType.length() > 0 )
+        {
+            GenericNodeType[] reqd = new GenericNodeType[1];
+
+            if( requiredType.equals(parent.getName()) )
+                reqd[0] = parent;
+            else
+                reqd[0] = (GenericNodeType) getNodeType( requiredType );
+
+            nd.m_requiredPrimaryTypes = reqd;
+        }
+        
+        String defaultType = xpath.evaluate( "defaultPrimaryType", node );
+
+        if( defaultType != null && defaultType.length() > 0 )
+        {
+            if( defaultType.equals(parent.getName()) )
+                nd.m_defaultPrimaryType = parent;
+            else
+                nd.m_defaultPrimaryType = (GenericNodeType) getNodeType( defaultType );
+        }
+        
+        nd.m_isAutoCreated = getBooleanProperty(xpath, "autoCreated", node);
+        nd.m_isMandatory   = getBooleanProperty(xpath, "mandatory", node);
+        nd.m_isProtected   = getBooleanProperty(xpath, "protected", node);
+        nd.m_allowsSameNameSiblings = getBooleanProperty(xpath, "sameNameSiblings", node);
+
+        String onParentVersion = xpath.evaluate( "onParentVersion", node );
+        nd.m_onParentVersion  = OnParentVersionAction.valueFromName( onParentVersion );
+
+        return nd;
+    }
+    
+    /**
+     *  Finds a node definition from the complete array of all definitions
+     *  
+     *  @param type
+     *  @return
+     */
+    public NodeDefinition findNodeDefinition(String type)
+    {
+        for( NodeType nt : m_primaryTypes.values() )
+        {
+            for( NodeDefinition nd : nt.getChildNodeDefinitions() )
+            {
+                if( nd.getName().equals( type ) )
+                    return nd;
+            }
+        }
+        
+        for( NodeType nt : m_primaryTypes.values() )
+        {
+            for( NodeDefinition nd : nt.getChildNodeDefinitions() )
+            {
+                if( nd.getName().equals( "*" ) )
+                    return nd;
+            }
+        }
+        
+        return null;
     }
 
     public void addPrimaryNodeType( NodeType nt )

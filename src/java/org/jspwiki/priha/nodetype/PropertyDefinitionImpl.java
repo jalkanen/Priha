@@ -25,8 +25,7 @@ public class PropertyDefinitionImpl extends ItemDefinitionImpl implements Proper
 
     public int getRequiredType()
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return m_requiredType;
     }
 
     public String[] getValueConstraints()

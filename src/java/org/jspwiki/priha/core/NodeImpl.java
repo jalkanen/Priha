@@ -36,20 +36,34 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     
     private NodeState m_state = NodeState.NEW;
     
+    private GenericNodeType m_primaryType;
+    
     Logger log = Logger.getLogger( getClass().getName() );
 
-    private NodeType m_primaryType;
-    
-    protected NodeImpl( SessionImpl session, String path )
+    protected NodeImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef ) 
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         super( session, path );
+     
+        m_primaryType = primaryType;
+        m_definition  = nDef;
+        setProperty( "jcr:primaryType", m_primaryType.getName() );        
     }
     
-    protected NodeImpl( SessionImpl session, Path path )
+    protected NodeImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef ) 
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        super( session, path );
+        this( session, path.toString(), primaryType, nDef );
     }
 
+    protected NodeImpl( SessionImpl session, Path path, NodeDefinition nDef ) 
+        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
+    {
+        this( session, path, null, nDef );
+        
+        m_primaryType = (GenericNodeType) nDef.getDefaultPrimaryType();
+    }
+    
     void markModified()
     {
         m_modified = true;
@@ -67,21 +81,21 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         throw new UnsupportedRepositoryOperationException("Node.addMixin()");
     }
 
-    private NodeType assignChildType(String relpath) throws RepositoryException
+    private GenericNodeType assignChildType(String relpath) throws RepositoryException
     {
-        NodeType mytype = m_session.getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
+        NodeDefinition nd = m_primaryType.findNodeDefinition(relpath);
 
-        // FIXME: Should really look through the child definitions
-        /*
-        for( NodeDefinition nd : mytype.getChildNodeDefinitions() )
+        GenericNodeType nt = (GenericNodeType) nd.getDefaultPrimaryType();
+        
+        if( nt == null )
         {
-            
+            throw new ConstraintViolationException("Cannot assign a child type to this node, since there is no default type.");
         }
-        */
-        return mytype;
+        
+        return nt;
     }
     
-    public Node addNode(String relPath)
+    public Node addNode(String relPath, String primaryNodeTypeName)
                                        throws ItemExistsException,
                                            PathNotFoundException,
                                            VersionException,
@@ -109,18 +123,23 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             {
                 throw new ConstraintViolationException("Trying to add a node to a Property");
             }
-        
-            ni = new NodeImpl(m_session,absPath.toString());
+     
+            GenericNodeType assignedType;
+            NodeDefinition  assignedNodeDef;
+            
+            if( primaryNodeTypeName == null )
+            {
+                NodeImpl parent = (NodeImpl) item;
+                assignedType = parent.assignChildType(relPath);
+            }
+            else
+            {
+                assignedType = (GenericNodeType) m_session.getWorkspace().getNodeTypeManager().getNodeType( primaryNodeTypeName );
+            }
 
-            //
-            //  Figure out the node type
-            //
-            
-            NodeImpl parent = (NodeImpl) item;
-            
-            NodeType assignedType = parent.assignChildType(relPath);
-            
-            ni.setProperty( "jcr:primaryType", assignedType.getName() );
+            assignedNodeDef = assignedType.findNodeDefinition( absPath.getLastComponent() );
+
+            ni = new NodeImpl( m_session, absPath, assignedType, assignedNodeDef );
             
             ni.sanitize();
             
@@ -134,19 +153,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return ni;
     }
 
-    public Node addNode(String relPath, String primaryNodeTypeName)
-                                                                   throws ItemExistsException,
-                                                                       PathNotFoundException,
-                                                                       NoSuchNodeTypeException,
-                                                                       LockException,
-                                                                       VersionException,
-                                                                       ConstraintViolationException,
-                                                                       RepositoryException
+    public Node addNode(String relPath)
+        throws ItemExistsException,
+               PathNotFoundException,
+               NoSuchNodeTypeException,
+               LockException,
+               VersionException,
+               ConstraintViolationException,
+               RepositoryException
     {
-        if( primaryNodeTypeName == null ) throw new NoSuchNodeTypeException("Node type cannot be null");
-
-        Node nd = addNode(relPath);
-        nd.setProperty( "jcr:primaryType", primaryNodeTypeName );
+        Node nd = addNode(relPath, null);
         
         return nd;
     }
@@ -235,6 +251,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public NodeDefinition getDefinition() throws RepositoryException
     {
+        if( m_definition == null ) sanitize();
+        
         return m_definition;
     }
 
@@ -392,23 +410,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public NodeType getPrimaryNodeType() throws RepositoryException
     {
-        try
-        {
-            if( m_primaryType == null )
-            {
-                Property p = getChildProperty("jcr:primaryType");
-        
-                NodeTypeManager mgr = getSession().getWorkspace().getNodeTypeManager();
-                
-                m_primaryType = mgr.getNodeType( p.getString() );
-            }
-            
-            return m_primaryType;
-        }
-        catch( PathNotFoundException e )
-        {
-            throw new PathNotFoundException("Mandatory property 'jcr:primaryType' not found!",e);
-        }
+        return m_primaryType;
     }
 
     public PropertyIterator getProperties() throws RepositoryException
@@ -669,31 +671,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     }
 
-    /**
-     *  Always finds a property definition.  If a suitable definition cannot be found
-     *  for this Node, then returns null.
-     *  
-     *  @param name
-     *  @return
-     * @throws RepositoryException 
-     */
-    private PropertyDefinition findDefinition( NodeType type, String name ) throws RepositoryException
-    {
-        // Check primary type
-        
-        PropertyDefinition[] defs = type.getPropertyDefinitions();
-        PropertyDefinition   propDef = null;
-        
-        for( PropertyDefinition p : defs )
-        {
-            // FIXME: This does not take into account the multiplicity
-            //        of the node types, and might return the wrong one
-            if( p.getName().equals( name ) || p.getName().equals("*") ) propDef = p;
-        }
-                
-        return propDef;
-    }
-    
+ 
     /**
      *  Finds a property and checks if we're supposed to remove it or not.  It also creates
      *  the property if it does not exist.
@@ -741,14 +719,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         
         if( prop == null )
         {
-            
             Path propertypath = m_path.resolve(name);
      
-            // PropertyDefinition propDef = findDefinition( getPrimaryNodeType(),name );
-
-            // if( propDef == null ) throw new RepositoryException("No match for such property type: "+name);
+            Path p = propertypath.getParentPath();
             
-            prop = new PropertyImpl( m_session, propertypath.toString() );
+            NodeImpl nd = (NodeImpl) m_session.getItem(p);
+            
+            PropertyDefinition pd = ((GenericNodeType)nd.getPrimaryNodeType()).findPropertyDefinition(name);
+            
+            prop = new PropertyImpl( m_session, propertypath.toString(), pd );
             m_properties.add(prop);
             markModified();
         }
@@ -1110,17 +1089,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
             if( m_parent != null )
             {
-                NodeDefinition[] defs = m_parent.getPrimaryNodeType().getChildNodeDefinitions();
-                NodeType mytype = getPrimaryNodeType();
-            
-                for( NodeDefinition nd : defs )
-                {
-                    if( nd.getName().equals(mytype.getName()) || nd.getName().equals("*") )
-                    {
-                        m_definition = nd;
-                        break;
-                    }
-                }
+                GenericNodeType mytype = (GenericNodeType)getPrimaryNodeType();
+
+                m_definition = ((GenericNodeType)m_parent.getPrimaryNodeType()).findNodeDefinition( mytype.getName() );
             }
             else
             {
@@ -1134,8 +1105,20 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             }
             
         }
+        
+        autoCreateProperties();
 
-        autoCreateProperties(); 
+        GenericNodeType mytype = (GenericNodeType)getPrimaryNodeType();
+
+        for( PropertyImpl pi : m_properties )
+        {
+            if( pi.getDefinition() == null )
+            {
+                PropertyDefinition pd = mytype.findPropertyDefinition( pi.getName() );
+                
+                pi.m_definition = pd;
+            }
+        }
     }
 
 }

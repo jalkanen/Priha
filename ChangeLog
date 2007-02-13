@@ -1,5 +1,12 @@
 2007-02-11  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.0.4
+        
+        * Reworked the SPI a bit; now reading the repository
+        in at startup works.  It's nowhere near optimal, tho'.
+
+2007-02-11  Janne Jalkanen <jalkanen@ecyrd.com>
+
         * 0.0.3
         
         * Node and property definitions should now be properly

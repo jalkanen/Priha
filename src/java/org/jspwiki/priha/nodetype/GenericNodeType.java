@@ -26,7 +26,7 @@ public class GenericNodeType
     protected String               m_name; 
     
     protected boolean              m_ismixin;
-    public boolean m_hasOrderableChildNodes;
+    protected boolean              m_hasOrderableChildNodes;
     
     public GenericNodeType(String name)
     {
@@ -136,7 +136,15 @@ public class GenericNodeType
     {
         for( NodeDefinition nd : m_childNodeDefinitions )
         {
-            if( nd.getName().equals(name) || nd.getName().equals("*") )
+            if( nd.getName().equals(name) )
+            {
+                return nd;
+            }
+        }
+        
+        for( NodeDefinition nd : m_childNodeDefinitions )
+        {
+            if( nd.getName().equals("*") )
             {
                 return nd;
             }
@@ -149,12 +157,20 @@ public class GenericNodeType
     {
         for( PropertyDefinition pd : m_propertyDefinitions )
         {
-            if( pd.getName().equals(name) || pd.getName().equals("*") )
+            if( pd.getName().equals(name) )
             {
                 return pd;
             }
         }
-        
+
+        for( PropertyDefinition pd : m_propertyDefinitions )
+        {
+            if( pd.getName().equals("*") )
+            {
+                return pd;
+            }
+        }
+
         return null;
     }
     

@@ -5,7 +5,9 @@ import java.util.HashMap;
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
+import javax.jcr.nodetype.NodeDefinition;
 
+import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 
@@ -42,8 +44,7 @@ public class NodeManager
         
         if( ni == null )
         {
-            ni = new NodeImpl( m_session, path );
-            addNode(ni);
+            ni = (NodeImpl) getRootNode().addNode( path.toString() );
         }
         
         return ni;
@@ -99,11 +100,17 @@ public class NodeManager
     {
         m_nodeReferences.clear();
         
-        NodeImpl ni = new NodeImpl(m_session,"/");
+        // Create root node
+        
+        GenericNodeType rootType = (GenericNodeType)m_session.getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
+        
+        NodeDefinition nd = rootType.findNodeDefinition("*");
+        
+        NodeImpl ni = new NodeImpl( m_session, "/", rootType, nd);
         
         ni.sanitize();
         
-        m_nodeReferences.put( "/",ni );
+        m_nodeReferences.put( "/", ni );
     }
 
     public void remove( NodeImpl node ) throws RepositoryException
@@ -142,6 +149,13 @@ public class NodeManager
             m_path  = new Path(basePath);
             m_index = index;
         }
+    }
+
+    public NodeImpl getRootNode()
+    {
+        NodeImpl root = m_nodeReferences.get("/");
+        
+        return root;
     }
     
 

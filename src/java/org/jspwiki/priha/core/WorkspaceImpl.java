@@ -8,14 +8,20 @@ import java.util.Map;
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeTypeManager;
+import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.observation.ObservationManager;
 import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 
+import org.jspwiki.priha.nodetype.GenericNodeType;
+import org.jspwiki.priha.nodetype.NodeDefinitionImpl;
 import org.jspwiki.priha.nodetype.NodeTypeManagerImpl;
 import org.jspwiki.priha.providers.RepositoryProvider;
+import org.jspwiki.priha.util.InvalidPathException;
+import org.jspwiki.priha.util.Path;
 import org.jspwiki.priha.util.PropertyList;
 import org.xml.sax.ContentHandler;
 
@@ -35,10 +41,30 @@ public class WorkspaceImpl
         m_provider = provider;
         m_nodeTypeManager = NodeTypeManagerImpl.getInstance(this);
     }
-        
+     
+    /**
+     *  Creates a new property implementation without a property definition.
+     *  This is meant for providers to create an "empty" property definition,
+     *  which the WorkspaceImpl will then update later on.
+     *  
+     *  @param path
+     *  @return
+     *  @throws RepositoryException
+     */
     public PropertyImpl createPropertyImpl( String path )
+        throws RepositoryException
     {
-        PropertyImpl pi = new PropertyImpl( m_session, path );
+        Path p = new Path(path);
+        
+        String name = p.getLastComponent();
+
+        p = p.getParentPath();
+        
+        //NodeImpl nd = (NodeImpl) m_session.getItem(p);
+        
+        //PropertyDefinition pd = ((GenericNodeType)nd.getPrimaryNodeType()).findPropertyDefinition(name);
+        
+        PropertyImpl pi = new PropertyImpl( m_session, path, null );
         
         return pi;
     }
@@ -54,18 +80,39 @@ public class WorkspaceImpl
         m_provider.putNode( this, node );
     }
     
+    /**
+     * Loads the state of a node from the repository.
+     * 
+     * @param path
+     * @return A brand new NodeImpl.
+     * 
+     * @throws RepositoryException
+     */
     NodeImpl loadNode( String path ) throws RepositoryException
     {
-        NodeImpl nd = new NodeImpl( m_session, path );
-        
         PropertyList properties = m_provider.getProperties( this, path );
+        
+        PropertyImpl primaryType = properties.find( "jcr:primaryType" );
+        
+        if( primaryType == null ) throw new RepositoryException("Repository did not return a primary type for path "+path);
+        
+        GenericNodeType type = (GenericNodeType) m_nodeTypeManager.getNodeType( primaryType.getString() );
+        
+        NodeDefinition nd = m_nodeTypeManager.findNodeDefinition( primaryType.getString() );
+        
+        NodeImpl ni = new NodeImpl( m_session, path, type, nd );
         
         for( PropertyImpl p : properties )
         {
-            nd.addChildProperty( p );
+            String name = p.getName();
+            PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name);
+            
+            p.m_definition = pd;
+            
+            ni.addChildProperty( p );
         }
         
-        return nd;
+        return ni;
     }
         
     public void clone(String srcWorkspace, String srcAbsPath, String destAbsPath, boolean removeExisting) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException

@@ -19,17 +19,12 @@ public class PropertyImpl extends ItemImpl implements Property
 
     private Value[]            m_value;
     private Multi              m_multi = Multi.UNDEFINED;
-    private PropertyDefinition m_definition;
+    PropertyDefinition         m_definition;
     
     public PropertyImpl( SessionImpl session, String path, PropertyDefinition propDef )
     {
         super( session, path );
         m_definition = propDef;
-    }
-    
-    public PropertyImpl( SessionImpl session, String path )
-    {
-        this( session, path, null );
     }
     
     public boolean getBoolean() throws ValueFormatException, RepositoryException

@@ -206,7 +206,7 @@ public class SessionImpl implements Session
 
     public Node getRootNode() throws RepositoryException
     {
-        return m_nodeManager.getOrCreateNode( new Path("/") );
+        return m_nodeManager.getRootNode();
     }
 
     public String getUserID()
@@ -282,23 +282,18 @@ public class SessionImpl implements Session
         m_nodeManager.reset();
             
         List<String> paths = m_workspace.listNodePaths();
-            
+        
+        paths.remove("/");
+        
         for( String path : paths )
         {
             NodeImpl nd = m_workspace.loadNode(path);
+            m_nodeManager.addNode( nd );
             nd.m_new = false;
             
             nd.sanitize();
-            
-            try
-            {
-                m_nodeManager.addNode( nd );
-            }
-            catch (InvalidPathException e)
-            {
-                throw new RepositoryException( e.getMessage(), e );
-            }
         }
+        
         m_updateList.clear();
         
         repopulate();
@@ -312,7 +307,7 @@ public class SessionImpl implements Session
     {
         if( !hasNode("/"+JCR_SYSTEM) )
         {
-            Node nd = getRootNode().addNode(JCR_SYSTEM);
+            Node nd = getRootNode().addNode(JCR_SYSTEM, "nt:unstructured");
             
             // FIXME: Should probably set up all sorts of things.
             save();
