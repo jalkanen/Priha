@@ -47,7 +47,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
      
         m_primaryType = primaryType;
         m_definition  = nDef;
-        setProperty( "jcr:primaryType", m_primaryType.getName() );        
+        setProperty( "jcr:primaryType", m_primaryType.getName(), PropertyType.NAME );        
     }
     
     protected NodeImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef ) 
@@ -846,8 +846,29 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                                         ConstraintViolationException,
                                                                         RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        switch(type)
+        {
+            case PropertyType.STRING:
+                return setProperty( name, value );
+               
+            case PropertyType.LONG:
+                return setProperty( name, Long.parseLong(value) );
+                
+            case PropertyType.BOOLEAN:
+                return setProperty( name, Boolean.parseBoolean(value) );
+                
+            case PropertyType.DOUBLE:
+                return setProperty( name, Double.parseDouble(value) );
+                
+            case PropertyType.NAME:
+            case PropertyType.PATH:
+            case PropertyType.REFERENCE:
+                Value val = ValueFactoryImpl.getInstance().createValue( value, type );
+                return setProperty( name, val );
+                
+            default:
+                throw new UnsupportedRepositoryOperationException("We do not support setProperty for type "+type);
+        }
     }
 
     public Property setProperty(String name, InputStream value)
@@ -1079,11 +1100,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             {
                 if( m_path.isRoot() )
                 {
-                    setProperty( "jcr:primaryType", "nt:unstructured");
+                    setProperty( "jcr:primaryType", "nt:unstructured", PropertyType.NAME );
                 }
                 else
                 {
-                    setProperty( "jcr:primaryType", assignChildType( m_path.getLastComponent() ).toString() );
+                    setProperty( "jcr:primaryType", 
+                                 assignChildType( m_path.getLastComponent() ).toString(),
+                                 PropertyType.NAME );
                 }
             }
 

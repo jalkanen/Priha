@@ -56,7 +56,7 @@ public class ValueFactoryImpl implements ValueFactory
 
     public Value createValue(String value, int type) throws ValueFormatException
     {
-        return new ValueImpl(value);
+        return new ValueImpl( value, type );
     }
 
 }

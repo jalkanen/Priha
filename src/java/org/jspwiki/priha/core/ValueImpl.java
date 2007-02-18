@@ -70,6 +70,17 @@ public class ValueImpl implements Value, Cloneable
         m_value = string;
     }
 
+    /**
+     * Can be used to create a NAME, REFERENCE, or STRING
+     * @param string
+     * @param type
+     */
+    public ValueImpl( String string, int type )
+    {
+        m_type = type;
+        m_value = string;
+    }
+    
     public ValueImpl(InputStream in)
     {
         m_type = PropertyType.BINARY;

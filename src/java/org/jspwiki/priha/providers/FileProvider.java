@@ -122,6 +122,7 @@ public class FileProvider extends RepositoryProvider
                 return p.getString();
         }
     }
+    
     public void putNode(WorkspaceImpl ws, NodeImpl node) throws RepositoryException
     {
         File nodeDir = getNodeDir( ws, node.getPath() );
@@ -136,8 +137,10 @@ public class FileProvider extends RepositoryProvider
         {
             Property p = i.nextProperty();
          
-            props.setProperty( p.getName()+".type",  PropertyType.nameFromValue(p.getType()) );
-            props.setProperty( p.getName()+".value", getStringFormat( ws, p ) );
+            String qname = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).toQName(p.getName());
+            
+            props.setProperty( qname+".type",  PropertyType.nameFromValue(p.getType()) );
+            props.setProperty( qname+".value", getStringFormat( ws, p ) );
         }
         
         OutputStream out = null;
@@ -189,9 +192,10 @@ public class FileProvider extends RepositoryProvider
                 String key = (String)entry.getKey();
                 if( key.endsWith(".value") ) 
                 {
-                    String propName = key.substring(0,key.length()-".value".length());
+                    String qName = key.substring(0,key.length()-".value".length());
+                    String propName = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName(qName);
                     String propVal  = (String) entry.getValue();                    
-                    String propType = props.getProperty(propName+".type");
+                    String propType = props.getProperty(qName+".type");
          
                     String propertyPath = path + "/" + propName;
                     
