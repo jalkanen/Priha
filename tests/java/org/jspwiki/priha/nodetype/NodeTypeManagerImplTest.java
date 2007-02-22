@@ -68,6 +68,13 @@ public class NodeTypeManagerImplTest extends TestCase
         
     }
 
+    public void testMixin() throws Exception
+    {
+        NodeType mixin = m_mgr.getNodeType("mix:referenceable");
+        
+        assertNotNull( "no mixin type", mixin );
+    }
+    
     public static Test suite()
     {
         return new TestSuite( NodeTypeManagerImplTest.class );

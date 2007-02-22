@@ -195,8 +195,7 @@ public class SessionImpl implements Session
 
     public Node getNodeByUUID(String uuid) throws ItemNotFoundException, RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("Session.getNodeByUUID()");
-        // TODO Auto-generated method stub
+        return m_nodeManager.getNodeByUUID( uuid );
     }
 
     public Repository getRepository()

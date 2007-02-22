@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -24,19 +25,16 @@ import org.jspwiki.priha.util.*;
 
 public class NodeImpl extends ItemImpl implements Node, Comparable
 {
-    private PropertyList m_properties = new PropertyList();
-    
+    private PropertyList        m_properties = new PropertyList();
     private ArrayList<NodeImpl> m_children = new ArrayList<NodeImpl>();
-    
-    private ArrayList m_mixinTypes = new ArrayList();
-
-    private NodeDefinition m_definition;
+    private ArrayList<NodeType> m_mixinTypes = new ArrayList<NodeType>();
+    private NodeDefinition      m_definition;
     
     private enum NodeState { NEW, EXISTS, REMOVED };
     
-    private NodeState m_state = NodeState.NEW;
-    
-    private GenericNodeType m_primaryType;
+    private NodeState           m_state = NodeState.NEW;
+    private GenericNodeType     m_primaryType;
+    private UUID                m_UUID;
     
     Logger log = Logger.getLogger( getClass().getName() );
 
@@ -77,8 +75,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                               LockException,
                                               RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Node.addMixin()");
+        NodeType mixin = getNodeTypeManager().getNodeType(mixinName);
+        
+        if( !mixin.isMixin() )
+            throw new NoSuchNodeTypeException("Type "+mixinName+" is not a mixin type!");
+        
+        m_mixinTypes.add(mixin);
+    
+        markModified();
     }
 
     private GenericNodeType assignChildType(String relpath) throws RepositoryException
@@ -134,7 +138,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             }
             else
             {
-                assignedType = (GenericNodeType) m_session.getWorkspace().getNodeTypeManager().getNodeType( primaryNodeTypeName );
+                assignedType = (GenericNodeType) getNodeTypeManager().getNodeType( primaryNodeTypeName );
             }
 
             assignedNodeDef = assignedType.findNodeDefinition( absPath.getLastComponent() );
@@ -151,6 +155,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             throw new PathNotFoundException( e.getMessage() );
         }
         return ni;
+    }
+
+    private NodeTypeManager getNodeTypeManager() throws RepositoryException
+    {
+        return m_session.getWorkspace().getNodeTypeManager();
     }
 
     public Node addNode(String relPath)
@@ -189,8 +198,29 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     
     public boolean canAddMixin(String mixinName) throws NoSuchNodeTypeException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Node.canAddMixin()");
+        NodeType nt = getNodeTypeManager().getNodeType( mixinName );
+        
+        if( !nt.isMixin() )
+            throw new NoSuchNodeTypeException(mixinName+" is not a mixin type!");
+        
+        if( hasMixinType(nt.getName()) )
+        {
+            return false;
+        }
+        
+        // FIXME: This is rather permissive...
+        
+        return true;
+    }
+
+    private boolean hasMixinType(String mixinType)
+    {
+        for( NodeType nt : m_mixinTypes )
+        {
+            if( nt.getName().equals(mixinType) ) return true;
+        }
+        
+        return false;
     }
 
     public void cancelMerge(Version version)
@@ -289,7 +319,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         {
             Property p = getChildProperty("jcr:mixinTypes");
         
-            NodeTypeManager mgr = getSession().getWorkspace().getNodeTypeManager();
+            NodeTypeManager mgr = getNodeTypeManager();
         
             Value[] v = p.getValues();
         
@@ -493,8 +523,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public String getUUID() throws UnsupportedRepositoryOperationException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        if( isNodeType("mix:referenceable") )
+        {
+            Property uuid = getProperty("jcr:uuid");
+            
+            return uuid.toString();
+        }
+        
+        throw new UnsupportedRepositoryOperationException("No UUID defined for this node");
     }
 
     public VersionHistory getVersionHistory() throws UnsupportedRepositoryOperationException, RepositoryException
@@ -698,7 +734,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             }
 
             //  We know where this belongs to.
-            GenericNodeType gnt = (GenericNodeType)m_session.getWorkspace().getNodeTypeManager().getNodeType("nt:base");
+            GenericNodeType gnt = (GenericNodeType)getNodeTypeManager().getNodeType("nt:base");
             
             PropertyDefinition primaryDef = gnt.findPropertyDefinition("jcr:primaryType");
                         

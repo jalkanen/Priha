@@ -2,9 +2,7 @@ package org.jspwiki.priha.core;
 
 import java.util.HashMap;
 
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
+import javax.jcr.*;
 import javax.jcr.nodetype.NodeDefinition;
 
 import org.jspwiki.priha.nodetype.GenericNodeType;
@@ -156,6 +154,24 @@ public class NodeManager
         NodeImpl root = m_nodeReferences.get("/");
         
         return root;
+    }
+
+    // FIXME: Really, really slow
+    public Node getNodeByUUID(String uuid) throws RepositoryException, ItemNotFoundException
+    {
+        for( Node nd : m_nodeReferences.values() )
+        {
+            try
+            {
+                if( uuid.equals(nd.getUUID()) )
+                    return nd;
+            }
+            catch (UnsupportedRepositoryOperationException e)
+            {
+            }
+        }
+        
+        throw new ItemNotFoundException( "No match for UUID "+uuid );
     }
     
 

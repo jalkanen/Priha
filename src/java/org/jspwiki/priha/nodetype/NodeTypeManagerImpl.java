@@ -283,7 +283,16 @@ public class NodeTypeManagerImpl implements NodeTypeManager
                     return nd;
             }
         }
-        
+
+        for( NodeType nt : m_mixinTypes.values() )
+        {
+            for( NodeDefinition nd : nt.getChildNodeDefinitions() )
+            {
+                if( nd.getName().equals( type ) )
+                    return nd;
+            }
+        }
+
         for( NodeType nt : m_primaryTypes.values() )
         {
             for( NodeDefinition nd : nt.getChildNodeDefinitions() )

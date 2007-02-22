@@ -81,4 +81,126 @@
    </nodetype>
    
    <!-- MIXIN TYPES -->
+   
+   <nodetype>
+      <name>mix:lockable</name>
+      <supertypes/>
+      <isMixin>true</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName/>
+      
+      <propertyDefinition>
+          <name>jcr:lockOwner</name>
+          <requiredType>String</requiredType>
+          <valueConstraints/>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>IGNORE</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+      
+      <propertyDefinition>
+          <name>jcr:lockIsDeep</name>
+          <requiredType>Boolean</requiredType>
+          <valueConstraints/>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>IGNORE</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+      
+   </nodetype>
+
+   <nodetype>
+      <name>mix:referenceable</name>
+      <supertypes/>
+      <isMixin>true</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName/>
+      
+      <propertyDefinition>
+          <name>jcr:uuid</name>
+          <requiredType>String</requiredType>
+          <valueConstraints/>
+          <defaultValues/>
+          <autoCreated>true</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>INITIALIZE</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>      
+   </nodetype>
+
+   <nodetype>
+      <name>mix:versionable</name>
+      <supertypes>mix:referenceable</supertypes>
+      <isMixin>true</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName/>
+      
+      <propertyDefinition>
+          <name>jcr:versionHistory</name>
+          <requiredType>Reference</requiredType>
+          <valueConstraints>nt:versionHistory</valueConstraints>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>COPY</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+      
+      <propertyDefinition>
+          <name>jcr:baseVersion</name>
+          <requiredType>Reference</requiredType>
+          <valueConstraints>nt:version</valueConstraints>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>IGNORE</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+
+      <propertyDefinition>
+          <name>jcr:isCheckedOut</name>
+          <requiredType>Boolean</requiredType>
+          <valueConstraints/>
+          <defaultValues>true</defaultValues>
+          <autoCreated>true</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>IGNORE</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+      
+      <propertyDefinition>
+          <name>jcr:predecessors</name>
+          <requiredType>Reference</requiredType>
+          <valueConstraints>nt:version</valueConstraints>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>COPY</onParentVersion>
+          <protected>true</protected>
+          <multiple>true</multiple>
+      </propertyDefinition>
+      
+      <propertyDefinition>
+          <name>jcr:mergeFailed</name>
+          <requiredType>Reference</requiredType>
+          <valueConstraints>nt:version</valueConstraints>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <multiple>true</multiple>
+      </propertyDefinition>
+      
+   </nodetype>
 </nodetypes>

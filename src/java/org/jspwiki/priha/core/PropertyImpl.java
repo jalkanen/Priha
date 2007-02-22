@@ -97,7 +97,14 @@ public class PropertyImpl extends ItemImpl implements Property
 
     public Node getNode() throws ValueFormatException, RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException();
+        if( m_multi != Multi.SINGLE ) throw new ValueFormatException();
+        if( getValue().getType() != PropertyType.REFERENCE ) throw new ValueFormatException();
+        
+        String name = getValue().getString();
+       
+        Node nd = (Node)m_session.getItem( name );
+
+        return nd;
     }
 
     public InputStream getStream() throws ValueFormatException, RepositoryException
@@ -200,7 +207,7 @@ public class PropertyImpl extends ItemImpl implements Property
             remove();
         }
         
-        ArrayList ls = new ArrayList<Value>();
+        ArrayList<Value> ls = new ArrayList<Value>();
         for( int i = 0; i < values.length; i++ )
         {
             if( m_value[i] == null )
@@ -279,10 +286,22 @@ public class PropertyImpl extends ItemImpl implements Property
         {
             remove();
         }
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        
+        setValue( new ValueImpl(value.getPath(), PropertyType.REFERENCE) );
     }
 
+    public void setValue( String value, int type ) throws ValueFormatException, 
+        VersionException, LockException, ConstraintViolationException, RepositoryException
+    {
+        if( value == null )
+        {
+            remove();
+        }
+        else
+        {
+            setValue( new ValueImpl(value,type) );
+        }
+    }
    
     public void save() throws AccessDeniedException, 
                               ItemExistsException, 

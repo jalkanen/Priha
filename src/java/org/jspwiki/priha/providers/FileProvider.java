@@ -219,8 +219,11 @@ public class FileProvider extends RepositoryProvider
                         propType.equals(PropertyType.TYPENAME_PATH ))
                     {
                         propVal = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName( propVal );
-                        pi.setValue( propVal );
-                        // FIXME: Does not set NAME property correctly
+                        pi.setValue( propVal, PropertyType.valueFromName(propType) );
+                    }
+                    else if( propType.equals(PropertyType.TYPENAME_REFERENCE ) )
+                    {
+                        pi.setValue( (String) propVal, PropertyType.REFERENCE );
                     }
                     else if( propType.equals(PropertyType.TYPENAME_BINARY) )
                     {

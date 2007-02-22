@@ -25,6 +25,8 @@ import org.jspwiki.priha.core.RepositoryImpl;
  */
 public class JNDIRegistrationServlet extends HttpServlet
 {
+    private static final long serialVersionUID = 1L;
+
     public void init() throws ServletException
     {
         super.init();

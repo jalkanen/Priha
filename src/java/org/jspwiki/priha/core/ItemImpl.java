@@ -33,8 +33,14 @@ public abstract class ItemImpl implements Item
 
     public void accept(ItemVisitor visitor) throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Item.accept()");
+        if( isNode() )
+        {
+            visitor.visit( (Node) this );
+        }
+        else
+        {
+            visitor.visit( (Property) this );
+        }
     }
 
     public Item getAncestor(int depth) throws ItemNotFoundException, AccessDeniedException, RepositoryException

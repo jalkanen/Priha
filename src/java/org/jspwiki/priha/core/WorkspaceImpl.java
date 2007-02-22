@@ -94,7 +94,8 @@ public class WorkspaceImpl
         
         PropertyImpl primaryType = properties.find( "jcr:primaryType" );
         
-        if( primaryType == null ) throw new RepositoryException("Repository did not return a primary type for path "+path);
+        if( primaryType == null ) 
+            throw new RepositoryException("Repository did not return a primary type for path "+path);
         
         GenericNodeType type = (GenericNodeType) m_nodeTypeManager.getNodeType( primaryType.getString() );
         

@@ -3,6 +3,7 @@ package org.jspwiki.priha.core;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 import javax.jcr.*;
 
@@ -16,8 +17,10 @@ public class RepositoryImpl implements Repository
 
     public static final String DEFAULT_WORKSPACE = "default";
     
-    RepositoryProvider m_provider;
+    private RepositoryProvider m_provider;
     private NamespaceRegistry m_namespaceRegistry;
+    
+    private Preferences          m_preferences;
     
     private static String[] DESCRIPTORS = {
         Repository.SPEC_NAME_DESC,                "Content Repository for Java Technology API",
@@ -40,14 +43,20 @@ public class RepositoryImpl implements Repository
     private Properties m_properties = new Properties();
     
     private Logger log = Logger.getLogger( getClass().getName() );
+    public static final String DEFAULT_PROVIDER = "org.jspwiki.priha.providers.FileProvider";
     
-    public RepositoryImpl( String className ) throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    public RepositoryImpl( Preferences prefs ) throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
+        m_preferences = prefs;
+        
+        String className = prefs.get( "provider",  DEFAULT_PROVIDER );
+        
         Class cl = Class.forName( className );
         
         m_provider = (RepositoryProvider) cl.newInstance();
         
-        log.info("G'day, Matilda!  Priha has been initialized.");
+        log.info( "G'day, Matilda!  Priha has been initialized." );
+        log.fine( "Using configuration from "+prefs.toString() );
     }
     
     public String getProperty(String key)
@@ -96,6 +105,11 @@ public class RepositoryImpl implements Repository
         return keys;
     }
 
+    public Preferences getPreferences()
+    {
+        return m_preferences;
+    }
+    
     public Session login(Credentials credentials, String workspaceName)
         throws LoginException,
                NoSuchWorkspaceException,

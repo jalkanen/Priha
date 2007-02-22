@@ -19,6 +19,8 @@
  */
 package org.jspwiki.priha;
 
+import java.util.prefs.Preferences;
+
 import org.jspwiki.priha.core.RepositoryImpl;
 
 
@@ -30,8 +32,6 @@ import org.jspwiki.priha.core.RepositoryImpl;
  */
 public class RepositoryManager
 {
-    public static final String DEFAULT_PROVIDER = "org.jspwiki.priha.providers.FileProvider";
-    
     private static RepositoryImpl m_repository = null;
     
     /**
@@ -44,8 +44,13 @@ public class RepositoryManager
      */
     public static RepositoryImpl getRepository() throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
+        return getRepository( Preferences.systemNodeForPackage(RepositoryManager.class) );
+    }
+    
+    public static RepositoryImpl getRepository( Preferences prefs ) throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    {
         if( m_repository == null )
-            m_repository = new RepositoryImpl( DEFAULT_PROVIDER );
+            m_repository = new RepositoryImpl( prefs );
         
         return m_repository;
     }
