@@ -6,9 +6,19 @@ import javax.jcr.*;
 
 import org.jspwiki.priha.core.NodeImpl;
 import org.jspwiki.priha.core.PropertyImpl;
+import org.jspwiki.priha.core.RepositoryImpl;
 import org.jspwiki.priha.core.WorkspaceImpl;
 import org.jspwiki.priha.util.PropertyList;
 
+/**
+ *  A few ground rules:
+ *  <ul>
+ *  <li>A RepositoryProvider shall not cache the Session object</li>
+ *  </ul>
+ *  
+ *  @author jalkanen
+ *
+ */
 public abstract class RepositoryProvider
 {
     /**
@@ -21,9 +31,9 @@ public abstract class RepositoryProvider
      * @return
      * @throws NoSuchWorkspaceException, if no such workspace exists 
      */
-    public void open( Repository  rep, 
-                      Credentials credentials, 
-                      String      workspaceName ) 
+    public void open( RepositoryImpl  rep, 
+                      Credentials     credentials, 
+                      String          workspaceName ) 
         throws RepositoryException,
                NoSuchWorkspaceException
     {
@@ -34,11 +44,11 @@ public abstract class RepositoryProvider
      *  repository starts.
      *
      */
-    public void start( Repository rep )
+    public void start( RepositoryImpl rep )
     {
     }
     
-    public void stop( Repository rep )
+    public void stop( RepositoryImpl rep )
     {
     }
     
@@ -75,7 +85,7 @@ public abstract class RepositoryProvider
         
     }
 
-    public abstract List<String> listNodePaths(Workspace ws);
+    public abstract List<String> listNodePaths(WorkspaceImpl ws);
     
     public abstract List<String> listWorkspaces();
 

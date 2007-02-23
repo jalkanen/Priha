@@ -12,15 +12,16 @@ import org.jspwiki.priha.providers.RepositoryProvider;
 
 public class RepositoryImpl implements Repository
 {
-    private static final String STR_TRUE  = "true";
-    private static final String STR_FALSE = "false";
+    private static final String  STR_TRUE  = "true";
+    private static final String  STR_FALSE = "false";
 
-    public static final String DEFAULT_WORKSPACE = "default";
+    public static final String   DEFAULT_WORKSPACE = "default";
     
-    private RepositoryProvider m_provider;
-    private NamespaceRegistry m_namespaceRegistry;
+    private NamespaceRegistry    m_namespaceRegistry;
     
     private Preferences          m_preferences;
+    
+    private RepositoryProvider   m_provider;
     
     private static String[] DESCRIPTORS = {
         Repository.SPEC_NAME_DESC,                "Content Repository for Java Technology API",
@@ -54,6 +55,7 @@ public class RepositoryImpl implements Repository
         Class cl = Class.forName( className );
         
         m_provider = (RepositoryProvider) cl.newInstance();
+        m_provider.start(this);
         
         log.info( "G'day, Matilda!  Priha has been initialized." );
         log.fine( "Using configuration from "+prefs.toString() );

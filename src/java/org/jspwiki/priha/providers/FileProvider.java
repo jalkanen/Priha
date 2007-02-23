@@ -3,13 +3,12 @@ package org.jspwiki.priha.providers;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 import javax.jcr.*;
 
 import org.jspwiki.priha.core.*;
 import org.jspwiki.priha.util.PropertyList;
-
-import com.sun.org.apache.xml.internal.utils.UnImplNode;
 
 public class FileProvider extends RepositoryProvider
 {
@@ -30,33 +29,67 @@ public class FileProvider extends RepositoryProvider
         }
     }
 
+    /**
+     * Returns the File which houses all of the workspaces.
+     * @return
+     */
     private File getWorkspaceRoot()
     {
         return new File( m_root, "workspaces" );
     }
+    
+    /**
+     *  Figures out what the filename for a Workspace is.
+     * @param ws
+     * @return
+     */
+    // FIXME: Should escape the filename properly.
     private String getWorkspaceFilename( Workspace ws )
     {
         return ws.getName();
     }
     
+    /**
+     *  Figures out the what the filename for a given path is. 
+     *  @param path
+     *  @return
+     */
+    // FIXME: Should escape the path properly
     private String getPathFilename( String path )
     {
         return path;
     }
 
+    /**
+     *  Returns the directory for a particular Workspace.
+     *  
+     *  @param wsname
+     *  @return
+     */
+    private File getWorkspaceDir( String wsname )
+    {
+        File wsDir = new File( getWorkspaceRoot(), wsname );
+
+        return wsDir;
+    }
+    
+    /**
+     *  Returns the directory in which a particular Node in a particular workspace resides
+     *  
+     *  @param ws
+     *  @param path
+     *  @return
+     */
     private File getNodeDir( Workspace ws, String path )
     {
-        File wsDir = new File( getWorkspaceRoot(), getWorkspaceFilename(ws) );
-        
+        File wsDir   = getWorkspaceDir( getWorkspaceFilename(ws) );
         File nodeDir = new File( wsDir, getPathFilename(path) );
         
         return nodeDir;
     }
     
     /**
-     *  Just copies all characters from <I>in</I> to <I>out</I>.
-     *
-     *  @since 1.9.31
+     *  Just copies all characters from <i>in</i> to <i>out</i>.
      */
     public static void copyContents( InputStream in, OutputStream out )
         throws IOException
@@ -74,10 +107,10 @@ public class FileProvider extends RepositoryProvider
     
     /**
      *  Saves a binary property to a new file, and returns the file name.
-     * @param ws
-     * @param p
-     * @return
-     * @throws RepositoryException
+     *  @param ws
+     *  @param p
+     *  @return
+     *  @throws RepositoryException
      */
     private String saveBinary( Workspace ws, Property p ) throws RepositoryException
     {
@@ -127,7 +160,7 @@ public class FileProvider extends RepositoryProvider
     {
         File nodeDir = getNodeDir( ws, node.getPath() );
 
-        nodeDir.mkdirs();
+        nodeDir.mkdir();
         
         File propertyfile = new File( nodeDir, ".properties" );
         
@@ -274,7 +307,8 @@ public class FileProvider extends RepositoryProvider
         }
     }
     
-    public List<String> listNodePaths(Workspace ws)
+    @Override
+    public List<String> listNodePaths(WorkspaceImpl ws)
     {
         ArrayList<String> list = new ArrayList<String>();
 
@@ -327,14 +361,23 @@ public class FileProvider extends RepositoryProvider
         
         if( nodeDir != null && nodeDir.exists() )
         {
-            deleteContents( nodeDir );
-        
-            nodeDir.delete();
+            if( deleteContents( nodeDir ) )
+            {
+                if( !nodeDir.delete() )
+                {
+                    log.warning("Unable to delete path "+path);
+                }
+            }
+            else
+            {
+                log.warning("Failed to delete contents of path "+path);
+            }
         }
     }
 
-    private void deleteContents( File dir )
+    private boolean deleteContents( File dir )
     {
+        // System.out.println("Deleting "+dir.getAbsolutePath());
         for( File f : dir.listFiles() )
         {
             if( f.isDirectory() )
@@ -342,7 +385,26 @@ public class FileProvider extends RepositoryProvider
                 deleteContents( f );
             }
             
-            f.delete();
+            if( !f.delete() ) return false;
         }
+        
+        return true;
+    }
+
+    @Override
+    public void start(RepositoryImpl rep)
+    {
+        Preferences prefs = rep.getPreferences();
+        
+        Preferences p = prefs.node("fileprovider");
+        
+        String wsname = p.get("workspace", "default");
+        
+        File rootDir = getWorkspaceDir( wsname );
+        
+        rootDir.mkdirs();
+        
+        System.out.println("Created workspace directory "+rootDir);
+        log.fine("Created workspace directory "+rootDir);
     }
 }

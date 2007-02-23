@@ -1,3 +1,13 @@
+2007-02-23  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.7
+        
+        * FileProvider no longer allows you to create nodes without
+        parent path.
+        
+        * FileProvider also now reads configuration from Preferences
+        object.
+
 2007-02-22  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.6

@@ -64,6 +64,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     
     void markModified()
     {
+        if( m_parent != null )
+            m_parent.markModified();
+        
         m_modified = true;
         m_session.markDirty(this);
     }
@@ -114,11 +117,18 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             throw new RepositoryException("Cannot add an indexed entry");
         }
         
-        if( m_session.itemExists(absPath) ) throw new ItemExistsException("Node "+absPath+" already exists!");
+        if( m_session.itemExists(absPath) )
+        {
+            // FIXME: This should really check if samenamesiblings are allowed
+            throw new ItemExistsException("Node "+absPath+" already exists!");
+        }
         
         NodeImpl ni = null;
         try
         {
+            //
+            //  Check out if parent is okay with the addition of this node
+            //
             Path parentPath = absPath.getParentPath();
         
             Item item = m_session.getItem(parentPath.toString());
@@ -128,12 +138,22 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 throw new ConstraintViolationException("Trying to add a node to a Property");
             }
      
+            NodeImpl parent = (NodeImpl) item;
+
+            if( parent.m_state == NodeState.REMOVED )
+            {
+                throw new ConstraintViolationException("Parent has been removed");
+            }
+
+            //
+            //  Parent is okay with this addition, so we'll continue with
+            //  figuring out what the node type of this node should be.
+            //
             GenericNodeType assignedType;
             NodeDefinition  assignedNodeDef;
             
             if( primaryNodeTypeName == null )
             {
-                NodeImpl parent = (NodeImpl) item;
                 assignedType = parent.assignChildType(relPath);
             }
             else
@@ -143,6 +163,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
             assignedNodeDef = assignedType.findNodeDefinition( absPath.getLastComponent() );
 
+            //
+            //  Node type and definition are now okay, so we'll create the node
+            //  and add it to our session.
+            //
             ni = new NodeImpl( m_session, absPath, assignedType, assignedNodeDef );
             
             ni.sanitize();
@@ -1108,6 +1132,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
+        if( m_state == NodeState.REMOVED )
+            throw new ConstraintViolationException(getPath()+" has already been removed");
+        
         m_session.getNodeManager().remove( this );
         markModified();
         m_state = NodeState.REMOVED;
