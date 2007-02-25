@@ -2,6 +2,7 @@ package org.jspwiki.priha.util;
 
 import java.util.ArrayList;
 
+import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 
 import org.jspwiki.priha.core.PropertyImpl;
@@ -31,5 +32,14 @@ public class PropertyList extends ArrayList<PropertyImpl>
     public boolean hasProperty( String name )
     {
         return find(name) != null;
+    }
+    
+    /**
+     *  Returns a PropertyIterator for this list.
+     *  @return
+     */
+    public PropertyIterator propertyIterator()
+    {
+        return new PropertyIteratorImpl(this);
     }
 }

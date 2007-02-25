@@ -25,8 +25,9 @@ import org.jspwiki.priha.util.*;
 
 public class NodeImpl extends ItemImpl implements Node, Comparable
 {
+    private static final String PROPERTY_REFERENCES = "references"; // FIXME: Should contain something else
     private PropertyList        m_properties = new PropertyList();
-    private ArrayList<NodeImpl> m_children = new ArrayList<NodeImpl>();
+    private ArrayList<NodeImpl> m_children   = new ArrayList<NodeImpl>();
     private ArrayList<NodeType> m_mixinTypes = new ArrayList<NodeType>();
     private NodeDefinition      m_definition;
     
@@ -34,7 +35,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     
     private NodeState           m_state = NodeState.NEW;
     private GenericNodeType     m_primaryType;
-    private UUID                m_UUID;
     
     Logger log = Logger.getLogger( getClass().getName() );
 
@@ -85,7 +85,29 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         
         m_mixinTypes.add(mixin);
     
+        autoCreateProperties();
         markModified();
+
+        Property p;
+        try
+        {
+            p = getProperty("jcr:mixinTypes");
+
+            Value[] v = p.getValues();
+            
+            Value[] newval = new Value[v.length+1];
+            
+            for( int i = 0; i < v.length; i++ )
+            {
+                newval[i] = v[i];
+            }
+            
+            newval[newval.length-1] = ValueFactoryImpl.getInstance().createValue(mixinName,PropertyType.NAME);    
+        }
+        catch( PathNotFoundException e )
+        {
+            setProperty( "jcr:mixinTypes", mixinName, PropertyType.NAME );
+        }
     }
 
     private GenericNodeType assignChildType(String relpath) throws RepositoryException
@@ -336,31 +358,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         throw new UnsupportedRepositoryOperationException();
     }
 
-    // FIXME: Highly inefficient; the values should be cached
     public NodeType[] getMixinNodeTypes() throws RepositoryException
     {
-        try
-        {
-            Property p = getChildProperty("jcr:mixinTypes");
-        
-            NodeTypeManager mgr = getNodeTypeManager();
-        
-            Value[] v = p.getValues();
-        
-            NodeType[] types = new NodeType[v.length];
-        
-            for( int i = 0; i < v.length; i++ )
-            {
-                types[i] = mgr.getNodeType( v[i].getString() );
-            }
-        
-            return types;
-        }
-        catch( PathNotFoundException e )
-        {
-            // TODO: Should return a ref to a static object instead of creating a new one
-            return new NodeType[0];
-        }
+        return m_mixinTypes.toArray( new NodeType[0] );
     }
 
     public Node getNode(String relPath) throws PathNotFoundException, RepositoryException
@@ -519,11 +519,21 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         throw new PathNotFoundException( abspath.toString() );
     }
 
-    void autoCreateProperties()
+    void autoCreateProperties() throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         log.finer( "Autocreating properties for "+m_path );
         
-        for( PropertyDefinition pd : m_definition.getDeclaringNodeType().getPropertyDefinitions() )
+        autoCreateProperties( getPrimaryNodeType() );
+        
+        for( NodeType nt : getMixinNodeTypes() )
+        {
+            autoCreateProperties( nt );
+        }
+    }
+
+    private void autoCreateProperties(NodeType nt) throws RepositoryException, ValueFormatException, VersionException, LockException, ConstraintViolationException
+    {
+        for( PropertyDefinition pd : nt.getPropertyDefinitions() )
         {
             if( pd.isAutoCreated() && !m_properties.hasProperty(pd.getName()) )
             {
@@ -534,6 +544,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 
                 // FIXME: Add default value generation
                 
+                if( "jcr:uuid".equals(pi.getName()) )
+                {
+                    pi.setValue( UUID.randomUUID().toString() );
+                }
+                
                 addChildProperty( pi );
             }
         }
@@ -541,8 +556,31 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     
     public PropertyIterator getReferences() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        // FIXME: This is really, really, really slow.  But it works.
+
+        String uuid = getUUID();
+        
+        PropertyList references = new PropertyList();
+        
+        for( NodeImpl nd : m_session.getNodeManager().allNodes() )
+        {
+            for( PropertyIterator pi = nd.getProperties(); pi.hasNext(); )
+            {
+                Property p = pi.nextProperty();
+                
+                if( p.getType() == PropertyType.REFERENCE )
+                {
+                    String ref = p.getValue().getString();
+                    
+                    if( ref.equals( uuid ) )
+                    {
+                        references.add( (PropertyImpl)p );
+                    }
+                }
+            }
+        }
+        
+        return references.propertyIterator();
     }
 
     public String getUUID() throws UnsupportedRepositoryOperationException, RepositoryException

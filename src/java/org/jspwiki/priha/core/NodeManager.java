@@ -1,6 +1,8 @@
 package org.jspwiki.priha.core;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.jcr.*;
 import javax.jcr.nodetype.NodeDefinition;
@@ -172,6 +174,20 @@ public class NodeManager
         }
         
         throw new ItemNotFoundException( "No match for UUID "+uuid );
+    }
+
+    /**
+     *  Returns a copy of the current node listing.
+     *  
+     *  @return
+     */
+    public List<NodeImpl> allNodes()
+    {
+        ArrayList<NodeImpl> ls = new ArrayList<NodeImpl>();
+        
+        ls.addAll( m_nodeReferences.values() );
+        
+        return ls;
     }
     
 

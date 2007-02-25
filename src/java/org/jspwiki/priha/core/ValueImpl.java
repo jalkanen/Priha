@@ -5,10 +5,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
 
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
-import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
+import javax.jcr.*;
 
 /**
  *  Implements the Value interface and provides a number of constructors
@@ -118,6 +115,24 @@ public class ValueImpl implements Value, Cloneable
             default:
                 m_value = value.getString();
                 break;
+        }
+    }
+
+    public ValueImpl(Node value)
+    {
+        //
+        //  Reference objects are stored as paths; not direct references.
+        //
+        
+        try
+        {
+            m_value = value.getPath();
+            m_type  = PropertyType.REFERENCE;
+        }
+        catch (RepositoryException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
     }
 

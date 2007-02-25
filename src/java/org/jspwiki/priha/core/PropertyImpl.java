@@ -176,9 +176,16 @@ public class PropertyImpl extends ItemImpl implements Property
         {
             remove();
         }
-        
-        m_value = values;
-        m_multi = Multi.MULTI;
+
+        if( values.length == 1 )
+        {
+            setValue( values[0] );
+        }
+        else
+        {
+            m_value = values;
+            m_multi = Multi.MULTI;
+        }
     }
 
     public void setValue(String value)
@@ -210,10 +217,10 @@ public class PropertyImpl extends ItemImpl implements Property
         ArrayList<Value> ls = new ArrayList<Value>();
         for( int i = 0; i < values.length; i++ )
         {
-            if( m_value[i] == null )
+            if( values[i] != null )
                 ls.add(new ValueImpl( values[i] ));
         }
-        setValue( (Value[])ls.toArray() );
+        setValue( (Value[])ls.toArray( new Value[0] ) );
     }
 
     public void setValue(InputStream value)
@@ -287,7 +294,7 @@ public class PropertyImpl extends ItemImpl implements Property
             remove();
         }
         
-        setValue( new ValueImpl(value.getPath(), PropertyType.REFERENCE) );
+        setValue( new ValueImpl(value.getUUID(), PropertyType.REFERENCE) );
     }
 
     public void setValue( String value, int type ) throws ValueFormatException, 

@@ -51,7 +51,7 @@ public class ValueFactoryImpl implements ValueFactory
 
     public Value createValue(Node value) throws RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("ValueFactory.createValue()");
+        return new ValueImpl( value );
     }
 
     public Value createValue(String value, int type) throws ValueFormatException

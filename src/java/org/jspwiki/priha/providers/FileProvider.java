@@ -139,6 +139,7 @@ public class FileProvider extends RepositoryProvider
             }
         }
     }
+
     
     private String getStringFormat( Workspace ws, Property p ) throws ValueFormatException, RepositoryException
     {
