@@ -289,6 +289,7 @@ public class SessionImpl implements Session
             NodeImpl nd = m_workspace.loadNode(path);
             m_nodeManager.addNode( nd );
             nd.m_new = false;
+            nd.m_state = ItemState.EXISTS;
             
             nd.sanitize();
         }

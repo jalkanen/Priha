@@ -31,9 +31,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     private ArrayList<NodeType> m_mixinTypes = new ArrayList<NodeType>();
     private NodeDefinition      m_definition;
     
-    private enum NodeState { NEW, EXISTS, REMOVED };
-    
-    private NodeState           m_state = NodeState.NEW;
     private GenericNodeType     m_primaryType;
     
     Logger log = Logger.getLogger( getClass().getName() );
@@ -45,7 +42,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
      
         m_primaryType = primaryType;
         m_definition  = nDef;
-        setProperty( "jcr:primaryType", m_primaryType.getName(), PropertyType.NAME );        
+        setProperty( "jcr:primaryType", m_primaryType.getName(), PropertyType.NAME );
+        
+        //
+        //  This is a bit of a kludge to make sure that a root node is never in NEW state,
+        //  because that would prevent saves.
+        //
+        if( path.equals("/") ) m_state = ItemState.EXISTS;
     }
     
     protected NodeImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef ) 
@@ -138,13 +141,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         {
             throw new RepositoryException("Cannot add an indexed entry");
         }
-        
-        if( m_session.itemExists(absPath) )
-        {
-            // FIXME: This should really check if samenamesiblings are allowed
-            throw new ItemExistsException("Node "+absPath+" already exists!");
-        }
-        
+                
         NodeImpl ni = null;
         try
         {
@@ -162,9 +159,23 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
      
             NodeImpl parent = (NodeImpl) item;
 
-            if( parent.m_state == NodeState.REMOVED )
+            if( parent.m_state == ItemState.REMOVED )
             {
                 throw new ConstraintViolationException("Parent has been removed");
+            }
+
+            //
+            //  Check for same name siblings
+            //
+            if( m_session.itemExists(absPath) )
+            {
+                NodeDefinition nd = parent.getDefinition();
+                
+                if( !nd.allowsSameNameSiblings() )
+                {
+                    // FIXME: This should really check if samenamesiblings are allowed
+                    throw new ItemExistsException("Node "+absPath+" already exists!");
+                }
             }
 
             //
@@ -1101,9 +1112,17 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 ws.saveNode(this);
                 m_modified = false;
                 m_new      = false;
+                m_state    = ItemState.EXISTS;
         }
     }
-    
+   
+    protected void internalSave() throws RepositoryException
+    {
+        List<String> modifications = saveNodeAndChildren();
+
+        m_session.nodesSaved(modifications);    
+    }
+
     // FIXME: No rollback support
     public void save()
         throws AccessDeniedException,
@@ -1116,9 +1135,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                NoSuchNodeTypeException,
                RepositoryException
     {
-        List<String> modifications = saveNodeAndChildren();
-
-        m_session.nodesSaved(modifications);
+        if( m_state == ItemState.NEW ) 
+            throw new InvalidItemStateException("Cannot call save on newly added node "+m_path);
+    
+        internalSave();
     }
 
     /**
@@ -1132,8 +1152,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         List<String> modifications = new ArrayList<String>();
         
-        WorkspaceImpl ws = (WorkspaceImpl)m_session.getWorkspace();
-
         if( isModified() ) 
         {
             saveNodeOnly();
@@ -1142,12 +1160,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         
         for( NodeImpl node : m_children )
         {
-            if( node.isModified() ) 
-            {
-                node.saveNodeOnly();
-                modifications.add(getPath());
-            }
+            modifications.addAll( node.saveNodeAndChildren() );
         }
+
         return modifications;
     }
 
@@ -1170,12 +1185,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        if( m_state == NodeState.REMOVED )
+        if( m_state == ItemState.REMOVED )
             throw new ConstraintViolationException(getPath()+" has already been removed");
         
         m_session.getNodeManager().remove( this );
         markModified();
-        m_state = NodeState.REMOVED;
+        m_state = ItemState.REMOVED;
     }
 
     public void addChildProperty(PropertyImpl property)

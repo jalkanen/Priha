@@ -107,7 +107,7 @@ public class NodeManager
         NodeDefinition nd = rootType.findNodeDefinition("*");
         
         NodeImpl ni = new NodeImpl( m_session, "/", rootType, nd);
-        
+
         ni.sanitize();
         
         m_nodeReferences.put( "/", ni );
@@ -142,7 +142,7 @@ public class NodeManager
             if( (s = n.indexOf('[')) != -1 )
             {
                 basePath = basePath.substring( 0, basePath.lastIndexOf('[') );
-                String indexInt = n.substring(s+1,n.length()-1);
+                String indexInt = n.substring(s+1,n.length()-2);
                 index = Integer.parseInt( indexInt ) - 1;
             }
             

@@ -18,6 +18,7 @@ public abstract class ItemImpl implements Item
     protected boolean     m_modified = false;
     protected boolean     m_new      = true;
     protected NodeImpl    m_parent;
+    protected ItemState   m_state    = ItemState.NEW;
     
     public ItemImpl( SessionImpl session, String path )
     {

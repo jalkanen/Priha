@@ -1,59 +1,62 @@
+2007-06-13  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.9
+
 2007-02-26  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.8
-        
+
         * Reference nodes work now
 
 2007-02-23  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.7
-        
+
         * FileProvider no longer allows you to create nodes without
         parent path.
-        
+
         * FileProvider also now reads configuration from Preferences
         object.
 
 2007-02-22  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.6
-        
+
         * Implemented UUID support
-        
+
         * Added mixin types support
 
 2007-02-19  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.5
-        
+
         * FileProvider now saves NAME properties correctly.
-        
+
         * New nodes are now created with proper types in types(?)
 
 2007-02-11  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.4
-        
+
         * Reworked the SPI a bit; now reading the repository
         in at startup works.  It's nowhere near optimal, tho'.
 
 2007-02-11  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.3
-        
+
         * Node and property definitions should now be properly
         assigned.
 
 2007-02-07  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.2
-        
+
         * Implemented default node and property definitions scheme
         in NodeTypeManagerImpl.
 
 2007-01-14  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.1
-        
+
         * Initial commit; includes JCR TCK 1.0.
-         
