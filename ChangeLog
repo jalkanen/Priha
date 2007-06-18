@@ -1,3 +1,10 @@
+2007-06-18  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.10
+
+        * Implemented rest of Node.setProperty() calls.  Started
+        work on versioning.
+
 2007-06-13  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.9
