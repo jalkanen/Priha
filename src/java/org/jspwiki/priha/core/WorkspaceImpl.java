@@ -32,7 +32,7 @@ public class WorkspaceImpl
     private String              m_name;
     private RepositoryProvider  m_provider;
     private NodeTypeManagerImpl m_nodeTypeManager;
-    
+
     public WorkspaceImpl( SessionImpl session, String name, RepositoryProvider provider )
         throws RepositoryException
     {
@@ -41,12 +41,12 @@ public class WorkspaceImpl
         m_provider = provider;
         m_nodeTypeManager = NodeTypeManagerImpl.getInstance(this);
     }
-     
+
     /**
      *  Creates a new property implementation without a property definition.
      *  This is meant for providers to create an "empty" property definition,
      *  which the WorkspaceImpl will then update later on.
-     *  
+     *
      *  @param path
      *  @return
      *  @throws RepositoryException
@@ -55,23 +55,23 @@ public class WorkspaceImpl
         throws RepositoryException
     {
         Path p = new Path(path);
-        
+
         String name = p.getLastComponent();
 
         p = p.getParentPath();
-        
+
         //NodeImpl nd = (NodeImpl) m_session.getItem(p);
-        
+
         //PropertyDefinition pd = ((GenericNodeType)nd.getPrimaryNodeType()).findPropertyDefinition(name);
-        
+
         PropertyImpl pi = new PropertyImpl( m_session, path, null );
-        
+
         return pi;
     }
-    
+
     /**
      *  Writes the state of a node directly to the repository.
-     *  
+     *
      *  @param node
      *  @throws RepositoryException
      */
@@ -79,43 +79,43 @@ public class WorkspaceImpl
     {
         m_provider.putNode( this, node );
     }
-    
+
     /**
      * Loads the state of a node from the repository.
-     * 
+     *
      * @param path
      * @return A brand new NodeImpl.
-     * 
+     *
      * @throws RepositoryException
      */
     NodeImpl loadNode( String path ) throws RepositoryException
     {
         PropertyList properties = m_provider.getProperties( this, path );
-        
+
         PropertyImpl primaryType = properties.find( "jcr:primaryType" );
-        
-        if( primaryType == null ) 
+
+        if( primaryType == null )
             throw new RepositoryException("Repository did not return a primary type for path "+path);
-        
+
         GenericNodeType type = (GenericNodeType) m_nodeTypeManager.getNodeType( primaryType.getString() );
-        
+
         NodeDefinition nd = m_nodeTypeManager.findNodeDefinition( primaryType.getString() );
-        
+
         NodeImpl ni = new NodeImpl( m_session, path, type, nd );
-        
+
         for( PropertyImpl p : properties )
         {
             String name = p.getName();
             PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name);
-            
-            p.m_definition = pd;
-            
+
+            p.setDefinition( pd );
+
             ni.addChildProperty( p );
         }
-        
+
         return ni;
     }
-        
+
     public void clone(String srcWorkspace, String srcAbsPath, String destAbsPath, boolean removeExisting) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         // TODO Auto-generated method stub
@@ -127,20 +127,20 @@ public class WorkspaceImpl
     {
         // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException("Workspace.copy()");
-        
+
     }
 
     public void copy(String srcWorkspace, String srcAbsPath, String destAbsPath) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException("Workspace.copy2()");
-        
+
     }
 
     public String[] getAccessibleWorkspaceNames() throws RepositoryException
     {
         List<String> list = m_provider.listWorkspaces();
-        
+
         return list.toArray(new String[0]);
     }
 
@@ -164,7 +164,7 @@ public class WorkspaceImpl
     {
         if( m_nodeTypeManager == null )
             m_nodeTypeManager = NodeTypeManagerImpl.getInstance(this);
-        
+
         return m_nodeTypeManager;
     }
 
@@ -189,21 +189,21 @@ public class WorkspaceImpl
     {
         // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException("Workspace.importXML()");
-        
+
     }
 
     public void move(String srcAbsPath, String destAbsPath) throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException("Workspace.move()");
-        
+
     }
 
     public void restore(Version[] versions, boolean removeExisting) throws ItemExistsException, UnsupportedRepositoryOperationException, VersionException, LockException, InvalidItemStateException, RepositoryException
     {
         // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException("Workspace.restore()");
-        
+
     }
 
     /**

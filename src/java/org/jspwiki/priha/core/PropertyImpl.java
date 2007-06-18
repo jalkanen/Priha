@@ -20,22 +20,27 @@ public class PropertyImpl extends ItemImpl implements Property
     private Value[]            m_value;
     private Multi              m_multi = Multi.UNDEFINED;
     PropertyDefinition         m_definition;
-    
+
     public PropertyImpl( SessionImpl session, String path, PropertyDefinition propDef )
     {
         super( session, path );
-        m_definition = propDef;
+
+        setDefinition( propDef );
     }
-    
+
     public boolean getBoolean() throws ValueFormatException, RepositoryException
     {
-        if( m_multi != Multi.SINGLE ) throw new ValueFormatException();
+        if( m_multi != Multi.SINGLE )
+            throw new ValueFormatException("Attempted to get a SINGLE boolean value from a MULTI property "+m_path);
+
         return getValue().getBoolean();
     }
 
     public Calendar getDate() throws ValueFormatException, RepositoryException
     {
-        if( m_multi != Multi.SINGLE ) throw new ValueFormatException();
+        if( m_multi != Multi.SINGLE )
+            throw new ValueFormatException("Attempted to get a SINGLE date value from a MULTI property "+m_path);
+
         return getValue().getDate();
     }
 
@@ -46,14 +51,16 @@ public class PropertyImpl extends ItemImpl implements Property
 
     public double getDouble() throws ValueFormatException, RepositoryException
     {
-        if( m_multi != Multi.SINGLE ) throw new ValueFormatException();
+        if( m_multi != Multi.SINGLE )
+            throw new ValueFormatException("Attempted to get a SINGLE double value from a MULTI property "+m_path);
 
         return getValue().getDouble();
     }
 
     public long getLength() throws ValueFormatException, RepositoryException
     {
-        if( m_multi != Multi.SINGLE ) throw new ValueFormatException();
+        if( m_multi != Multi.SINGLE )
+            throw new ValueFormatException("Attempted to get a SINGLE length value from a MULTI property "+m_path);
 
         return getLength( m_value[0] );
     }
@@ -70,21 +77,21 @@ public class PropertyImpl extends ItemImpl implements Property
     {
         if( v.getType() == PropertyType.BINARY )
             return -1; // FIXME: Not yet supported
-        
+
         return getValue().getString().length();
     }
 
     public long[] getLengths() throws ValueFormatException, RepositoryException
     {
         if( m_multi != Multi.MULTI ) throw new ValueFormatException();
-        
+
         long[] lengths = new long[m_value.length];
-        
+
         for( int i = 0; i < m_value.length; i++ )
         {
             lengths[i] = getLength( m_value[i] );
         }
-        
+
         return lengths;
     }
 
@@ -97,11 +104,13 @@ public class PropertyImpl extends ItemImpl implements Property
 
     public Node getNode() throws ValueFormatException, RepositoryException
     {
-        if( m_multi != Multi.SINGLE ) throw new ValueFormatException();
+        if( m_multi != Multi.SINGLE )
+            throw new ValueFormatException("Attempted to get a SINGLE reference value from a MULTI property "+m_path);
+
         if( getValue().getType() != PropertyType.REFERENCE ) throw new ValueFormatException();
-        
+
         String name = getValue().getString();
-       
+
         Node nd = (Node)m_session.getItem( name );
 
         return nd;
@@ -111,12 +120,13 @@ public class PropertyImpl extends ItemImpl implements Property
     {
         if( m_multi != Multi.SINGLE ) throw new ValueFormatException();
 
-        return getValue().getStream();       
+        return getValue().getStream();
     }
 
     public String getString() throws ValueFormatException, RepositoryException
     {
-        if( m_multi != Multi.SINGLE ) throw new ValueFormatException();
+        if( m_multi != Multi.SINGLE )
+            throw new ValueFormatException("Attempted to get a SINGLE string value from a MULTI property "+m_path);
 
         return getValue().getString();
     }
@@ -128,7 +138,8 @@ public class PropertyImpl extends ItemImpl implements Property
 
     public Value getValue() throws ValueFormatException, RepositoryException
     {
-        if( m_multi != Multi.SINGLE ) throw new ValueFormatException();
+        if( m_multi != Multi.SINGLE )
+            throw new ValueFormatException("Attempted to get a SINGLE Value object from a MULTI property "+m_path);
 
         //
         //  Clones the value as per the Javadoc
@@ -138,8 +149,9 @@ public class PropertyImpl extends ItemImpl implements Property
 
     public Value[] getValues() throws ValueFormatException, RepositoryException
     {
-        if( m_multi != Multi.MULTI ) throw new ValueFormatException();
-        
+        if( m_multi != Multi.MULTI )
+            throw new ValueFormatException("Attempted to get a MULTI Value object from a SINGLE property "+m_path);
+
         return m_value;
     }
 
@@ -150,15 +162,16 @@ public class PropertyImpl extends ItemImpl implements Property
                                          ConstraintViolationException,
                                          RepositoryException
     {
-        if( m_multi == Multi.MULTI ) throw new ValueFormatException();
-        
+        if( m_multi == Multi.MULTI )
+            throw new ValueFormatException("Attempted to set a SINGLE Value object to a MULTI property "+m_path);
+
         if( value == null )
         {
             remove();
         }
-        
+
         m_value = new Value[1];
-        
+
         m_value[0] = value;
         m_multi = Multi.SINGLE;
     }
@@ -170,22 +183,16 @@ public class PropertyImpl extends ItemImpl implements Property
                                             ConstraintViolationException,
                                             RepositoryException
     {
-        if( m_multi == Multi.SINGLE ) throw new ValueFormatException();
+        if( m_multi == Multi.SINGLE )
+            throw new ValueFormatException("Attempted to set a MULTI Value object to a SINGLE property "+m_path);
 
         if( values == null )
         {
             remove();
         }
 
-        if( values.length == 1 )
-        {
-            setValue( values[0] );
-        }
-        else
-        {
-            m_value = values;
-            m_multi = Multi.MULTI;
-        }
+        m_value = values;
+        m_multi = Multi.MULTI;
     }
 
     public void setValue(String value)
@@ -213,7 +220,7 @@ public class PropertyImpl extends ItemImpl implements Property
         {
             remove();
         }
-        
+
         ArrayList<Value> ls = new ArrayList<Value>();
         for( int i = 0; i < values.length; i++ )
         {
@@ -234,7 +241,7 @@ public class PropertyImpl extends ItemImpl implements Property
         {
             remove();
         }
-        
+
         setValue( new ValueImpl(value) );
     }
 
@@ -293,11 +300,11 @@ public class PropertyImpl extends ItemImpl implements Property
         {
             remove();
         }
-        
+
         setValue( new ValueImpl(value.getUUID(), PropertyType.REFERENCE) );
     }
 
-    public void setValue( String value, int type ) throws ValueFormatException, 
+    public void setValue( String value, int type ) throws ValueFormatException,
         VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         if( value == null )
@@ -309,22 +316,22 @@ public class PropertyImpl extends ItemImpl implements Property
             setValue( new ValueImpl(value,type) );
         }
     }
-   
-    public void save() throws AccessDeniedException, 
-                              ItemExistsException, 
-                              ConstraintViolationException, 
-                              InvalidItemStateException, 
-                              ReferentialIntegrityException, 
-                              VersionException, 
-                              LockException, 
-                              NoSuchNodeTypeException, 
+
+    public void save() throws AccessDeniedException,
+                              ItemExistsException,
+                              ConstraintViolationException,
+                              InvalidItemStateException,
+                              ReferentialIntegrityException,
+                              VersionException,
+                              LockException,
+                              NoSuchNodeTypeException,
                               RepositoryException
     {
         Node parent = getParent();
-        
+
         parent.save();
     }
-    
+
     public String toString()
     {
         return "Property("+m_multi+")["+m_name+"="+((m_multi == Multi.SINGLE ) ? m_value[0].toString() : m_value)+"]";
@@ -333,7 +340,17 @@ public class PropertyImpl extends ItemImpl implements Property
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         NodeImpl nd = (NodeImpl)getParent();
-        
+
         nd.removeProperty(this);
+    }
+
+    public void setDefinition(PropertyDefinition pd)
+    {
+        m_definition = pd;
+
+        if( m_definition != null )
+        {
+            m_multi = m_definition.isMultiple() ? Multi.MULTI : Multi.SINGLE;
+        }
     }
 }

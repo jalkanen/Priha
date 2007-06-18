@@ -1,4 +1,4 @@
-/* 
+/*
     Priha - A JSR-170 implementation library.
 
     Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
@@ -24,17 +24,17 @@ import java.util.List;
 
 /**
  *  Manages paths, which are a key ingredient in JCR.
- *  
+ *
  *  @author jalkanen
  */
 public class Path
 {
     private List<String> m_components;
-    
+
     private boolean m_isAbsolute = false;
-    
+
     private String  m_cachedString;
-    
+
     protected Path( List<String> components, boolean absolute )
     {
         m_components = new ArrayList<String>();
@@ -42,7 +42,7 @@ public class Path
         m_isAbsolute = absolute;
         update();
     }
-    
+
     /**
      *  Create a new path from a String.  E.g.
      *  <code>
@@ -57,11 +57,19 @@ public class Path
         m_components = parsePath( abspath );
         update();
     }
-    
+
+    public Path( String pathStart, Path pathEnd )
+    {
+        this( pathStart );
+
+        m_components.addAll( pathEnd.m_components );
+        update();
+    }
+
     private List<String> parsePath( String path )
     {
         ArrayList<String> ls = new ArrayList<String>();
-        
+
         int start = 0, end = 0;
         while( (end = path.indexOf('/',start)) != -1 )
         {
@@ -69,12 +77,12 @@ public class Path
             start = end+1;
             if( component.length() > 0 ) ls.add(component);
         }
-        
+
         if( start < path.length() )
             ls.add(path.substring(start)); // Add the final component
 
         ls.trimToSize();
-        
+
         return ls;
     }
     /**
@@ -86,7 +94,7 @@ public class Path
     {
         return m_components.get(idx);
     }
-    
+
     /**
      *  Returns the name of the last component of the path (i.e. the name)
      * @return The name.  If this is the root, returns "" (empty string).
@@ -99,7 +107,7 @@ public class Path
         }
         return m_components.get(depth()-1);
     }
-    
+
     /**
      *  Returns true, if this Path represents the root.
      *  @return True, if this Path is the root.
@@ -108,7 +116,7 @@ public class Path
     {
         return m_components.size() == 0;
     }
-    
+
     /**
      *  Returns the depth of this path.  Root is zero.
      *  @return The depth of the path.
@@ -117,7 +125,7 @@ public class Path
     {
         return m_components.size();
     }
-    
+
     /**
      *  Returns the name of the parent (not the path).
      *  @return String describing the name of the parent.
@@ -129,10 +137,10 @@ public class Path
         if( isRoot() ) throw new InvalidPathException("Root has no parent");
         return m_components.get(depth()-1);
     }
-    
+
     /**
      *  Returns a valid path pointing at the parent of this path.
-     *  
+     *
      *  @return A new Path object.
      *  @throws InvalidPathException If this Path is the root node.
      */
@@ -140,16 +148,16 @@ public class Path
         throws InvalidPathException
     {
         if( isRoot() ) throw new InvalidPathException("Root has no parent");
-        List<String> list = m_components.subList( 0, 
+        List<String> list = m_components.subList( 0,
                                                   m_components.size()-1 );
-        
+
         return new Path( list, m_isAbsolute );
     }
-    
+
     /**
      *  Returns a subpath starting from index "startidx".  Start from zero
      *  to get a clone of this Path.
-     *  
+     *
      * @param startidx Where to start the path from.  Zero is root.
      * @return A valid Path.
      * @throws InvalidPathException If startidx < 0 or startidx > path depth.
@@ -175,11 +183,11 @@ public class Path
             throw new InvalidPathException("Supplied index deeper than the path");
         }
         if( startidx < 0 || endidx < 0 ) throw new InvalidPathException("Negative index");
-    
-        List<String> list = m_components.subList( startidx, 
+
+        List<String> list = m_components.subList( startidx,
                                                   endidx );
         Path newpath = new Path( list, startidx == 0 ? m_isAbsolute : false );
-    
+
         return newpath;
     }
 
@@ -191,35 +199,35 @@ public class Path
     {
         StringBuilder sb = new StringBuilder();
         if( m_isAbsolute ) sb.append("/");
-    
+
         for( String c : m_components )
         {
             sb.append( c );
             sb.append("/");
         }
-    
+
         if( depth() > 0 ) sb.deleteCharAt(sb.length()-1); // Remove final "/"
-        
-        m_cachedString = sb.toString();        
+
+        m_cachedString = sb.toString();
     }
-    
+
     /**
      *  Returns the Path in String format.
-     *  
+     *
      */
     public String toString()
     {
-        if( m_cachedString == null ) 
+        if( m_cachedString == null )
         {
             update();
         }
-        
+
         return m_cachedString;
     }
 
     /**
      *  Resolves a relative Path against this Path.
-     *  
+     *
      *  @param relPath String describing relative path.
      *  @return A valid Path.
      */
@@ -227,12 +235,12 @@ public class Path
     {
         ArrayList<String> p    = new ArrayList<String>();
         ArrayList<String> list = new ArrayList<String>();
-        
+
         if( !relPath.startsWith("/") )
             p.addAll( m_components );
 
         p.addAll( parsePath(relPath) );
-        
+
         for( int i = 0; i < p.size(); i++ )
         {
             if( p.get(i).equals("..") )
@@ -254,13 +262,13 @@ public class Path
         }
 
         list.trimToSize();
-        
+
         return new Path( list, m_isAbsolute );
     }
 
     /**
      *  Returns the Path up to ancestor "depth".
-     *  
+     *
      *  @param depth
      *  @return
      *  @throws InvalidPathException

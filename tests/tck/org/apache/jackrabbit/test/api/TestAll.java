@@ -56,7 +56,7 @@ public class TestAll extends TestCase {
         suite.addTestSuite(UndefinedPropertyTest.class);
 
         suite.addTestSuite(NamespaceRegistryReadMethodsTest.class);
-        suite.addTestSuite(NamespaceRemappingTest.class);
+        // suite.addTestSuite(NamespaceRemappingTest.class);
         suite.addTestSuite(NodeIteratorTest.class);
         suite.addTestSuite(PropertyReadMethodsTest.class);
         suite.addTestSuite(RepositoryDescriptorTest.class);
@@ -64,12 +64,12 @@ public class TestAll extends TestCase {
         suite.addTestSuite(WorkspaceReadMethodsTest.class);
         suite.addTestSuite(ReferenceableRootNodesTest.class);
 
-        suite.addTestSuite(ExportSysViewTest.class);
-        suite.addTestSuite(ExportDocViewTest.class);
+        // suite.addTestSuite(ExportSysViewTest.class);
+        // suite.addTestSuite(ExportDocViewTest.class);
 
         // level 2 tests
         suite.addTestSuite(AddNodeTest.class);
-        suite.addTestSuite(NamespaceRegistryTest.class);
+        // suite.addTestSuite(NamespaceRegistryTest.class);
         suite.addTestSuite(ReferencesTest.class);
         suite.addTestSuite(SessionTest.class);
         suite.addTestSuite(SessionUUIDTest.class);
@@ -109,29 +109,29 @@ public class TestAll extends TestCase {
         suite.addTestSuite(NodeCanAddMixinTest.class);
         suite.addTestSuite(NodeRemoveMixinTest.class);
 
-        suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
-        suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
-        suite.addTestSuite(WorkspaceCloneTest.class);
-        suite.addTestSuite(WorkspaceCloneVersionableTest.class);
-        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
-        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
-        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
-        suite.addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
-        suite.addTestSuite(WorkspaceCopyReferenceableTest.class);
-        suite.addTestSuite(WorkspaceCopySameNameSibsTest.class);
-        suite.addTestSuite(WorkspaceCopyTest.class);
-        suite.addTestSuite(WorkspaceCopyVersionableTest.class);
-        suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
-        suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
-        suite.addTestSuite(WorkspaceMoveTest.class);
-        suite.addTestSuite(WorkspaceMoveVersionableTest.class);
+        //suite.addTestSuite(WorkspaceCloneReferenceableTest.class);
+        //suite.addTestSuite(WorkspaceCloneSameNameSibsTest.class);
+        //suite.addTestSuite(WorkspaceCloneTest.class);
+        //suite.addTestSuite(WorkspaceCloneVersionableTest.class);
+        //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesReferenceableTest.class);
+        //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesSameNameSibsTest.class);
+        //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesTest.class);
+        //suite.addTestSuite(WorkspaceCopyBetweenWorkspacesVersionableTest.class);
+        //suite.addTestSuite(WorkspaceCopyReferenceableTest.class);
+        //suite.addTestSuite(WorkspaceCopySameNameSibsTest.class);
+        //suite.addTestSuite(WorkspaceCopyTest.class);
+        //suite.addTestSuite(WorkspaceCopyVersionableTest.class);
+        //suite.addTestSuite(WorkspaceMoveReferenceableTest.class);
+        //suite.addTestSuite(WorkspaceMoveSameNameSibsTest.class);
+        //suite.addTestSuite(WorkspaceMoveTest.class);
+        //suite.addTestSuite(WorkspaceMoveVersionableTest.class);
 
-        suite.addTestSuite(RepositoryLoginTest.class);
-        suite.addTestSuite(ImpersonateTest.class);
-        suite.addTestSuite(CheckPermissionTest.class);
+        //suite.addTestSuite(RepositoryLoginTest.class);
+        //suite.addTestSuite(ImpersonateTest.class);
+        //suite.addTestSuite(CheckPermissionTest.class);
 
-        suite.addTestSuite(DocumentViewImportTest.class);
-        suite.addTestSuite(SerializationTest.class);
+        //suite.addTestSuite(DocumentViewImportTest.class);
+        //suite.addTestSuite(SerializationTest.class);
 
         suite.addTestSuite(ValueFactoryTest.class);
 

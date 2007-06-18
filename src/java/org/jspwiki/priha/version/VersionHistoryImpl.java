@@ -7,6 +7,7 @@ import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
@@ -21,7 +22,19 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
 {
     private List<Version> m_versions = new ArrayList<Version>();
 
-    protected VersionHistoryImpl(SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef)
+    public static VersionHistoryImpl getInstance( SessionImpl session, Path path )
+        throws RepositoryException
+    {
+        NodeTypeManager nt = session.getWorkspace().getNodeTypeManager();
+
+        GenericNodeType versionType = (GenericNodeType)nt.getNodeType("jcr:versionHistory");
+
+        NodeDefinition nDef = versionType.findNodeDefinition( path.getLastComponent() );
+
+        return new VersionHistoryImpl( session, path, versionType, nDef );
+    }
+
+    private VersionHistoryImpl(SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef)
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         super(session, path, primaryType, nDef);

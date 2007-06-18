@@ -56,25 +56,25 @@ public class RepositoryHelper {
     public RepositoryHelper(Map config) {
         configuration.putAll(config);
     }
-    
+
     /**
      * Returns the repository instance to test.
      * @return the repository instance to test.
      * @throws RepositoryException if the repository could not be obtained.
      */
     public Repository getRepository() throws RepositoryException {
-            
+
         try
         {
             repoStub = RepositoryStub.getInstance(configuration);
-            
+
             return repoStub.getRepository();
         }
         catch (RepositoryStubException e)
         {
             throw new RepositoryException(e);
         }
-        
+
     }
 
     /**
