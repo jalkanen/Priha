@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.UUID;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,7 +19,6 @@ import javax.jcr.version.VersionHistory;
 
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.nodetype.NodeDefinitionImpl;
-import org.jspwiki.priha.nodetype.PropertyDefinitionImpl;
 import org.jspwiki.priha.util.*;
 import org.jspwiki.priha.version.VersionHistoryImpl;
 

@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.TreeSet;
 
@@ -26,30 +25,30 @@ public class SessionImpl implements Session
     private RepositoryImpl m_repository;
     private WorkspaceImpl  m_workspace;
     private NodeManager    m_nodeManager;
-    
+
     private SimpleCredentials m_credentials;
-    
+
     /** Keeps a list of nodes which have been updated and must be flushed at next
      *  save().
      */
     private TreeSet<NodeImpl> m_updateList = new TreeSet<NodeImpl>();
-    
+
     public SessionImpl( RepositoryImpl rep, Credentials creds, String name, RepositoryProvider provider )
         throws RepositoryException
     {
         m_repository = rep;
         m_workspace  = new WorkspaceImpl( this, name, provider );
         m_nodeManager = new NodeManager( this );
-        
+
         if( creds instanceof SimpleCredentials )
         {
             m_credentials = (SimpleCredentials)creds;
         }
     }
-    
+
     /**
      * Adds a node to the internal checklists
-     * 
+     *
      * @param node
      * @throws RepositoryException
      */
@@ -62,10 +61,10 @@ public class SessionImpl implements Session
         }
         catch (InvalidPathException e)
         {
-            throw new ItemNotFoundException(e.getMessage()); 
+            throw new ItemNotFoundException(e.getMessage());
         }
     }
-    
+
     void markDirty( NodeImpl node )
     {
         synchronized(m_updateList)
@@ -73,12 +72,12 @@ public class SessionImpl implements Session
             m_updateList.add(node);
         }
     }
-      
+
     boolean hasNode( String absPath )
     {
         return m_nodeManager.hasNode(absPath);
     }
-    
+
     public void addLockToken(String lt)
     {
         // TODO Auto-generated method stub
@@ -100,28 +99,28 @@ public class SessionImpl implements Session
     public void exportDocumentView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException
     {
         // TODO Auto-generated method stub
-        
+
         throw new UnsupportedRepositoryOperationException("Session.exportDocumentView2()");
     }
 
     public void exportSystemView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException
     {
         // TODO Auto-generated method stub
-        
+
         throw new UnsupportedRepositoryOperationException("Session.exportSystemView()");
     }
 
     public void exportSystemView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException
     {
         // TODO Auto-generated method stub
-        
+
         throw new UnsupportedRepositoryOperationException("Session.exportSystemView2()");
     }
 
     public Object getAttribute(String name)
     {
         Object res = null;
-   
+
         if( m_credentials != null )
         {
             res = m_credentials.getAttribute(name);
@@ -135,7 +134,7 @@ public class SessionImpl implements Session
         {
             return m_credentials.getAttributeNames();
         }
-        
+
         return new String[0];
     }
 
@@ -144,11 +143,11 @@ public class SessionImpl implements Session
         throw new UnsupportedRepositoryOperationException("Session.getImportContentHandler()");
         // TODO Auto-generated method stub
     }
-    
+
     public Item getItem(String absPath) throws PathNotFoundException, RepositoryException
     {
         Path p = new Path(absPath);
-        
+
         try
         {
             NodeImpl nd = m_nodeManager.findNode( p );
@@ -157,9 +156,9 @@ public class SessionImpl implements Session
             {
                 return nd;
             }
-            
+
             nd = m_nodeManager.findNode( p.getParentPath() );
-        
+
             if( nd != null )
             {
                 return nd.getChildProperty( p.getLastComponent() );
@@ -168,7 +167,7 @@ public class SessionImpl implements Session
         catch( InvalidPathException e )
         {
         }
-        
+
         throw new PathNotFoundException( absPath );
     }
 
@@ -238,7 +237,7 @@ public class SessionImpl implements Session
     public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException, InvalidSerializedDataException, LockException, RepositoryException
     {
         throw new UnsupportedRepositoryOperationException("Session.importXML()");
-        // TODO Auto-generated method stub        
+        // TODO Auto-generated method stub
     }
 
     public boolean isLive()
@@ -271,7 +270,7 @@ public class SessionImpl implements Session
     {
         // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException("Session.move()");
-        
+
     }
 
     public void refresh(boolean keepChanges) throws RepositoryException
@@ -279,23 +278,23 @@ public class SessionImpl implements Session
         if( keepChanges ) throw new UnsupportedRepositoryOperationException("Session.refresh(true)");
 
         m_nodeManager.reset();
-            
+
         List<String> paths = m_workspace.listNodePaths();
-        
+
         paths.remove("/");
-        
+
         for( String path : paths )
         {
             NodeImpl nd = m_workspace.loadNode(path);
             m_nodeManager.addNode( nd );
             nd.m_new = false;
             nd.m_state = ItemState.EXISTS;
-            
+
             nd.sanitize();
         }
-        
+
         m_updateList.clear();
-        
+
         repopulate();
     }
 
@@ -308,16 +307,16 @@ public class SessionImpl implements Session
         if( !hasNode("/"+JCR_SYSTEM) )
         {
             Node nd = getRootNode().addNode(JCR_SYSTEM, "nt:unstructured");
-            
+
             // FIXME: Should probably set up all sorts of things.
             save();
         }
     }
-    
+
     public void removeLockToken(String lt)
     {
         // TODO Auto-generated method stub
-        
+
     }
 
     public void save() throws AccessDeniedException, ItemExistsException, ConstraintViolationException, InvalidItemStateException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException
@@ -328,15 +327,15 @@ public class SessionImpl implements Session
             {
                 ni.saveNodeAndChildren();
             }
-            
+
             m_updateList.clear();
         }
     }
-    
+
     public void setNamespacePrefix(String newPrefix, String existingUri) throws NamespaceException, RepositoryException
     {
         // TODO Auto-generated method stub
-        
+
         throw new UnsupportedRepositoryOperationException("Session.setNamespacePrefix()");
     }
 
@@ -363,7 +362,7 @@ public class SessionImpl implements Session
         return m_nodeManager;
     }
 
-    public boolean itemExists(Path absPath) 
+    public boolean itemExists(Path absPath)
         throws RepositoryException
     {
         return itemExists( absPath.toString() );
