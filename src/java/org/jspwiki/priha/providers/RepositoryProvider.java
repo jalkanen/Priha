@@ -1,25 +1,26 @@
 package org.jspwiki.priha.providers;
 
+import java.util.Collection;
 import java.util.List;
 
 import javax.jcr.*;
 
-import org.jspwiki.priha.core.NodeImpl;
-import org.jspwiki.priha.core.PropertyImpl;
-import org.jspwiki.priha.core.RepositoryImpl;
-import org.jspwiki.priha.core.WorkspaceImpl;
+import org.jspwiki.priha.core.*;
+import org.jspwiki.priha.core.values.ValueImpl;
+import org.jspwiki.priha.util.Path;
 import org.jspwiki.priha.util.PropertyList;
 
 /**
  *  A few ground rules:
  *  <ul>
  *  <li>A RepositoryProvider shall not cache the Session object</li>
+ *  <li>A RepositoryProvider shall be thread-safe</li>
  *  </ul>
  *  
  *  @author jalkanen
  *
  */
-public abstract class RepositoryProvider
+public interface RepositoryProvider
 {
     /**
      *  Opens a repository.  Called only once when the Repository is
@@ -35,26 +36,30 @@ public abstract class RepositoryProvider
                       Credentials     credentials, 
                       String          workspaceName ) 
         throws RepositoryException,
-               NoSuchWorkspaceException
-    {
-    }
+               NoSuchWorkspaceException;
     
     /**
      *  Starts access to a repository.  This is called only when the
      *  repository starts.
      *
      */
-    public void start( RepositoryImpl rep )
-    {
-    }
+    public void start( RepositoryImpl rep );
     
-    public void stop( RepositoryImpl rep )
-    {
-    }
+    /**
+     *  Stops a given repository.  This is called whenever the repository
+     *  can go safely to sleep.
+     *  
+     *  @param rep
+     */
+    public void stop( RepositoryImpl rep );
     
-    public void close( WorkspaceImpl ws )
-    {
-    }
+    /**
+     *  The repository will no longer be used.  This may be called without a preceding call
+     *  to stop().
+     *  
+     *  @param ws
+     */
+    public void close( WorkspaceImpl ws );
     
     /**
      *  Returns a list of properties for a Node.
@@ -64,30 +69,92 @@ public abstract class RepositoryProvider
      *  @return
      *  @throws RepositoryException
      */
-    public abstract PropertyList getProperties( WorkspaceImpl ws, String path ) throws RepositoryException;
+    public abstract List<String> listProperties( WorkspaceImpl ws, Path path ) throws RepositoryException;
     
-    public abstract PropertyImpl getProperty( WorkspaceImpl ws, String path ) throws RepositoryException;
+    /**
+     *  Returns the value of a property.
+     *  
+     * @param ws
+     * @param path
+     * @return either a ValueImpl or ValueImpl[], depending on whether this is a multi-valued thing
+     * @throws RepositoryException
+     */
+    public abstract Object getPropertyValue( WorkspaceImpl ws, Path path ) throws RepositoryException;
     
-    public boolean nodeExists( WorkspaceImpl ws, String path )
-    {
-        return false;
-    }
+    /**
+     *  Returns true, if a property exists.
+     *  
+     *  @param ws
+     *  @param path
+     *  @return
+     */
+    public boolean nodeExists( WorkspaceImpl ws, Path path );
     
-    public abstract void putNode( WorkspaceImpl ws, NodeImpl node ) throws RepositoryException;
+    /**
+     * Adds a new Node to the repository.
+     * 
+     * @param ws
+     * @param node
+     * @throws RepositoryException
+     */
+    public void putNode( WorkspaceImpl ws, NodeImpl node ) throws RepositoryException;
     
-    public void copy( WorkspaceImpl ws, String srcpath, String destpath ) throws RepositoryException
-    {
-        
-    }
+    /**
+     * Sets or adds a new Property to the repository.
+     * 
+     */
     
-    public void move( WorkspaceImpl ws, String srcpath, String destpath ) throws RepositoryException
-    {
-        
-    }
+    public void putProperty( WorkspaceImpl ws, PropertyImpl property ) throws RepositoryException;
+    
+    /**
+     * Copies content from one path to another path.
+     * @param ws
+     * @param srcpath
+     * @param destpath
+     * @throws RepositoryException
+     */
+    public void copy( WorkspaceImpl ws, Path srcpath, Path destpath ) throws RepositoryException;
+    
+    /**
+     *  Moves the content at the end of one Path to the destpath.
+     *  
+     * @param ws
+     * @param srcpath
+     * @param destpath
+     * @throws RepositoryException
+     */
+    public void move( WorkspaceImpl ws, Path srcpath, Path destpath ) throws RepositoryException;
 
-    public abstract List<String> listNodePaths(WorkspaceImpl ws);
+    /**
+     *  Lists all the Nodes from the repository which belong to this parent.
+     *  
+     *  @param ws
+     *  @param parentpath
+     *  @return
+     */
+    public List<Path> listNodes(WorkspaceImpl ws, Path parentpath);
     
-    public abstract List<String> listWorkspaces();
+    /**
+     *  Lists all workspaces which are available in this Repository.
+     *  
+     *  @return
+     */
+    public Collection<String> listWorkspaces();
 
-    public abstract void remove( WorkspaceImpl ws, String path );
+    /**
+     *  Removes a node or a property from the repository.
+     *  
+     *  @param ws
+     *  @param path
+     */
+    public void remove( WorkspaceImpl ws, Path path )  throws RepositoryException;
+    
+    /**
+     *  If an item by this UUID exists, returns a Path.
+     * @param ws
+     * @param uuid
+     * @return
+     * @throws
+     */
+    public Path findByUUID( WorkspaceImpl ws, String uuid ) throws RepositoryException;
 }

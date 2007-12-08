@@ -23,6 +23,12 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+/**
+ *  This class is essentially a singleton per repository.
+ *  
+ *  @author jalkanen
+ *
+ */
 public class NodeTypeManagerImpl implements NodeTypeManager
 {
     private SortedMap<String,NodeType> m_primaryTypes = new TreeMap<String,NodeType>();
@@ -301,6 +307,9 @@ public class NodeTypeManagerImpl implements NodeTypeManager
             }
         }
 
+        //
+        //  Find the default
+        //
         for( NodeType nt : m_primaryTypes.values() )
         {
             for( NodeDefinition nd : nt.getChildNodeDefinitions() )

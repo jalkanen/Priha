@@ -11,6 +11,8 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.VersionException;
 
+import org.jspwiki.priha.core.values.ValueFactoryImpl;
+import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.nodetype.PropertyDefinitionImpl;
 
 public class PropertyImpl extends ItemImpl implements Property
@@ -144,7 +146,7 @@ public class PropertyImpl extends ItemImpl implements Property
         //
         //  Clones the value as per the Javadoc
         //
-        return new ValueImpl(m_value[0]);
+        return ValueFactoryImpl.getInstance().createValue( m_value[0] );
     }
 
     public Value[] getValues() throws ValueFormatException, RepositoryException
@@ -206,7 +208,7 @@ public class PropertyImpl extends ItemImpl implements Property
         {
             remove();
         }
-        setValue( new ValueImpl(value) );
+        setValue( ValueFactoryImpl.getInstance().createValue(value) );
     }
 
     public void setValue(String[] values)
@@ -225,7 +227,7 @@ public class PropertyImpl extends ItemImpl implements Property
         for( int i = 0; i < values.length; i++ )
         {
             if( values[i] != null )
-                ls.add(new ValueImpl( values[i] ));
+                ls.add(ValueFactoryImpl.getInstance().createValue( values[i] ));
         }
         setValue( (Value[])ls.toArray( new Value[0] ) );
     }
@@ -242,7 +244,7 @@ public class PropertyImpl extends ItemImpl implements Property
             remove();
         }
 
-        setValue( new ValueImpl(value) );
+        setValue( ValueFactoryImpl.getInstance().createValue(value) );
     }
 
     public void setValue(long value)
@@ -252,7 +254,7 @@ public class PropertyImpl extends ItemImpl implements Property
                                         ConstraintViolationException,
                                         RepositoryException
     {
-        setValue( new ValueImpl(value) );
+        setValue( ValueFactoryImpl.getInstance().createValue(value) );
     }
 
     public void setValue(double value)
@@ -262,7 +264,7 @@ public class PropertyImpl extends ItemImpl implements Property
                                           ConstraintViolationException,
                                           RepositoryException
     {
-        setValue( new ValueImpl(value) );
+        setValue( ValueFactoryImpl.getInstance().createValue(value) );
     }
 
     public void setValue(Calendar value)
@@ -276,7 +278,7 @@ public class PropertyImpl extends ItemImpl implements Property
         {
             remove();
         }
-        setValue( new ValueImpl(value) );
+        setValue( ValueFactoryImpl.getInstance().createValue(value) );
     }
 
     public void setValue(boolean value)
@@ -286,7 +288,7 @@ public class PropertyImpl extends ItemImpl implements Property
                                            ConstraintViolationException,
                                            RepositoryException
     {
-        setValue( new ValueImpl(value) );
+        setValue( ValueFactoryImpl.getInstance().createValue(value) );
     }
 
     public void setValue(Node value)
@@ -301,7 +303,7 @@ public class PropertyImpl extends ItemImpl implements Property
             remove();
         }
 
-        setValue( new ValueImpl(value.getUUID(), PropertyType.REFERENCE) );
+        setValue( ValueFactoryImpl.getInstance().createValue(value.getUUID(), PropertyType.REFERENCE) );
     }
 
     public void setValue( String value, int type ) throws ValueFormatException,
@@ -313,7 +315,7 @@ public class PropertyImpl extends ItemImpl implements Property
         }
         else
         {
-            setValue( new ValueImpl(value,type) );
+            setValue( ValueFactoryImpl.getInstance().createValue(value,type) );
         }
     }
 

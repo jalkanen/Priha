@@ -142,19 +142,22 @@ public class GenericNodeType
         return null;
     }
 
-    public PropertyDefinition findPropertyDefinition( String name )
+    public PropertyDefinition findPropertyDefinition( String name, boolean multiple )
     {
         for( PropertyDefinition pd : m_propertyDefinitions )
         {
-            if( pd.getName().equals(name) )
+            if( pd.getName().equals(name) && pd.isMultiple() == multiple )
             {
                 return pd;
             }
         }
 
+        //
+        //  Attempt to find the default.
+        //
         for( PropertyDefinition pd : m_propertyDefinitions )
         {
-            if( pd.getName().equals("*") )
+            if( pd.getName().equals("*") && pd.isMultiple() == multiple )
             {
                 return pd;
             }

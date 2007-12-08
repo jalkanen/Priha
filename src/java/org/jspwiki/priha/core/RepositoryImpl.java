@@ -33,7 +33,7 @@ public class RepositoryImpl implements Repository
         Repository.LEVEL_1_SUPPORTED,             STR_TRUE,
         Repository.LEVEL_2_SUPPORTED,             STR_TRUE,
         Repository.OPTION_TRANSACTIONS_SUPPORTED, STR_FALSE,
-        Repository.OPTION_VERSIONING_SUPPORTED,   STR_TRUE,
+        Repository.OPTION_VERSIONING_SUPPORTED,   STR_FALSE,
         Repository.OPTION_LOCKING_SUPPORTED,      STR_FALSE,
         Repository.OPTION_OBSERVATION_SUPPORTED,  STR_FALSE,
         Repository.OPTION_QUERY_SQL_SUPPORTED,    STR_FALSE,

@@ -2,6 +2,8 @@ package org.jspwiki.priha.core;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +18,7 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 
+import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.nodetype.NodeDefinitionImpl;
 import org.jspwiki.priha.nodetype.NodeTypeManagerImpl;
@@ -51,20 +54,18 @@ public class WorkspaceImpl
      *  @return
      *  @throws RepositoryException
      */
-    public PropertyImpl createPropertyImpl( String path )
+    public PropertyImpl createPropertyImpl( Path path )
         throws RepositoryException
     {
-        Path p = new Path(path);
+        String name = path.getLastComponent();
 
-        String name = p.getLastComponent();
-
-        p = p.getParentPath();
+        path = path.getParentPath();
 
         //NodeImpl nd = (NodeImpl) m_session.getItem(p);
 
         //PropertyDefinition pd = ((GenericNodeType)nd.getPrimaryNodeType()).findPropertyDefinition(name);
 
-        PropertyImpl pi = new PropertyImpl( m_session, path, null );
+        PropertyImpl pi = new PropertyImpl( m_session, path.toString(), null );
 
         return pi;
     }
@@ -88,29 +89,45 @@ public class WorkspaceImpl
      *
      * @throws RepositoryException
      */
-    NodeImpl loadNode( String path ) throws RepositoryException
+    NodeImpl loadNode( Path path ) throws RepositoryException
     {
-        PropertyList properties = m_provider.getProperties( this, path );
+        List<String> properties = m_provider.listProperties( this, path );
 
-        PropertyImpl primaryType = properties.find( "jcr:primaryType" );
+        Path ptPath = path.resolve("jcr:primaryType");
+        PropertyImpl primaryType = createPropertyImpl( ptPath );
 
-        if( primaryType == null )
+        ValueImpl v = (ValueImpl)m_provider.getPropertyValue( this, ptPath );
+        
+        if( v == null )
             throw new RepositoryException("Repository did not return a primary type for path "+path);
 
+        primaryType.setValue( v );
+        
         GenericNodeType type = (GenericNodeType) m_nodeTypeManager.getNodeType( primaryType.getString() );
 
         NodeDefinition nd = m_nodeTypeManager.findNodeDefinition( primaryType.getString() );
 
         NodeImpl ni = new NodeImpl( m_session, path, type, nd );
 
-        for( PropertyImpl p : properties )
+        for( String name : properties )
         {
-            String name = p.getName();
-            PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name);
+            ptPath = path.resolve(name);
+            
+            Object values = m_provider.getPropertyValue( this, ptPath );
 
+            PropertyImpl p = createPropertyImpl( ptPath );
+
+            boolean multiple = values instanceof ValueImpl[];
+
+            PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name,multiple);
             p.setDefinition( pd );
-
-            ni.addChildProperty( p );
+            
+            if( multiple )
+                p.setValue( (ValueImpl[]) values );
+            else
+                p.setValue( (ValueImpl) values );
+            
+            ni.addChildProperty( p );            
         }
 
         return ni;
@@ -139,7 +156,7 @@ public class WorkspaceImpl
 
     public String[] getAccessibleWorkspaceNames() throws RepositoryException
     {
-        List<String> list = m_provider.listWorkspaces();
+        Collection<String> list = m_provider.listWorkspaces();
 
         return list.toArray(new String[0]);
     }
@@ -210,11 +227,24 @@ public class WorkspaceImpl
      *  Goes to the repository and lists all available Nodes with their paths.
      *  @return
      */
-    List<String> listNodePaths()
+    List<Path> listNodePaths()
     {
-        return m_provider.listNodePaths( this );
+        return listNodePaths(new Path("/"));
     }
 
+    private List<Path>listNodePaths(Path path)
+    {
+        List<Path> ls = m_provider.listNodes( this, path );
+        List<Path> result = new ArrayList<Path>();
+        
+        for( Path p : ls )
+        {
+            result.addAll( listNodePaths(p) );
+        }
+        
+        return ls;
+    }
+    
     public void logout()
     {
         m_provider.close(this);
@@ -222,7 +252,7 @@ public class WorkspaceImpl
 
     public void removeNode(NodeImpl impl) throws RepositoryException
     {
-        m_provider.remove( this, impl.getPath() );
+        m_provider.remove( this, new Path(impl.getPath()) );
     }
 
 }

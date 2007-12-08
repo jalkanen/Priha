@@ -1,10 +1,7 @@
 package org.jspwiki.priha.core;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -17,6 +14,7 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 
+import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.nodetype.NodeDefinitionImpl;
 import org.jspwiki.priha.util.*;
@@ -24,7 +22,6 @@ import org.jspwiki.priha.version.VersionHistoryImpl;
 
 public class NodeImpl extends ItemImpl implements Node, Comparable
 {
-    private static final String PROPERTY_REFERENCES = "references"; // FIXME: Should contain something else
     private PropertyList        m_properties = new PropertyList();
     private ArrayList<NodeImpl> m_children   = new ArrayList<NodeImpl>();
     private ArrayList<NodeType> m_mixinTypes = new ArrayList<NodeType>();
@@ -572,7 +569,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
         String uuid = getUUID();
 
-        PropertyList references = new PropertyList();
+        ArrayList<PropertyImpl> references = new ArrayList<PropertyImpl>();
 
         for( NodeImpl nd : m_session.getNodeManager().allNodes() )
         {
@@ -592,7 +589,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             }
         }
 
-        return references.propertyIterator();
+        return new PropertyIteratorImpl(references);
     }
 
     public String getUUID() throws UnsupportedRepositoryOperationException, RepositoryException
@@ -820,7 +817,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             //  We know where this belongs to.
             GenericNodeType gnt = (GenericNodeType)getNodeTypeManager().getNodeType("nt:base");
 
-            PropertyDefinition primaryDef = gnt.findPropertyDefinition("jcr:primaryType");
+            PropertyDefinition primaryDef = gnt.findPropertyDefinition("jcr:primaryType",false);
 
             prop = new PropertyImpl( m_session,
                                      m_path.resolve(name).toString(),
@@ -845,7 +842,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
             NodeImpl nd = (NodeImpl) m_session.getItem(p);
 
-            PropertyDefinition pd = ((GenericNodeType)nd.getPrimaryNodeType()).findPropertyDefinition(name);
+            boolean ismultiple = value instanceof Object[];
+
+            PropertyDefinition pd = ((GenericNodeType)nd.getPrimaryNodeType()).findPropertyDefinition(name,ismultiple);
 
             prop = new PropertyImpl( m_session, propertypath.toString(), pd );
             m_properties.add(prop);
@@ -1229,7 +1228,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         m_properties.add( property );
         property.m_parent = this;
     }
-
+    
     /**
      *  Assumes nothing, goes through the properties, makes sure all things are correct
      *
@@ -1284,7 +1283,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         {
             if( pi.getDefinition() == null )
             {
-                PropertyDefinition pd = mytype.findPropertyDefinition( pi.getName() );
+                PropertyDefinition pd = mytype.findPropertyDefinition( pi.getName(), false ); // FIXME: Really?
 
                 pi.m_definition = pd;
             }

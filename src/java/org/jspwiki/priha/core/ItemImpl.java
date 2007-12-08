@@ -99,6 +99,11 @@ public abstract class ItemImpl implements Item
         }
     }
 
+    public Path getInternalPath()
+    {
+        return m_path;
+    }
+    
     public String getPath() throws RepositoryException
     {
         return m_path.toString();

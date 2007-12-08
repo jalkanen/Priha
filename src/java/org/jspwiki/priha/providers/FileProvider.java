@@ -6,11 +6,15 @@ import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 import javax.jcr.*;
+import javax.xml.namespace.QName;
 
 import org.jspwiki.priha.core.*;
+import org.jspwiki.priha.core.values.ValueFactoryImpl;
+import org.jspwiki.priha.core.values.ValueImpl;
+import org.jspwiki.priha.util.Path;
 import org.jspwiki.priha.util.PropertyList;
 
-public class FileProvider extends RepositoryProvider
+public class FileProvider implements RepositoryProvider
 {
     private File m_root;
     
@@ -91,7 +95,7 @@ public class FileProvider extends RepositoryProvider
     /**
      *  Just copies all characters from <i>in</i> to <i>out</i>.
      */
-    public static void copyContents( InputStream in, OutputStream out )
+    private static void copyContents( InputStream in, OutputStream out )
         throws IOException
     {
         byte[] buf = new byte[4096];
@@ -103,6 +107,40 @@ public class FileProvider extends RepositoryProvider
         }
 
         out.flush();
+    }
+    
+    private static void copyContents(FileReader in, StringWriter out)
+        throws IOException
+    {
+        char[] buf = new char[4096];
+        int bytesRead = 0;
+
+        while ((bytesRead = in.read(buf)) > 0) 
+        {
+            out.write(buf, 0, bytesRead);
+        }
+
+        out.flush();
+    }
+
+
+    
+    private static void writeFile( File f, String contents )
+        throws IOException
+    {
+        FileOutputStream out = new FileOutputStream(f);
+        
+        ByteArrayInputStream in = new ByteArrayInputStream(contents.getBytes("UTF-8"));
+        
+        try
+        {
+            copyContents(in, out);
+        }
+        finally
+        {
+            out.close();
+            in.close();
+        } 
     }
     
     /**
@@ -163,135 +201,15 @@ public class FileProvider extends RepositoryProvider
 
         nodeDir.mkdir();
         
-        File propertyfile = new File( nodeDir, ".properties" );
-        
-        Properties props = new Properties();
-        
         for( PropertyIterator i = node.getProperties(); i.hasNext(); )
         {
-            Property p = i.nextProperty();
+            PropertyImpl p = (PropertyImpl)i.nextProperty();
          
-            String qname = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).toQName(p.getName());
-            
-            props.setProperty( qname+".type",  PropertyType.nameFromValue(p.getType()) );
-            props.setProperty( qname+".value", getStringFormat( ws, p ) );
-        }
-        
-        OutputStream out = null;
-        try
-        {
-            out = new FileOutputStream(propertyfile);
-            props.store(out, "");
-        }
-        catch( IOException e )
-        {
-            throw new RepositoryException( "IO Exception when trying to save node properties ",e);
-        }
-        finally
-        {
-            if( out != null ) try { out.close(); } catch( IOException e ) {}
+            putProperty( ws, p );
         }
     }
 
-    public PropertyImpl getProperty(WorkspaceImpl ws, String path) throws RepositoryException
-    {
-        throw new UnsupportedRepositoryOperationException("getProperty()");
-    }
-
-    public PropertyList getProperties(WorkspaceImpl ws, String path)
-        throws RepositoryException
-    {
-        File nodeDir = getNodeDir( ws, path );
-        PropertyList proplist = new PropertyList();
-        
-        Properties props = new Properties();
-        
-        File propertyFile = new File( nodeDir, ".properties" );
-        
-        if( !propertyFile.exists() )
-        {
-            return proplist;
-        }
-        
-        InputStream in = null;
-        
-        try
-        {
-            in = new FileInputStream(propertyFile);
-            
-            props.load(in);
-        
-            for( Map.Entry entry : props.entrySet() )
-            {
-                String key = (String)entry.getKey();
-                if( key.endsWith(".value") ) 
-                {
-                    String qName = key.substring(0,key.length()-".value".length());
-                    String propName = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName(qName);
-                    String propVal  = (String) entry.getValue();                    
-                    String propType = props.getProperty(qName+".type");
-         
-                    String propertyPath = path + "/" + propName;
-                    
-                    PropertyImpl pi = ws.createPropertyImpl( propertyPath );
-                    
-                    if( propType.equals(PropertyType.TYPENAME_STRING) )
-                        pi.setValue( (String) propVal );
-                    else if( propType.equals(PropertyType.TYPENAME_BOOLEAN) )
-                        pi.setValue( Boolean.parseBoolean(propVal) );
-                    else if( propType.equals(PropertyType.TYPENAME_DOUBLE) )
-                        pi.setValue( Double.parseDouble(propVal) );
-                    else if( propType.equals(PropertyType.TYPENAME_LONG) )
-                        pi.setValue( Long.parseLong(propVal) );
-                    else if( propType.equals(PropertyType.TYPENAME_DATE) )
-                    {
-                        Calendar c = Calendar.getInstance();
-                        c.setTimeInMillis( Long.parseLong(propVal) );
-                        pi.setValue( c );
-                    }
-                    else if( propType.equals(PropertyType.TYPENAME_NAME) ||
-                        propType.equals(PropertyType.TYPENAME_PATH ))
-                    {
-                        propVal = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName( propVal );
-                        pi.setValue( propVal, PropertyType.valueFromName(propType) );
-                    }
-                    else if( propType.equals(PropertyType.TYPENAME_REFERENCE ) )
-                    {
-                        pi.setValue( (String) propVal, PropertyType.REFERENCE );
-                    }
-                    else if( propType.equals(PropertyType.TYPENAME_BINARY) )
-                    {
-                        // FIXME: Should not absolutely do this
-                        InputStream input = new FileInputStream( new File(nodeDir, propVal) );
-                        pi.setValue( input );
-                    }
-                    else
-                        throw new RepositoryException("Cannot deserialize property type "+propType);
-        
-                    proplist.add( pi );
-                }
-            }
-        }
-        catch( IOException e )
-        {
-            throw new RepositoryException("Thingy said booboo", e);
-        }
-        finally
-        {
-            if( in != null ) try { in.close(); } catch(IOException ex) {}            
-        }
-        
-        return proplist;
-    }
-
-    public boolean nodeExists(Workspace ws, String path)
-    {
-        File nodeDir = getNodeDir( ws, path );
-
-        return nodeDir.exists();
-    }
-
-    private void acquirePaths( String path, File dir, List<String> list )
+    private void acquirePaths( String path, File dir, List<Path> list, boolean recurse )
     {
         File[] files = dir.listFiles();
         
@@ -302,25 +220,16 @@ public class FileProvider extends RepositoryProvider
             String newPath = path + "/" + f.getName();
             if( f.isDirectory() )
             {
-                list.add( newPath );
-                acquirePaths( newPath, f, list );
+                list.add( new Path(newPath) );
+                
+                if( recurse )
+                {
+                    acquirePaths( newPath, f, list, recurse );
+                }
             }
         }
     }
     
-    @Override
-    public List<String> listNodePaths(WorkspaceImpl ws)
-    {
-        ArrayList<String> list = new ArrayList<String>();
-
-        File wsDir = new File( getWorkspaceRoot(), getWorkspaceFilename(ws) );
-
-        list.add("/");
-        
-        acquirePaths("",wsDir,list);
-        
-        return list;
-    }
 
     public List<String> listWorkspaces()
     {
@@ -342,8 +251,103 @@ public class FileProvider extends RepositoryProvider
         return list;
     }
 
-    public void open(Repository rep, Credentials credentials, String workspaceName) 
-        throws NoSuchWorkspaceException
+    private boolean deleteContents( File dir )
+    {
+        // System.out.println("Deleting "+dir.getAbsolutePath());
+        for( File f : dir.listFiles() )
+        {
+            if( f.isDirectory() )
+            {
+                deleteContents( f );
+            }
+            
+            if( !f.delete() ) return false;
+        }
+        
+        return true;
+    }
+
+    public void start(RepositoryImpl rep)
+    {
+        Preferences prefs = rep.getPreferences();
+        
+        Preferences p = prefs.node("fileprovider");
+        
+        String wsname = p.get("workspace", "default");
+        
+        File rootDir = getWorkspaceDir( wsname );
+        
+        rootDir.mkdirs();
+        
+        System.out.println("Created workspace directory "+rootDir);
+        log.fine("Created workspace directory "+rootDir);
+    }
+
+    public void close(WorkspaceImpl ws)
+    {
+        // Does nothing
+    }
+
+    public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
+    {
+        throw new UnsupportedRepositoryOperationException("copy()");
+    }
+
+    public List<Path> listNodes(WorkspaceImpl ws, Path parentpath)
+    {
+        ArrayList<Path> list = new ArrayList<Path>();
+
+        File wsDir = new File( getWorkspaceRoot(), getWorkspaceFilename(ws) );
+        
+        acquirePaths("",new File(wsDir,parentpath.toString()),list,false);
+        
+        return list;
+    }
+
+    public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
+    {
+        File nodeDir = getNodeDir( ws, path.toString() );
+        List<String> proplist = new ArrayList<String>();
+        
+        try
+        {
+            File[] files = nodeDir.listFiles( new PropertyTypeFilter() );
+            
+            for( File propertyFile : files )
+            {
+                Properties props = new Properties();
+            
+                InputStream in = new FileInputStream(propertyFile);
+                
+                props.load(in);
+        
+                String qname =  props.getProperty("qname");
+                
+                qname = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName(qname);
+                proplist.add( qname );
+            }
+        }
+        catch( IOException e )
+        {
+            throw new RepositoryException("Thingy said booboo", e);
+        }
+        
+        return proplist;
+    }
+
+    public void move(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
+    {
+        throw new UnsupportedRepositoryOperationException("move()");
+    }
+
+    public boolean nodeExists(WorkspaceImpl ws, Path path)
+    {
+        File nodeDir = getNodeDir( ws, path.toString() );
+
+        return nodeDir.exists();
+    }
+
+    public void open(RepositoryImpl rep, Credentials credentials, String workspaceName) throws RepositoryException, NoSuchWorkspaceException
     {
         List<String> wsnames = listWorkspaces();
         
@@ -353,10 +357,180 @@ public class FileProvider extends RepositoryProvider
         log.fine("Repository has been opened.");
     }
 
-    @Override
-    public void remove( WorkspaceImpl ws, String path )
+    private void writeValue( File f, ValueImpl v ) throws IOException, IllegalStateException, RepositoryException
     {
-        File nodeDir = getNodeDir( ws, path );
+        OutputStream out = null;
+        
+        try
+        {
+            out = new FileOutputStream( f );
+        
+            copyContents( v.getStream(), out );
+        }
+        finally
+        {
+            if( out != null ) out.close();
+        }
+    }
+    
+    public void putProperty(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
+    {
+        File nodeDir = getNodeDir( ws, property.getParent().getPath() );
+        
+        String qname = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).toQName(property.getName());
+        
+        File inf = new File( nodeDir, property.getName()+".info" );
+        
+        Properties props = new Properties();
+        
+        props.setProperty( "qname", qname );
+        props.setProperty( "type",  PropertyType.nameFromValue( property.getType() ) );
+        props.setProperty( "multiple", property.getDefinition().isMultiple() ? "true" : "false" );
+
+        try
+        {
+            if( property.getDefinition().isMultiple() )
+            {
+                props.setProperty( "numProperties", Integer.toString(property.getValues().length) );
+                Value[] values = property.getValues();
+                
+                for( int i = 0; i < values.length; i++ )
+                {
+                    File df = new File( nodeDir, property.getName()+"."+i+".data" );
+                    writeValue( df, (ValueImpl)values[i] );
+                }
+            }
+            else
+            {
+                File df = new File( nodeDir, property.getName()+".data" );
+                writeValue( df, (ValueImpl)property.getValue() );
+            }
+        
+            props.store( new FileOutputStream(inf), null );
+        }
+        catch (FileNotFoundException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IOException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
+
+    private String readContentsAsString( File file )
+        throws IOException
+    {
+        FileReader in = new FileReader( file );
+        StringWriter out = new StringWriter();
+        copyContents( in, out );  
+        
+        return out.toString();
+    }
+    
+    private ValueImpl prepareValue( WorkspaceImpl ws, File propFile, String propType )
+        throws IOException, RepositoryException
+    {
+        ValueFactoryImpl vf = ValueFactoryImpl.getInstance();
+        ValueImpl value;
+        
+        if( propType.equals(PropertyType.TYPENAME_STRING) )
+        {
+            value = vf.createValue( readContentsAsString(propFile) );
+        }
+        else if( propType.equals(PropertyType.TYPENAME_BOOLEAN) )
+        {
+            value = vf.createValue( "true".equals(readContentsAsString(propFile)) );
+        }
+        else if( propType.equals(PropertyType.TYPENAME_DOUBLE) )
+        {
+            value = vf.createValue( Double.parseDouble(readContentsAsString(propFile)) );
+        }
+        else if( propType.equals(PropertyType.TYPENAME_LONG) )
+        {
+            value = vf.createValue( Long.parseLong(readContentsAsString(propFile)) );
+        }
+        else if( propType.equals(PropertyType.TYPENAME_DATE) )
+        {
+            Calendar c = Calendar.getInstance();
+            c.setTimeInMillis( Long.parseLong(readContentsAsString(propFile)) );
+            value = vf.createValue( c );
+        }
+        else if( propType.equals(PropertyType.TYPENAME_NAME) ||
+            propType.equals(PropertyType.TYPENAME_PATH ))
+        {
+            String val = readContentsAsString(propFile);
+            val = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName( val );
+            value = vf.createValue( val, PropertyType.NAME );
+        }
+        else if( propType.equals(PropertyType.TYPENAME_REFERENCE ) )
+        {
+            value = vf.createValue( readContentsAsString(propFile), PropertyType.REFERENCE );
+        }
+        /*
+        else if( propType.equals(PropertyType.TYPENAME_BINARY) )
+        {
+            // FIXME: Should not absolutely do this
+            InputStream input = new FileInputStream( new File(nodeDir, propVal) );
+            pi.setValue( input );
+        }
+        */
+        else
+            throw new RepositoryException("Cannot deserialize property type "+propType);
+
+        return value;
+    }
+    
+    public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
+    {
+        File nodeDir = getNodeDir( ws, path.getParentPath().toString() );
+       
+        File inf = new File( nodeDir, path.getLastComponent()+".info" );
+
+        Properties props = new Properties();
+        InputStream in = null;
+        
+        try
+        {
+            in = new FileInputStream( inf );
+            props.load(in);
+            
+            String propType = props.getProperty("type");
+            Boolean isMultiple = new Boolean(props.getProperty("multiple"));
+            
+            if( isMultiple )
+            {
+                int items = Integer.parseInt( props.getProperty( "numProperties" ) );
+                
+                ValueImpl[] result = new ValueImpl[items];
+                for( int i = 0; i < items; i++ )
+                {
+                    File df = new File( nodeDir, path.getLastComponent()+"."+i+".data");
+                    ValueImpl v = prepareValue( ws, df, propType );
+                    result[i] = v;
+                }
+                
+                return result;
+            }
+            else
+            {
+                File df = new File( nodeDir, path.getLastComponent()+".data" );
+                ValueImpl v = prepareValue(ws, df, propType);
+
+                return v;
+            }
+        }
+        catch( IOException e )
+        {
+            throw new RepositoryException("Unable to read property file",e);
+        }
+    }
+
+    public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
+    {
+        File nodeDir = getNodeDir( ws, path.toString() );
 
         log.fine("Deleting path and all subdirectories: "+path);
         
@@ -374,38 +548,28 @@ public class FileProvider extends RepositoryProvider
                 log.warning("Failed to delete contents of path "+path);
             }
         }
+
     }
 
-    private boolean deleteContents( File dir )
+    public void stop(RepositoryImpl rep)
     {
-        // System.out.println("Deleting "+dir.getAbsolutePath());
-        for( File f : dir.listFiles() )
+        // TODO Auto-generated method stub
+        
+    }
+
+    public Path findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+    
+    private static class PropertyTypeFilter implements FilenameFilter 
+    {
+
+        public boolean accept(File dir, String name)
         {
-            if( f.isDirectory() )
-            {
-                deleteContents( f );
-            }
-            
-            if( !f.delete() ) return false;
+            return name.endsWith(".info");
         }
         
-        return true;
-    }
-
-    @Override
-    public void start(RepositoryImpl rep)
-    {
-        Preferences prefs = rep.getPreferences();
-        
-        Preferences p = prefs.node("fileprovider");
-        
-        String wsname = p.get("workspace", "default");
-        
-        File rootDir = getWorkspaceDir( wsname );
-        
-        rootDir.mkdirs();
-        
-        System.out.println("Created workspace directory "+rootDir);
-        log.fine("Created workspace directory "+rootDir);
     }
 }

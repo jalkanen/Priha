@@ -13,12 +13,19 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
 
+import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.providers.RepositoryProvider;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+/**
+ *  The SessionImpl class implements a JCR Session.  It is non thread safe,
+ *  so each Thread must have its own Session.
+ *  
+ *  @author jalkanen
+ */
 public class SessionImpl implements Session
 {
     private static final String JCR_SYSTEM = "jcr:system";
@@ -277,13 +284,13 @@ public class SessionImpl implements Session
     {
         if( keepChanges ) throw new UnsupportedRepositoryOperationException("Session.refresh(true)");
 
+        m_updateList.clear();
+
         m_nodeManager.reset();
 
-        List<String> paths = m_workspace.listNodePaths();
+        List<Path> paths = m_workspace.listNodePaths();
 
-        paths.remove("/");
-
-        for( String path : paths )
+        for( Path path : paths )
         {
             NodeImpl nd = m_workspace.loadNode(path);
             m_nodeManager.addNode( nd );
@@ -292,9 +299,7 @@ public class SessionImpl implements Session
 
             nd.sanitize();
         }
-
-        m_updateList.clear();
-
+        
         repopulate();
     }
 
@@ -306,7 +311,7 @@ public class SessionImpl implements Session
     {
         if( !hasNode("/"+JCR_SYSTEM) )
         {
-            Node nd = getRootNode().addNode(JCR_SYSTEM, "nt:unstructured");
+            getRootNode().addNode(JCR_SYSTEM, "nt:unstructured");
 
             // FIXME: Should probably set up all sorts of things.
             save();
