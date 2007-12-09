@@ -59,13 +59,11 @@ public class WorkspaceImpl
     {
         String name = path.getLastComponent();
 
-        path = path.getParentPath();
-
         //NodeImpl nd = (NodeImpl) m_session.getItem(p);
 
         //PropertyDefinition pd = ((GenericNodeType)nd.getPrimaryNodeType()).findPropertyDefinition(name);
 
-        PropertyImpl pi = new PropertyImpl( m_session, path.toString(), null );
+        PropertyImpl pi = new PropertyImpl( m_session, path, null );
 
         return pi;
     }
@@ -109,6 +107,8 @@ public class WorkspaceImpl
 
         NodeImpl ni = new NodeImpl( m_session, path, type, nd );
 
+        properties.remove("jcr:primaryType"); // Already handled.
+        
         for( String name : properties )
         {
             ptPath = path.resolve(name);

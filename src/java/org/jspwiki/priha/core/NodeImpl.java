@@ -549,7 +549,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 log.finer("Autocreating property "+pd.getName());
 
                 String path = m_path + "/" + pd.getName();
-                PropertyImpl pi = new PropertyImpl(m_session,path,pd);
+                PropertyImpl pi = new PropertyImpl(m_session,new Path(path),pd);
 
                 // FIXME: Add default value generation
 
@@ -820,7 +820,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             PropertyDefinition primaryDef = gnt.findPropertyDefinition("jcr:primaryType",false);
 
             prop = new PropertyImpl( m_session,
-                                     m_path.resolve(name).toString(),
+                                     m_path.resolve(name),
                                      primaryDef );
 
             m_properties.add( prop );
@@ -846,7 +846,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
             PropertyDefinition pd = ((GenericNodeType)nd.getPrimaryNodeType()).findPropertyDefinition(name,ismultiple);
 
-            prop = new PropertyImpl( m_session, propertypath.toString(), pd );
+            prop = new PropertyImpl( m_session, propertypath, pd );
             m_properties.add(prop);
             markModified();
         }

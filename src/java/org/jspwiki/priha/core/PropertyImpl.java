@@ -14,6 +14,7 @@ import javax.jcr.version.VersionException;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.nodetype.PropertyDefinitionImpl;
+import org.jspwiki.priha.util.Path;
 
 public class PropertyImpl extends ItemImpl implements Property
 {
@@ -23,7 +24,7 @@ public class PropertyImpl extends ItemImpl implements Property
     private Multi              m_multi = Multi.UNDEFINED;
     PropertyDefinition         m_definition;
 
-    public PropertyImpl( SessionImpl session, String path, PropertyDefinition propDef )
+    public PropertyImpl( SessionImpl session, Path path, PropertyDefinition propDef )
     {
         super( session, path );
 
