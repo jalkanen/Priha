@@ -209,7 +209,7 @@ public class FileProvider implements RepositoryProvider
         }
     }
 
-    private void acquirePaths( String path, File dir, List<Path> list, boolean recurse )
+    private void acquirePaths( Path startPath, File dir, List<Path> list, boolean recurse )
     {
         File[] files = dir.listFiles();
         
@@ -217,10 +217,11 @@ public class FileProvider implements RepositoryProvider
         
         for( File f : files )
         {
-            String newPath = path + "/" + f.getName();
+            Path newPath = startPath.resolve( f.getName() );
+
             if( f.isDirectory() )
             {
-                list.add( new Path(newPath) );
+                list.add( newPath );
                 
                 if( recurse )
                 {
@@ -299,7 +300,7 @@ public class FileProvider implements RepositoryProvider
 
         File wsDir = new File( getWorkspaceRoot(), getWorkspaceFilename(ws) );
         
-        acquirePaths("",new File(wsDir,parentpath.toString()),list,false);
+        acquirePaths( parentpath, new File(wsDir,parentpath.toString()), list, false);
         
         return list;
     }
@@ -313,18 +314,21 @@ public class FileProvider implements RepositoryProvider
         {
             File[] files = nodeDir.listFiles( new PropertyTypeFilter() );
             
-            for( File propertyFile : files )
+            if( files != null )
             {
-                Properties props = new Properties();
+                for( File propertyFile : files )
+                {
+                    Properties props = new Properties();
             
-                InputStream in = new FileInputStream(propertyFile);
+                    InputStream in = new FileInputStream(propertyFile);
                 
-                props.load(in);
+                    props.load(in);
         
-                String qname =  props.getProperty("qname");
+                    String qname =  props.getProperty("qname");
                 
-                qname = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName(qname);
-                proplist.add( qname );
+                    qname = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName(qname);
+                    proplist.add( qname );
+                }
             }
         }
         catch( IOException e )
@@ -458,12 +462,17 @@ public class FileProvider implements RepositoryProvider
             c.setTimeInMillis( Long.parseLong(readContentsAsString(propFile)) );
             value = vf.createValue( c );
         }
-        else if( propType.equals(PropertyType.TYPENAME_NAME) ||
-            propType.equals(PropertyType.TYPENAME_PATH ))
+        else if( propType.equals(PropertyType.TYPENAME_NAME) )
         {
             String val = readContentsAsString(propFile);
             val = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName( val );
             value = vf.createValue( val, PropertyType.NAME );
+        }
+        else if( propType.equals(PropertyType.TYPENAME_PATH ))
+        {
+            String val = readContentsAsString(propFile);
+            val = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName( val );
+            value = vf.createValue( val, PropertyType.PATH );
         }
         else if( propType.equals(PropertyType.TYPENAME_REFERENCE ) )
         {

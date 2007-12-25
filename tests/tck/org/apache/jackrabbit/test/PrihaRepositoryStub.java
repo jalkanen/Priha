@@ -35,6 +35,7 @@ public class PrihaRepositoryStub extends RepositoryStub
                     Node nd = s.getRootNode().addNode(testroot);
                     nd = nd.addNode("footest");
                     nd.addMixin("mix:referenceable");
+                    
                     s.save();
                 }
                 s.logout();

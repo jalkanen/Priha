@@ -12,6 +12,7 @@ public class AllTests
         
         suite.addTest( NamespaceRegistryImplTest.suite() );
         suite.addTest( RepositoryTest.suite() );
+        suite.addTest( WorkspaceImplTest.suite() );
         
         return suite;
     }

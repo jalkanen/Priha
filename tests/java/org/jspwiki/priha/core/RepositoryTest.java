@@ -26,7 +26,7 @@ public class RepositoryTest extends TestCase
         s.save();
     }
     
-    public void deleteTree( Node start ) throws RepositoryException
+    public static void deleteTree( Node start ) throws RepositoryException
     {
         for( NodeIterator i = start.getNodes(); i.hasNext(); )
         {

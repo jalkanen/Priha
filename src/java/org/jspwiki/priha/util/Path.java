@@ -23,13 +23,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *  Manages paths, which are a key ingredient in JCR.
+ *  Manages paths, which are a key ingredient in JCR.  A Path is an immutable
+ *  object, so you can't change it once you create it. 
  *
  *  @author jalkanen
  */
 public class Path
 {
-    private List<String> m_components;
+    private final List<String> m_components;
 
     private boolean m_isAbsolute = false;
 
@@ -52,7 +53,7 @@ public class Path
      */
     public Path( String abspath )
     {
-        if( abspath.charAt(0) == '/' ) m_isAbsolute = true;
+        if( abspath.length() > 0 && abspath.charAt(0) == '/' ) m_isAbsolute = true;
 
         m_components = parsePath( abspath );
         update();
@@ -81,6 +82,9 @@ public class Path
         if( start < path.length() )
             ls.add(path.substring(start)); // Add the final component
 
+        //
+        //  This saves some bytes at the expense of speed.
+        //
         ls.trimToSize();
 
         return ls;

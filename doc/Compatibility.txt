@@ -4,3 +4,6 @@ Things that Priha does not even attempt to currently do:
 
 * Property constraints
 
+* Same name siblings - only single nodes
+
+

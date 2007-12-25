@@ -36,13 +36,13 @@ public class ValueFactoryImpl implements ValueFactory
                 return new LongValueImpl( value.getLong() );
                 
             case PropertyType.NAME:
-                return new NodeValueImpl( value.getString() );
+                return new NameValueImpl( value.getString() );
                 
             case PropertyType.PATH:
-                return new NodeValueImpl( value.getString() );
+                return new PathValueImpl( value.getString() );
                 
             case PropertyType.REFERENCE:
-                return new NodeValueImpl( value.getString() );
+                return new ReferenceValueImpl( value.getString() );
                 
             case PropertyType.STRING:
                 return new StringValueImpl( value.getString() );
@@ -85,7 +85,7 @@ public class ValueFactoryImpl implements ValueFactory
 
     public ValueImpl createValue(Node value) throws RepositoryException
     {
-        return new NodeValueImpl( (NodeImpl)value, PropertyType.REFERENCE );
+        return new ReferenceValueImpl( (NodeImpl)value );
     }
 
     public ValueImpl createValue(String value, int type) throws ValueFormatException
@@ -102,19 +102,42 @@ public class ValueFactoryImpl implements ValueFactory
                 return new LongValueImpl(value);
                 
             case PropertyType.NAME:
-                return new NodeValueImpl(value,type);
+                return new NameValueImpl(value);
                 
             case PropertyType.PATH:
-                return new NodeValueImpl(value,type);
+                return new PathValueImpl(value);
                 
             case PropertyType.REFERENCE:
-                return new NodeValueImpl(value,type);
+                return new ReferenceValueImpl(value);
                 
             case PropertyType.STRING:
                 return new StringValueImpl(value);
         }
         
         throw new ValueFormatException("Illegal type "+PropertyType.nameFromValue(type));
+    }
+
+    /**
+     *  Clones a value array.  This creates a new instance of every single value
+     *  contained in this array, a so-called deep clone.
+     *  
+     *  @param values  The array to clone.
+     *  @return A deep clone of the array.
+     *  @throws ValueFormatException
+     *  @throws IllegalStateException
+     *  @throws RepositoryException
+     */
+    public Value[] cloneValues(Value[] values) 
+        throws ValueFormatException, IllegalStateException, RepositoryException
+    {
+        Value[] v = new Value[values.length];
+        
+        for( int i = 0; i < values.length; i++ )
+        {
+            v[i] = createValue( values[i] );
+        }
+        
+        return v;
     }
 
 }

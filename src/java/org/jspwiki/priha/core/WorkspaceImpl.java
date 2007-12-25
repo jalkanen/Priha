@@ -232,17 +232,19 @@ public class WorkspaceImpl
         return listNodePaths(new Path("/"));
     }
 
-    private List<Path>listNodePaths(Path path)
+    private List<Path> listNodePaths(Path path)
     {
         List<Path> ls = m_provider.listNodes( this, path );
         List<Path> result = new ArrayList<Path>();
+        
+        result.addAll( ls );
         
         for( Path p : ls )
         {
             result.addAll( listNodePaths(p) );
         }
         
-        return ls;
+        return result;
     }
     
     public void logout()

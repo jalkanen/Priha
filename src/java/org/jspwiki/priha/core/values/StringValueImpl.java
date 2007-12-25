@@ -24,6 +24,12 @@ public class StringValueImpl extends ValueImpl implements Value
     }
 
     @Override
+    public boolean getBoolean()
+    {
+        return "true".equalsIgnoreCase(m_value);
+    }
+    
+    @Override
     public String getString() throws ValueFormatException, IllegalStateException, RepositoryException
     {
         checkValue();

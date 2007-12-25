@@ -10,15 +10,15 @@ import javax.jcr.Value;
 import org.jspwiki.priha.core.NodeImpl;
 
 /**
- *  A Node is stored as a REFERENCE.
+ *  Superclass of all classes which reference a Node
  *  
  */
-public class NodeValueImpl extends ValueImpl implements Value
+public abstract class NodeValueImpl extends ValueImpl implements Value
 {
     private int m_type;
     private String m_value;
     
-    public NodeValueImpl( NodeImpl value, int type )
+    protected NodeValueImpl( NodeImpl value, int type )
     {
         try
         {
@@ -32,13 +32,8 @@ public class NodeValueImpl extends ValueImpl implements Value
         
         m_type  = type;
     }
-    
-    public NodeValueImpl(String value)
-    {
-        this( value, PropertyType.REFERENCE );
-    }
 
-    public NodeValueImpl(String value, int type)
+    protected NodeValueImpl(String value, int type)
     {
         m_value = value;
         m_type  = type;

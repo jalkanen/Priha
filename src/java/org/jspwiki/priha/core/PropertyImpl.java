@@ -155,7 +155,7 @@ public class PropertyImpl extends ItemImpl implements Property
         if( m_multi != Multi.MULTI )
             throw new ValueFormatException("Attempted to get a MULTI Value object from a SINGLE property "+m_path);
 
-        return m_value;
+        return ValueFactoryImpl.getInstance().cloneValues(m_value);
     }
 
     public void setValue(Value value)

@@ -56,7 +56,7 @@
          <mandatory>false</mandatory>
          <onParentVersion>VERSION</onParentVersion>
          <protected>false</protected>
-         <sameNameSiblings>true</sameNameSiblings>
+         <sameNameSiblings>false</sameNameSiblings> <!--  Technically, this should be true, but we don't support that. -->
       </childNodeDefinition>
 
       <propertyDefinition>
