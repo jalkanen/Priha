@@ -15,12 +15,20 @@ public class RepositoryTest extends TestCase
     protected void setUp() throws Exception
     {
         m_repository = RepositoryManager.getRepository();
+
+        Session s = m_repository.login();
+        
+        s.refresh(false);
+        deleteTree( s.getRootNode() );
+        
+        s.save();
     }
     
     protected void tearDown() throws Exception
     {
         Session s = m_repository.login();
         
+        s.refresh(false);
         deleteTree( s.getRootNode() );
         
         s.save();

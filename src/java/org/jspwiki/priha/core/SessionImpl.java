@@ -6,14 +6,17 @@ import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.util.List;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.version.VersionException;
 
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
+import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.providers.RepositoryProvider;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
@@ -35,18 +38,25 @@ public class SessionImpl implements Session
 
     private SimpleCredentials m_credentials;
 
+    private Logger         log = Logger.getLogger( getClass().getName() );
+    
     /** Keeps a list of nodes which have been updated and must be flushed at next
      *  save().
      */
     private TreeSet<NodeImpl> m_updateList = new TreeSet<NodeImpl>();
 
-    public SessionImpl( RepositoryImpl rep, Credentials creds, String name, RepositoryProvider provider )
+    public SessionImpl( RepositoryImpl rep, Credentials creds, String name )
         throws RepositoryException
     {
         m_repository = rep;
-        m_workspace  = new WorkspaceImpl( this, name, provider );
+        m_workspace  = new WorkspaceImpl( this, name, rep.getProviderManager() );
         m_nodeManager = new NodeManager( this );
 
+        if( !hasNode("/"+JCR_SYSTEM) )
+        {
+            repopulate();
+        }
+        
         if( creds instanceof SimpleCredentials )
         {
             m_credentials = (SimpleCredentials)creds;
@@ -64,7 +74,9 @@ public class SessionImpl implements Session
     {
         try
         {
-            m_nodeManager.addNode(node);
+            NodeImpl parentNode = (NodeImpl)getItem( node.getInternalPath().getParentPath() );
+            
+            m_nodeManager.addNode(parentNode,node);
         }
         catch (InvalidPathException e)
         {
@@ -82,9 +94,44 @@ public class SessionImpl implements Session
 
     boolean hasNode( String absPath )
     {
-        return m_nodeManager.hasNode(absPath);
+        if( !m_nodeManager.hasNode(absPath) )
+        {
+            try
+            {
+                return m_repository.getProviderManager().hasNode( m_workspace, new Path(absPath) );
+            }
+            catch (InvalidPathException e)
+            {
+                return false;
+            }
+        }
+        
+        return true;
     }
 
+    boolean hasProperty( Path absPath ) throws RepositoryException
+    {
+        Path parent = absPath.getParentPath();
+        
+        NodeImpl nd = m_nodeManager.findNode( parent );
+        
+        if( nd == null )
+            nd = m_workspace.loadNode( parent );
+        
+        if( nd != null )
+        {
+            try
+            {
+                nd.getChildProperty( absPath.getLastComponent() );
+                return true;
+            }
+            catch( PathNotFoundException e )
+            {
+            }
+        }
+        return false;
+    }
+    
     public void addLockToken(String lt)
     {
         // TODO Auto-generated method stub
@@ -157,6 +204,9 @@ public class SessionImpl implements Session
 
         try
         {
+            //
+            //  Check internal cache
+            //
             NodeImpl nd = m_nodeManager.findNode( p );
 
             if( nd != null )
@@ -164,12 +214,40 @@ public class SessionImpl implements Session
                 return nd;
             }
 
-            nd = m_nodeManager.findNode( p.getParentPath() );
-
-            if( nd != null )
+            if( p.depth() > 0 )
             {
-                return nd.getChildProperty( p.getLastComponent() );
+                nd = m_nodeManager.findNode( p.getParentPath() );
+
+                if( nd != null && nd.hasProperty( p.getLastComponent() ) )
+                {
+                    return nd.getChildProperty( p.getLastComponent() );
+                }
             }
+            
+            //
+            //  Load from repository
+            //
+            try
+            {
+                nd = m_workspace.loadNode( p );
+            
+                if( nd != null )
+                {
+                    return nd;   
+                }
+            }
+            catch( RepositoryException e ) {}
+            
+            try
+            {
+                nd = m_workspace.loadNode( p.getParentPath() );
+            
+                if( nd != null && nd.hasProperty( p.getLastComponent() ) )
+                {
+                    return nd.getChildProperty( p.getLastComponent() );
+                }
+            }
+            catch( RepositoryException e ) {}
         }
         catch( InvalidPathException e )
         {
@@ -211,7 +289,7 @@ public class SessionImpl implements Session
 
     public Node getRootNode() throws RepositoryException
     {
-        return m_nodeManager.getRootNode();
+        return (Node) getItem("/");
     }
 
     public String getUserID()
@@ -254,14 +332,7 @@ public class SessionImpl implements Session
 
     public boolean itemExists(String absPath) throws RepositoryException
     {
-        try
-        {
-            return getItem(absPath) != null; // FIXME: Slow
-        }
-        catch( PathNotFoundException e )
-        {
-            return false;
-        }
+        return itemExists( new Path(absPath) );
     }
 
     public void logout()
@@ -288,6 +359,7 @@ public class SessionImpl implements Session
 
         m_nodeManager.reset();
 
+        /*
         List<Path> paths = m_workspace.listNodePaths();
 
         for( Path path : paths )
@@ -299,7 +371,7 @@ public class SessionImpl implements Session
 
             nd.sanitize();
         }
-        
+        */
         repopulate();
     }
 
@@ -309,6 +381,34 @@ public class SessionImpl implements Session
      */
     private void repopulate() throws RepositoryException
     {
+        if( !hasNode("/") )
+        {
+            // Create root node
+            NodeImpl ni = null;
+            
+            try
+            {
+                ni = m_workspace.loadNode( new Path("/") );
+            }
+            catch( RepositoryException e )
+            {
+                log.info("Repository empty; setting up root node...");
+
+                GenericNodeType rootType = (GenericNodeType)getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
+            
+                NodeDefinition nd = rootType.findNodeDefinition("*");
+            
+                ni = new NodeImpl( this, "/", rootType, nd);
+
+                ni.sanitize();
+                
+                m_nodeManager.addNode( null, ni );
+                ni.markModified();
+                
+                save();
+            }
+        }
+        
         if( !hasNode("/"+JCR_SYSTEM) )
         {
             getRootNode().addNode(JCR_SYSTEM, "nt:unstructured");
@@ -370,7 +470,7 @@ public class SessionImpl implements Session
     public boolean itemExists(Path absPath)
         throws RepositoryException
     {
-        return itemExists( absPath.toString() );
+        return hasNode(absPath.toString()) || hasProperty(absPath);
     }
 
     public ItemImpl getItem(Path path) throws PathNotFoundException, RepositoryException

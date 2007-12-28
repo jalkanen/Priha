@@ -17,7 +17,6 @@ public abstract class ItemImpl implements Item
     protected SessionImpl m_session;
     protected boolean     m_modified = false;
     protected boolean     m_new      = true;
-    protected NodeImpl    m_parent;
     protected ItemState   m_state    = ItemState.NEW;
     
     public ItemImpl( SessionImpl session, String path )
@@ -72,26 +71,11 @@ public abstract class ItemImpl implements Item
     {
         try
         {
-            //
-            //  Lazy eval of parent.
-            //
-            if( m_parent == null )
-            {
-                Path parentPath = m_path.getParentPath();
+            Path parentPath = m_path.getParentPath();
         
-                NodeImpl parent = (NodeImpl)m_session.getItem(parentPath.toString());
-                
-                if( isNode() )
-                {
-                    parent.addChildNode( (NodeImpl)this );
-                }
-                else
-                {
-                    parent.addChildProperty( (PropertyImpl) this );
-                }
-            }
-            
-            return m_parent;
+            NodeImpl parent = (NodeImpl)m_session.getItem(parentPath.toString());
+                            
+            return parent;
         }
         catch( InvalidPathException e )
         {

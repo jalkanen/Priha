@@ -199,7 +199,7 @@ public class FileProvider implements RepositoryProvider
     {
         File nodeDir = getNodeDir( ws, node.getPath() );
 
-        nodeDir.mkdir();
+        nodeDir.mkdirs();
         
         for( PropertyIterator i = node.getProperties(); i.hasNext(); )
         {
@@ -344,11 +344,16 @@ public class FileProvider implements RepositoryProvider
         throw new UnsupportedRepositoryOperationException("move()");
     }
 
+    /**
+     *  A Node exists only if it has a primaryType.info in the directory.
+     */
     public boolean nodeExists(WorkspaceImpl ws, Path path)
     {
         File nodeDir = getNodeDir( ws, path.toString() );
 
-        return nodeDir.exists();
+        File propFile = new File( nodeDir, "jcr:primaryType.info" );
+        
+        return propFile.exists();
     }
 
     public void open(RepositoryImpl rep, Credentials credentials, String workspaceName) throws RepositoryException, NoSuchWorkspaceException

@@ -1,7 +1,7 @@
 package org.jspwiki.priha.core;
 
-import java.util.Enumeration;
-import java.util.Properties;
+import java.lang.ref.WeakReference;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
@@ -20,8 +20,6 @@ public class RepositoryImpl implements Repository
     private NamespaceRegistry    m_namespaceRegistry;
 
     private Preferences          m_preferences;
-
-    private RepositoryProvider   m_provider;
 
     private static String[] DESCRIPTORS = {
         Repository.SPEC_NAME_DESC,                "Content Repository for Java Technology API",
@@ -44,19 +42,16 @@ public class RepositoryImpl implements Repository
     private Properties m_properties = new Properties();
 
     private Logger log = Logger.getLogger( getClass().getName() );
-    public static final String DEFAULT_PROVIDER = "org.jspwiki.priha.providers.FileProvider";
 
+    private SessionManager m_sessionManager = new SessionManager();
+    private ProviderManager m_providerManager;
+    
     public RepositoryImpl( Preferences prefs ) throws ClassNotFoundException, InstantiationException, IllegalAccessException
     {
         m_preferences = prefs;
 
-        String className = prefs.get( "provider",  DEFAULT_PROVIDER );
-
-        Class cl = Class.forName( className );
-
-        m_provider = (RepositoryProvider) cl.newInstance();
-        m_provider.start(this);
-
+        m_providerManager = new ProviderManager( this, prefs );
+        
         log.info( "G'day, Matilda!  Priha has been initialized." );
         log.fine( "Using configuration from "+prefs.toString() );
     }
@@ -66,6 +61,11 @@ public class RepositoryImpl implements Repository
         return m_properties.getProperty(key);
     }
 
+    protected ProviderManager getProviderManager()
+    {
+        return m_providerManager;
+    }
+    
     /**
      *  Set transient properties for this repository.  These are not saved anywhere, but they
      *  might be something that you can use to control the Repository behaviour with.
@@ -119,9 +119,9 @@ public class RepositoryImpl implements Repository
     {
         if( workspaceName == null ) workspaceName = DEFAULT_WORKSPACE;
 
-        m_provider.open( this, credentials, workspaceName );
+        m_providerManager.open( credentials, workspaceName );
 
-        SessionImpl session = new SessionImpl( this, credentials, workspaceName, m_provider );
+        SessionImpl session = m_sessionManager.openSession( credentials, workspaceName );
 
         session.refresh(false);
 
@@ -153,4 +153,20 @@ public class RepositoryImpl implements Repository
         return m_namespaceRegistry;
     }
 
+    private class SessionManager
+    {
+        private ArrayList<WeakReference<SessionImpl>> m_sessions = new ArrayList<WeakReference<SessionImpl>>();
+        
+        public SessionImpl openSession( Credentials credentials, String workspaceName ) 
+            throws RepositoryException
+        {
+            SessionImpl session = new SessionImpl( RepositoryImpl.this, 
+                                                   credentials, 
+                                                   workspaceName );
+            
+            m_sessions.add( new WeakReference<SessionImpl>(session) );
+            return session;
+        }
+
+    }
 }

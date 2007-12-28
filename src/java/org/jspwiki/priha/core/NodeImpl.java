@@ -23,7 +23,7 @@ import org.jspwiki.priha.version.VersionHistoryImpl;
 public class NodeImpl extends ItemImpl implements Node, Comparable
 {
     private PropertyList        m_properties = new PropertyList();
-    private ArrayList<NodeImpl> m_children   = new ArrayList<NodeImpl>();
+    private List<Path>          m_children   = new ArrayList<Path>();
     private ArrayList<NodeType> m_mixinTypes = new ArrayList<NodeType>();
     private NodeDefinition      m_definition;
 
@@ -63,11 +63,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     void markModified()
     {
-        if( m_parent != null )
-            m_parent.markModified();
+        try
+        {
+            if( !getInternalPath().isRoot() ) ((NodeImpl)getParent()).markModified();
 
-        m_modified = true;
-        m_session.markDirty(this);
+            m_modified = true;
+            m_session.markDirty(this);
+        }
+        catch( Exception e ) {} // This is fine.  I guess.
     }
 
     public void addMixin(String mixinName)
@@ -163,20 +166,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             }
 
             //
-            //  Check for same name siblings
-            //
-            if( m_session.itemExists(absPath) )
-            {
-                NodeDefinition nd = parent.getDefinition();
-
-                if( !nd.allowsSameNameSiblings() )
-                {
-                    // FIXME: This should really check if samenamesiblings are allowed
-                    throw new ItemExistsException("Node "+absPath+" already exists!");
-                }
-            }
-
-            //
             //  Parent is okay with this addition, so we'll continue with
             //  figuring out what the node type of this node should be.
             //
@@ -193,6 +182,21 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             }
 
             assignedNodeDef = assignedType.findNodeDefinition( absPath.getLastComponent() );
+
+            //
+            //  Check for same name siblings
+            //
+            if( m_session.itemExists(absPath) )
+            {
+                NodeDefinition nd = parent.getDefinition();
+
+                if( !nd.allowsSameNameSiblings() )
+                {
+                    // FIXME: This should really check if samenamesiblings are allowed
+                    throw new ItemExistsException("Node "+absPath+" already exists!");
+                }
+            }
+
 
             //
             //  Node type and definition are now okay, so we'll create the node
@@ -239,8 +243,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
      */
     int addChildNode( NodeImpl childNode )
     {
-        m_children.add( childNode );
-        childNode.m_parent = this;
+        m_children.add( childNode.getInternalPath() );
 
         return m_children.size();
     }
@@ -248,7 +251,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     void removeChildNode( NodeImpl childNode )
     {
         m_children.remove(childNode);
-        childNode.m_parent = null;
     }
 
     public boolean canAddMixin(String mixinName) throws NoSuchNodeTypeException, RepositoryException
@@ -343,22 +345,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public int getIndex() throws RepositoryException
     {
-        int idx = 1;
+        // Not supported, so always constant
+        return 1;
+    }
 
-        for( Node nd : m_parent.m_children )
-        {
-            if( nd.getName().equals(getName()) )
-            {
-                if( nd == this )
-                {
-                    return idx;
-                }
-
-                idx++;
-            }
-        }
-
-        throw new RepositoryException("Unable to even find myself!");
+    private List<Path> getSiblings() throws RepositoryException
+    {
+        return ((NodeImpl)getParent()).m_children;
     }
 
     public Lock getLock() throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException
@@ -372,6 +365,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return m_mixinTypes.toArray( new NodeType[0] );
     }
 
+    public NodeImpl getNode( Path path ) throws PathNotFoundException, RepositoryException
+    {
+        return (NodeImpl)getNode( path.toString() );
+    }
+    
     public Node getNode(String relPath) throws PathNotFoundException, RepositoryException
     {
         Path p = m_path.resolve(relPath);
@@ -389,7 +387,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     public NodeIterator getNodes() throws RepositoryException
     {
         List<Node> ls = new ArrayList<Node>();
-        ls.addAll(m_children);
+
+        for( Path p : m_children )
+        {
+            NodeImpl nd = getNode( p );
+            ls.add( nd );
+        }
+
         NodeIterator it = new NodeIteratorImpl(ls);
 
         return it;
@@ -430,13 +434,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
         ArrayList<Node> matchedpaths = new ArrayList<Node>();
 
-        for( NodeImpl node : m_children )
+        for( Path path : m_children )
         {
-            Matcher match = p.matcher( node.getName() );
+            Matcher match = p.matcher( path.getLastComponent() );
 
             if( match.matches() )
             {
-                matchedpaths.add( node );
+                matchedpaths.add( getNode(path) );
             }
         }
 
@@ -638,13 +642,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public boolean hasProperty(String relPath) throws RepositoryException
     {
-        try
-        {
-            return getProperty(relPath) != null; // FIXME: Slow
-        }
-        catch( PathNotFoundException e ) {}
-
-        return false;
+        Path abspath = m_path.resolve(relPath);
+        
+        NodeImpl parent = getNode( abspath.getParentPath() );
+        
+        return parent.m_properties.hasProperty( abspath.getLastComponent() );
     }
 
     public boolean holdsLock() throws RepositoryException
@@ -1182,15 +1184,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         List<String> modifications = new ArrayList<String>();
 
+        for( Path p : m_children )
+        {
+            modifications.addAll( getNode(p).saveNodeAndChildren() );
+        }
+
         if( isModified() )
         {
             saveNodeOnly();
             modifications.add( getPath() );
-        }
-
-        for( NodeImpl node : m_children )
-        {
-            modifications.addAll( node.saveNodeAndChildren() );
         }
 
         return modifications;
@@ -1226,7 +1228,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     public void addChildProperty(PropertyImpl property)
     {
         m_properties.add( property );
-        property.m_parent = this;
     }
     
     /**
@@ -1256,11 +1257,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 }
             }
 
-            if( m_parent != null )
+            if( getParent() != null )
             {
                 GenericNodeType mytype = (GenericNodeType)getPrimaryNodeType();
 
-                m_definition = ((GenericNodeType)m_parent.getPrimaryNodeType()).findNodeDefinition( mytype.getName() );
+                m_definition = ((GenericNodeType)getParent().getPrimaryNodeType()).findNodeDefinition( mytype.getName() );
             }
             else
             {
@@ -1288,6 +1289,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 pi.m_definition = pd;
             }
         }
+    }
+
+    void setChildren(List<Path> children)
+    {
+        if( children != null )
+            m_children = children;
+        else
+            m_children.clear();
     }
 
 }

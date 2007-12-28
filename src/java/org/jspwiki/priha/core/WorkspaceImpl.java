@@ -5,27 +5,18 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeTypeManager;
-import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.observation.ObservationManager;
 import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 
-import org.jspwiki.priha.core.values.ValueImpl;
-import org.jspwiki.priha.nodetype.GenericNodeType;
-import org.jspwiki.priha.nodetype.NodeDefinitionImpl;
 import org.jspwiki.priha.nodetype.NodeTypeManagerImpl;
-import org.jspwiki.priha.providers.RepositoryProvider;
-import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
-import org.jspwiki.priha.util.PropertyList;
 import org.xml.sax.ContentHandler;
 
 public class WorkspaceImpl
@@ -33,15 +24,15 @@ public class WorkspaceImpl
 {
     private SessionImpl         m_session;
     private String              m_name;
-    private RepositoryProvider  m_provider;
+    private ProviderManager     m_providerManager;
     private NodeTypeManagerImpl m_nodeTypeManager;
 
-    public WorkspaceImpl( SessionImpl session, String name, RepositoryProvider provider )
+    public WorkspaceImpl( SessionImpl session, String name, ProviderManager mgr )
         throws RepositoryException
     {
         m_session  = session;
         m_name     = name;
-        m_provider = provider;
+        m_providerManager = mgr;
         m_nodeTypeManager = NodeTypeManagerImpl.getInstance(this);
     }
 
@@ -76,7 +67,7 @@ public class WorkspaceImpl
      */
     void saveNode( NodeImpl node ) throws RepositoryException
     {
-        m_provider.putNode( this, node );
+        m_providerManager.putNode( this, node );
     }
 
     /**
@@ -89,48 +80,7 @@ public class WorkspaceImpl
      */
     NodeImpl loadNode( Path path ) throws RepositoryException
     {
-        List<String> properties = m_provider.listProperties( this, path );
-
-        Path ptPath = path.resolve("jcr:primaryType");
-        PropertyImpl primaryType = createPropertyImpl( ptPath );
-
-        ValueImpl v = (ValueImpl)m_provider.getPropertyValue( this, ptPath );
-        
-        if( v == null )
-            throw new RepositoryException("Repository did not return a primary type for path "+path);
-
-        primaryType.setValue( v );
-        
-        GenericNodeType type = (GenericNodeType) m_nodeTypeManager.getNodeType( primaryType.getString() );
-
-        NodeDefinition nd = m_nodeTypeManager.findNodeDefinition( primaryType.getString() );
-
-        NodeImpl ni = new NodeImpl( m_session, path, type, nd );
-
-        properties.remove("jcr:primaryType"); // Already handled.
-        
-        for( String name : properties )
-        {
-            ptPath = path.resolve(name);
-            
-            Object values = m_provider.getPropertyValue( this, ptPath );
-
-            PropertyImpl p = createPropertyImpl( ptPath );
-
-            boolean multiple = values instanceof ValueImpl[];
-
-            PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name,multiple);
-            p.setDefinition( pd );
-            
-            if( multiple )
-                p.setValue( (ValueImpl[]) values );
-            else
-                p.setValue( (ValueImpl) values );
-            
-            ni.addChildProperty( p );            
-        }
-
-        return ni;
+        return m_providerManager.loadNode(this, path);
     }
 
     public void clone(String srcWorkspace, String srcAbsPath, String destAbsPath, boolean removeExisting) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
@@ -156,7 +106,7 @@ public class WorkspaceImpl
 
     public String[] getAccessibleWorkspaceNames() throws RepositoryException
     {
-        Collection<String> list = m_provider.listWorkspaces();
+        Collection<String> list = m_providerManager.listWorkspaces();
 
         return list.toArray(new String[0]);
     }
@@ -234,7 +184,7 @@ public class WorkspaceImpl
 
     private List<Path> listNodePaths(Path path)
     {
-        List<Path> ls = m_provider.listNodes( this, path );
+        List<Path> ls = m_providerManager.listNodes( this, path );
         List<Path> result = new ArrayList<Path>();
         
         result.addAll( ls );
@@ -249,12 +199,12 @@ public class WorkspaceImpl
     
     public void logout()
     {
-        m_provider.close(this);
+        m_providerManager.close(this);
     }
 
     public void removeNode(NodeImpl impl) throws RepositoryException
     {
-        m_provider.remove( this, new Path(impl.getPath()) );
+        m_providerManager.remove( this, new Path(impl.getPath()) );
     }
 
 }

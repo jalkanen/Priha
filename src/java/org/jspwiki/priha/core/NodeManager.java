@@ -74,15 +74,15 @@ public class NodeManager
         return findNode( new Path(path) ) != null;
     }
     
-    public void addNode( NodeImpl node ) throws RepositoryException, InvalidPathException
+    public void addNode( NodeImpl parentNode, NodeImpl node ) throws RepositoryException, InvalidPathException
     {
-        if( !node.m_path.isRoot() )
+        if( parentNode != null )
         {
-            Path parentPath = node.m_path.getParentPath();
-            NodeImpl parent = findNode(parentPath);
-            parent.addChildNode( node );
-            node.m_parent = parent;
-            
+            parentNode.addChildNode( node );
+         
+            m_nodeReferences.put( parentNode.getPath(), parentNode );
+            /*
+            // Only used if supports samenamesiblings
             NodeIterator i = parent.getNodes(node.m_path.getLastComponent());
             long index = i.getSize();
             
@@ -91,26 +91,20 @@ public class NodeManager
                 String newpath = node.getPath()+"["+index+"]";
                 node.m_path = new Path(newpath);
             }
+            */
         }
         
         m_nodeReferences.put( node.getPath(), node );
     }
     
+    /**
+     *  Throws away the entire changed items.
+     *  
+     *  @throws RepositoryException
+     */
     protected void reset() throws RepositoryException
     {
         m_nodeReferences.clear();
-        
-        // Create root node
-        
-        GenericNodeType rootType = (GenericNodeType)m_session.getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
-        
-        NodeDefinition nd = rootType.findNodeDefinition("*");
-        
-        NodeImpl ni = new NodeImpl( m_session, "/", rootType, nd);
-
-        ni.sanitize();
-        
-        m_nodeReferences.put( "/", ni );
     }
 
     public void remove( NodeImpl node ) throws RepositoryException
@@ -118,7 +112,7 @@ public class NodeManager
         if( node.getDepth() == 0 ) throw new RepositoryException("Root cannot be removed.");
         
         m_nodeReferences.remove( node.getPath() );
-        node.m_parent.removeChildNode(node);
+        ((NodeImpl)node.getParent()).removeChildNode(node);
         
         for( NodeIterator ndi = node.getNodes(); ndi.hasNext(); )
         {
