@@ -6,6 +6,7 @@ import java.util.prefs.Preferences;
 
 import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.PropertyIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
@@ -17,6 +18,9 @@ import org.jspwiki.priha.providers.RepositoryProvider;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 
+import com.opensymphony.oscache.base.Cache;
+import com.opensymphony.oscache.base.NeedsRefreshException;
+
 /**
  *  This is a front-end class for managing single or, in the future, multiple providers
  *  for a single repository.
@@ -27,9 +31,12 @@ import org.jspwiki.priha.util.Path;
  */
 public class ProviderManager
 {
+    private static final int   DEFAULT_CACHE_SIZE = 1;
     private RepositoryProvider m_provider;
     public static final String DEFAULT_PROVIDER = "org.jspwiki.priha.providers.FileProvider";
     private RepositoryImpl     m_repository;
+    
+    private Cache              m_nodeCache;
     
     public ProviderManager( RepositoryImpl repository, Preferences prefs )
     {
@@ -60,6 +67,7 @@ public class ProviderManager
             e.printStackTrace();
         }
 
+        m_nodeCache = new Cache( true, false, false, false, "com.opensymphony.oscache.base.algorithm.LRUCache", DEFAULT_CACHE_SIZE );
     }
 
     /**
@@ -71,25 +79,17 @@ public class ProviderManager
      */
     public boolean hasNode( WorkspaceImpl ws, Path path ) throws InvalidPathException
     {
-        return m_provider.nodeExists( ws, path );
-        
-        /*
-        if( path.isRoot() ) return true;
-        
-        List<Path> nodes = m_provider.listNodes( ws, path.getParentPath() );
-        
-        for( Path p : nodes )
+        try
         {
-            if( p.getLastComponent().equals(path.getLastComponent()) )
-            {
-                // Found it
-                
-                return true;
-            }
+            NodeImpl ni = (NodeImpl) m_nodeCache.getFromCache( path.toString() );
+            
+            return true;
         }
-        
-        return false;
-        */
+        catch (NeedsRefreshException e)
+        {
+            m_nodeCache.cancelUpdate( path.toString() );
+            return m_provider.nodeExists( ws, path );
+        }
     }
     
     public void open(Credentials credentials, String workspaceName) 
@@ -98,9 +98,32 @@ public class ProviderManager
         m_provider.open( m_repository, credentials, workspaceName );
     }
 
-    public void putNode(WorkspaceImpl impl, NodeImpl node) throws RepositoryException
+    /**
+     *  Convenience method for storing an entire NodeImpl.  Will only store
+     *  modified properties.
+     *  
+     *  @param ws The workspace which wishes to make the save.
+     *  @param node
+     *  @throws RepositoryException
+     */
+    public void saveNode(WorkspaceImpl ws, NodeImpl node) throws RepositoryException
     {
-        m_provider.putNode( impl, node );
+        if( node.isNew() )
+        {
+            m_provider.addNode( ws, node.getInternalPath() );
+        }
+        
+        for( PropertyIterator pi = node.getProperties(); pi.hasNext(); )
+        {
+            PropertyImpl p = (PropertyImpl)pi.nextProperty();
+        
+            if( p.isNew() || p.isModified() )
+            {
+                m_provider.putPropertyValue( ws, p );
+            }
+        }
+
+        m_nodeCache.putInCache( node.getPath().toString(), node );
     }
 
     public List<String> listProperties(WorkspaceImpl impl, Path path) throws RepositoryException
@@ -108,7 +131,7 @@ public class ProviderManager
         return m_provider.listProperties( impl, path );
     }
 
-    public Object getPropertyValue(WorkspaceImpl impl, Path ptPath) throws RepositoryException
+    private Object getPropertyValue(WorkspaceImpl impl, Path ptPath) throws RepositoryException
     {
         return m_provider.getPropertyValue( impl, ptPath );
     }
@@ -128,73 +151,107 @@ public class ProviderManager
         m_provider.close( impl );
     }
 
+    /**
+     *  Removes the item at the end of the path.
+     *  
+     *  @param impl
+     *  @param path
+     *  @throws RepositoryException
+     */
     public void remove(WorkspaceImpl impl, Path path) throws RepositoryException
     {
+        m_nodeCache.removeEntry( path.toString() );
         m_provider.remove( impl, path );
     }
 
     /**
      * Loads the state of a node from the repository.
      *
-     * @param impl TODO
+     * @param ws TODO
      * @param path
      * @return A brand new NodeImpl.
      *
      * @throws RepositoryException
      */
-    public NodeImpl loadNode( WorkspaceImpl impl, Path path ) throws RepositoryException
+    public NodeImpl loadNode( WorkspaceImpl ws, Path path ) throws RepositoryException
     {
-        List<String> properties = listProperties( impl, path );
-    
-        Path ptPath = path.resolve("jcr:primaryType");
-        PropertyImpl primaryType = impl.createPropertyImpl( ptPath );
-    
-        ValueImpl v = (ValueImpl)getPropertyValue( impl, ptPath );
+        NodeImpl ni = null;
         
-        if( v == null )
-            throw new RepositoryException("Repository did not return a primary type for path "+path);
-    
-        primaryType.setValue( v );
-        
-        NodeTypeManagerImpl ntm = (NodeTypeManagerImpl)impl.getNodeTypeManager();
-        GenericNodeType type = (GenericNodeType) ntm.getNodeType( primaryType.getString() );
-    
-        NodeDefinition nd = ntm.findNodeDefinition( primaryType.getString() );
-    
-        NodeImpl ni = new NodeImpl( (SessionImpl)impl.getSession(), path, type, nd );
-    
-        properties.remove("jcr:primaryType"); // Already handled.
-        
-        for( String name : properties )
+        try
         {
-            ptPath = path.resolve(name);
+            //
+            //  We'll check the cache for this node.  If it exists, we create
+            //  a clone (because the state of the node is always relevant to the Session)
+            //  and send it back up.
+            //
+            ni = (NodeImpl)m_nodeCache.getFromCache( path.toString() );
             
-            Object values = getPropertyValue( impl, ptPath );
-    
-            PropertyImpl p = impl.createPropertyImpl( ptPath );
-    
-            boolean multiple = values instanceof ValueImpl[];
-    
-            PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name,multiple);
-            p.setDefinition( pd );
+            if( ni.getSession() == ws.getSession() )
+                return ni;
             
-            if( multiple )
-                p.setValue( (ValueImpl[]) values );
-            else
-                p.setValue( (ValueImpl) values );
-            
-            ni.addChildProperty( p );            
+            return new NodeImpl( ni, (SessionImpl)ws.getSession() );
         }
+        catch( NeedsRefreshException e )
+        {
+            List<String> properties = listProperties( ws, path );
     
-        //
-        //  Children
-        //
+            Path ptPath = path.resolve("jcr:primaryType");
+            PropertyImpl primaryType = ws.createPropertyImpl( ptPath );
+    
+            ValueImpl v = (ValueImpl)getPropertyValue( ws, ptPath );
         
-        List<Path> children = listNodes( impl, ni.getInternalPath() );
+            if( v == null )
+                throw new RepositoryException("Repository did not return a primary type for path "+path);
+    
+            primaryType.setValue( v );
         
-        ni.setChildren( children );
+            NodeTypeManagerImpl ntm = (NodeTypeManagerImpl)ws.getNodeTypeManager();
+            GenericNodeType type = (GenericNodeType) ntm.getNodeType( primaryType.getString() );
+    
+            NodeDefinition nd = ntm.findNodeDefinition( primaryType.getString() );
+    
+            ni = new NodeImpl( (SessionImpl)ws.getSession(), path, type, nd );
+    
+            properties.remove("jcr:primaryType"); // Already handled.
         
-        return ni;
+            for( String name : properties )
+            {
+                ptPath = path.resolve(name);
+            
+                Object values = getPropertyValue( ws, ptPath );
+    
+                PropertyImpl p = ws.createPropertyImpl( ptPath );
+    
+                boolean multiple = values instanceof ValueImpl[];
+    
+                PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name,multiple);
+                p.setDefinition( pd );
+            
+                if( multiple )
+                    p.setValue( (ValueImpl[]) values );
+                else
+                    p.setValue( (ValueImpl) values );
+            
+                ni.addChildProperty( p );            
+            }
+
+            //
+            //  Children
+            //
+            
+            List<Path> children = listNodes( ws, ni.getInternalPath() );
+            
+            ni.setChildren( children );
+            
+            m_nodeCache.putInCache( path.toString(), ni );
+            
+            return ni;
+        }
+        finally
+        {
+            if( ni == null ) m_nodeCache.cancelUpdate( path.toString() );
+        }
+            
     }
 
 }

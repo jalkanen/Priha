@@ -17,7 +17,6 @@ import javax.jcr.version.VersionException;
 
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
-import org.jspwiki.priha.providers.RepositoryProvider;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 import org.xml.sax.ContentHandler;
@@ -359,19 +358,6 @@ public class SessionImpl implements Session
 
         m_nodeManager.reset();
 
-        /*
-        List<Path> paths = m_workspace.listNodePaths();
-
-        for( Path path : paths )
-        {
-            NodeImpl nd = m_workspace.loadNode(path);
-            m_nodeManager.addNode( nd );
-            nd.m_new = false;
-            nd.m_state = ItemState.EXISTS;
-
-            nd.sanitize();
-        }
-        */
         repopulate();
     }
 
@@ -383,30 +369,22 @@ public class SessionImpl implements Session
     {
         if( !hasNode("/") )
         {
-            // Create root node
             NodeImpl ni = null;
             
-            try
-            {
-                ni = m_workspace.loadNode( new Path("/") );
-            }
-            catch( RepositoryException e )
-            {
-                log.info("Repository empty; setting up root node...");
+            log.info("Repository empty; setting up root node...");
 
-                GenericNodeType rootType = (GenericNodeType)getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
+            GenericNodeType rootType = (GenericNodeType)getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
             
-                NodeDefinition nd = rootType.findNodeDefinition("*");
+            NodeDefinition nd = rootType.findNodeDefinition("*");
             
-                ni = new NodeImpl( this, "/", rootType, nd);
+            ni = new NodeImpl( this, "/", rootType, nd );
 
-                ni.sanitize();
+            ni.sanitize();
                 
-                m_nodeManager.addNode( null, ni );
-                ni.markModified();
+            m_nodeManager.addNode( null, ni );
+            ni.markModified();
                 
-                save();
-            }
+            save();
         }
         
         if( !hasNode("/"+JCR_SYSTEM) )
@@ -434,6 +412,7 @@ public class SessionImpl implements Session
             }
 
             m_updateList.clear();
+            m_nodeManager.reset();
         }
     }
 

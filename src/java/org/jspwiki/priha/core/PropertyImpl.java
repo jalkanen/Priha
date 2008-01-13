@@ -31,6 +31,24 @@ public class PropertyImpl extends ItemImpl implements Property
         setDefinition( propDef );
     }
 
+    /**
+     *  Creates a  deep clone of a PropertyImpl, using the given session.
+     *  
+     * @param pi
+     * @param session
+     * @throws ValueFormatException
+     * @throws IllegalStateException
+     * @throws RepositoryException
+     */
+    public PropertyImpl(PropertyImpl pi, SessionImpl session) throws ValueFormatException, IllegalStateException, RepositoryException
+    {
+        super( pi, session );
+        
+        m_value = ValueFactoryImpl.getInstance().cloneValues( pi.m_value );
+        m_multi = pi.m_multi;
+        m_definition = pi.m_definition;
+    }
+
     public boolean getBoolean() throws ValueFormatException, RepositoryException
     {
         if( m_multi != Multi.SINGLE )

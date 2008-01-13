@@ -15,13 +15,14 @@ public class RepositoryTest extends TestCase
     protected void setUp() throws Exception
     {
         m_repository = RepositoryManager.getRepository();
-
+/*
         Session s = m_repository.login();
         
         s.refresh(false);
         deleteTree( s.getRootNode() );
         
         s.save();
+        */
     }
     
     protected void tearDown() throws Exception
@@ -38,12 +39,7 @@ public class RepositoryTest extends TestCase
     {
         for( NodeIterator i = start.getNodes(); i.hasNext(); )
         {
-            deleteTree( i.nextNode() );
-        }
-        
-        if( start.getDepth() > 0 )
-        {
-            start.remove();
+            i.nextNode().remove();
         }
     }
     

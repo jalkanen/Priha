@@ -57,14 +57,15 @@ public class NodeManager
      */
     public NodeImpl findNode( Path path )
     {
-        PathIndex pi = new PathIndex(path);
+        //PathIndex pi = new PathIndex(path);
 
         NodeImpl ni = m_nodeReferences.get(path.toString());
-
+/*
         if( ni == null && pi.m_index == 0 )
         {
             ni = m_nodeReferences.get( path.toString()+"[1]" );
         }
+ */
         return ni;
     }
     
@@ -80,7 +81,7 @@ public class NodeManager
         {
             parentNode.addChildNode( node );
          
-            m_nodeReferences.put( parentNode.getPath(), parentNode );
+            pullUpNode( parentNode );
             /*
             // Only used if supports samenamesiblings
             NodeIterator i = parent.getNodes(node.m_path.getLastComponent());
@@ -94,7 +95,7 @@ public class NodeManager
             */
         }
         
-        m_nodeReferences.put( node.getPath(), node );
+        pullUpNode( node );
     }
     
     /**
@@ -110,18 +111,26 @@ public class NodeManager
     public void remove( NodeImpl node ) throws RepositoryException
     {
         if( node.getDepth() == 0 ) throw new RepositoryException("Root cannot be removed.");
-        
+
         m_nodeReferences.remove( node.getPath() );
-        ((NodeImpl)node.getParent()).removeChildNode(node);
         
-        for( NodeIterator ndi = node.getNodes(); ndi.hasNext(); )
-        {
-            Node nd = ndi.nextNode();
-            
-            nd.remove();
-        }
+        NodeImpl parent = (NodeImpl)node.getParent();
+        pullUpNode( parent );
+        parent.removeChildNode(node);        
     }
     
+    /**
+     *  This method pulls up a Node from the repository
+     *  and makes sure there's a copy in our local cache.
+     *  
+     *  @param node
+     */
+    private void pullUpNode( NodeImpl node ) throws RepositoryException
+    {
+        m_nodeReferences.put( node.getPath(), node );
+    }
+    
+    /*
     private static class PathIndex
     {
         public Path m_path;
@@ -144,7 +153,8 @@ public class NodeManager
             m_index = index;
         }
     }
-
+    */
+    
     public NodeImpl getRootNode()
     {
         NodeImpl root = m_nodeReferences.get("/");

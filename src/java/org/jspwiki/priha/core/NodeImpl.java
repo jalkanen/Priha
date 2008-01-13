@@ -29,8 +29,28 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     private GenericNodeType     m_primaryType;
 
-    Logger log = Logger.getLogger( getClass().getName() );
+    static Logger log = Logger.getLogger( NodeImpl.class.getName() );
 
+    /**
+     *  Creates a clone of the NodeImpl, and places it to the given Session
+     *  
+     *  @param original
+     *  @param session
+     *  @throws RepositoryException 
+     *  @throws IllegalStateException 
+     *  @throws ValueFormatException 
+     */
+    protected NodeImpl( NodeImpl original, SessionImpl session ) throws ValueFormatException, IllegalStateException, RepositoryException
+    {
+        super( original, session );
+        
+        m_properties = new PropertyList( original.m_properties, session );
+        m_children.addAll( original.m_children );
+        m_mixinTypes.addAll( original.m_mixinTypes );
+        m_primaryType = original.m_primaryType;
+        m_definition  = original.m_definition;
+    }
+    
     protected NodeImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
@@ -245,12 +265,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         m_children.add( childNode.getInternalPath() );
 
+        markModified();
         return m_children.size();
     }
 
-    void removeChildNode( NodeImpl childNode )
+    void removeChildNode( NodeImpl childNode ) throws RepositoryException
     {
-        m_children.remove(childNode);
+        m_children.remove( childNode.getInternalPath() );
+        markModified();
     }
 
     public boolean canAddMixin(String mixinName) throws NoSuchNodeTypeException, RepositoryException
@@ -1142,10 +1164,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 break;
             default:
                 ws.saveNode(this);
-                m_modified = false;
-                m_new      = false;
-                m_state    = ItemState.EXISTS;
+                m_state = ItemState.EXISTS;
         }
+        m_modified = false;
+        m_new      = false;
     }
 
     protected void internalSave() throws RepositoryException
@@ -1220,6 +1242,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         if( m_state == ItemState.REMOVED )
             throw new ConstraintViolationException(getPath()+" has already been removed");
 
+        if( getPath().equals("/") || getPath().equals("/jcr:system") ) return; // Refuse to remove
+        
+        for( NodeIterator ndi = getNodes(); ndi.hasNext(); )
+        {
+            Node nd = ndi.nextNode();
+          
+            nd.remove();
+        }
+        
+        log.fine("Removed "+getPath());
         m_session.getNodeManager().remove( this );
         markModified();
         m_state = ItemState.REMOVED;

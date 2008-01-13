@@ -195,18 +195,11 @@ public class FileProvider implements RepositoryProvider
         }
     }
     
-    public void putNode(WorkspaceImpl ws, NodeImpl node) throws RepositoryException
+    public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        File nodeDir = getNodeDir( ws, node.getPath() );
+        File nodeDir = getNodeDir( ws, path.toString() );
 
         nodeDir.mkdirs();
-        
-        for( PropertyIterator i = node.getProperties(); i.hasNext(); )
-        {
-            PropertyImpl p = (PropertyImpl)i.nextProperty();
-         
-            putProperty( ws, p );
-        }
     }
 
     private void acquirePaths( Path startPath, File dir, List<Path> list, boolean recurse )
@@ -382,7 +375,7 @@ public class FileProvider implements RepositoryProvider
         }
     }
     
-    public void putProperty(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
+    public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
     {
         File nodeDir = getNodeDir( ws, property.getParent().getPath() );
         

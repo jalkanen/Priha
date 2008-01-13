@@ -31,6 +31,14 @@ public abstract class ItemImpl implements Item
         m_name = m_path.getLastComponent();
     }
 
+    public ItemImpl(ItemImpl original, SessionImpl session)
+    {
+        this( session, original.getInternalPath() );
+        m_modified = original.m_modified;
+        m_new      = original.m_new;
+        m_state    = original.m_state;
+    }
+
     public void accept(ItemVisitor visitor) throws RepositoryException
     {
         if( isNode() )

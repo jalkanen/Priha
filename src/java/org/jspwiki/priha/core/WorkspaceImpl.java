@@ -67,7 +67,7 @@ public class WorkspaceImpl
      */
     void saveNode( NodeImpl node ) throws RepositoryException
     {
-        m_providerManager.putNode( this, node );
+        m_providerManager.saveNode( this, node );
     }
 
     /**

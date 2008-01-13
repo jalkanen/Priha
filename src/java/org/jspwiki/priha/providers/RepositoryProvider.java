@@ -91,20 +91,20 @@ public interface RepositoryProvider
     public boolean nodeExists( WorkspaceImpl ws, Path path );
     
     /**
-     * Adds a new Node to the repository.
+     * Adds a new Node to the repository to the given Path.
      * 
      * @param ws
      * @param node
      * @throws RepositoryException
      */
-    public void putNode( WorkspaceImpl ws, NodeImpl node ) throws RepositoryException;
+    public void addNode( WorkspaceImpl ws, Path path ) throws RepositoryException;
     
     /**
      * Sets or adds a new Property to the repository.
      * 
      */
     
-    public void putProperty( WorkspaceImpl ws, PropertyImpl property ) throws RepositoryException;
+    public void putPropertyValue( WorkspaceImpl ws, PropertyImpl property ) throws RepositoryException;
     
     /**
      * Copies content from one path to another path.
