@@ -51,4 +51,10 @@ public class StringValueImpl extends ValueImpl implements Value
             throw new RepositoryException(e);
         }
     }
+    
+    @Override
+    public String toString()
+    {
+        return m_value;
+    }
 }

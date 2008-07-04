@@ -52,7 +52,7 @@ public class RepositoryImpl implements Repository
 
         m_providerManager = new ProviderManager( this, prefs );
         
-        log.info( "G'day, Matilda!  Priha has been initialized." );
+        log.info( "G'day, Matilda!  Priha "+Release.VERSTR+" has been initialized." );
         log.fine( "Using configuration from "+prefs.toString() );
     }
 

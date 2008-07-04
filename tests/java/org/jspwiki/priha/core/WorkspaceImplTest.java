@@ -9,6 +9,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.jspwiki.priha.RepositoryManager;
+import org.jspwiki.priha.TestUtil;
 import org.jspwiki.priha.util.Path;
 
 public class WorkspaceImplTest extends TestCase
@@ -18,15 +19,13 @@ public class WorkspaceImplTest extends TestCase
     protected void setUp() throws Exception
     {
         m_repository = RepositoryManager.getRepository();
+
+        TestUtil.emptyRepo( m_repository );
     }
     
     protected void tearDown() throws Exception
     {
-        Session s = m_repository.login();
-        
-        RepositoryTest.deleteTree( s.getRootNode() );
-        
-        s.save();
+        TestUtil.emptyRepo(m_repository);
     }
     
     public void testListNodePaths() throws LoginException, RepositoryException

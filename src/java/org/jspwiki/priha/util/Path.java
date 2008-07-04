@@ -281,4 +281,43 @@ public class Path
     {
         return getSubpath(0,depth);
     }
+
+    /**
+     *  Returns true, if this path is a parent of the given Path.
+     *  Root is the parent of all other paths.
+     *  
+     *  @param path
+     *  @return
+     */
+    public boolean isParentOf( Path p )
+    {
+        if( p.depth() > depth() || (depth() == 0) )
+        {
+            for( int i = 0; i < m_components.size(); i++ )
+            {
+                if( !m_components.get(i).equals(p.m_components.get(i)) ) 
+                    return false;
+            }
+            
+            return true;
+        }
+        
+        return false;
+    }
+    
+    @Override
+    public boolean equals(Object obj)
+    {
+        if( obj instanceof Path )
+        {
+            return ((Path)obj).toString().equals( toString() );
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return toString().hashCode() + 13;
+    }
 }

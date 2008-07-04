@@ -537,22 +537,33 @@ public class FileProvider implements RepositoryProvider
 
     public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        File nodeDir = getNodeDir( ws, path.toString() );
+        File nodeFile = getNodeDir( ws, path.toString() );
 
         log.fine("Deleting path and all subdirectories: "+path);
         
-        if( nodeDir != null && nodeDir.exists() )
+        if( nodeFile != null )
         {
-            if( deleteContents( nodeDir ) )
+            if( nodeFile.exists() )
             {
-                if( !nodeDir.delete() )
+                if( deleteContents( nodeFile ) )
                 {
-                    log.warning("Unable to delete path "+path);
+                    if( !nodeFile.delete() )
+                    {
+                        log.warning("Unable to delete path "+path);
+                    }
+                }
+                else
+                {
+                    log.warning("Failed to delete contents of path "+path);
                 }
             }
             else
             {
-                log.warning("Failed to delete contents of path "+path);
+                // Must be a property
+                nodeFile = new File( nodeFile.getParentFile(), path.getLastComponent()+".info" );
+                nodeFile.delete();
+                nodeFile = new File( nodeFile.getParentFile(), path.getLastComponent()+".data" );
+                nodeFile.delete();
             }
         }
 

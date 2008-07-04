@@ -8,26 +8,35 @@ import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 
 /**
- *  Implements the Value interface and provides a number of constructors
- *  for easy development.
- *  @author jalkanen
+ *  Implements the Value interface and provides a number of default accessors
+ *  for easy development.  All accessors by default throw a ValueFormatException,
+ *  so you will want to implement those which you can convert to.
  *
  */
 public abstract class ValueImpl implements Value, Cloneable
 {
     protected VALUE_STATE m_state   = VALUE_STATE.UNDEFINED;    
 
-    private int    BLOB = 1000;
     private enum   VALUE_STATE { UNDEFINED, VALUE, STREAM };
     
     protected ValueImpl() {}
 
+    /**
+     *  This method makes sure that the Value value is a stream, not a value.
+     *  
+     *  @throws IllegalStateException If this is a value Value.
+     */
     protected final void checkStream() throws IllegalStateException
     {
         if( m_state == VALUE_STATE.VALUE ) throw new IllegalStateException();
         m_state = VALUE_STATE.STREAM;
     }
 
+    /**
+     *  This method makes sure that the Value value is a value, not a stream.
+     *  
+     *  @throws IllegalStateException If this is a stream value.
+     */
     protected final void checkValue() throws IllegalStateException
     {
         if( m_state == VALUE_STATE.STREAM ) throw new IllegalStateException();

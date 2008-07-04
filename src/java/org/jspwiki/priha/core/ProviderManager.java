@@ -4,10 +4,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.prefs.Preferences;
 
-import javax.jcr.Credentials;
-import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.PropertyIterator;
-import javax.jcr.RepositoryException;
+import javax.jcr.*;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
 
@@ -27,16 +24,17 @@ import com.opensymphony.oscache.base.NeedsRefreshException;
  *  <p>
  *  This class also provides caching and some additional helper functions over
  *  the regular Provider interface.
- *
+ *  <p>
+ *  The ProviderManager is a singleton per Repository.
  */
-public class ProviderManager
+public class ProviderManager implements ItemStore
 {
     private static final int   DEFAULT_CACHE_SIZE = 1;
     private RepositoryProvider m_provider;
-    public static final String DEFAULT_PROVIDER = "org.jspwiki.priha.providers.FileProvider";
+    private static final String DEFAULT_PROVIDER = "org.jspwiki.priha.providers.FileProvider";
     private RepositoryImpl     m_repository;
-    
     private Cache              m_nodeCache;
+    private Cache              m_propertyCache;
     
     public ProviderManager( RepositoryImpl repository, Preferences prefs )
     {
@@ -54,7 +52,7 @@ public class ProviderManager
         catch (ClassNotFoundException e)
         {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            e.printStackTrace( );
         }
         catch (InstantiationException e)
         {
@@ -67,7 +65,12 @@ public class ProviderManager
             e.printStackTrace();
         }
 
-        m_nodeCache = new Cache( true, false, false, false, "com.opensymphony.oscache.base.algorithm.LRUCache", DEFAULT_CACHE_SIZE );
+        m_nodeCache = new Cache( true, false, false, false, 
+                                 "com.opensymphony.oscache.base.algorithm.LRUCache", 
+                                 DEFAULT_CACHE_SIZE );
+        m_propertyCache = new Cache( true, false, false, false, 
+                                     "com.opensymphony.oscache.base.algorithm.LRUCache", 
+                                     DEFAULT_CACHE_SIZE );
     }
 
     /**
@@ -106,6 +109,7 @@ public class ProviderManager
      *  @param node
      *  @throws RepositoryException
      */
+    /*
     public void saveNode(WorkspaceImpl ws, NodeImpl node) throws RepositoryException
     {
         if( node.isNew() )
@@ -125,15 +129,35 @@ public class ProviderManager
 
         m_nodeCache.putInCache( node.getPath().toString(), node );
     }
-
-    public List<String> listProperties(WorkspaceImpl impl, Path path) throws RepositoryException
+*/
+    /*
+    public void saveProperty( WorkspaceImpl ws, PropertyImpl property ) throws RepositoryException
     {
-        return m_provider.listProperties( impl, path );
+        //
+        //  Make sure that the Node exists prior to saving.
+        //
+        if( property.isNew() )
+            m_provider.addNode( ws, property.getInternalPath().getParentPath() );
+        
+        m_provider.putPropertyValue( ws, property );
     }
-
+*/
     private Object getPropertyValue(WorkspaceImpl impl, Path ptPath) throws RepositoryException
     {
-        return m_provider.getPropertyValue( impl, ptPath );
+        try
+        {
+            Object cached = m_propertyCache.getFromCache( ptPath.toString() );
+            
+            return cached;
+        }
+        catch( NeedsRefreshException e )
+        {
+            Object stored = m_provider.getPropertyValue( impl, ptPath );
+            
+            m_propertyCache.putInCache( ptPath.toString(), stored );
+            
+            return stored;
+        }
     }
 
     public Collection<String> listWorkspaces()
@@ -141,7 +165,7 @@ public class ProviderManager
         return m_provider.listWorkspaces();
     }
 
-    public List<Path> listNodes(WorkspaceImpl impl, Path path)
+    public List<Path>listNodes(WorkspaceImpl impl, Path path)
     {
         return m_provider.listNodes( impl, path );
     }
@@ -161,6 +185,7 @@ public class ProviderManager
     public void remove(WorkspaceImpl impl, Path path) throws RepositoryException
     {
         m_nodeCache.removeEntry( path.toString() );
+        m_propertyCache.removeEntry( path.toString() );
         m_provider.remove( impl, path );
     }
 
@@ -173,7 +198,7 @@ public class ProviderManager
      *
      * @throws RepositoryException
      */
-    public NodeImpl loadNode( WorkspaceImpl ws, Path path ) throws RepositoryException
+    NodeImpl loadNode( WorkspaceImpl ws, Path path ) throws RepositoryException
     {
         NodeImpl ni = null;
         
@@ -193,7 +218,7 @@ public class ProviderManager
         }
         catch( NeedsRefreshException e )
         {
-            List<String> properties = listProperties( ws, path );
+            List<String> properties = m_provider.listProperties( ws, path );
     
             Path ptPath = path.resolve("jcr:primaryType");
             PropertyImpl primaryType = ws.createPropertyImpl( ptPath );
@@ -234,14 +259,6 @@ public class ProviderManager
             
                 ni.addChildProperty( p );            
             }
-
-            //
-            //  Children
-            //
-            
-            List<Path> children = listNodes( ws, ni.getInternalPath() );
-            
-            ni.setChildren( children );
             
             m_nodeCache.putInCache( path.toString(), ni );
             
@@ -252,6 +269,72 @@ public class ProviderManager
             if( ni == null ) m_nodeCache.cancelUpdate( path.toString() );
         }
             
+    }
+
+    public void addNode(WorkspaceImpl ws, NodeImpl ni) throws RepositoryException
+    {
+        m_provider.addNode(ws, ni.getInternalPath());
+        
+        m_nodeCache.putInCache(ni.getInternalPath().toString(), ni);
+    }
+
+    public void copy(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException
+    {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    public NodeImpl findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
+    {
+        Path path = m_provider.findByUUID(ws, uuid);
+        
+        return loadNode(ws, path);
+    }
+
+    public ItemImpl getItem(WorkspaceImpl ws, Path path) throws InvalidPathException, RepositoryException
+    {
+        try
+        {
+            NodeImpl ni = loadNode( ws, path );
+            
+            return ni;
+        }
+        catch( RepositoryException e )
+        {
+            NodeImpl ni = loadNode( ws, path.getParentPath() );
+            
+            return (ItemImpl) ni.getChildProperty( path.getLastComponent() );
+        }
+    }
+
+    public void move(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    public boolean nodeExists(WorkspaceImpl ws, Path path)
+    {
+        return m_provider.nodeExists(ws, path);
+    }
+
+    public void open(RepositoryImpl repository, Credentials credentials, String workspaceName) throws NoSuchWorkspaceException, RepositoryException
+    {
+        m_provider.open(repository, credentials, workspaceName);
+    }
+
+    public void putProperty(WorkspaceImpl ws, PropertyImpl pi) throws RepositoryException
+    {
+        m_provider.putPropertyValue( ws, pi );   
+    }
+
+    public void start(RepositoryImpl repository)
+    {
+        m_provider.start(repository);
+    }
+
+    public void stop(RepositoryImpl repository)
+    {
+        m_provider.stop(repository);
     }
 
 }

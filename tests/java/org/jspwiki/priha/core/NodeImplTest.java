@@ -11,6 +11,7 @@ public class NodeImplTest extends TestCase
 
     private RepositoryImpl m_repository;
     private Session m_session;
+    private Session m_session2;
 
     @Override
     protected void setUp() throws Exception
@@ -22,6 +23,8 @@ public class NodeImplTest extends TestCase
         Node nd = m_session.getRootNode().addNode("gobble");
         nd.addMixin("mix:referenceable");
         m_session.save();
+        
+        m_session2 = m_repository.login();
     }
 
     @Override
@@ -33,6 +36,9 @@ public class NodeImplTest extends TestCase
         
         removeAll( nd.getNodes() );
         m_session.save();
+        
+        m_session.logout();
+        m_session2.logout();
     }
 
     private void removeAll( NodeIterator ni ) throws RepositoryException
@@ -81,4 +87,17 @@ public class NodeImplTest extends TestCase
         assertEquals( "wrong val", gobble2.getUUID(), p.getValue().getString() );
     }
 
+    public void testSave() throws Exception
+    {
+        Node root = m_session.getRootNode();
+        
+        root.addNode("foo");
+        
+        root.save();
+        
+        Node test = m_session2.getRootNode().getNode("/foo");
+        
+        assertNotNull( test );
+        
+    }
 }

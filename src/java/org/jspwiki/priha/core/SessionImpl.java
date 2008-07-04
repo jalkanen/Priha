@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.TreeSet;
 import java.util.logging.Logger;
@@ -25,32 +27,26 @@ import org.xml.sax.SAXException;
 /**
  *  The SessionImpl class implements a JCR Session.  It is non thread safe,
  *  so each Thread must have its own Session.
- *  
- *  @author jalkanen
  */
 public class SessionImpl implements Session
 {
     private static final String JCR_SYSTEM = "jcr:system";
     private RepositoryImpl m_repository;
     private WorkspaceImpl  m_workspace;
-    private NodeManager    m_nodeManager;
 
     private SimpleCredentials m_credentials;
 
     private Logger         log = Logger.getLogger( getClass().getName() );
     
-    /** Keeps a list of nodes which have been updated and must be flushed at next
-     *  save().
-     */
-    private TreeSet<NodeImpl> m_updateList = new TreeSet<NodeImpl>();
+    private SessionProvider m_provider;
 
     public SessionImpl( RepositoryImpl rep, Credentials creds, String name )
         throws RepositoryException
     {
         m_repository = rep;
         m_workspace  = new WorkspaceImpl( this, name, rep.getProviderManager() );
-        m_nodeManager = new NodeManager( this );
-
+        m_provider   = new SessionProvider( this, rep.getProviderManager() );
+        
         if( !hasNode("/"+JCR_SYSTEM) )
         {
             repopulate();
@@ -62,6 +58,17 @@ public class SessionImpl implements Session
         }
     }
 
+    public List<Path> listNodes( Path parentpath )
+    {
+        return m_provider.listNodes(parentpath);
+    }
+    
+    protected void markDirty( ItemImpl ii )
+    {
+        
+    }
+    
+    
     /**
      * Adds a node to the internal checklists
      *
@@ -72,10 +79,8 @@ public class SessionImpl implements Session
         throws RepositoryException
     {
         try
-        {
-            NodeImpl parentNode = (NodeImpl)getItem( node.getInternalPath().getParentPath() );
-            
-            m_nodeManager.addNode(parentNode,node);
+        {   
+            m_provider.addNode( node );
         }
         catch (InvalidPathException e)
         {
@@ -83,52 +88,14 @@ public class SessionImpl implements Session
         }
     }
 
-    void markDirty( NodeImpl node )
-    {
-        synchronized(m_updateList)
-        {
-            m_updateList.add(node);
-        }
-    }
-
     boolean hasNode( String absPath )
     {
-        if( !m_nodeManager.hasNode(absPath) )
-        {
-            try
-            {
-                return m_repository.getProviderManager().hasNode( m_workspace, new Path(absPath) );
-            }
-            catch (InvalidPathException e)
-            {
-                return false;
-            }
-        }
-        
-        return true;
+        return m_provider.nodeExists( new Path(absPath) );
     }
 
     boolean hasProperty( Path absPath ) throws RepositoryException
     {
-        Path parent = absPath.getParentPath();
-        
-        NodeImpl nd = m_nodeManager.findNode( parent );
-        
-        if( nd == null )
-            nd = m_workspace.loadNode( parent );
-        
-        if( nd != null )
-        {
-            try
-            {
-                nd.getChildProperty( absPath.getLastComponent() );
-                return true;
-            }
-            catch( PathNotFoundException e )
-            {
-            }
-        }
-        return false;
+        return m_provider.getProperty(absPath) != null;
     }
     
     public void addLockToken(String lt)
@@ -197,29 +164,24 @@ public class SessionImpl implements Session
         // TODO Auto-generated method stub
     }
 
-    public Item getItem(String absPath) throws PathNotFoundException, RepositoryException
+    public ItemImpl getItem( Path absPath ) throws PathNotFoundException, RepositoryException
     {
-        Path p = new Path(absPath);
-
         try
         {
-            //
-            //  Check internal cache
-            //
-            NodeImpl nd = m_nodeManager.findNode( p );
+            ItemImpl ii = m_provider.getProperty(absPath);
 
-            if( nd != null )
+            if( ii != null )
             {
-                return nd;
+                return ii;
             }
 
-            if( p.depth() > 0 )
+            if( absPath.depth() > 0 )
             {
-                nd = m_nodeManager.findNode( p.getParentPath() );
+                NodeImpl nd = (NodeImpl)m_provider.getNode( absPath.getParentPath() );
 
-                if( nd != null && nd.hasProperty( p.getLastComponent() ) )
+                if( nd != null && nd.hasProperty( absPath.getLastComponent() ) )
                 {
-                    return nd.getChildProperty( p.getLastComponent() );
+                    return (ItemImpl)nd.getChildProperty( absPath.getLastComponent() );
                 }
             }
             
@@ -228,7 +190,7 @@ public class SessionImpl implements Session
             //
             try
             {
-                nd = m_workspace.loadNode( p );
+                NodeImpl nd = m_workspace.loadNode( absPath );
             
                 if( nd != null )
                 {
@@ -239,11 +201,11 @@ public class SessionImpl implements Session
             
             try
             {
-                nd = m_workspace.loadNode( p.getParentPath() );
+                NodeImpl nd = m_workspace.loadNode( absPath.getParentPath() );
             
-                if( nd != null && nd.hasProperty( p.getLastComponent() ) )
+                if( nd != null && nd.hasProperty( absPath.getLastComponent() ) )
                 {
-                    return nd.getChildProperty( p.getLastComponent() );
+                    return (ItemImpl)nd.getChildProperty( absPath.getLastComponent() );
                 }
             }
             catch( RepositoryException e ) {}
@@ -252,7 +214,12 @@ public class SessionImpl implements Session
         {
         }
 
-        throw new PathNotFoundException( absPath );
+        throw new PathNotFoundException( absPath.toString() );        
+    }
+    
+    public Item getItem(String absPath) throws PathNotFoundException, RepositoryException
+    {
+        return getItem( new Path(absPath) );
     }
 
     public String[] getLockTokens()
@@ -278,7 +245,7 @@ public class SessionImpl implements Session
 
     public Node getNodeByUUID(String uuid) throws ItemNotFoundException, RepositoryException
     {
-        return m_nodeManager.getNodeByUUID( uuid );
+        throw new UnsupportedRepositoryOperationException("No UUID");
     }
 
     public Repository getRepository()
@@ -309,7 +276,7 @@ public class SessionImpl implements Session
 
     public boolean hasPendingChanges() throws RepositoryException
     {
-        return !m_updateList.isEmpty();
+        return m_provider.hasPendingChanges();
     }
 
     public Session impersonate(Credentials credentials) throws LoginException, RepositoryException
@@ -354,9 +321,7 @@ public class SessionImpl implements Session
     {
         if( keepChanges ) throw new UnsupportedRepositoryOperationException("Session.refresh(true)");
 
-        m_updateList.clear();
-
-        m_nodeManager.reset();
+        m_provider.clear();
 
         repopulate();
     }
@@ -381,7 +346,7 @@ public class SessionImpl implements Session
 
             ni.sanitize();
                 
-            m_nodeManager.addNode( null, ni );
+            m_provider.addNode( ni );
             ni.markModified();
                 
             save();
@@ -404,16 +369,7 @@ public class SessionImpl implements Session
 
     public void save() throws AccessDeniedException, ItemExistsException, ConstraintViolationException, InvalidItemStateException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException
     {
-        synchronized( m_updateList )
-        {
-            for( NodeImpl ni : m_updateList )
-            {
-                ni.saveNodeAndChildren();
-            }
-
-            m_updateList.clear();
-            m_nodeManager.reset();
-        }
+        saveNodes( new Path("/") );
     }
 
     public void setNamespacePrefix(String newPrefix, String existingUri) throws NamespaceException, RepositoryException
@@ -423,38 +379,22 @@ public class SessionImpl implements Session
         throw new UnsupportedRepositoryOperationException("Session.setNamespacePrefix()");
     }
 
-    protected void nodesSaved(List<String> modifications) throws VersionException, LockException, ConstraintViolationException, RepositoryException
+    /**
+     *  Saves all modified nodes that start with the given path prefix. This
+     *  can be used to save a node and all its children.
+     *  
+     *  @param pathprefix
+     *  @throws RepositoryException
+     */
+    protected void saveNodes( Path pathprefix ) throws RepositoryException
     {
-        synchronized( m_updateList )
-        {
-            for( String path : modifications )
-            {
-                for( NodeImpl nd : m_updateList )
-                {
-                    if( nd.getPath().equals(path) )
-                    {
-                        m_updateList.remove(nd);
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    public NodeManager getNodeManager()
-    {
-        return m_nodeManager;
+        m_provider.save( pathprefix );
     }
 
     public boolean itemExists(Path absPath)
         throws RepositoryException
     {
         return hasNode(absPath.toString()) || hasProperty(absPath);
-    }
-
-    public ItemImpl getItem(Path path) throws PathNotFoundException, RepositoryException
-    {
-        return (ItemImpl) getItem( path.toString() );
     }
 
 }

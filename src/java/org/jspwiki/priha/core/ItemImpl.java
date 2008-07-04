@@ -163,8 +163,30 @@ public abstract class ItemImpl implements Item
                           RepositoryException
     ;
 
+//    protected abstract void saveItemOnly() throws RepositoryException;
+
     public String toString()
     {
         return "Node["+m_path.toString()+"]";
     }
+
+    protected void markModified()
+    {
+        try
+        {
+            if( !getInternalPath().isRoot() ) ((NodeImpl)getParent()).markModified();
+    
+            m_modified = true;
+            m_session.markDirty(this);
+        }
+        catch( Exception e ) {} // This is fine.  I guess.
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return getInternalPath().hashCode()-17;
+    }
+    
+    
 }

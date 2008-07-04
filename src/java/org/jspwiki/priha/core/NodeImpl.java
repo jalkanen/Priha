@@ -23,10 +23,9 @@ import org.jspwiki.priha.version.VersionHistoryImpl;
 public class NodeImpl extends ItemImpl implements Node, Comparable
 {
     private PropertyList        m_properties = new PropertyList();
-    private List<Path>          m_children   = new ArrayList<Path>();
     private ArrayList<NodeType> m_mixinTypes = new ArrayList<NodeType>();
     private NodeDefinition      m_definition;
-
+    
     private GenericNodeType     m_primaryType;
 
     static Logger log = Logger.getLogger( NodeImpl.class.getName() );
@@ -45,7 +44,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         super( original, session );
         
         m_properties = new PropertyList( original.m_properties, session );
-        m_children.addAll( original.m_children );
         m_mixinTypes.addAll( original.m_mixinTypes );
         m_primaryType = original.m_primaryType;
         m_definition  = original.m_definition;
@@ -79,18 +77,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         this( session, path, null, nDef );
 
         m_primaryType = (GenericNodeType) nDef.getDefaultPrimaryType();
-    }
-
-    void markModified()
-    {
-        try
-        {
-            if( !getInternalPath().isRoot() ) ((NodeImpl)getParent()).markModified();
-
-            m_modified = true;
-            m_session.markDirty(this);
-        }
-        catch( Exception e ) {} // This is fine.  I guess.
     }
 
     public void addMixin(String mixinName)
@@ -255,26 +241,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return nd;
     }
 
-    /**
-     *  Adds a child node to the child list.  Assumes that child node is
-     *  already set up.
-     *  @param node
-     *  @return the new length of the child node array
-     */
-    int addChildNode( NodeImpl childNode )
-    {
-        m_children.add( childNode.getInternalPath() );
-
-        markModified();
-        return m_children.size();
-    }
-
-    void removeChildNode( NodeImpl childNode ) throws RepositoryException
-    {
-        m_children.remove( childNode.getInternalPath() );
-        markModified();
-    }
-
     public boolean canAddMixin(String mixinName) throws NoSuchNodeTypeException, RepositoryException
     {
         NodeType nt = getNodeTypeManager().getNodeType( mixinName );
@@ -371,11 +337,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return 1;
     }
 
-    private List<Path> getSiblings() throws RepositoryException
-    {
-        return ((NodeImpl)getParent()).m_children;
-    }
-
     public Lock getLock() throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException
     {
         // TODO Auto-generated method stub
@@ -410,7 +371,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         List<Node> ls = new ArrayList<Node>();
 
-        for( Path p : m_children )
+        List<Path> children = m_session.listNodes( m_path );
+        
+        for( Path p : children )
         {
             NodeImpl nd = getNode( p );
             ls.add( nd );
@@ -456,7 +419,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
         ArrayList<Node> matchedpaths = new ArrayList<Node>();
 
-        for( Path path : m_children )
+        List<Path> children = m_session.listNodes( m_path );
+        
+        for( Path path : children )
         {
             Matcher match = p.matcher( path.getLastComponent() );
 
@@ -597,23 +562,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
         ArrayList<PropertyImpl> references = new ArrayList<PropertyImpl>();
 
-        for( NodeImpl nd : m_session.getNodeManager().allNodes() )
-        {
-            for( PropertyIterator pi = nd.getProperties(); pi.hasNext(); )
-            {
-                Property p = pi.nextProperty();
-
-                if( p.getType() == PropertyType.REFERENCE )
-                {
-                    String ref = p.getValue().getString();
-
-                    if( ref.equals( uuid ) )
-                    {
-                        references.add( (PropertyImpl)p );
-                    }
-                }
-            }
-        }
 
         return new PropertyIteratorImpl(references);
     }
@@ -654,7 +602,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public boolean hasNodes() throws RepositoryException
     {
-        return m_children.size() > 0;
+        return getNodes().getSize() > 0;
     }
 
     public boolean hasProperties() throws RepositoryException
@@ -872,7 +820,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
             prop = new PropertyImpl( m_session, propertypath, pd );
             m_properties.add(prop);
-            markModified();
+            prop.markModified();
         }
 
         if( value == null )
@@ -890,6 +838,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     protected void removeProperty(Property prop)
     {
         m_properties.remove(prop);
+        markModified();
     }
 
     public Property setProperty(String name, Value value)
@@ -1153,28 +1102,31 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
      *
      *  @throws RepositoryException
      */
-    private void saveNodeOnly() throws RepositoryException
+    /*
+    protected void saveItemOnly() throws RepositoryException
     {
-        WorkspaceImpl ws = (WorkspaceImpl)m_session.getWorkspace();
-
-        switch( m_state )
+        if( isModified() )
         {
-            case REMOVED:
-                ws.removeNode(this);
-                break;
-            default:
-                ws.saveNode(this);
-                m_state = ItemState.EXISTS;
-        }
-        m_modified = false;
-        m_new      = false;
-    }
+            WorkspaceImpl ws = (WorkspaceImpl)m_session.getWorkspace();
 
+            switch( m_state )
+            {
+                case REMOVED:
+                    ws.removeItem(this);
+                    break;
+                default:
+                    ws.saveItem(this);
+                    m_state = ItemState.EXISTS;
+                    break;
+            }
+            m_modified = false;
+            m_new      = false;
+        }
+    }
+*/
     protected void internalSave() throws RepositoryException
     {
-        List<String> modifications = saveNodeAndChildren();
-
-        m_session.nodesSaved(modifications);
+        m_session.saveNodes( getInternalPath() );
     }
 
     // FIXME: No rollback support
@@ -1193,31 +1145,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             throw new InvalidItemStateException("Cannot call save on newly added node "+m_path);
 
         internalSave();
-    }
-
-    /**
-     *  Saves the node and all its children that need modification, returning
-     *  a list of the node paths.
-     *
-     *  @return
-     *  @throws RepositoryException
-     */
-    protected List<String> saveNodeAndChildren() throws RepositoryException
-    {
-        List<String> modifications = new ArrayList<String>();
-
-        for( Path p : m_children )
-        {
-            modifications.addAll( getNode(p).saveNodeAndChildren() );
-        }
-
-        if( isModified() )
-        {
-            saveNodeOnly();
-            modifications.add( getPath() );
-        }
-
-        return modifications;
     }
 
     public int compareTo(Object o)
@@ -1252,8 +1179,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         }
         
         log.fine("Removed "+getPath());
-        m_session.getNodeManager().remove( this );
         markModified();
+
         m_state = ItemState.REMOVED;
     }
 
@@ -1322,13 +1249,4 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             }
         }
     }
-
-    void setChildren(List<Path> children)
-    {
-        if( children != null )
-            m_children = children;
-        else
-            m_children.clear();
-    }
-
 }

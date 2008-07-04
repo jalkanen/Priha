@@ -17,4 +17,5 @@ public class ReferenceValueImpl extends NodeValueImpl
         super( impl,PropertyType.REFERENCE );
     }
 
+    
 }

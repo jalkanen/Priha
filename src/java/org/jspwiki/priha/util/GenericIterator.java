@@ -3,9 +3,8 @@ package org.jspwiki.priha.util;
 import java.util.Iterator;
 import java.util.List;
 
-public class GenericIterator implements Iterator
+public abstract class GenericIterator implements Iterator
 {
-
     protected Iterator m_iterator;
     protected int m_position;
     protected int m_size;

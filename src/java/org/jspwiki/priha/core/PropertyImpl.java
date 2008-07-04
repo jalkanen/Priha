@@ -355,14 +355,22 @@ public class PropertyImpl extends ItemImpl implements Property
 
     public String toString()
     {
-        return "Property("+m_multi+")["+m_name+"="+((m_multi == Multi.SINGLE ) ? m_value[0].toString() : m_value)+"]";
+        return "Property("+m_multi+")["+m_path+","+m_name+"="+((m_multi == Multi.SINGLE ) ? m_value[0].toString() : m_value)+"]";
     }
 
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
+        //
+        // Sanity check - the primary type cannot be deleted.
+        //
+        if( getName().equals("jcr:primaryType") ) return;
+        		
         NodeImpl nd = (NodeImpl)getParent();
 
         nd.removeProperty(this);
+        
+        m_state = ItemState.REMOVED;
+        markModified();
     }
 
     public void setDefinition(PropertyDefinition pd)
@@ -374,4 +382,28 @@ public class PropertyImpl extends ItemImpl implements Property
             m_multi = m_definition.isMultiple() ? Multi.MULTI : Multi.SINGLE;
         }
     }
+/*
+    @Override
+    protected void saveItemOnly() throws RepositoryException
+    {
+        if( isModified() )
+        {
+            WorkspaceImpl ws = (WorkspaceImpl)m_session.getWorkspace();
+
+            switch( m_state )
+            {
+                case REMOVED:
+                    ws.removeItem(this);
+                    break;
+                default:
+                    // Saving is done by the parent.
+                    ws.saveItem(this);
+                    m_state = ItemState.EXISTS;
+                    break;
+            }
+            m_modified = false;
+            m_new      = false;
+        }
+    }
+    */
 }

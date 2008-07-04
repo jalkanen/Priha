@@ -48,7 +48,7 @@ public class WorkspaceImpl
     public PropertyImpl createPropertyImpl( Path path )
         throws RepositoryException
     {
-        String name = path.getLastComponent();
+        // String name = path.getLastComponent();
 
         //NodeImpl nd = (NodeImpl) m_session.getItem(p);
 
@@ -62,14 +62,18 @@ public class WorkspaceImpl
     /**
      *  Writes the state of a node directly to the repository.
      *
-     *  @param node
+     *  @param item
      *  @throws RepositoryException
      */
-    void saveNode( NodeImpl node ) throws RepositoryException
+    /*
+    void saveItem( ItemImpl item ) throws RepositoryException
     {
-        m_providerManager.saveNode( this, node );
+        if( item instanceof NodeImpl )
+            m_providerManager.addNode( this, (NodeImpl)item );
+        else
+            m_providerManager.putProperty( this, (PropertyImpl) item ); 
     }
-
+*/
     /**
      * Loads the state of a node from the repository.
      *
@@ -202,9 +206,9 @@ public class WorkspaceImpl
         m_providerManager.close(this);
     }
 
-    public void removeNode(NodeImpl impl) throws RepositoryException
+    public void removeItem(ItemImpl impl) throws RepositoryException
     {
-        m_providerManager.remove( this, new Path(impl.getPath()) );
+        m_providerManager.remove( this, impl.getInternalPath() );
     }
 
 }

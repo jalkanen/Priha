@@ -56,4 +56,9 @@ public abstract class NodeValueImpl extends ValueImpl implements Value
         return m_type;
     }
 
+    @Override
+    public String toString()
+    {
+        return m_value.toString();
+    }
 }
