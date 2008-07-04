@@ -1,3 +1,10 @@
+2008-07-02  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.13
+        
+        * Major changes to storage managemement.  This version
+        does not really work at all...
+
 2007-12-25  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.12
