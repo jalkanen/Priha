@@ -5,6 +5,7 @@ import java.util.Map.Entry;
 
 import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 
 import org.jspwiki.priha.util.InvalidPathException;
@@ -77,7 +78,12 @@ public class SessionProvider
         
         if( propval == null )
         {
-            propval = (PropertyImpl)m_source.getItem(m_workspace, path);
+            ItemImpl ii = m_source.getItem(m_workspace, path);
+            
+            if( ii instanceof PropertyImpl )
+                propval = (PropertyImpl) ii;
+            else
+                throw new PathNotFoundException();
         }
         
         return propval;
@@ -99,24 +105,7 @@ public class SessionProvider
         
         return res;
     }
-/*
-    public List<PropertyImpl> listProperties(Path path) throws RepositoryException
-    {
-        ArrayList<PropertyImpl> res = new ArrayList<PropertyImpl>();
-        
-        for( PropertyImpl p : m_properties.values() )
-        {
-            if( path.isParentOf(p.getInternalPath()) )
-            {
-                res.add( p );
-            }
-        }
-        
-        res.addAll( m_source.listProperties(m_workspace, path) );
-        
-        return res;
-    }
-*/
+
     public Collection<String> listWorkspaces()
     {
         return m_source.listWorkspaces();
@@ -149,9 +138,16 @@ public class SessionProvider
         m_properties.put( property.getInternalPath(), property );
     }
 
-    public void remove(Path path) throws RepositoryException
+    public void remove(ItemImpl item) throws RepositoryException
     {
-        m_source.remove(m_workspace, path);
+        if( item instanceof PropertyImpl )
+        {
+            m_properties.put( item.getInternalPath(), (PropertyImpl) item );
+        }
+        else
+        {
+            m_nodes.add( (NodeImpl) item );
+        }
     }
 
     public void start()
@@ -183,7 +179,17 @@ public class SessionProvider
             
             if( path.isParentOf(ni.getInternalPath()) )
             {
-                m_source.addNode( m_workspace, ni );
+                switch( ni.getState() )
+                {
+                    case NEW:
+                    case EXISTS:
+                        m_source.addNode( m_workspace, ni );
+                        break;
+                        
+                    case REMOVED:
+                        m_source.remove( m_workspace, ni.getInternalPath() );
+                        break;
+                }
                 i.remove();
             }
         }
@@ -193,7 +199,20 @@ public class SessionProvider
             Entry<Path,PropertyImpl> e = i.next();
             if( path.isParentOf(e.getKey()) )
             {
-                m_source.putProperty( m_workspace, e.getValue() );
+                PropertyImpl pi = e.getValue();
+                
+                switch( pi.getState() )
+                {
+                    case NEW:
+                    case EXISTS:
+                        m_source.putProperty( m_workspace, pi );
+                        break;
+                        
+                    case REMOVED:
+                        m_source.remove( m_workspace, pi.getInternalPath() );
+                        break;
+                }
+                i.remove();
             }
         }
     }

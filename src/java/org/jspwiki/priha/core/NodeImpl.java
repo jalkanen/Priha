@@ -49,14 +49,18 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         m_definition  = original.m_definition;
     }
     
-    protected NodeImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef )
+    protected NodeImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         super( session, path );
 
         m_primaryType = primaryType;
         m_definition  = nDef;
-        setProperty( "jcr:primaryType", m_primaryType.getName(), PropertyType.NAME );
+        
+        if( populateDefaults )
+        {
+            setProperty( "jcr:primaryType", m_primaryType.getName(), PropertyType.NAME );
+        }
 
         //
         //  This is a bit of a kludge to make sure that a root node is never in NEW state,
@@ -65,20 +69,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         if( path.equals("/") ) m_state = ItemState.EXISTS;
     }
 
-    protected NodeImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef )
+    protected NodeImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        this( session, path.toString(), primaryType, nDef );
+        this( session, path.toString(), primaryType, nDef, populateDefaults );
     }
-
-    protected NodeImpl( SessionImpl session, Path path, NodeDefinition nDef )
-        throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
-    {
-        this( session, path, null, nDef );
-
-        m_primaryType = (GenericNodeType) nDef.getDefaultPrimaryType();
-    }
-
+    
     public void addMixin(String mixinName)
                                           throws NoSuchNodeTypeException,
                                               VersionException,
@@ -208,7 +204,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             //  Node type and definition are now okay, so we'll create the node
             //  and add it to our session.
             //
-            ni = new NodeImpl( m_session, absPath, assignedType, assignedNodeDef );
+            ni = new NodeImpl( m_session, absPath, assignedType, assignedNodeDef, true );
 
             ni.sanitize();
 
@@ -771,7 +767,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
      *  @throws PathNotFoundException
      *  @throws RepositoryException
      */
-    private Property prepareProperty( String name, Object value ) throws PathNotFoundException, RepositoryException
+    private PropertyImpl prepareProperty( String name, Object value ) throws PathNotFoundException, RepositoryException
     {
         PropertyImpl prop = null;
 
@@ -820,7 +816,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
             prop = new PropertyImpl( m_session, propertypath, pd );
             m_properties.add(prop);
-            prop.markModified();
         }
 
         if( value == null )
@@ -848,10 +843,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                              ConstraintViolationException,
                                                              RepositoryException
     {
-        Property p = prepareProperty( name, value );
+        PropertyImpl p = prepareProperty( name, value );
 
         p.setValue(value);
-
+        
         return p;
     }
 
@@ -1177,11 +1172,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
           
             nd.remove();
         }
+
+        m_session.remove( this );
+        markModified();
+        m_state = ItemState.REMOVED;
         
         log.fine("Removed "+getPath());
-        markModified();
-
-        m_state = ItemState.REMOVED;
     }
 
     public void addChildProperty(PropertyImpl property)

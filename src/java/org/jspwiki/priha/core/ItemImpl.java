@@ -39,6 +39,11 @@ public abstract class ItemImpl implements Item
         m_state    = original.m_state;
     }
 
+    public ItemState getState()
+    {
+        return m_state;
+    }
+    
     public void accept(ItemVisitor visitor) throws RepositoryException
     {
         if( isNode() )
@@ -81,7 +86,7 @@ public abstract class ItemImpl implements Item
         {
             Path parentPath = m_path.getParentPath();
         
-            NodeImpl parent = (NodeImpl)m_session.getItem(parentPath.toString());
+            NodeImpl parent = (NodeImpl)m_session.getItem(parentPath);
                             
             return parent;
         }
@@ -174,10 +179,10 @@ public abstract class ItemImpl implements Item
     {
         try
         {
-            if( !getInternalPath().isRoot() ) ((NodeImpl)getParent()).markModified();
-    
             m_modified = true;
             m_session.markDirty(this);
+            
+            if( !getInternalPath().isRoot() ) ((NodeImpl)getParent()).markModified();
         }
         catch( Exception e ) {} // This is fine.  I guess.
     }

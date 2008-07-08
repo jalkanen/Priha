@@ -176,12 +176,16 @@ public class PropertyImpl extends ItemImpl implements Property
         return ValueFactoryImpl.getInstance().cloneValues(m_value);
     }
 
-    public void setValue(Value value)
-                                     throws ValueFormatException,
-                                         VersionException,
-                                         LockException,
-                                         ConstraintViolationException,
-                                         RepositoryException
+    /**
+     *  Differs from setValue(), as it does not mark the item modified.
+     *  
+     * @param value
+     * @throws VersionException
+     * @throws LockException
+     * @throws ConstraintViolationException
+     * @throws RepositoryException
+     */
+    public void loadValue( Value value ) throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         if( m_multi == Multi.MULTI )
             throw new ValueFormatException("Attempted to set a SINGLE Value object to a MULTI property "+m_path);
@@ -197,12 +201,45 @@ public class PropertyImpl extends ItemImpl implements Property
         m_multi = Multi.SINGLE;
     }
 
+    public void setValue(Value value)
+                                     throws ValueFormatException,
+                                         VersionException,
+                                         LockException,
+                                         ConstraintViolationException,
+                                         RepositoryException
+    {
+        loadValue( value );
+        markModified();
+    }
+
     public void setValue(Value[] values)
                                         throws ValueFormatException,
                                             VersionException,
                                             LockException,
                                             ConstraintViolationException,
                                             RepositoryException
+    {
+        loadValue(values);
+        
+        markModified();
+    }
+
+    /**
+     *  Differs from setValue() in the sense that it does not mark it modified.
+     *  
+     * @param values
+     * @throws ValueFormatException
+     * @throws VersionException
+     * @throws LockException
+     * @throws ConstraintViolationException
+     * @throws RepositoryException
+     */
+    public void loadValue(Value[] values)
+                                          throws ValueFormatException,
+                                              VersionException,
+                                              LockException,
+                                              ConstraintViolationException,
+                                              RepositoryException
     {
         if( m_multi == Multi.SINGLE )
             throw new ValueFormatException("Attempted to set a MULTI Value object to a SINGLE property "+m_path);

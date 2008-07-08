@@ -5,8 +5,11 @@ import java.util.List;
 import java.util.prefs.Preferences;
 
 import javax.jcr.*;
+import javax.jcr.lock.LockException;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.version.VersionException;
 
 import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
@@ -33,8 +36,6 @@ public class ProviderManager implements ItemStore
     private RepositoryProvider m_provider;
     private static final String DEFAULT_PROVIDER = "org.jspwiki.priha.providers.FileProvider";
     private RepositoryImpl     m_repository;
-    private Cache              m_nodeCache;
-    private Cache              m_propertyCache;
     
     public ProviderManager( RepositoryImpl repository, Preferences prefs )
     {
@@ -64,13 +65,6 @@ public class ProviderManager implements ItemStore
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-
-        m_nodeCache = new Cache( true, false, false, false, 
-                                 "com.opensymphony.oscache.base.algorithm.LRUCache", 
-                                 DEFAULT_CACHE_SIZE );
-        m_propertyCache = new Cache( true, false, false, false, 
-                                     "com.opensymphony.oscache.base.algorithm.LRUCache", 
-                                     DEFAULT_CACHE_SIZE );
     }
 
     /**
@@ -82,17 +76,7 @@ public class ProviderManager implements ItemStore
      */
     public boolean hasNode( WorkspaceImpl ws, Path path ) throws InvalidPathException
     {
-        try
-        {
-            NodeImpl ni = (NodeImpl) m_nodeCache.getFromCache( path.toString() );
-            
-            return true;
-        }
-        catch (NeedsRefreshException e)
-        {
-            m_nodeCache.cancelUpdate( path.toString() );
-            return m_provider.nodeExists( ws, path );
-        }
+        return m_provider.nodeExists( ws, path );
     }
     
     public void open(Credentials credentials, String workspaceName) 
@@ -101,63 +85,12 @@ public class ProviderManager implements ItemStore
         m_provider.open( m_repository, credentials, workspaceName );
     }
 
-    /**
-     *  Convenience method for storing an entire NodeImpl.  Will only store
-     *  modified properties.
-     *  
-     *  @param ws The workspace which wishes to make the save.
-     *  @param node
-     *  @throws RepositoryException
-     */
-    /*
-    public void saveNode(WorkspaceImpl ws, NodeImpl node) throws RepositoryException
-    {
-        if( node.isNew() )
-        {
-            m_provider.addNode( ws, node.getInternalPath() );
-        }
-        
-        for( PropertyIterator pi = node.getProperties(); pi.hasNext(); )
-        {
-            PropertyImpl p = (PropertyImpl)pi.nextProperty();
-        
-            if( p.isNew() || p.isModified() )
-            {
-                m_provider.putPropertyValue( ws, p );
-            }
-        }
 
-        m_nodeCache.putInCache( node.getPath().toString(), node );
-    }
-*/
-    /*
-    public void saveProperty( WorkspaceImpl ws, PropertyImpl property ) throws RepositoryException
-    {
-        //
-        //  Make sure that the Node exists prior to saving.
-        //
-        if( property.isNew() )
-            m_provider.addNode( ws, property.getInternalPath().getParentPath() );
-        
-        m_provider.putPropertyValue( ws, property );
-    }
-*/
     private Object getPropertyValue(WorkspaceImpl impl, Path ptPath) throws RepositoryException
     {
-        try
-        {
-            Object cached = m_propertyCache.getFromCache( ptPath.toString() );
+        Object stored = m_provider.getPropertyValue( impl, ptPath );
             
-            return cached;
-        }
-        catch( NeedsRefreshException e )
-        {
-            Object stored = m_provider.getPropertyValue( impl, ptPath );
-            
-            m_propertyCache.putInCache( ptPath.toString(), stored );
-            
-            return stored;
-        }
+        return stored;
     }
 
     public Collection<String> listWorkspaces()
@@ -184,8 +117,6 @@ public class ProviderManager implements ItemStore
      */
     public void remove(WorkspaceImpl impl, Path path) throws RepositoryException
     {
-        m_nodeCache.removeEntry( path.toString() );
-        m_propertyCache.removeEntry( path.toString() );
         m_provider.remove( impl, path );
     }
 
@@ -202,80 +133,64 @@ public class ProviderManager implements ItemStore
     {
         NodeImpl ni = null;
         
-        try
-        {
-            //
-            //  We'll check the cache for this node.  If it exists, we create
-            //  a clone (because the state of the node is always relevant to the Session)
-            //  and send it back up.
-            //
-            ni = (NodeImpl)m_nodeCache.getFromCache( path.toString() );
-            
-            if( ni.getSession() == ws.getSession() )
-                return ni;
-            
-            return new NodeImpl( ni, (SessionImpl)ws.getSession() );
-        }
-        catch( NeedsRefreshException e )
-        {
-            List<String> properties = m_provider.listProperties( ws, path );
+        List<String> properties = m_provider.listProperties( ws, path );
     
-            Path ptPath = path.resolve("jcr:primaryType");
-            PropertyImpl primaryType = ws.createPropertyImpl( ptPath );
+        Path ptPath = path.resolve("jcr:primaryType");
+        PropertyImpl primaryType = ws.createPropertyImpl( ptPath );
     
-            ValueImpl v = (ValueImpl)getPropertyValue( ws, ptPath );
+        ValueImpl v = (ValueImpl)getPropertyValue( ws, ptPath );
         
-            if( v == null )
-                throw new RepositoryException("Repository did not return a primary type for path "+path);
+        if( v == null )
+            throw new RepositoryException("Repository did not return a primary type for path "+path);
     
-            primaryType.setValue( v );
+        primaryType.loadValue( v );
         
-            NodeTypeManagerImpl ntm = (NodeTypeManagerImpl)ws.getNodeTypeManager();
-            GenericNodeType type = (GenericNodeType) ntm.getNodeType( primaryType.getString() );
+        NodeTypeManagerImpl ntm = (NodeTypeManagerImpl)ws.getNodeTypeManager();
+        GenericNodeType type = (GenericNodeType) ntm.getNodeType( primaryType.getString() );
     
-            NodeDefinition nd = ntm.findNodeDefinition( primaryType.getString() );
+        NodeDefinition nd = ntm.findNodeDefinition( primaryType.getString() );
     
-            ni = new NodeImpl( (SessionImpl)ws.getSession(), path, type, nd );
+        ni = new NodeImpl( (SessionImpl)ws.getSession(), path, type, nd, false );
     
-            properties.remove("jcr:primaryType"); // Already handled.
-        
-            for( String name : properties )
-            {
-                ptPath = path.resolve(name);
-            
-                Object values = getPropertyValue( ws, ptPath );
-    
-                PropertyImpl p = ws.createPropertyImpl( ptPath );
-    
-                boolean multiple = values instanceof ValueImpl[];
-    
-                PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name,multiple);
-                p.setDefinition( pd );
-            
-                if( multiple )
-                    p.setValue( (ValueImpl[]) values );
-                else
-                    p.setValue( (ValueImpl) values );
-            
-                ni.addChildProperty( p );            
-            }
-            
-            m_nodeCache.putInCache( path.toString(), ni );
-            
-            return ni;
-        }
-        finally
+        for( String name : properties )
         {
-            if( ni == null ) m_nodeCache.cancelUpdate( path.toString() );
-        }
+            ptPath = path.resolve(name);
             
+            PropertyImpl p = loadProperty(ws, ni, ptPath, name);
+            
+            ni.addChildProperty( p );            
+        }
+
+        return ni;
+    }
+
+    private PropertyImpl loadProperty(WorkspaceImpl ws, NodeImpl ni, Path ptPath, String name)
+        throws RepositoryException,
+        ValueFormatException,
+        VersionException,
+        LockException,
+        ConstraintViolationException
+    {
+        Object values = getPropertyValue( ws, ptPath );
+   
+        PropertyImpl p = ws.createPropertyImpl( ptPath );
+   
+        boolean multiple = values instanceof ValueImpl[];
+   
+        PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name,multiple);
+        p.setDefinition( pd );
+        
+        if( multiple )
+            p.loadValue( (ValueImpl[]) values );
+        else
+            p.loadValue( (ValueImpl) values );
+        
+        return p;
     }
 
     public void addNode(WorkspaceImpl ws, NodeImpl ni) throws RepositoryException
     {
         m_provider.addNode(ws, ni.getInternalPath());
-        
-        m_nodeCache.putInCache(ni.getInternalPath().toString(), ni);
     }
 
     public void copy(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException
@@ -302,7 +217,7 @@ public class ProviderManager implements ItemStore
         {
             NodeImpl ni = loadNode( ws, path.getParentPath() );
             
-            return (ItemImpl) ni.getChildProperty( path.getLastComponent() );
+            return (PropertyImpl) ni.getChildProperty( path.getLastComponent() );
         }
     }
 

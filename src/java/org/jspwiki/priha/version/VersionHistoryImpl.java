@@ -37,7 +37,7 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
     private VersionHistoryImpl(SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef)
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        super(session, path, primaryType, nDef);
+        super(session, path, primaryType, nDef, true);
         // TODO Auto-generated constructor stub
     }
 

@@ -377,7 +377,7 @@ public class FileProvider implements RepositoryProvider
     
     public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
     {
-        File nodeDir = getNodeDir( ws, property.getParent().getPath() );
+        File nodeDir = getNodeDir( ws, property.getInternalPath().getParentPath().toString() );
         
         String qname = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).toQName(property.getName());
         
@@ -496,6 +496,10 @@ public class FileProvider implements RepositoryProvider
        
         File inf = new File( nodeDir, path.getLastComponent()+".info" );
 
+        if( !inf.exists() )
+        {
+            throw new PathNotFoundException("The property metadata file was not found.");
+        }
         Properties props = new Properties();
         InputStream in = null;
         

@@ -63,9 +63,12 @@ public class SessionImpl implements Session
         return m_provider.listNodes(parentpath);
     }
     
-    protected void markDirty( ItemImpl ii )
+    protected void markDirty( ItemImpl ii ) throws RepositoryException
     {
-        
+        if( ii instanceof PropertyImpl )
+        {
+            m_provider.putProperty( (PropertyImpl) ii );
+        }
     }
     
     
@@ -95,7 +98,13 @@ public class SessionImpl implements Session
 
     boolean hasProperty( Path absPath ) throws RepositoryException
     {
-        return m_provider.getProperty(absPath) != null;
+        try
+        {
+            return m_provider.getProperty(absPath) != null;
+        }
+        catch( PathNotFoundException e) {}
+        
+        return false;
     }
     
     public void addLockToken(String lt)
@@ -166,55 +175,22 @@ public class SessionImpl implements Session
 
     public ItemImpl getItem( Path absPath ) throws PathNotFoundException, RepositoryException
     {
+        //
+        //  First, try to get the property, then try to shoot for the node
+        //
         try
         {
-            ItemImpl ii = m_provider.getProperty(absPath);
+            
+            PropertyImpl pi = m_provider.getProperty(absPath);
 
-            if( ii != null )
-            {
-                return ii;
-            }
-
-            if( absPath.depth() > 0 )
-            {
-                NodeImpl nd = (NodeImpl)m_provider.getNode( absPath.getParentPath() );
-
-                if( nd != null && nd.hasProperty( absPath.getLastComponent() ) )
-                {
-                    return (ItemImpl)nd.getChildProperty( absPath.getLastComponent() );
-                }
-            }
+            return pi;
             
-            //
-            //  Load from repository
-            //
-            try
-            {
-                NodeImpl nd = m_workspace.loadNode( absPath );
-            
-                if( nd != null )
-                {
-                    return nd;   
-                }
-            }
-            catch( RepositoryException e ) {}
-            
-            try
-            {
-                NodeImpl nd = m_workspace.loadNode( absPath.getParentPath() );
-            
-                if( nd != null && nd.hasProperty( absPath.getLastComponent() ) )
-                {
-                    return (ItemImpl)nd.getChildProperty( absPath.getLastComponent() );
-                }
-            }
-            catch( RepositoryException e ) {}
         }
-        catch( InvalidPathException e )
-        {
-        }
+        catch( RepositoryException e ) {}
 
-        throw new PathNotFoundException( absPath.toString() );        
+        NodeImpl nd = m_provider.getNode( absPath );
+        
+        return nd;
     }
     
     public Item getItem(String absPath) throws PathNotFoundException, RepositoryException
@@ -342,7 +318,7 @@ public class SessionImpl implements Session
             
             NodeDefinition nd = rootType.findNodeDefinition("*");
             
-            ni = new NodeImpl( this, "/", rootType, nd );
+            ni = new NodeImpl( this, "/", rootType, nd, true );
 
             ni.sanitize();
                 
@@ -395,6 +371,11 @@ public class SessionImpl implements Session
         throws RepositoryException
     {
         return hasNode(absPath.toString()) || hasProperty(absPath);
+    }
+
+    public void remove(ItemImpl itemImpl) throws RepositoryException
+    {
+        m_provider.remove( itemImpl );
     }
 
 }

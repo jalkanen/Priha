@@ -28,7 +28,7 @@ public class VersionImpl
                ConstraintViolationException,
                RepositoryException
     {
-        super( session, path, primaryType, nDef );
+        super( session, path, primaryType, nDef, true );
 
         m_history = history;
     }
