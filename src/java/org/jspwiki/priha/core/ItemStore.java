@@ -18,17 +18,17 @@ public interface ItemStore
 
     void stop(RepositoryImpl repository);
     
-    void close(WorkspaceImpl m_workspace);
+    void close(WorkspaceImpl ws);
 
-    void copy(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException;
+    void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException;
 
-    NodeImpl findByUUID(WorkspaceImpl m_workspace, String uuid) throws RepositoryException;
+    NodeImpl findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException;
 
-    ItemImpl getItem(WorkspaceImpl m_workspace, Path path) throws InvalidPathException, RepositoryException;
+    ItemImpl getItem(WorkspaceImpl ws, Path path) throws InvalidPathException, RepositoryException;
 
-    List<Path> listNodes(WorkspaceImpl m_workspace, Path parentpath);
+    List<? extends Path> listNodes(WorkspaceImpl m_workspace, Path parentpath);
 
-    Collection<String> listWorkspaces();
+    Collection<? extends String> listWorkspaces();
 
     void move(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException;
 
@@ -40,4 +40,16 @@ public interface ItemStore
     void addNode(WorkspaceImpl m_workspace, NodeImpl ni) throws RepositoryException;
 
     void putProperty(WorkspaceImpl m_workspace, PropertyImpl pi) throws RepositoryException;
+
+    /**
+     *  Locate all properties of type REFERENCE with the content of the particular UUID.
+     *  
+     *  @param m_workspace
+     *  @param uuid
+     *  @return
+     * @throws RepositoryException 
+     */
+    Collection<? extends PropertyImpl> getReferences(WorkspaceImpl w, String uuid) throws RepositoryException;
+
+    List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException;
 }

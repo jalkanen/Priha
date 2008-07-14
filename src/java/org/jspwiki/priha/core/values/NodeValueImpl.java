@@ -15,8 +15,8 @@ import org.jspwiki.priha.core.NodeImpl;
  */
 public abstract class NodeValueImpl extends ValueImpl implements Value
 {
-    private int m_type;
-    private String m_value;
+    protected int m_type;
+    protected String m_value;
     
     protected NodeValueImpl( NodeImpl value, int type )
     {

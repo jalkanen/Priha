@@ -16,7 +16,6 @@ public abstract class ItemImpl implements Item
     protected String      m_name;
     protected SessionImpl m_session;
     protected boolean     m_modified = false;
-    protected boolean     m_new      = true;
     protected ItemState   m_state    = ItemState.NEW;
     
     public ItemImpl( SessionImpl session, String path )
@@ -35,7 +34,6 @@ public abstract class ItemImpl implements Item
     {
         this( session, original.getInternalPath() );
         m_modified = original.m_modified;
-        m_new      = original.m_new;
         m_state    = original.m_state;
     }
 
@@ -118,7 +116,7 @@ public abstract class ItemImpl implements Item
 
     public boolean isNew()
     {
-        return m_new;
+        return m_state == ItemState.NEW;
     }
 
     public boolean isNode()
@@ -193,5 +191,20 @@ public abstract class ItemImpl implements Item
         return getInternalPath().hashCode()-17;
     }
     
+    /**
+     *  Performs mandatory housekeeping right before saving.
+     *  @throws RepositoryException
+     */
+    protected void preSave() throws RepositoryException
+    {
+    }
     
+    /**
+     *  Performs mandatory housekeeping after item state has been persisted to disk.
+     *
+     */
+    protected void postSave()
+    {
+        m_state = ItemState.EXISTS;        
+    }
 }

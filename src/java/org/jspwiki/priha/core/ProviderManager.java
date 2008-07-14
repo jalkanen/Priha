@@ -1,5 +1,6 @@
 package org.jspwiki.priha.core;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.prefs.Preferences;
@@ -133,7 +134,7 @@ public class ProviderManager implements ItemStore
     {
         NodeImpl ni = null;
         
-        List<String> properties = m_provider.listProperties( ws, path );
+        // List<String> properties = m_provider.listProperties( ws, path );
     
         Path ptPath = path.resolve("jcr:primaryType");
         PropertyImpl primaryType = ws.createPropertyImpl( ptPath );
@@ -151,16 +152,20 @@ public class ProviderManager implements ItemStore
         NodeDefinition nd = ntm.findNodeDefinition( primaryType.getString() );
     
         ni = new NodeImpl( (SessionImpl)ws.getSession(), path, type, nd, false );
-    
+        ni.m_state = ItemState.EXISTS;
+        //ni.autoCreateProperties();
+
+        /*
         for( String name : properties )
         {
             ptPath = path.resolve(name);
             
             PropertyImpl p = loadProperty(ws, ni, ptPath, name);
             
-            ni.addChildProperty( p );            
+            // ni.addChildProperty( p );
+            ni.updateCachedProperties( p );
         }
-
+*/
         return ni;
     }
 
@@ -174,7 +179,8 @@ public class ProviderManager implements ItemStore
         Object values = getPropertyValue( ws, ptPath );
    
         PropertyImpl p = ws.createPropertyImpl( ptPath );
-   
+        p.m_state = ItemState.EXISTS;
+        
         boolean multiple = values instanceof ValueImpl[];
    
         PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name,multiple);
@@ -190,7 +196,12 @@ public class ProviderManager implements ItemStore
 
     public void addNode(WorkspaceImpl ws, NodeImpl ni) throws RepositoryException
     {
-        m_provider.addNode(ws, ni.getInternalPath());
+        Path path = ni.getInternalPath();
+        
+        if( !path.isRoot() && !m_provider.nodeExists(ws, path.getParentPath()) )
+            throw new ConstraintViolationException("Parent path is missing");
+        
+        m_provider.addNode(ws, path);
     }
 
     public void copy(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException
@@ -204,7 +215,8 @@ public class ProviderManager implements ItemStore
         
         return loadNode(ws, path);
     }
-
+ 
+    
     public ItemImpl getItem(WorkspaceImpl ws, Path path) throws InvalidPathException, RepositoryException
     {
         try
@@ -217,7 +229,7 @@ public class ProviderManager implements ItemStore
         {
             NodeImpl ni = loadNode( ws, path.getParentPath() );
             
-            return (PropertyImpl) ni.getChildProperty( path.getLastComponent() );
+            return loadProperty( ws, ni, path, path.getLastComponent() );
         }
     }
 
@@ -250,6 +262,27 @@ public class ProviderManager implements ItemStore
     public void stop(RepositoryImpl repository)
     {
         m_provider.stop(repository);
+    }
+
+    public Collection<? extends PropertyImpl> getReferences(WorkspaceImpl ws, String uuid) throws RepositoryException
+    {
+        ArrayList<PropertyImpl> result = new ArrayList<PropertyImpl>();
+        
+        List<Path> paths = m_provider.findReferences( ws, uuid );
+        
+        for( Path path : paths )
+        {
+            NodeImpl nd = loadNode( ws, path.getParentPath() );
+            
+            result.add( (PropertyImpl)nd.getProperty(path.getLastComponent()) );
+        }
+        
+        return result;
+    }
+
+    public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
+    {
+        return m_provider.listProperties(ws, path);
     }
 
 }

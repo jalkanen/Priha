@@ -2,7 +2,9 @@ package org.jspwiki.priha.core;
 
 import javax.jcr.*;
 
+import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import org.jspwiki.priha.RepositoryManager;
 
@@ -41,6 +43,11 @@ public class NodeImplTest extends TestCase
         m_session2.logout();
     }
 
+    public static Test suite()
+    {
+        return new TestSuite( NodeImplTest.class );
+    }
+    
     private void removeAll( NodeIterator ni ) throws RepositoryException
     {
         while( ni.hasNext() )
@@ -99,5 +106,31 @@ public class NodeImplTest extends TestCase
         
         assertNotNull( test );
         
+    }
+    
+    public void testMixinLoadSave() throws Exception
+    {
+        Node root = m_session.getRootNode();
+        
+        Node n = root.addNode("foo");
+        n.addMixin("mix:referenceable");
+        root.save();
+        
+        Node n2 = m_session2.getRootNode().getNode("foo");
+        
+        Property p = n2.getProperty("jcr:mixinTypes");
+        
+        Value[] v = p.getValues();
+        
+        boolean found = false;
+        
+        for( Value vv : v )
+        {
+            if( vv.getString().equals("mix:referenceable") ) { found = true; };
+        }
+        
+        assertTrue("mix:referenceable not found",found);
+        
+        assertNotNull( n2.getUUID() );
     }
 }

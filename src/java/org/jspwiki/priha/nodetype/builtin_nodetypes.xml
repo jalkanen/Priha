@@ -340,6 +340,67 @@
       </childNodeDefinition>
    </nodetype>
 
+   <!--  nt:hierarchyNode -->
+   <nodetype>
+      <name>nt:hierarchyNode</name>
+      <supertypes>nt:base</supertypes>
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName />
 
+      <propertyDefinition>
+          <name>jcr:created</name>
+          <requiredType>Date</requiredType>
+          <valueConstraints/>
+          <defaultValues/>
+          <autoCreated>true</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>INITIALIZE</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+   </nodetype>
+
+   <!--  nt:file -->
+   <nodetype>
+      <name>nt:file</name>
+      <supertypes>nt:hierarchyNode</supertypes>
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName>jcr:content</primaryItemName>
+
+      <childNodeDefinition>
+          <name>jcr:content</name>
+          <requiredPrimaryTypes>[nt:base]</requiredPrimaryTypes>
+          <defaultPrimaryType></defaultPrimaryType>
+          <autoCreated>false</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>COPY</onParentVersion>
+          <protected>false</protected>
+          <sameNameSiblings>false</sameNameSiblings>
+      </childNodeDefinition>
+
+   </nodetype>
+
+   <!--  nt:linkedFile -->
+   <nodetype>
+      <name>nt:linkedFile</name>
+      <supertypes>nt:hierarchyNode</supertypes>
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName>jcr:content</primaryItemName>
+
+      <propertyDefinition>
+          <name>jcr:content</name>
+          <requiredType>Reference</requiredType>
+          <valueConstraints/>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>COPY</onParentVersion>
+          <protected>false</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+   </nodetype>
 
 </nodetypes>

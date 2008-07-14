@@ -151,10 +151,22 @@ public interface RepositoryProvider
     
     /**
      *  If an item by this UUID exists, returns a Path.
+     *  
      * @param ws
      * @param uuid
      * @return
-     * @throws
+     * @throws ItemNotFoundException If the repository does not contain an UUID by this name.
      */
     public Path findByUUID( WorkspaceImpl ws, String uuid ) throws RepositoryException;
+
+    /**
+     *  Finds all the Property paths which are of type REFERENCE and whose content
+     *  is equal to the UUID given.
+     *  
+     *  @param ws
+     *  @param uuid
+     *  @return
+     *  @throws RepositoryException 
+     */
+    public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException;
 }

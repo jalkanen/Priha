@@ -16,7 +16,7 @@ import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.nodetype.PropertyDefinitionImpl;
 import org.jspwiki.priha.util.Path;
 
-public class PropertyImpl extends ItemImpl implements Property
+public class PropertyImpl extends ItemImpl implements Property, Comparable<PropertyImpl>
 {
     private enum Multi { UNDEFINED, SINGLE, MULTI };
 
@@ -130,9 +130,9 @@ public class PropertyImpl extends ItemImpl implements Property
 
         if( getValue().getType() != PropertyType.REFERENCE ) throw new ValueFormatException();
 
-        String name = getValue().getString();
+        String uuid = getValue().getString();
 
-        Node nd = (Node)m_session.getItem( name );
+        Node nd = (Node)m_session.getNodeByUUID( uuid );
 
         return nd;
     }
@@ -244,7 +244,7 @@ public class PropertyImpl extends ItemImpl implements Property
         if( m_multi == Multi.SINGLE )
             throw new ValueFormatException("Attempted to set a MULTI Value object to a SINGLE property "+m_path);
 
-        if( values == null )
+        if( values == null || values.length == 0 )
         {
             remove();
         }
@@ -274,7 +274,7 @@ public class PropertyImpl extends ItemImpl implements Property
                                              ConstraintViolationException,
                                              RepositoryException
     {
-        if( values == null )
+        if( values == null || values.length == 0)
         {
             remove();
         }
@@ -419,28 +419,46 @@ public class PropertyImpl extends ItemImpl implements Property
             m_multi = m_definition.isMultiple() ? Multi.MULTI : Multi.SINGLE;
         }
     }
-/*
-    @Override
-    protected void saveItemOnly() throws RepositoryException
-    {
-        if( isModified() )
-        {
-            WorkspaceImpl ws = (WorkspaceImpl)m_session.getWorkspace();
 
-            switch( m_state )
-            {
-                case REMOVED:
-                    ws.removeItem(this);
-                    break;
-                default:
-                    // Saving is done by the parent.
-                    ws.saveItem(this);
-                    m_state = ItemState.EXISTS;
-                    break;
-            }
-            m_modified = false;
-            m_new      = false;
+    /**
+     *  A PropertyImpl is equal to another PropertyImpl if
+     *  <ul>
+     *   <li>Paths are equal</li>
+     *   <li>Definitions are equal</li>
+     *   <li>All values are equal (in case of a multi-valued object)</li>
+     *  </ul>
+     */
+    @Override
+    public boolean equals( Object obj )
+    {
+        if( !(obj instanceof PropertyImpl) ) return false;
+        
+        if( obj == this ) return true;
+        
+        PropertyImpl pi = (PropertyImpl) obj;
+        
+        if( !pi.m_path.equals(m_path) ) return false;
+        
+        if( m_value.length != pi.m_value.length ) return false;
+        
+        for( int i = 0; i < m_value.length; i++ )
+        {
+            if( !m_value[i].equals(pi.m_value[i]) ) return false;
         }
+        
+        return true;
     }
-    */
+
+    // FIXME: Is not consistent with equals.
+    public int compareTo(PropertyImpl o)
+    {
+        int res = m_path.toString().compareTo(o.m_path.toString());
+        
+        if( res == 0 )
+        {
+            res = m_session.getWorkspace().getName().compareTo( o.m_session.getWorkspace().getName() );
+        }
+        
+        return res;
+    }
 }

@@ -3,10 +3,7 @@ package org.jspwiki.priha.core;
 import java.util.*;
 import java.util.Map.Entry;
 
-import javax.jcr.Credentials;
-import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.PathNotFoundException;
-import javax.jcr.RepositoryException;
+import javax.jcr.*;
 
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
@@ -21,8 +18,7 @@ public class SessionProvider
     private ItemStore          m_source;
     private WorkspaceImpl      m_workspace;
     
-    private List<NodeImpl>         m_nodes;
-    private Map<Path,PropertyImpl> m_properties;
+    private SortedMap<Path,ItemImpl> m_items;
     
     public SessionProvider( SessionImpl session, ItemStore source )
     {
@@ -30,31 +26,51 @@ public class SessionProvider
         m_source  = source;
         m_workspace = (WorkspaceImpl)session.getWorkspace();
         
-        m_nodes = new ArrayList<NodeImpl>();
-        m_properties = new HashMap<Path,PropertyImpl>();
+        //
+        //  The nodes are sorted according to their length to make
+        //  sure when they are saved, we save the parent path first.
+        //
+        m_items = new TreeMap<Path,ItemImpl>( new Comparator<Path>() {
+            public int compare(Path o1, Path o2)
+            {
+                int res = o1.depth() - o2.depth();
+                
+                if( res == 0 )
+                {
+                    //
+                    //  OK, this is a bit kludgy.  We put the primaryType first so that
+                    //  we make sure it's the first property to be saved.
+                    //
+                    
+                    if( o1.getLastComponent().equals("jcr:primaryType") && !o2.getLastComponent().equals("jcr:primaryType") ) return -1;
+                    if( o2.getLastComponent().equals("jcr:primaryType") && !o1.getLastComponent().equals("jcr:primaryType") ) return 1;
+                    
+                    res = o1.toString().compareTo( o2.toString() );
+                }
+                
+                return res;
+            };
+        });
     }
     
     public void save() throws RepositoryException
     {
-        save( new Path("/") );
+        save( Path.ROOT );
     }
     
     public void addNode( NodeImpl ni ) throws RepositoryException
     {
-        m_nodes.add( ni );
+        m_items.put( ni.getInternalPath(), ni );
     }
 
-    public NodeImpl getNode( Path path ) throws InvalidPathException, RepositoryException
+    public ItemImpl getItem( Path path ) throws InvalidPathException, RepositoryException
     {
-        for( NodeImpl ni : m_nodes )
-        {
-            if( ni.getInternalPath().equals(path) )
-            {
-                return ni;
-            }
-        }
+        ItemImpl ii = m_items.get(path);
+
+        if( ii != null ) 
+            return ii;
         
-        return (NodeImpl)m_source.getItem(m_workspace, path);
+        return m_source.getItem(m_workspace, path);
     }
     
     public void close()
@@ -69,33 +85,76 @@ public class SessionProvider
 
     public NodeImpl findByUUID(String uuid) throws RepositoryException
     {
-        return m_source.findByUUID(m_workspace, uuid);
-    }
-
-    public PropertyImpl getProperty(Path path) throws RepositoryException
-    {
-        PropertyImpl propval = m_properties.get( path );
-        
-        if( propval == null )
+        for( ItemImpl ni : m_items.values() )
         {
-            ItemImpl ii = m_source.getItem(m_workspace, path);
-            
-            if( ii instanceof PropertyImpl )
-                propval = (PropertyImpl) ii;
-            else
-                throw new PathNotFoundException();
+            try
+            {
+                if( ni.isNode() )
+                {
+                    String pid = ((NodeImpl)ni).getUUID();
+                    if( uuid.equals(pid) ) return (NodeImpl)ni;
+                }
+            }
+            catch(RepositoryException e) {}
         }
         
-        return propval;
+        return m_source.findByUUID( m_workspace, uuid );
+    }
+
+    /**
+     *  Finds all references to the given UUID.
+     *  
+     *  @param uuid
+     *  @return
+     *  @throws RepositoryException
+     */
+    public Collection<PropertyImpl> getReferences( String uuid ) throws RepositoryException
+    {
+        TreeSet<PropertyImpl> response = new TreeSet<PropertyImpl>();
+        
+        for (ItemImpl ii : m_items.values())
+        {
+            if (!ii.isNode())
+            {
+                PropertyImpl pi = (PropertyImpl) ii;
+
+                if (pi.getType() == PropertyType.REFERENCE)
+                {
+                    Value[] v;
+
+                    if (pi.getDefinition().isMultiple())
+                    {
+                        v = pi.getValues();
+                    }
+                    else
+                    {
+                        v = new Value[] { pi.getValue() };
+                    }
+
+                    for (Value vv : v)
+                    {
+                        if (vv.getString().equals(uuid))
+                        {
+                            response.add(pi);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        response.addAll( m_source.getReferences(m_workspace,uuid) );
+        
+        return response;
     }
 
     public List<Path> listNodes(Path parentpath)
     {
         ArrayList<Path> res = new ArrayList<Path>();
         
-        for( NodeImpl ni : m_nodes )
+        for( ItemImpl ni : m_items.values() )
         {
-            if( parentpath.isParentOf(ni.getInternalPath()) )
+            if( parentpath.isParentOf(ni.getInternalPath()) && ni.isNode() )
             {
                 res.add( ni.getInternalPath() );
             }
@@ -106,7 +165,7 @@ public class SessionProvider
         return res;
     }
 
-    public Collection<String> listWorkspaces()
+    public Collection<? extends String> listWorkspaces()
     {
         return m_source.listWorkspaces();
     }
@@ -118,9 +177,12 @@ public class SessionProvider
 
     public boolean nodeExists(Path path)
     {
-        for( NodeImpl ni : m_nodes )
+        ItemImpl ni = m_items.get( path );
+
+        if( ni != null && ni.isNode() ) 
         {
-            if( ni.getInternalPath().equals(path) ) return true;
+            if( ni.getState() == ItemState.REMOVED ) return false;
+            return true;
         }
         
         return m_source.nodeExists(m_workspace, path);
@@ -133,21 +195,9 @@ public class SessionProvider
         m_source.open((RepositoryImpl)m_session.getRepository(), credentials, workspaceName);
     }
 
-    public void putProperty(PropertyImpl property) throws RepositoryException
-    {
-        m_properties.put( property.getInternalPath(), property );
-    }
-
     public void remove(ItemImpl item) throws RepositoryException
     {
-        if( item instanceof PropertyImpl )
-        {
-            m_properties.put( item.getInternalPath(), (PropertyImpl) item );
-        }
-        else
-        {
-            m_nodes.add( (NodeImpl) item );
-        }
+        m_items.put( item.getInternalPath(), item );
     }
 
     public void start()
@@ -162,59 +212,120 @@ public class SessionProvider
 
     public boolean hasPendingChanges()
     {
-        return !(m_nodes.isEmpty() && m_properties.isEmpty());
+        return !m_items.isEmpty();
     }
 
     public void clear()
     {
-        m_nodes.clear();
-        m_properties.clear();
+        m_items.clear();
     }
 
     public void save(Path path) throws RepositoryException
     {
-        for( Iterator<NodeImpl> i = m_nodes.iterator(); i.hasNext(); )
+        for( Iterator<Entry<Path, ItemImpl>> i = m_items.entrySet().iterator(); i.hasNext(); )
         {
-            NodeImpl ni = i.next();
+            Entry<Path, ItemImpl> entry = i.next();
             
-            if( path.isParentOf(ni.getInternalPath()) )
+            ItemImpl ii = entry.getValue();
+            
+            if( path.isParentOf(ii.getInternalPath()) )
             {
-                switch( ni.getState() )
+                if( ii.isNode() )
                 {
-                    case NEW:
-                    case EXISTS:
-                        m_source.addNode( m_workspace, ni );
-                        break;
+                    NodeImpl ni = (NodeImpl) ii;
+                    
+                    switch( ni.getState() )
+                    {
+                        case NEW:
+                        case EXISTS:
+                            ni.preSave();
+                            m_source.addNode( m_workspace, ni );
+                            ni.postSave();
+                            break;
                         
-                    case REMOVED:
-                        m_source.remove( m_workspace, ni.getInternalPath() );
-                        break;
+                        case REMOVED:
+                            m_source.remove( m_workspace, ni.getInternalPath() );
+                            break;
+                    }
                 }
+                else
+                {
+                    PropertyImpl pi = (PropertyImpl)ii;
+                    
+                    switch( pi.getState() )
+                    {
+                        case NEW:
+                        case EXISTS:
+                            pi.preSave();
+                            m_source.putProperty( m_workspace, pi );
+                            pi.postSave();
+                            break;
+                                
+                        case REMOVED:
+                            m_source.remove( m_workspace, pi.getInternalPath() );
+                            break;                     
+                    }
+                }
+
                 i.remove();
+                
+            }
+        }
+    }
+
+    public Collection<? extends PropertyImpl> getProperties(Path path) throws RepositoryException
+    {
+        HashMap<String,PropertyImpl> result = new HashMap<String,PropertyImpl>();
+        
+        //
+        //  Find the node first
+        //
+        NodeImpl ni = null;
+        
+        try
+        {
+            ni = (NodeImpl) m_source.getItem( m_workspace, path );
+            
+            List<String> propertyNames = m_source.listProperties( m_workspace, path );
+            
+            for( String pName : propertyNames )
+            {
+                result.put( pName, (PropertyImpl)m_source.getItem( m_workspace, path.resolve(pName) ) );
+            }
+        }
+        catch( RepositoryException e )
+        {
+            ItemImpl ii = m_items.get( path );
+            
+            if( ii != null && ii.isNode() ) ni = (NodeImpl)ii;
+        }
+        
+        if( ni == null )
+        {
+            throw new ItemNotFoundException("There is no such Node");
+        }
+        
+        //
+        //  Now, we need to collate the properties from the Node which was
+        //  found with the properties which have been changed.  We put them all in the
+        //  same hashmap and rely on the fact that there can't be two items with 
+        //  the same key.
+        //
+        for( ItemImpl ii : m_items.values() )
+        {
+            if( ii.isNode() == false && ii.getInternalPath().getParentPath().equals(path) )
+            {
+                result.put( ii.getInternalPath().getLastComponent(), (PropertyImpl) ii );
             }
         }
         
-        for( Iterator<Entry<Path, PropertyImpl>> i = m_properties.entrySet().iterator(); i.hasNext(); )
-        {
-            Entry<Path,PropertyImpl> e = i.next();
-            if( path.isParentOf(e.getKey()) )
-            {
-                PropertyImpl pi = e.getValue();
-                
-                switch( pi.getState() )
-                {
-                    case NEW:
-                    case EXISTS:
-                        m_source.putProperty( m_workspace, pi );
-                        break;
-                        
-                    case REMOVED:
-                        m_source.remove( m_workspace, pi.getInternalPath() );
-                        break;
-                }
-                i.remove();
-            }
-        }
+        return result.values();
+    }
+
+    public void putProperty(NodeImpl impl, PropertyImpl property) throws RepositoryException
+    {
+        addNode( impl );
+        m_items.put( property.getInternalPath(), property );
     }
 
 }

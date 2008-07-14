@@ -16,6 +16,8 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 
 import org.jspwiki.priha.nodetype.NodeTypeManagerImpl;
+import org.jspwiki.priha.query.PrihaQueryManager;
+import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 import org.xml.sax.ContentHandler;
 
@@ -147,8 +149,7 @@ public class WorkspaceImpl
 
     public QueryManager getQueryManager() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Workspace.getQueryManager()");
+        return new PrihaQueryManager();
     }
 
     public Session getSession()
@@ -183,7 +184,7 @@ public class WorkspaceImpl
      */
     List<Path> listNodePaths()
     {
-        return listNodePaths(new Path("/"));
+        return listNodePaths( Path.ROOT );
     }
 
     private List<Path> listNodePaths(Path path)
@@ -209,6 +210,18 @@ public class WorkspaceImpl
     public void removeItem(ItemImpl impl) throws RepositoryException
     {
         m_providerManager.remove( this, impl.getInternalPath() );
+    }
+
+    /**
+     *  Checks directly from the repository if an item exists.
+     *  
+     *  @param path
+     *  @return
+     * @throws InvalidPathException 
+     */
+    public boolean nodeExists(Path path) throws InvalidPathException
+    {
+        return m_providerManager.hasNode(this, path);
     }
 
 }

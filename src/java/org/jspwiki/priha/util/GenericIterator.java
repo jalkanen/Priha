@@ -1,7 +1,7 @@
 package org.jspwiki.priha.util;
 
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 
 public abstract class GenericIterator implements Iterator
 {
@@ -9,12 +9,11 @@ public abstract class GenericIterator implements Iterator
     protected int m_position;
     protected int m_size;
 
-    public GenericIterator( List list )
+    public GenericIterator( Collection list )
     {
         m_iterator = list.iterator();
         m_position = 0;
         m_size     = list.size();
-
     }
     
     public long getPosition()

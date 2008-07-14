@@ -72,6 +72,7 @@ public class RepositoryHelper {
         }
         catch (RepositoryStubException e)
         {
+            e.printStackTrace();
             throw new RepositoryException(e);
         }
 

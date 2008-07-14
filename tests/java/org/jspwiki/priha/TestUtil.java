@@ -1,7 +1,5 @@
 package org.jspwiki.priha;
 
-import java.util.Iterator;
-
 import javax.jcr.*;
 
 public class TestUtil

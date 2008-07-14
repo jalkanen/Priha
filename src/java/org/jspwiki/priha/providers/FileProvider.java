@@ -575,14 +575,49 @@ public class FileProvider implements RepositoryProvider
 
     public void stop(RepositoryImpl rep)
     {
-        // TODO Auto-generated method stub
-        
+        // No need to do anything
     }
 
+    private Path findUUIDFromPath( WorkspaceImpl ws, String uuid, Path path ) throws RepositoryException
+    {
+        List<Path> list = listNodes( ws, path );
+        
+        for( Path p : list )
+        {
+            //
+            //  Check child nodes
+            //
+            
+            Path res = findUUIDFromPath( ws, uuid, p );
+            if( res != null ) return res;
+            
+            //
+            //  Check properties of this node
+            //
+            
+            List<String> propList = listProperties( ws, p );
+            
+            for( String property : propList )
+            {
+                if( property.equals( NodeImpl.JCR_UUID ) )
+                {
+                    Value v = (Value)getPropertyValue( ws, p.resolve(property) );
+                    
+                    if( uuid.equals(v.getString()) ) return p;
+                }
+            }
+        }
+        
+        return null;
+    }
+    
     public Path findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        Path p = findUUIDFromPath( ws, uuid, Path.ROOT );
+        
+        if( p == null ) throw new ItemNotFoundException( "There is no item with UUID "+uuid+" in the repository.");
+        
+        return p;
     }
     
     private static class PropertyTypeFilter implements FilenameFilter 
@@ -593,5 +628,67 @@ public class FileProvider implements RepositoryProvider
             return name.endsWith(".info");
         }
         
+    }
+
+    private List<Path> findReferencesFromPath( WorkspaceImpl ws, String uuid, Path path ) throws RepositoryException
+    {
+        List<Path> response = new ArrayList<Path>();
+        
+        List<Path> list = listNodes( ws, path );
+        
+        for( Path p : list )
+        {
+            //
+            //  Depth-first.
+            //
+            response.addAll( findReferencesFromPath( ws, uuid, p ) );
+            
+            //
+            //  List the properties
+            //
+            List<String> propList = listProperties( ws, p );
+            
+            for( String property : propList )
+            {
+                Path propertyPath = p.resolve(property);
+                
+                Object o = getPropertyValue(ws, propertyPath );
+                
+                if( o instanceof Value )
+                {
+                    Value v = (Value) o;
+                    
+                    if( v.getType() == PropertyType.REFERENCE &&
+                        v.getString().equals( uuid ) )
+                    {
+                        response.add( propertyPath );
+                    }
+                }
+                else if( o instanceof Value[] )
+                {
+                    for( Value v : (Value[])o )
+                    {             
+                        if( v.getType() == PropertyType.REFERENCE &&
+                            v.getString().equals( uuid ) )
+                        {
+                            response.add( propertyPath );
+                        }
+                    }
+                }
+            }
+        }
+        
+        return response;
+    }
+
+    public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException
+    {
+        return findReferencesFromPath(ws, uuid, Path.ROOT);
+    }
+    
+    private interface ItemPathVisitor
+    {
+        public void visitNode( Path path );
+        public void visitProperty( Path parentPath, String name );
     }
 }

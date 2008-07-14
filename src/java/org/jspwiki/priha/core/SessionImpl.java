@@ -4,10 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
@@ -38,7 +35,7 @@ public class SessionImpl implements Session
 
     private Logger         log = Logger.getLogger( getClass().getName() );
     
-    private SessionProvider m_provider;
+    protected SessionProvider m_provider;
 
     public SessionImpl( RepositoryImpl rep, Credentials creds, String name )
         throws RepositoryException
@@ -65,10 +62,10 @@ public class SessionImpl implements Session
     
     protected void markDirty( ItemImpl ii ) throws RepositoryException
     {
-        if( ii instanceof PropertyImpl )
-        {
-            m_provider.putProperty( (PropertyImpl) ii );
-        }
+        if( ii instanceof NodeImpl )
+            m_provider.addNode( (NodeImpl) ii );
+        else
+            m_provider.putProperty( (NodeImpl) ii.getParent(), (PropertyImpl)ii );
     }
     
     
@@ -93,14 +90,21 @@ public class SessionImpl implements Session
 
     boolean hasNode( String absPath )
     {
-        return m_provider.nodeExists( new Path(absPath) );
+        return hasNode( new Path(absPath) );
+    }
+    
+    boolean hasNode( Path absPath )
+    {
+        return m_provider.nodeExists( absPath );
     }
 
     boolean hasProperty( Path absPath ) throws RepositoryException
     {
         try
         {
-            return m_provider.getProperty(absPath) != null;
+            ItemImpl ii = m_provider.getItem(absPath);
+            
+            if( !ii.isNode() ) return true;
         }
         catch( PathNotFoundException e) {}
         
@@ -175,22 +179,9 @@ public class SessionImpl implements Session
 
     public ItemImpl getItem( Path absPath ) throws PathNotFoundException, RepositoryException
     {
-        //
-        //  First, try to get the property, then try to shoot for the node
-        //
-        try
-        {
-            
-            PropertyImpl pi = m_provider.getProperty(absPath);
-
-            return pi;
-            
-        }
-        catch( RepositoryException e ) {}
-
-        NodeImpl nd = m_provider.getNode( absPath );
+        ItemImpl ii = m_provider.getItem( absPath );
         
-        return nd;
+        return ii;
     }
     
     public Item getItem(String absPath) throws PathNotFoundException, RepositoryException
@@ -221,7 +212,7 @@ public class SessionImpl implements Session
 
     public Node getNodeByUUID(String uuid) throws ItemNotFoundException, RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("No UUID");
+        return m_provider.findByUUID(uuid);
     }
 
     public Repository getRepository()
@@ -231,7 +222,7 @@ public class SessionImpl implements Session
 
     public Node getRootNode() throws RepositoryException
     {
-        return (Node) getItem("/");
+        return (Node) getItem(Path.ROOT);
     }
 
     public String getUserID()
@@ -298,8 +289,6 @@ public class SessionImpl implements Session
         if( keepChanges ) throw new UnsupportedRepositoryOperationException("Session.refresh(true)");
 
         m_provider.clear();
-
-        repopulate();
     }
 
     /**
@@ -345,7 +334,7 @@ public class SessionImpl implements Session
 
     public void save() throws AccessDeniedException, ItemExistsException, ConstraintViolationException, InvalidItemStateException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException
     {
-        saveNodes( new Path("/") );
+        saveNodes( Path.ROOT );
     }
 
     public void setNamespacePrefix(String newPrefix, String existingUri) throws NamespaceException, RepositoryException
@@ -367,15 +356,20 @@ public class SessionImpl implements Session
         m_provider.save( pathprefix );
     }
 
-    public boolean itemExists(Path absPath)
+    public boolean itemExists( Path absPath )
         throws RepositoryException
     {
-        return hasNode(absPath.toString()) || hasProperty(absPath);
+        return hasNode(absPath) || hasProperty(absPath);
     }
 
     public void remove(ItemImpl itemImpl) throws RepositoryException
     {
         m_provider.remove( itemImpl );
+    }
+
+    public Collection<PropertyImpl> getReferences(String uuid) throws RepositoryException
+    {
+        return m_provider.getReferences( uuid );
     }
 
 }

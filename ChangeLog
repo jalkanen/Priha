@@ -1,3 +1,12 @@
+2008-07-15  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.14
+        
+        * Massive reworking of pretty much everything.  Fails
+        140 out of 454 TCK tests, which is the best result so far.
+        
+        * Path is now way faster than before.
+
 2008-07-02  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.13

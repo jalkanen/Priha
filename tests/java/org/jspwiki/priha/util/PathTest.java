@@ -62,6 +62,54 @@ public class PathTest extends TestCase
         assertFalse( "p2->p1", p2.isParentOf(p1) );
     }
 
+    private static final int SPEED_ITERS = 10000;
+    
+    public void testSpeed() throws Exception
+    {
+        Path[] paths = new Path[SPEED_ITERS];
+        long start = System.currentTimeMillis();
+        for( int i = 0; i < SPEED_ITERS; i++ )
+        {
+            Path p = new Path( "/foo/bar/test/gobble" );
+            paths[i] = p;
+        }
+        
+        long end = System.currentTimeMillis();
+
+        printSpeed( "Path creation", SPEED_ITERS, start, end );
+        
+        start = System.currentTimeMillis();
+        for( int i = 0; i < SPEED_ITERS; i++ )
+        {
+            Path p = paths[i].resolve("test");
+            
+            paths[i] = p;
+        }
+        end = System.currentTimeMillis();
+        
+        printSpeed( "Basic resolve", SPEED_ITERS, start, end );
+        
+        start = System.currentTimeMillis();
+        for( int i = 0; i < SPEED_ITERS; i++ )
+        {
+            Path p = paths[i].getParentPath();
+            
+            paths[i] = p;
+        }
+        end = System.currentTimeMillis();
+        
+        printSpeed( "getParentPath()", SPEED_ITERS, start, end );        
+        
+    }
+    
+    private void printSpeed( String msg, int iters, long start, long end )
+    {
+        long time = end - start;
+        float itersSec = (iters*100)/((float)time/1000) / 100;
+        
+        System.out.println( msg + ":" + iters + " iterations in "+time+" ms ("+itersSec+" iterations/second)");
+    }
+    
     public static Test suite()
     {
         return new TestSuite( PathTest.class );

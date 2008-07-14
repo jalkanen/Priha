@@ -43,7 +43,9 @@ public class RepositoryTest extends TestCase
     {
         Session s = m_repository.login();
         
-        s.getRootNode().addNode("testemptyrepo");
+        Node nd = s.getRootNode().addNode("testemptyrepo");
+        nd = nd.addNode("foo");
+        nd.setProperty("Barbapapa","Barbamama");
         
         s.save();
         
@@ -127,7 +129,6 @@ public class RepositoryTest extends TestCase
 
     public void testRemoveProperty() throws Exception
     {
-        log.info("testRemoveProperty");
         Session s = m_repository.login();
         
         Node nd = s.getRootNode();
@@ -195,6 +196,10 @@ public class RepositoryTest extends TestCase
         assertTrue( "test node not found", testFound );
     }
     
+    /** The size of a million can be configured here. ;-) */
+    
+    private static final int MILLION_ITERATIONS = 100;
+    
     public void testMillionSaves() throws Exception
     {
         Session s = m_repository.login();
@@ -203,12 +208,12 @@ public class RepositoryTest extends TestCase
         
         long start = System.currentTimeMillis();
 
-        for( int i = 0; i < 1; i++ )
+        for( int i = 0; i < MILLION_ITERATIONS; i++ )
         {
             String name = "x-"+getUniqueID();
             
-            nd.addNode( name );
-            nd.setProperty( "test", getUniqueID() );
+            Node n = nd.addNode( name );
+            n.setProperty( "test", getUniqueID() );
         }
         
         s.save();

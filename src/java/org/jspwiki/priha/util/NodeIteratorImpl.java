@@ -1,6 +1,6 @@
 package org.jspwiki.priha.util;
 
-import java.util.List;
+import java.util.Collection;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
@@ -8,7 +8,7 @@ import javax.jcr.NodeIterator;
 public class NodeIteratorImpl extends GenericIterator
     implements NodeIterator
 {
-    public NodeIteratorImpl( List<Node> list )
+    public NodeIteratorImpl( Collection<Node> list )
     {
         super(list);
     }

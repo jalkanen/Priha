@@ -22,8 +22,8 @@ import org.jspwiki.priha.version.VersionHistoryImpl;
 
 public class NodeImpl extends ItemImpl implements Node, Comparable
 {
-    private PropertyList        m_properties = new PropertyList();
-    private ArrayList<NodeType> m_mixinTypes = new ArrayList<NodeType>();
+    private static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
+    public static final String JCR_UUID = "jcr:uuid";
     private NodeDefinition      m_definition;
     
     private GenericNodeType     m_primaryType;
@@ -43,8 +43,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         super( original, session );
         
-        m_properties = new PropertyList( original.m_properties, session );
-        m_mixinTypes.addAll( original.m_mixinTypes );
         m_primaryType = original.m_primaryType;
         m_definition  = original.m_definition;
     }
@@ -74,7 +72,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         this( session, path.toString(), primaryType, nDef, populateDefaults );
     }
-    
+        
+
     public void addMixin(String mixinName)
                                           throws NoSuchNodeTypeException,
                                               VersionException,
@@ -83,20 +82,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                               RepositoryException
     {
         ValueFactory vf = ValueFactoryImpl.getInstance();
+
         NodeType mixin = getNodeTypeManager().getNodeType(mixinName);
 
         if( !mixin.isMixin() )
             throw new NoSuchNodeTypeException("Type "+mixinName+" is not a mixin type!");
 
-        m_mixinTypes.add(mixin);
-
-        autoCreateProperties();
-        markModified();
-
         Property p;
         try
         {
-            p = getProperty("jcr:mixinTypes");
+            p = getProperty(JCR_MIXIN_TYPES);
 
             Value[] v = p.getValues();
 
@@ -112,10 +107,21 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         catch( PathNotFoundException e )
         {
             Value[] values = new Value[] { vf.createValue(mixinName,PropertyType.NAME) };
-            setProperty( "jcr:mixinTypes", values, PropertyType.NAME );
+            setProperty( JCR_MIXIN_TYPES, values, PropertyType.NAME );
         }
+
+        autoCreateProperties();
+
+        markModified();
     }
 
+    /**
+     *  Figures out what type the child node should be.
+     *  
+     *  @param relpath A relative path to the child node.
+     *  @return A NodeType for the path
+     *  @throws RepositoryException If something goes wrong.
+     */
     private GenericNodeType assignChildType(String relpath) throws RepositoryException
     {
         NodeDefinition nd = m_primaryType.findNodeDefinition(relpath);
@@ -153,7 +159,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             //
             Path parentPath = absPath.getParentPath();
 
-            Item item = m_session.getItem(parentPath.toString());
+            Item item = m_session.getItem(parentPath);
 
             if( !item.isNode() )
             {
@@ -213,7 +219,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         }
         catch( InvalidPathException e)
         {
-            throw new PathNotFoundException( e.getMessage() );
+            throw new PathNotFoundException( e.getMessage(), e );
         }
         return ni;
     }
@@ -242,8 +248,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         NodeType nt = getNodeTypeManager().getNodeType( mixinName );
 
         if( !nt.isMixin() )
+        {
             throw new NoSuchNodeTypeException(mixinName+" is not a mixin type!");
-
+        }
+        
         if( hasMixinType(nt.getName()) )
         {
             return false;
@@ -256,11 +264,18 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     private boolean hasMixinType(String mixinType)
     {
-        for( NodeType nt : m_mixinTypes )
+        try
         {
-            if( nt.getName().equals(mixinType) ) return true;
+            Property pi = getProperty( JCR_MIXIN_TYPES );
+        
+            for( Value v : pi.getValues() )
+            {
+                String mixin = v.getString();
+            
+                if( mixin.equals(mixinType) ) return true;
+            }
         }
-
+        catch( RepositoryException e ) {}
         return false;
     }
 
@@ -341,26 +356,42 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public NodeType[] getMixinNodeTypes() throws RepositoryException
     {
-        return m_mixinTypes.toArray( new NodeType[0] );
+        ArrayList<NodeType> mixinTypes = new ArrayList<NodeType>();
+        
+        //
+        //  If there are no mixin types, then let's just return an empty array.
+        //
+        try
+        {
+            Property p = getProperty( JCR_MIXIN_TYPES );
+        
+            for( Value v : p.getValues() )
+            {
+                NodeType nt = m_session.getWorkspace().getNodeTypeManager().getNodeType( v.getString() );
+            
+                mixinTypes.add( nt );
+            }
+        }
+        catch( RepositoryException e ) {}
+        
+        return mixinTypes.toArray( new NodeType[0] );
     }
 
-    public NodeImpl getNode( Path path ) throws PathNotFoundException, RepositoryException
+    public NodeImpl getNode( Path absPath ) throws PathNotFoundException, RepositoryException
     {
-        return (NodeImpl)getNode( path.toString() );
+        Item i = m_session.getItem(absPath);
+
+        if( i.isNode() )
+        {
+            return (NodeImpl) i;
+        }
+
+        throw new PathNotFoundException("Path refers to a property: "+absPath.toString());
     }
     
     public Node getNode(String relPath) throws PathNotFoundException, RepositoryException
     {
-        Path p = m_path.resolve(relPath);
-
-        Item i = m_session.getItem(p.toString());
-
-        if( i.isNode() )
-        {
-            return (Node) i;
-        }
-
-        throw new PathNotFoundException("Path refers to a property: "+p.toString());
+        return getNode( m_path.resolve(relPath) );
     }
 
     public NodeIterator getNodes() throws RepositoryException
@@ -465,8 +496,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public PropertyIterator getProperties() throws RepositoryException
     {
-        List<Property> ls = new ArrayList<Property>();
-        ls.addAll( m_properties );
+        List<PropertyImpl> ls = new ArrayList<PropertyImpl>();
+        
+        ls.addAll( m_session.m_provider.getProperties(getInternalPath()) );
+        
         return new PropertyIteratorImpl( ls );
     }
 
@@ -474,10 +507,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         Pattern p = parseJCRPattern(namePattern);
 
-        ArrayList<Property> matchedpaths = new ArrayList<Property>();
-
-        for( Property prop : m_properties )
+        ArrayList<PropertyImpl> matchedpaths = new ArrayList<PropertyImpl>();
+        
+        for( PropertyIterator i = getProperties(); i.hasNext(); )
         {
+            PropertyImpl prop = (PropertyImpl)i.nextProperty();
             Matcher match = p.matcher( prop.getName() );
 
             if( match.matches() )
@@ -492,13 +526,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     public Property getChildProperty( String name )
         throws RepositoryException
     {
-        for( Property prop : m_properties )
-        {
-            if( name.equals(prop.getName()) )
-                return prop;
-        }
-
-        throw new PathNotFoundException( m_path.resolve(name).toString() );
+        ItemImpl ii = m_session.m_provider.getItem( m_path.resolve(name) );
+        
+        if( ii.isNode() ) throw new ItemNotFoundException("Found a Node, not a Property");
+        
+        return (Property) ii;
     }
 
     public Property getProperty(String relPath) throws PathNotFoundException, RepositoryException
@@ -531,7 +563,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         for( PropertyDefinition pd : nt.getPropertyDefinitions() )
         {
-            if( pd.isAutoCreated() && !m_properties.hasProperty(pd.getName()) )
+            if( pd.isAutoCreated() && !hasProperty(pd.getName()) )
             {
                 log.finer("Autocreating property "+pd.getName());
 
@@ -540,7 +572,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
                 // FIXME: Add default value generation
 
-                if( "jcr:uuid".equals(pi.getName()) )
+                if( JCR_UUID.equals(pi.getName()) )
                 {
                     pi.setValue( UUID.randomUUID().toString() );
                 }
@@ -552,12 +584,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public PropertyIterator getReferences() throws RepositoryException
     {
-        // FIXME: This is really, really, really slow.  But it works.
-
-        String uuid = getUUID();
-
-        ArrayList<PropertyImpl> references = new ArrayList<PropertyImpl>();
-
+        Collection<PropertyImpl> references = m_session.getReferences( getUUID() );
 
         return new PropertyIteratorImpl(references);
     }
@@ -566,9 +593,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         if( isNodeType("mix:referenceable") )
         {
-            Property uuid = getProperty("jcr:uuid");
+            Property uuid = getProperty(JCR_UUID);
 
-            return uuid.toString();
+            return uuid.getValue().getString();
         }
 
         throw new UnsupportedRepositoryOperationException("No UUID defined for this node");
@@ -603,16 +630,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public boolean hasProperties() throws RepositoryException
     {
-        return m_properties.size() > 0;
+        // FIXME: Slow.
+        return getProperties().getSize() > 0;
     }
 
     public boolean hasProperty(String relPath) throws RepositoryException
     {
         Path abspath = m_path.resolve(relPath);
         
-        NodeImpl parent = getNode( abspath.getParentPath() );
-        
-        return parent.m_properties.hasProperty( abspath.getLastComponent() );
+        return m_session.hasProperty( abspath );
     }
 
     public boolean holdsLock() throws RepositoryException
@@ -777,7 +803,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         //
         if( name.equals("jcr:primaryType") )
         {
-            if( m_properties.hasProperty("jcr:primaryType") )
+            if( hasProperty("jcr:primaryType") )
             {
                 throw new RepositoryException("The object has already been assigned a primary type!");
             }
@@ -791,8 +817,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                      m_path.resolve(name),
                                      primaryDef );
 
-            m_properties.add( prop );
-
+            addChildProperty( prop );
+            markModified();
             return prop;
         }
 
@@ -815,7 +841,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             PropertyDefinition pd = ((GenericNodeType)nd.getPrimaryNodeType()).findPropertyDefinition(name,ismultiple);
 
             prop = new PropertyImpl( m_session, propertypath, pd );
-            m_properties.add(prop);
+            addChildProperty( prop );
+            markModified();
         }
 
         if( value == null )
@@ -827,12 +854,31 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     }
 
     /**
+     *  Checks only the properties of this Node.
+     *  
+     *  @param propertyName The name of the property to check.
+     *  @return True, if the property exists.
+     */
+    /*
+    private boolean hasChildProperty(String propertyName)
+    {
+        for( PropertyImpl pi : m_properties )
+        {
+            if( pi.m_name.equals(propertyName) ) return true;
+        }
+        
+        return false;
+    }
+    */
+
+    /**
      *  Removes a given property from the node.
      *  @param prop
      */
-    protected void removeProperty(Property prop)
+    protected void removeProperty(PropertyImpl prop)
     {
-        m_properties.remove(prop);
+        prop.m_state = ItemState.REMOVED;
+        // m_properties.remove(prop);
         markModified();
     }
 
@@ -857,7 +903,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                                        ConstraintViolationException,
                                                                        RepositoryException
     {
-        Property p = prepareProperty( name, value );
+        PropertyImpl p = prepareProperty( name, value );
 
         p.setValue(value);
 
@@ -871,7 +917,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                                 ConstraintViolationException,
                                                                 RepositoryException
     {
-        Property p = prepareProperty( name, values );
+        PropertyImpl p = prepareProperty( name, values );
 
         p.setValue(values);
 
@@ -888,7 +934,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         if( values.length > 0 && type != values[0].getType() )
             throw new ValueFormatException("Do not know how to convert between types, sorry.");
 
-        Property p = prepareProperty( name, values );
+        PropertyImpl p = prepareProperty( name, values );
 
         p.setValue( values );
 
@@ -902,7 +948,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                                  ConstraintViolationException,
                                                                  RepositoryException
     {
-        Property p = prepareProperty( name, values );
+        PropertyImpl p = prepareProperty( name, values );
 
         p.setValue(values);
 
@@ -926,7 +972,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             newVals[i] = ValueFactoryImpl.getInstance().createValue( values[i], type );
         }
 
-        Property p = prepareProperty( name, newVals );
+        PropertyImpl p = prepareProperty( name, newVals );
 
         p.setValue( newVals );
 
@@ -940,7 +986,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                               ConstraintViolationException,
                                                               RepositoryException
     {
-        Property prop = prepareProperty(name,value);
+        PropertyImpl prop = prepareProperty(name,value);
         prop.setValue(value);
 
         return prop;
@@ -985,7 +1031,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                                    ConstraintViolationException,
                                                                    RepositoryException
     {
-        Property p = prepareProperty( name, value );
+        PropertyImpl p = prepareProperty( name, value );
 
         p.setValue(value);
 
@@ -999,7 +1045,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                                ConstraintViolationException,
                                                                RepositoryException
     {
-        Property p = prepareProperty( name, value );
+        PropertyImpl p = prepareProperty( name, value );
 
         p.setValue(value);
 
@@ -1013,7 +1059,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                               ConstraintViolationException,
                                                               RepositoryException
     {
-        Property p = prepareProperty( name, value );
+        PropertyImpl p = prepareProperty( name, value );
 
         p.setValue(value);
 
@@ -1027,7 +1073,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                             ConstraintViolationException,
                                                             RepositoryException
     {
-        Property p = prepareProperty( name, value );
+        PropertyImpl p = prepareProperty( name, value );
 
         p.setValue(value);
 
@@ -1041,7 +1087,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                                 ConstraintViolationException,
                                                                 RepositoryException
     {
-        Property p = prepareProperty( name, value );
+        PropertyImpl p = prepareProperty( name, value );
 
         p.setValue(value);
 
@@ -1055,7 +1101,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                             ConstraintViolationException,
                                                             RepositoryException
     {
-        Property p = prepareProperty( name, value );
+        PropertyImpl p = prepareProperty( name, value );
 
         p.setValue(value);
 
@@ -1180,9 +1226,20 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         log.fine("Removed "+getPath());
     }
 
-    public void addChildProperty(PropertyImpl property)
+    /**
+     *  This method is allowed to add to the property list.
+     *  This is not public.
+     *  
+     *  @param property
+     * @throws RepositoryException 
+     * @throws ValueFormatException 
+     */
+    public void addChildProperty(PropertyImpl property) throws ValueFormatException, RepositoryException
     {
-        m_properties.add( property );
+        //
+        //  Add to the internal list.
+        //
+        m_session.m_provider.putProperty( this, property ); 
     }
     
     /**
@@ -1192,13 +1249,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
      */
     public void sanitize() throws RepositoryException
     {
-        log.finest("Sanitizing node "+m_path);
+        // log.finest("Sanitizing node "+m_path);
 
         if( m_definition == null )
         {
-            PropertyImpl primarytype = m_properties.find( "jcr:primaryType" );
-
-            if( primarytype == null )
+            try
+            {
+                PropertyImpl primarytype = (PropertyImpl) getProperty( "jcr:primaryType" );
+            }
+            catch( Exception e )
             {
                 if( m_path.isRoot() )
                 {
@@ -1235,13 +1294,71 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
         GenericNodeType mytype = (GenericNodeType)getPrimaryNodeType();
 
-        for( PropertyImpl pi : m_properties )
+        for( PropertyIterator i = getProperties(); i.hasNext(); )
         {
+            PropertyImpl pi = (PropertyImpl)i.next();
             if( pi.getDefinition() == null )
             {
                 PropertyDefinition pd = mytype.findPropertyDefinition( pi.getName(), false ); // FIXME: Really?
 
                 pi.m_definition = pd;
+            }
+        }
+    }
+
+    /**
+     *  We consider nodes to be equal if they have the exact same path, and
+     *  all the properties are equal too.
+     */
+    @Override
+    public boolean equals(Object obj)
+    {
+        if( obj == this ) return true;
+        
+        if( obj instanceof NodeImpl )
+        {
+            NodeImpl ni = (NodeImpl) obj;
+            
+            if( !ni.getInternalPath().equals(getInternalPath()) )
+                return false;
+            
+            if( !ni.m_session.getWorkspace().getName().equals(m_session.getWorkspace().getName()) ) return false;
+            
+            // All tests have succeeded
+            return true;
+        }
+        
+        return false;
+    }
+    
+    @Override
+    protected void preSave() throws RepositoryException
+    {
+        //
+        //  Check mandatory properties
+        //
+        checkMandatoryProperties( getPrimaryNodeType() );
+
+        for( NodeType nt : getMixinNodeTypes() )
+        {
+            checkMandatoryProperties( nt );
+        }
+    }
+
+    /**
+     *  Checks the mandatory properties for this Nodetype and throws a ConstraintViolationException
+     *  if it's not existing.
+     *  
+     * @param nt
+     * @throws RepositoryException 
+     */
+    private void checkMandatoryProperties(NodeType nt) throws RepositoryException
+    {
+        for( PropertyDefinition pd : nt.getPropertyDefinitions() )
+        {
+            if( pd.isMandatory() && !hasProperty(pd.getName()) )
+            {
+                throw new ConstraintViolationException("Node is missing property "+pd.getName());
             }
         }
     }

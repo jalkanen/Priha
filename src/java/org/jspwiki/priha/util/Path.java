@@ -20,6 +20,7 @@
 package org.jspwiki.priha.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -30,18 +31,25 @@ import java.util.List;
  */
 public class Path
 {
-    private final List<String> m_components;
+    /**
+     *  This is a static instance of the root path so that you don't have
+     *  to create it every single time you use it (as it happens quite often).
+     *  <p>
+     *  Using this is faster than using <code>Path p = new Path("/")</code>.
+     */
+    public static final Path ROOT = new Path("/");
+
+    private final String[] m_components;
 
     private boolean m_isAbsolute = false;
 
     private String  m_cachedString;
 
-    protected Path( List<String> components, boolean absolute )
+    protected Path( String[] components, boolean absolute )
     {
-        m_components = new ArrayList<String>();
-        m_components.addAll(components);
+        m_components = components;
         m_isAbsolute = absolute;
-        update();
+        //update();
     }
 
     /**
@@ -56,18 +64,32 @@ public class Path
         if( abspath.length() > 0 && abspath.charAt(0) == '/' ) m_isAbsolute = true;
 
         m_components = parsePath( abspath );
-        update();
+        //update();
     }
 
     public Path( String pathStart, Path pathEnd )
     {
-        this( pathStart );
+        if( pathStart.length() > 0 && pathStart.charAt(0) == '/' ) m_isAbsolute = true;
+        String[] start = parsePath( pathStart );
+        
+        m_components = new String[start.length+pathEnd.depth()];
+        
+        for( int i = 0; i < start.length; i++ )
+        {
+            m_components[i] = start[i];
+        }
+        
+        for( int i = 0; i < pathEnd.depth(); i++ )
+        {
+            m_components[i+start.length] = pathEnd.m_components[i];
+        }
 
-        m_components.addAll( pathEnd.m_components );
-        update();
+        //update();
     }
 
-    private List<String> parsePath( String path )
+    private static final String[] EMPTY_ARRAY = new String[0];
+    
+    private String[] parsePath( String path )
     {
         ArrayList<String> ls = new ArrayList<String>();
 
@@ -82,12 +104,7 @@ public class Path
         if( start < path.length() )
             ls.add(path.substring(start)); // Add the final component
 
-        //
-        //  This saves some bytes at the expense of speed.
-        //
-        ls.trimToSize();
-
-        return ls;
+        return ls.toArray( new String[ls.size()] );
     }
     /**
      *  Gets one path component.
@@ -96,7 +113,7 @@ public class Path
      */
     public String getComponent( int idx )
     {
-        return m_components.get(idx);
+        return m_components[idx];
     }
 
     /**
@@ -109,7 +126,7 @@ public class Path
         {
             return "";
         }
-        return m_components.get(depth()-1);
+        return m_components[depth()-1];
     }
 
     /**
@@ -118,7 +135,7 @@ public class Path
      */
     public final boolean isRoot()
     {
-        return m_components.size() == 0;
+        return depth() == 0;
     }
 
     /**
@@ -127,7 +144,7 @@ public class Path
      */
     public final int depth()
     {
-        return m_components.size();
+        return m_components.length;
     }
 
     /**
@@ -139,7 +156,7 @@ public class Path
         throws InvalidPathException
     {
         if( isRoot() ) throw new InvalidPathException("Root has no parent");
-        return m_components.get(depth()-1);
+        return m_components[depth()-1];
     }
 
     /**
@@ -152,10 +169,8 @@ public class Path
         throws InvalidPathException
     {
         if( isRoot() ) throw new InvalidPathException("Root has no parent");
-        List<String> list = m_components.subList( 0,
-                                                  m_components.size()-1 );
-
-        return new Path( list, m_isAbsolute );
+        
+        return getSubpath( 0, depth()-1 );
     }
 
     /**
@@ -188,9 +203,14 @@ public class Path
         }
         if( startidx < 0 || endidx < 0 ) throw new InvalidPathException("Negative index");
 
-        List<String> list = m_components.subList( startidx,
-                                                  endidx );
-        Path newpath = new Path( list, startidx == 0 ? m_isAbsolute : false );
+        String[] components = new String[endidx-startidx];
+        
+        for( int i = startidx; i < endidx; i++ )
+        {
+            components[i-startidx] = m_components[i];
+        }
+
+        Path newpath = new Path( components, startidx == 0 ? m_isAbsolute : false );
 
         return newpath;
     }
@@ -241,9 +261,9 @@ public class Path
         ArrayList<String> list = new ArrayList<String>();
 
         if( !relPath.startsWith("/") )
-            p.addAll( m_components );
+            p.addAll( Arrays.asList(m_components) );
 
-        p.addAll( parsePath(relPath) );
+        p.addAll( Arrays.asList(parsePath(relPath)) );
 
         for( int i = 0; i < p.size(); i++ )
         {
@@ -265,9 +285,7 @@ public class Path
             }
         }
 
-        list.trimToSize();
-
-        return new Path( list, m_isAbsolute );
+        return new Path( list.toArray(EMPTY_ARRAY), m_isAbsolute );
     }
 
     /**
@@ -293,9 +311,9 @@ public class Path
     {
         if( p.depth() > depth() || (depth() == 0) )
         {
-            for( int i = 0; i < m_components.size(); i++ )
+            for( int i = 0; i < m_components.length; i++ )
             {
-                if( !m_components.get(i).equals(p.m_components.get(i)) ) 
+                if( !m_components[i].equals(p.m_components[i]) ) 
                     return false;
             }
             

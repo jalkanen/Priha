@@ -1,6 +1,8 @@
 package org.jspwiki.priha.core.values;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.Calendar;
 
 import javax.jcr.RepositoryException;
@@ -63,13 +65,41 @@ public abstract class ValueImpl implements Value, Cloneable
         throw new ValueFormatException("This is not a long type: "+getClass().getName());
     }
 
+    /**
+     *  By default, returns the inputstream of the String representation.
+     */
     public InputStream getStream() throws IllegalStateException, RepositoryException
     {
-        throw new ValueFormatException("This is not a stream type: "+getClass().getName());
+        try
+        {
+            return new ByteArrayInputStream( getString().getBytes("UTF-8") );
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RepositoryException("Yeah right, you don't have UTF-8.  Your platform is b0rked.");
+        }
     }
 
     public String getString() throws ValueFormatException, IllegalStateException, RepositoryException
     {
         throw new ValueFormatException("Cannot convert to String!");
+    }
+    
+    public boolean equals( Object o )
+    {
+        if( o instanceof Value )
+        {
+            Value v = (Value) o;
+            
+            try
+            {
+                return v.getType() == getType() && v.getString().equals(getString());
+            }
+            catch( Exception e )
+            {
+            }
+        }
+        
+        return false;
     }
 }
