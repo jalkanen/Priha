@@ -61,34 +61,6 @@ public class WorkspaceImpl
         return pi;
     }
 
-    /**
-     *  Writes the state of a node directly to the repository.
-     *
-     *  @param item
-     *  @throws RepositoryException
-     */
-    /*
-    void saveItem( ItemImpl item ) throws RepositoryException
-    {
-        if( item instanceof NodeImpl )
-            m_providerManager.addNode( this, (NodeImpl)item );
-        else
-            m_providerManager.putProperty( this, (PropertyImpl) item ); 
-    }
-*/
-    /**
-     * Loads the state of a node from the repository.
-     *
-     * @param path
-     * @return A brand new NodeImpl.
-     *
-     * @throws RepositoryException
-     */
-    NodeImpl loadNode( Path path ) throws RepositoryException
-    {
-        return m_providerManager.loadNode(this, path);
-    }
-
     public void clone(String srcWorkspace, String srcAbsPath, String destAbsPath, boolean removeExisting) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         // TODO Auto-generated method stub
@@ -176,30 +148,6 @@ public class WorkspaceImpl
         // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException("Workspace.restore()");
 
-    }
-
-    /**
-     *  Goes to the repository and lists all available Nodes with their paths.
-     *  @return
-     */
-    List<Path> listNodePaths()
-    {
-        return listNodePaths( Path.ROOT );
-    }
-
-    private List<Path> listNodePaths(Path path)
-    {
-        List<Path> ls = m_providerManager.listNodes( this, path );
-        List<Path> result = new ArrayList<Path>();
-        
-        result.addAll( ls );
-        
-        for( Path p : ls )
-        {
-            result.addAll( listNodePaths(p) );
-        }
-        
-        return result;
     }
     
     public void logout()

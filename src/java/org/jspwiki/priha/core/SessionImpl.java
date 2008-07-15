@@ -284,11 +284,14 @@ public class SessionImpl implements Session
 
     }
 
+    void refresh( boolean keepChanges, Path path ) throws RepositoryException
+    {
+        m_provider.refresh( keepChanges, path );
+    }
+    
     public void refresh(boolean keepChanges) throws RepositoryException
     {
-        if( keepChanges ) throw new UnsupportedRepositoryOperationException("Session.refresh(true)");
-
-        m_provider.clear();
+        refresh( keepChanges, Path.ROOT );
     }
 
     /**

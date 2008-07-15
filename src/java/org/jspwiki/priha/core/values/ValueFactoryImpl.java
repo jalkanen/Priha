@@ -47,6 +47,8 @@ public class ValueFactoryImpl implements ValueFactory
             case PropertyType.STRING:
                 return new StringValueImpl( value.getString() );
 
+            case PropertyType.DATE:
+                return new CalendarValueImpl( value.getDate() );
         }
         
         

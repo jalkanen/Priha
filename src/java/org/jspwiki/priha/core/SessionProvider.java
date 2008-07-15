@@ -328,4 +328,39 @@ public class SessionProvider
         m_items.put( property.getInternalPath(), property );
     }
 
+    /**
+     *  Refreshes all the items within the given path.
+     *  
+     *  @param keepChanges If true, does nothing (Priha implements COPY-ON-WRITE). If false,
+     *                     purges all changes from the path.
+     *  @param path The path from which to start refreshing.
+     */
+    public void refresh(boolean keepChanges, Path path)
+    {
+        //
+        //  FIXME: Should notify the providers to refresh the caches, if caching
+        //         is implemented.
+        //
+        if( keepChanges ) return;
+        
+        if( path.isRoot() ) 
+        {
+            m_items.clear(); // Shortcut
+            return;
+        }
+        
+        for( Iterator<Entry<Path, ItemImpl>> i = m_items.entrySet().iterator(); i.hasNext(); )
+        {
+            Entry<Path, ItemImpl> entry = i.next();
+            
+            ItemImpl ii = entry.getValue();
+            
+            if( path.isParentOf(ii.getInternalPath()) )
+            {
+                i.remove();
+            }
+        }
+ 
+    }
+
 }

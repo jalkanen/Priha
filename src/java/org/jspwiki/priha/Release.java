@@ -39,11 +39,11 @@ public class Release
 
     public static final String APPNAME       = "Priha Content Repository";
 
-    public static final String COPYRIGHT     = "(C) Janne Jalkanen 2007";
+    public static final String COPYRIGHT     = "(C) Janne Jalkanen 2007-2008";
 
     public static final int    VERSION       = 0;
     public static final int    REVISION      = 0;
-    public static final int    MINORREVISION = 14;
+    public static final int    MINORREVISION = 15;
 
     public static final String VERSTR        = VERSION+"."+REVISION+"."+MINORREVISION;
 

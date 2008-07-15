@@ -1,5 +1,7 @@
 package org.jspwiki.priha.core.values;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Calendar;
 
 import javax.jcr.PropertyType;
@@ -33,5 +35,12 @@ public class CalendarValueImpl extends ValueImpl implements Value
     {
         checkValue();
         return m_value.toString();
+    }
+    
+    @Override
+    public InputStream getStream()
+    {
+        String val = Long.toString( m_value.getTimeInMillis() );
+        return new ByteArrayInputStream(val.getBytes());
     }
 }

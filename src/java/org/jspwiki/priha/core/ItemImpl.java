@@ -148,8 +148,7 @@ public abstract class ItemImpl implements Item
 
     public void refresh(boolean keepChanges) throws InvalidItemStateException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Item.refresh()");
+        m_session.refresh( keepChanges, m_path );
     }
 
     public abstract void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException;

@@ -27,25 +27,12 @@ public class WorkspaceImplTest extends TestCase
     {
         TestUtil.emptyRepo(m_repository);
     }
-    
-    public void testListNodePaths() throws LoginException, RepositoryException
-    {
-        Session s = m_repository.login();
-        
-        Node a = s.getRootNode().addNode("a");
-        Node b = a.addNode("b");
-        Node c = s.getRootNode().addNode("c");
-        
-        s.save();
-        
-        WorkspaceImpl wsi = (WorkspaceImpl)s.getWorkspace();
-        
-        List<Path> paths = wsi.listNodePaths();
-        
-        // Includes jcr:system
-        assertEquals("wrong number of paths",4,paths.size());
-    }
 
+    public void testEmpty()
+    {
+        
+    }
+    
     public static Test suite()
     {
         return new TestSuite( WorkspaceImplTest.class );

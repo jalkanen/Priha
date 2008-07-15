@@ -59,12 +59,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         {
             setProperty( "jcr:primaryType", m_primaryType.getName(), PropertyType.NAME );
         }
-
-        //
-        //  This is a bit of a kludge to make sure that a root node is never in NEW state,
-        //  because that would prevent saves.
-        //
-        if( path.equals("/") ) m_state = ItemState.EXISTS;
     }
 
     protected NodeImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
@@ -620,7 +614,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     public boolean hasNode(String relPath) throws RepositoryException
     {
         Path absPath = m_path.resolve(relPath);
-        return m_session.hasNode(absPath.toString());
+        return m_session.hasNode(absPath);
     }
 
     public boolean hasNodes() throws RepositoryException
@@ -1334,6 +1328,29 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     @Override
     protected void preSave() throws RepositoryException
     {
+        WorkspaceImpl ws = (WorkspaceImpl) m_session.getWorkspace();
+        
+        //
+        //  Check that parent still exists
+        //
+        
+        if( !m_path.isRoot() ) 
+        {
+            if( !ws.nodeExists(m_path.getParentPath()) )
+            {
+                throw new InvalidItemStateException("No parent available.");
+            }
+        }
+        
+        //
+        //  Check if nobody has removed us if we were still supposed to exist.
+        //
+        
+        if( m_state != ItemState.NEW && !ws.nodeExists(m_path))
+        {
+            throw new InvalidItemStateException("Looks like this Node has been removed by another session.");
+        }
+        
         //
         //  Check mandatory properties
         //

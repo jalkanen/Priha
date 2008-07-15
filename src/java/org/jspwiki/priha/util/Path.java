@@ -49,7 +49,6 @@ public class Path
     {
         m_components = components;
         m_isAbsolute = absolute;
-        //update();
     }
 
     /**
@@ -64,7 +63,6 @@ public class Path
         if( abspath.length() > 0 && abspath.charAt(0) == '/' ) m_isAbsolute = true;
 
         m_components = parsePath( abspath );
-        //update();
     }
 
     public Path( String pathStart, Path pathEnd )
@@ -83,8 +81,6 @@ public class Path
         {
             m_components[i+start.length] = pathEnd.m_components[i];
         }
-
-        //update();
     }
 
     private static final String[] EMPTY_ARRAY = new String[0];
@@ -221,7 +217,7 @@ public class Path
      */
     private void update()
     {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder( m_components.length * 16 );
         if( m_isAbsolute ) sb.append("/");
 
         for( String c : m_components )
@@ -232,6 +228,14 @@ public class Path
 
         if( depth() > 0 ) sb.deleteCharAt(sb.length()-1); // Remove final "/"
 
+        //
+        //  TODO: In theory, some performance/memory gain could be received by
+        //  using String.intern() here.  However, in testing it looks like
+        //  the penalty of using intern() [the cache lookups] seems to offset
+        //  any speed gain in equals() and, in fact, make regular ops slower.  
+        //  More testing is required to determine whether the memory savings are 
+        //  worth the penalty.
+        //
         m_cachedString = sb.toString();
     }
 
@@ -323,9 +327,13 @@ public class Path
         return false;
     }
     
+    /**
+     *  Two paths are equal if their string representations are equal.
+     */
     @Override
     public boolean equals(Object obj)
     {
+        if( obj == this ) return true;
         if( obj instanceof Path )
         {
             return ((Path)obj).toString().equals( toString() );

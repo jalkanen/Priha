@@ -248,8 +248,17 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         {
             remove();
         }
+        
+        // Clean away null values from the array
+        
+        ArrayList<Value> ls = new ArrayList<Value>();
+        for( int i = 0; i < values.length; i++ )
+        {
+            if( values[i] != null )
+                ls.add(ValueFactoryImpl.getInstance().createValue( values[i] ));
+        }
+        m_value = ls.toArray( new Value[ls.size()] );
 
-        m_value = values;
         m_multi = Multi.MULTI;
     }
 
@@ -285,7 +294,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             if( values[i] != null )
                 ls.add(ValueFactoryImpl.getInstance().createValue( values[i] ));
         }
-        setValue( (Value[])ls.toArray( new Value[0] ) );
+        setValue( ls.toArray( new Value[ls.size()] ) );
     }
 
     public void setValue(InputStream value)

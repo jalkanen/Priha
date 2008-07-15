@@ -99,7 +99,18 @@ public class PathTest extends TestCase
         end = System.currentTimeMillis();
         
         printSpeed( "getParentPath()", SPEED_ITERS, start, end );        
+
+        start = System.currentTimeMillis();
+        for( int i = 0; i < SPEED_ITERS-1; i++ )
+        {
+            boolean eq = paths[i].equals(paths[i+1]);
+            
+            assertTrue(eq);
+        }
+        end = System.currentTimeMillis();
         
+        printSpeed( "equals()", SPEED_ITERS, start, end );        
+
     }
     
     private void printSpeed( String msg, int iters, long start, long end )
