@@ -6,6 +6,7 @@ import java.util.Calendar;
 import javax.jcr.*;
 
 import org.jspwiki.priha.core.NodeImpl;
+import org.jspwiki.priha.core.binary.BinarySource;
 
 
 public class ValueFactoryImpl implements ValueFactory
@@ -49,6 +50,9 @@ public class ValueFactoryImpl implements ValueFactory
 
             case PropertyType.DATE:
                 return new CalendarValueImpl( value.getDate() );
+                
+            case PropertyType.BINARY:
+                return new StreamValueImpl( (ValueImpl)value );
         }
         
         
@@ -82,13 +86,28 @@ public class ValueFactoryImpl implements ValueFactory
 
     public ValueImpl createValue(InputStream value)
     {
-        return new StreamValueImpl(value);
+        try
+        {
+            return new StreamValueImpl(value);
+        }
+        catch (ValueFormatException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public ValueImpl createValue(Node value) throws RepositoryException
     {
         return new ReferenceValueImpl( (NodeImpl)value );
     }
+
+    public ValueImpl createValue(BinarySource source)
+    {
+        return new StreamValueImpl(source);
+    }
+
 
     public ValueImpl createValue(String value, int type) throws ValueFormatException
     {

@@ -6,4 +6,7 @@ Things that Priha does not even attempt to currently do:
 
 * Same name siblings - only single nodes
 
+* Multiple workspaces
+   * Node.update()
+
 

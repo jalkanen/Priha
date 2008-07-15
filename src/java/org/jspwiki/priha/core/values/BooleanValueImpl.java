@@ -20,7 +20,7 @@ public class BooleanValueImpl extends ValueImpl implements Value
 
     public BooleanValueImpl(String value)
     {
-        m_value = "true".equals(value);
+        m_value = Boolean.valueOf(value);
     }
 
     public int getType()

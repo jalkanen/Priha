@@ -1,14 +1,15 @@
 package org.jspwiki.priha.core;
 
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 import javax.jcr.*;
 
 import org.jspwiki.priha.Release;
-import org.jspwiki.priha.providers.RepositoryProvider;
 
 public class RepositoryImpl implements Repository
 {

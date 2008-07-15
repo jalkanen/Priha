@@ -1,20 +1,56 @@
 package org.jspwiki.priha.core.values;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
+import java.util.Calendar;
 
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
+
+import org.jspwiki.priha.core.binary.BinarySource;
+import org.jspwiki.priha.core.binary.MemoryBinarySource;
+import org.jspwiki.priha.util.FileUtil;
 
 public class StreamValueImpl extends ValueImpl implements Value
 {
-    private InputStream m_value;
+    private BinarySource m_value;
     
-    public StreamValueImpl(InputStream value)
+    public StreamValueImpl(ValueImpl val) throws IllegalStateException, RepositoryException
     {
-        m_value = value;
+        if( val instanceof StreamValueImpl )
+        {
+            m_value = ((StreamValueImpl)val).m_value;
+        }
+        try
+        {
+            m_value = new MemoryBinarySource( val.getStream() );
+        }
+        catch (IOException e)
+        {
+            throw new ValueFormatException("Cannot construct a binary source: "+e.getMessage());
+        }
     }
 
+    public StreamValueImpl(InputStream in) throws ValueFormatException
+    {
+        try
+        {
+            m_value = new MemoryBinarySource( in );
+        }
+        catch (IOException e)
+        {
+            throw new ValueFormatException("Cannot construct a binary source: "+e.getMessage());
+        }        
+    }
+    
+    public StreamValueImpl(BinarySource source)
+    {
+        m_value = source;
+    }
+    
     public int getType()
     {
         return PropertyType.BINARY;
@@ -24,6 +60,84 @@ public class StreamValueImpl extends ValueImpl implements Value
     public InputStream getStream() throws IllegalStateException, RepositoryException
     {
         checkStream();
-        return m_value;
+        try
+        {
+            return m_value.getStream();
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("Stream read error:"+e.getMessage());
+        }
+    }
+    
+    @Override
+    public String getString() throws ValueFormatException
+    {
+        checkStream();
+        
+        String res;
+        try
+        {
+            res = FileUtil.readContents( m_value.getStream(), "UTF-8" );
+        }
+        catch (IOException e)
+        {
+            throw new ValueFormatException("Stream cannot be interpreted in UTF-8");
+        }
+        
+        return res;
+    }
+    
+    @Override
+    public Calendar getDate() throws ValueFormatException
+    {
+        checkStream();
+        
+        Calendar cal = Calendar.getInstance();
+        try
+        {
+            cal.setTime( CalendarValueImpl.parse( getString() ) );
+        }
+        catch (ParseException e)
+        {
+            throw new ValueFormatException("Value cannot be parsed as a date");
+        }
+        return cal;
+    }
+    
+    @Override
+    public double getDouble() throws ValueFormatException
+    {
+        checkStream();
+        
+        try
+        {
+            return Double.parseDouble( getString() );
+        }
+        catch( NumberFormatException e )
+        {
+            throw new ValueFormatException("Conversion from Stream to Double failed: "+e.getMessage());
+        }
+    }
+    
+    @Override
+    public long getLong() throws ValueFormatException
+    {
+        checkStream();
+        try
+        {
+            return Long.parseLong( getString() );
+        }
+        catch( NumberFormatException e )
+        {
+            throw new ValueFormatException("Conversion from Stream to Long failed: "+e.getMessage());
+        }        
+    }
+    
+    @Override
+    public boolean getBoolean() throws ValueFormatException
+    {
+        checkStream();
+        return Boolean.parseBoolean( getString() );
     }
 }

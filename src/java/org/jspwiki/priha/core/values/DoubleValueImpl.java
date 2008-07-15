@@ -1,5 +1,7 @@
 package org.jspwiki.priha.core.values;
 
+import java.util.Calendar;
+
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -24,6 +26,22 @@ public class DoubleValueImpl extends ValueImpl implements Value
         return PropertyType.DOUBLE;
     }
 
+    @Override
+    public Calendar getDate()
+    {
+        checkValue();
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis( m_value.longValue() );
+        
+        return cal;
+    }
+    
+    @Override
+    public long getLong()
+    {
+        return m_value.longValue();
+    }
+    
     @Override
     public double getDouble() throws ValueFormatException, IllegalStateException, RepositoryException
     {

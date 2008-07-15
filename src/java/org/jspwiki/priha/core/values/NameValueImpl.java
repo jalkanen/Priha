@@ -8,4 +8,11 @@ public class NameValueImpl extends NodeValueImpl
     {
         super( value, PropertyType.NAME );
     }
+    
+    @Override
+    public String getString()
+    {
+        return m_value;
+    }
+    
 }

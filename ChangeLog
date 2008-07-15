@@ -1,3 +1,9 @@
+2008-07-16  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.16
+        
+        * Added basic binary support.  Fails: 95/454.
+
 2008-07-15  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.15

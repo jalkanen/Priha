@@ -30,7 +30,9 @@ public abstract class ValueImpl implements Value, Cloneable
      */
     protected final void checkStream() throws IllegalStateException
     {
-        if( m_state == VALUE_STATE.VALUE ) throw new IllegalStateException();
+        if( m_state == VALUE_STATE.VALUE )  throw new IllegalStateException("This is a scalar value");
+        if( m_state == VALUE_STATE.STREAM ) throw new IllegalStateException("Stream already consumed");
+        
         m_state = VALUE_STATE.STREAM;
     }
 

@@ -1,5 +1,7 @@
 package org.jspwiki.priha.core.values;
 
+import java.util.Calendar;
+
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -29,6 +31,22 @@ public class LongValueImpl extends ValueImpl implements Value
     {
         checkValue();
         return m_value;
+    }
+    
+    @Override
+    public Calendar getDate() 
+    {
+        checkValue();
+        
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis( m_value );
+        return cal;
+    }
+    
+    @Override
+    public double getDouble()
+    {
+        return (double)m_value;
     }
     
     @Override

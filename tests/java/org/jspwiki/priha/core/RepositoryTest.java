@@ -1,6 +1,8 @@
 package org.jspwiki.priha.core;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -18,36 +20,37 @@ public class RepositoryTest extends TestCase
     Logger log = Logger.getLogger(RepositoryTest.class.getName());
     Repository m_repository;
     
+    Session m_session;
+    
     protected void setUp() throws Exception
     {
         m_repository = RepositoryManager.getRepository();
 
         TestUtil.emptyRepo(m_repository);
+        
+        m_session = m_repository.login();
     }
     
     protected void tearDown() throws Exception
     {
+        m_session.logout();
         TestUtil.emptyRepo(m_repository);
     }
     
     public void testLogin() throws Exception
     {
-        Session s = m_repository.login();
-        
-        Node nd = s.getRootNode();
+        Node nd = m_session.getRootNode();
         
         assertEquals( 0, nd.getDepth() );
     }
 
     public void testEmptyRepo() throws Exception
     {
-        Session s = m_repository.login();
-        
-        Node nd = s.getRootNode().addNode("testemptyrepo");
+        Node nd = m_session.getRootNode().addNode("testemptyrepo");
         nd = nd.addNode("foo");
         nd.setProperty("Barbapapa","Barbamama");
         
-        s.save();
+        m_session.save();
         
         TestUtil.emptyRepo(m_repository);
         
@@ -241,6 +244,25 @@ public class RepositoryTest extends TestCase
         System.out.println("Reads took "+(stop-start)+"ms");
     }
 
+    public void testBinaryProperty() throws Exception
+    {
+        Node nd = m_session.getRootNode();
+        
+        nd = nd.addNode("binarytest");
+        
+        String content = getUniqueID();
+        
+        InputStream in = new ByteArrayInputStream( content.getBytes() );
+        
+        Property p = nd.setProperty("blob", in );
+        
+        m_session.save();
+        
+        Property p2 = (Property) m_session.getItem("/binarytest/blob");
+        
+        assertEquals( content, p2.getString() );
+    }
+    
     /**
      *  Returns a random string of six uppercase characters.
      *

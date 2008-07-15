@@ -10,6 +10,8 @@ The goals of the project are:
     * Optimize for fast fetching of medium-sized text objects (i.e.
       wikipages)
       
+    * Good storage of large binaries (i.e. attachments)
+      
     * Provide integrated versioning
     
     * Provide an SPI so that different types of providers can be used
@@ -32,8 +34,6 @@ to, because they are not useful (yet) in JSPWiki context) are:
       
     * Transactions support
     
-    * XML import/export
-    
     * HA or clustering support.  These should be left to an industrial-scale
       JSR implementation.
 
@@ -47,4 +47,5 @@ libraries as well as the servlet-api.jar.
 LICENSE
 =======
 
-Priha licensing is currently open.  It will either be LGPL or Apache 2.0.
+Priha will be licensed under the Apache 2.0 license.
+
