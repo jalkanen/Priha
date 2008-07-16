@@ -1,12 +1,15 @@
 <?xml version="1.0"?>
 
+<!--
+       A rather non-fancy build file.
+-->
 <project name="Priha" default="jar">
     <description>
-            description
+            Priha build file.
     </description>
 
     <!-- ================================= 
-          target: default              
+          target: jar            
          ================================= -->
     <target name="jar" depends="compile" description="Builds the main JAR file">
      
@@ -30,7 +33,7 @@
     </target>
 
     <!-- - - - - - - - - - - - - - - - - - 
-          target: depends                      
+          target: compile                      
          - - - - - - - - - - - - - - - - - -->
     <target name="compile">
        <mkdir dir="build"/>
