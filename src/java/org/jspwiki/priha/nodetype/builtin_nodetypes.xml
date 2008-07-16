@@ -403,4 +403,26 @@
       </propertyDefinition>
    </nodetype>
 
+   <!--  This is a nodetype for a basic referenceable node.  It is doubtful it
+         is usable outside the priha tests. -->
+   <nodetype>
+      <name>priha:referenceable</name>
+      <supertypes>nt:unstructured,mix:referenceable</supertypes>
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName></primaryItemName>
+      
+      <propertyDefinition>
+         <name>*</name>
+         <requiredType>undefined</requiredType>
+         <valueConstraints/>
+         <defaultValues/>
+         <autoCreated>false</autoCreated>
+         <mandatory>false</mandatory>
+         <onParentVersion>COPY</onParentVersion>
+         <protected>false</protected>
+         <multiple>false</multiple>
+      </propertyDefinition>
+   </nodetype>
+
 </nodetypes>

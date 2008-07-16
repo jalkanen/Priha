@@ -16,9 +16,16 @@ public class DoubleValueImpl extends ValueImpl implements Value
         m_value = value;
     }
     
-    public DoubleValueImpl(String value)
+    public DoubleValueImpl(String value) throws ValueFormatException
     {
-        m_value = Double.parseDouble(value);
+        try
+        {
+            m_value = Double.parseDouble(value);
+        }
+        catch( Exception e )
+        {
+            throw new ValueFormatException( e.getMessage() );
+        }
     }
 
     public int getType()

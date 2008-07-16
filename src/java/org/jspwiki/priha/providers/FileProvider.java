@@ -10,6 +10,7 @@ import javax.xml.namespace.QName;
 
 import org.jspwiki.priha.core.*;
 import org.jspwiki.priha.core.binary.BinarySource;
+import org.jspwiki.priha.core.binary.FileBinarySource;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.util.Path;
@@ -479,7 +480,7 @@ public class FileProvider implements RepositoryProvider
         }
         else if( propType.equals(PropertyType.TYPENAME_BINARY) )
         {
-            value = vf.createValue( new RepositoryBinarySource(propFile) );
+            value = vf.createValue( new FileBinarySource(propFile) );
         }
         else
             throw new RepositoryException("Cannot deserialize property type "+propType);
@@ -683,24 +684,4 @@ public class FileProvider implements RepositoryProvider
         return findReferencesFromPath(ws, uuid, Path.ROOT);
     }
     
-    private class RepositoryBinarySource implements BinarySource
-    {
-        private File m_file;
-        
-        public RepositoryBinarySource( File f )
-        {
-            m_file = f;
-        }
-        
-        public long getLength()
-        {
-            return m_file.length();
-        }
-
-        public InputStream getStream() throws FileNotFoundException
-        {
-            return new FileInputStream( m_file );
-        }
-        
-    }
 }

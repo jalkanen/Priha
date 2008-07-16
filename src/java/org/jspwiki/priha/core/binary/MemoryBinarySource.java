@@ -27,6 +27,11 @@ public class MemoryBinarySource implements BinarySource
         }
     }
     
+    public MemoryBinarySource(byte[] v)
+    {
+        m_bytes = v;
+    }
+
     public long getLength()
     {
         return m_bytes.length;
@@ -37,4 +42,8 @@ public class MemoryBinarySource implements BinarySource
         return new ByteArrayInputStream( m_bytes );
     }
 
+    public MemoryBinarySource clone()
+    {
+        return new MemoryBinarySource(m_bytes);
+    }
 }

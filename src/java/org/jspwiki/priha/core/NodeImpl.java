@@ -138,12 +138,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                            LockException,
                                            RepositoryException
     {
-        Path absPath = m_path.resolve(relPath);
-
-        if( absPath.getLastComponent().indexOf('[') != -1 )
+        if( relPath.indexOf('[') != -1 )
         {
             throw new RepositoryException("Cannot add an indexed entry");
         }
+        
+        Path absPath = m_path.resolve(relPath);
 
         NodeImpl ni = null;
         try

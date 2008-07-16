@@ -14,6 +14,7 @@ public class AllTests
         suite.addTest( RepositoryTest.suite() );
         suite.addTest( WorkspaceImplTest.suite() );
         suite.addTest( NodeImplTest.suite() );
+        suite.addTest( SessionImplTest.suite() );
         return suite;
     }
 

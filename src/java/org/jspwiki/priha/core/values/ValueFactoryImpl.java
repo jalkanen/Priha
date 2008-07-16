@@ -1,5 +1,6 @@
 package org.jspwiki.priha.core.values;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
 
@@ -133,6 +134,16 @@ public class ValueFactoryImpl implements ValueFactory
                 
             case PropertyType.STRING:
                 return new StringValueImpl(value);
+                
+            case PropertyType.BINARY:
+                try
+                {
+                    return new StreamValueImpl(value);
+                }
+                catch (IOException e)
+                {
+                    throw new ValueFormatException("Cannot create a binary object");
+                }
         }
         
         throw new ValueFormatException("Illegal type "+PropertyType.nameFromValue(type));

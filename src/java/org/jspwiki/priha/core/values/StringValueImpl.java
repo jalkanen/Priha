@@ -45,14 +45,7 @@ public class StringValueImpl extends ValueImpl implements Value
         checkValue();
         Calendar cal = Calendar.getInstance();
         
-        try
-        {
-            cal.setTime( CalendarValueImpl.parse(m_value) );
-        }
-        catch (ParseException e)
-        {
-            throw new ValueFormatException("Cannot parse as date");
-        }
+        cal.setTime( CalendarValueImpl.parse(m_value) );
         
         return cal;
     }

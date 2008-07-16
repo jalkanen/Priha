@@ -1,7 +1,6 @@
 package org.jspwiki.priha.util;
 
 import java.util.Collection;
-import java.util.List;
 
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;

@@ -2,7 +2,6 @@ package org.jspwiki.priha.core.values;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
 import java.util.Calendar;
 
 import javax.jcr.PropertyType;
@@ -22,15 +21,18 @@ public class StreamValueImpl extends ValueImpl implements Value
     {
         if( val instanceof StreamValueImpl )
         {
-            m_value = ((StreamValueImpl)val).m_value;
+            m_value = ((StreamValueImpl)val).m_value.clone();
         }
-        try
+        else
         {
-            m_value = new MemoryBinarySource( val.getStream() );
-        }
-        catch (IOException e)
-        {
-            throw new ValueFormatException("Cannot construct a binary source: "+e.getMessage());
+            try
+            {
+                m_value = new MemoryBinarySource( val.getStream() );
+            }
+            catch (IOException e)
+            {
+                throw new ValueFormatException("Cannot construct a binary source: "+e.getMessage());
+            }
         }
     }
 
@@ -51,6 +53,13 @@ public class StreamValueImpl extends ValueImpl implements Value
         m_value = source;
     }
     
+    public StreamValueImpl(String value) throws IOException
+    {
+        byte[] v = value.getBytes("UTF-8");
+        
+        m_value = new MemoryBinarySource(v);
+    }
+
     public int getType()
     {
         return PropertyType.BINARY;
@@ -94,14 +103,9 @@ public class StreamValueImpl extends ValueImpl implements Value
         checkStream();
         
         Calendar cal = Calendar.getInstance();
-        try
-        {
-            cal.setTime( CalendarValueImpl.parse( getString() ) );
-        }
-        catch (ParseException e)
-        {
-            throw new ValueFormatException("Value cannot be parsed as a date");
-        }
+
+        cal.setTime( CalendarValueImpl.parse( getString() ) );
+
         return cal;
     }
     

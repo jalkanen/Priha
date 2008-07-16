@@ -18,6 +18,8 @@ import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
+import org.jspwiki.priha.xml.StreamContentHandler;
+import org.jspwiki.priha.xml.XMLExport;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -138,16 +140,26 @@ public class SessionImpl implements Session
 
     public void exportSystemView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException
     {
-        // TODO Auto-generated method stub
-
-        throw new UnsupportedRepositoryOperationException("Session.exportSystemView()");
+        XMLExport export = new XMLExport( this );
+        
+        export.export( absPath, contentHandler, skipBinary, noRecurse );
     }
 
     public void exportSystemView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException
     {
-        // TODO Auto-generated method stub
+        XMLExport export = new XMLExport( this );
 
-        throw new UnsupportedRepositoryOperationException("Session.exportSystemView2()");
+        ContentHandler handler = new StreamContentHandler( out );
+        
+        try
+        {
+            export.export( absPath, handler, skipBinary, noRecurse );
+        }
+        catch (SAXException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     public Object getAttribute(String name)

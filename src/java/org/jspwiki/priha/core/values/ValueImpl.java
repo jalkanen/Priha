@@ -104,4 +104,10 @@ public abstract class ValueImpl implements Value, Cloneable
         
         return false;
     }
+    
+    @Override
+    public String toString()
+    {
+        return getClass().getName()+":"+m_state;
+    }
 }

@@ -21,7 +21,6 @@ package org.jspwiki.priha.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 /**
  *  Manages paths, which are a key ingredient in JCR.  A Path is an immutable
@@ -83,7 +82,18 @@ public class Path
         }
     }
 
-    private static final String[] EMPTY_ARRAY = new String[0];
+    /**
+     *  In Priha context, any path component ending with [1] is always
+     *  treated as the component itself, as per JCR-170 4.3.1.
+     *  
+     *  @param s Component name to clean
+     *  @return A new String.
+     */
+    private String cleanComponent(String s)
+    {
+        if( s.endsWith("[1]") ) s = s.substring(0,s.length()-3);
+        return s;
+    }
     
     private String[] parsePath( String path )
     {
@@ -94,7 +104,7 @@ public class Path
         {
             String component = path.substring( start, end );
             start = end+1;
-            if( component.length() > 0 ) ls.add(component);
+            if( component.length() > 0 ) ls.add(cleanComponent(component));
         }
 
         if( start < path.length() )
@@ -265,8 +275,10 @@ public class Path
         ArrayList<String> list = new ArrayList<String>();
 
         if( !relPath.startsWith("/") )
+        {
             p.addAll( Arrays.asList(m_components) );
-
+        }
+        
         p.addAll( Arrays.asList(parsePath(relPath)) );
 
         for( int i = 0; i < p.size(); i++ )
@@ -285,11 +297,11 @@ public class Path
             }
             else if( p.get(i).length() > 0 )
             {
-                list.add( p.get(i) );
+                list.add( cleanComponent(p.get(i)) );
             }
         }
 
-        return new Path( list.toArray(EMPTY_ARRAY), m_isAbsolute );
+        return new Path( list.toArray(new String[list.size()]), m_isAbsolute );
     }
 
     /**

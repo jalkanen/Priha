@@ -67,4 +67,83 @@ public class PathUtil
         
         return sb.toString();
     }
+
+    private static final String ONECHARSIMPLENAME = "./:[]*'\"|";
+    private static final String NONSPACE = "/:[]*'\"| \t\r\n";
+    
+    /**
+     *  Validates a path so that it valid according to JCR 4.6.
+     *  
+     *  @param value
+     *  @throws InvalidPathException If the path is not valid.
+     */
+    // FIXME: This is not complete.
+    public static void validatePath(String value) throws InvalidPathException
+    {
+        int start=0;
+        int end;
+        while( (end = value.indexOf('/',start)) != -1 )
+        {
+            String component = value.substring(start,end);
+            validateComponent(component);
+            
+            start = end+1;
+        }
+        
+        validateComponent(value.substring(start));
+    }
+
+    private static void validateComponent(String component) throws InvalidPathException
+    {
+        if( component.length() == 1 )
+        {
+            if( ONECHARSIMPLENAME.indexOf(component) != -1 ) throw new InvalidPathException("Invalid path");
+        }
+        else if( component.length() == 2 )
+        {
+            if( component.charAt(0) == '.' )
+            {
+                if( ONECHARSIMPLENAME.indexOf(component.charAt(1)) != -1 )
+                    throw new InvalidPathException("Invalid path");
+            }
+            else if( component.charAt(1) == '.' )
+            {
+                if( ONECHARSIMPLENAME.indexOf(component.charAt(0)) != -1 )
+                    throw new InvalidPathException("Invalid path");
+                
+            }
+            else
+            {
+                throw new InvalidPathException("Invalid path");
+            }
+        }
+        else
+        {
+            boolean hasColon = false;
+            
+            for( int i = 0; i < component.length(); i++ )
+            {
+                char ch = component.charAt(i);
+            
+                if( NONSPACE.indexOf(ch) != -1 )
+                {
+                    if( ch == ' ' && (i != 0 || i != component.length()) )
+                        continue;
+
+                    if( ch == ':' )
+                    {
+                        if( hasColon ) throw new InvalidPathException("More than one colon");
+                        hasColon = true;
+                        
+                        String prefix = component.substring(0,i);
+                        
+                        if( prefix.length() == 0 ) throw new InvalidPathException("Zero-length prefix");
+                        continue;
+                    }
+                    
+                    throw new InvalidPathException("Invalid path");
+                }
+            }
+        }
+    }
 }

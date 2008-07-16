@@ -43,9 +43,19 @@ public class CalendarValueImpl extends ValueImpl implements Value
         return c_isoFormat.get().format(date);
     }
     
-    public static Date parse( String date ) throws ParseException
+    public static Date parse( String date ) throws ValueFormatException
     {
-        return c_isoFormat.get().parse(date);
+        try
+        {
+            Date d = c_isoFormat.get().parse(date);
+            if( d == null ) throw new ValueFormatException("Cannot be parsed as date: "+date);
+            
+            return d;
+        }
+        catch( Exception e )
+        {
+            throw new ValueFormatException("Cannot be parsed as date: "+date);
+        }
     }
     
     @Override

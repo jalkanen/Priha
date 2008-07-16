@@ -367,8 +367,17 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         {
             remove();
         }
-
-        setValue( ValueFactoryImpl.getInstance().createValue(value.getUUID(), PropertyType.REFERENCE) );
+        else
+        {
+            try
+            {
+                setValue( ValueFactoryImpl.getInstance().createValue(value.getUUID(), PropertyType.REFERENCE) );
+            }
+            catch( UnsupportedRepositoryOperationException e )
+            {
+                throw new ValueFormatException("Node is not referenceable");
+            }
+        }
     }
 
     public void setValue( String value, int type ) throws ValueFormatException,

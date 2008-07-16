@@ -1,5 +1,10 @@
 2008-07-16  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.0.17
+        
+        * Added system view XML export, and fixed some error
+        conditions to achieve a nice fail figure of 74/454.
+
         * 0.0.16
         
         * Added basic binary support.  Fails: 95/454.

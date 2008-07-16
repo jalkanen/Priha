@@ -16,9 +16,16 @@ public class LongValueImpl extends ValueImpl implements Value
         m_value = value;
     }
     
-    public LongValueImpl(String value)
+    public LongValueImpl(String value) throws ValueFormatException
     {
-        m_value = Long.parseLong(value);
+        try
+        {
+            m_value = Long.parseLong(value);
+        }
+        catch( Exception e )
+        {
+            throw new ValueFormatException("Cannot be parsed as long: "+value);
+        }
     }
 
     public int getType()
