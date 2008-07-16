@@ -47,8 +47,13 @@ public class Release
 
     public static final void main(String[] argv)
     {
-        System.out.println(APPNAME);
-        System.out.println(VERSTR);
-        System.out.println(COPYRIGHT);
+        if( argv.length > 0 && argv[0].equals("-versiononly") )
+            System.out.println(VERSTR);
+        else
+        {
+            System.out.println(APPNAME);
+            System.out.println(VERSTR);
+            System.out.println(COPYRIGHT);
+        }
     }
 }

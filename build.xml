@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+
+<project name="Priha" default="jar">
+    <description>
+            description
+    </description>
+
+    <!-- ================================= 
+          target: default              
+         ================================= -->
+    <target name="jar" depends="compile" description="Builds the main JAR file">
+     
+        <java classpath="build" outputproperty="version" classname="org.jspwiki.priha.Release" 
+              args="-versiononly">
+        </java>   
+     
+        <echo>Building priha-${version}.jar</echo>   
+        
+        <jar destfile="build/priha-${version}.jar">
+           <fileset dir="build">
+              <include name="org/jspwiki/**"/>
+           </fileset>
+           <fileset dir="src/java">
+              <include name="**/*.xml"/>
+           </fileset>
+           <fileset dir=".">
+              <include name="LICENSE"/>
+           </fileset>   
+        </jar>   
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - 
+          target: depends                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="compile">
+       <mkdir dir="build"/>
+       <javac srcdir="src/java"
+         destdir="build"
+         debug="on">
+          <classpath>
+             <fileset dir="lib">
+                <include name="*.jar"/>
+             </fileset>
+          </classpath>
+       </javac>
+    </target>
+
+    <target name="clean">
+     
+       <delete dir="build"/>
+   
+    </target>   
+</project>
