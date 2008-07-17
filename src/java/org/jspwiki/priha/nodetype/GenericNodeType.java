@@ -1,9 +1,13 @@
 package org.jspwiki.priha.nodetype;
 
+import java.util.logging.Logger;
+
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
+
+import sun.util.logging.resources.logging;
 
 /**
  *  Stores the Node Types.
@@ -14,9 +18,6 @@ import javax.jcr.nodetype.PropertyDefinition;
 public class GenericNodeType
      implements NodeType
 {
-    /**
-     *  Priha does not support multiple inheritance.
-     */
     protected NodeType[]           m_parents = new NodeType[0];
     protected PropertyDefinition[] m_propertyDefinitions;
     protected PropertyDefinition[] m_declaredPropertyDefinitions;
@@ -28,6 +29,8 @@ public class GenericNodeType
     protected boolean              m_ismixin;
     protected boolean              m_hasOrderableChildNodes;
 
+    private Logger log = Logger.getLogger(getClass().getName());
+    
     public GenericNodeType(String name)
     {
         m_name = name;
@@ -35,26 +38,57 @@ public class GenericNodeType
 
     public boolean canAddChildNode(String childNodeName)
     {
+        NodeDefinition nd = findNodeDefinition(childNodeName);
+        
+        if( nd == null ) return false;
+        
         return true;
     }
 
     public boolean canAddChildNode(String childNodeName, String nodeTypeName)
     {
-        return true;
+        // FIXME: not entirely accurate
+        return canAddChildNode(childNodeName);
     }
 
     public boolean canRemoveItem(String itemName)
     {
+        NodeDefinition nd = findNodeDefinition(itemName);
+        
+        if( nd != null )
+        {
+            if( nd.isMandatory() || nd.isProtected() ) return false;
+        }
+        
+        PropertyDefinition pd = findPropertyDefinition(itemName, false);
+        
+        if( pd != null )
+        {
+            if( pd.isMandatory() || pd.isProtected() ) return false;
+        }
+        
         return true;
     }
 
     public boolean canSetProperty(String propertyName, Value value)
     {
+        PropertyDefinition p = findPropertyDefinition(propertyName, false);
+        
+        if( p == null ) return false;
+        
+        if( p.isProtected() ) return false;
+        
         return true;
     }
 
     public boolean canSetProperty(String propertyName, Value[] values)
     {
+        PropertyDefinition p = findPropertyDefinition(propertyName, true);
+        
+        if( p == null ) return false;
+
+        if( p.isProtected() ) return false;
+
         return true;
     }
 
@@ -138,7 +172,14 @@ public class GenericNodeType
                 return nd;
             }
         }
-
+        
+        for( NodeType nt : m_parents )
+        {
+            NodeDefinition nd = ((GenericNodeType)nt).findNodeDefinition(name);
+            
+            if( nd != null ) return nd;
+        }
+        
         return null;
     }
 

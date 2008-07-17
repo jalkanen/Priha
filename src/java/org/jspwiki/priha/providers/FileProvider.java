@@ -1,38 +1,31 @@
 package org.jspwiki.priha.providers;
 
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Properties;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 
 import javax.jcr.*;
-import javax.xml.namespace.QName;
 
 import org.jspwiki.priha.core.*;
-import org.jspwiki.priha.core.binary.BinarySource;
 import org.jspwiki.priha.core.binary.FileBinarySource;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.util.Path;
-import org.jspwiki.priha.util.PropertyList;
 
-public class FileProvider implements RepositoryProvider
+public class FileProvider implements RepositoryProvider, PerformanceReporter
 {
     private File m_root;
     
     private Logger log = Logger.getLogger( getClass().getName() );
     
+    private long[] m_hitCount;
+    
     public FileProvider()
     {
-        m_root = new File("/tmp/priha/fileprovider");
-    
-        log.fine("Initializing FileProvider with root "+m_root);
-        File wsroot = getWorkspaceRoot();
-        
-        if( !wsroot.exists() )
-        {
-            wsroot.mkdirs();
-        }
+        resetCounts();
     }
 
     /**
@@ -199,6 +192,8 @@ public class FileProvider implements RepositoryProvider
     
     public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
     {
+        m_hitCount[Count.AddNode.ordinal()]++;
+
         File nodeDir = getNodeDir( ws, path.toString() );
 
         nodeDir.mkdirs();
@@ -229,6 +224,8 @@ public class FileProvider implements RepositoryProvider
 
     public List<String> listWorkspaces()
     {
+        m_hitCount[Count.ListWorkspaces.ordinal()]++;
+
         ArrayList<String> list = new ArrayList<String>();
         
         File[] dirs = getWorkspaceRoot().listFiles();
@@ -263,34 +260,40 @@ public class FileProvider implements RepositoryProvider
         return true;
     }
 
-    public void start(RepositoryImpl rep)
+    public void start(RepositoryImpl rep, Properties props)
     {
-        Preferences prefs = rep.getPreferences();
+        m_hitCount[Count.Start.ordinal()]++;
         
-        Preferences p = prefs.node("fileprovider");
+        String wsname = props.getProperty("workspace", "default");
+        m_root = new File(props.getProperty("directory"));
         
-        String wsname = p.get("workspace", "default");
+        log.fine("Initializing FileProvider with root "+m_root);
+        File wsroot = getWorkspaceDir(wsname);
         
-        File rootDir = getWorkspaceDir( wsname );
-        
-        rootDir.mkdirs();
-        
-        System.out.println("Created workspace directory "+rootDir);
-        log.fine("Created workspace directory "+rootDir);
+        if( !wsroot.exists() )
+        {
+            wsroot.mkdirs();
+            log.finer("Created workspace directory "+wsroot);
+        }
     }
 
     public void close(WorkspaceImpl ws)
     {
+        m_hitCount[Count.Close.ordinal()]++;
         // Does nothing
     }
 
     public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
     {
+        m_hitCount[Count.Copy.ordinal()]++;
+
         throw new UnsupportedRepositoryOperationException("copy()");
     }
 
     public List<Path> listNodes(WorkspaceImpl ws, Path parentpath)
     {
+        m_hitCount[Count.ListNodes.ordinal()]++;
+
         ArrayList<Path> list = new ArrayList<Path>();
 
         File wsDir = new File( getWorkspaceRoot(), getWorkspaceFilename(ws) );
@@ -302,6 +305,8 @@ public class FileProvider implements RepositoryProvider
 
     public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
+        m_hitCount[Count.ListProperties.ordinal()]++;
+
         File nodeDir = getNodeDir( ws, path.toString() );
         List<String> proplist = new ArrayList<String>();
         
@@ -336,6 +341,8 @@ public class FileProvider implements RepositoryProvider
 
     public void move(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
     {
+        m_hitCount[Count.Move.ordinal()]++;
+
         throw new UnsupportedRepositoryOperationException("move()");
     }
 
@@ -344,6 +351,8 @@ public class FileProvider implements RepositoryProvider
      */
     public boolean nodeExists(WorkspaceImpl ws, Path path)
     {
+        m_hitCount[Count.NodeExists.ordinal()]++;
+
         File nodeDir = getNodeDir( ws, path.toString() );
 
         File propFile = new File( nodeDir, "jcr:primaryType.info" );
@@ -353,6 +362,8 @@ public class FileProvider implements RepositoryProvider
 
     public void open(RepositoryImpl rep, Credentials credentials, String workspaceName) throws RepositoryException, NoSuchWorkspaceException
     {
+        m_hitCount[Count.Open.ordinal()]++;
+
         List<String> wsnames = listWorkspaces();
         
         if( wsnames.indexOf(workspaceName) == -1 )
@@ -379,6 +390,8 @@ public class FileProvider implements RepositoryProvider
     
     public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
     {
+        m_hitCount[Count.PutPropertyValue.ordinal()]++;
+
         File nodeDir = getNodeDir( ws, property.getInternalPath().getParentPath().toString() );
         
         String qname = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).toQName(property.getName());
@@ -490,6 +503,8 @@ public class FileProvider implements RepositoryProvider
     
     public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
     {
+        m_hitCount[Count.GetPropertyValue.ordinal()]++;
+
         File nodeDir = getNodeDir( ws, path.getParentPath().toString() );
        
         File inf = new File( nodeDir, path.getLastComponent()+".info" );
@@ -539,6 +554,8 @@ public class FileProvider implements RepositoryProvider
 
     public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
     {
+        m_hitCount[Count.Remove.ordinal()]++;
+
         File nodeFile = getNodeDir( ws, path.toString() );
 
         log.fine("Deleting path and all subdirectories: "+path);
@@ -573,6 +590,8 @@ public class FileProvider implements RepositoryProvider
 
     public void stop(RepositoryImpl rep)
     {
+        m_hitCount[Count.Stop.ordinal()]++;
+
         // No need to do anything
     }
 
@@ -611,6 +630,8 @@ public class FileProvider implements RepositoryProvider
     
     public Path findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
+        m_hitCount[Count.FindByUUID.ordinal()]++;
+
         Path p = findUUIDFromPath( ws, uuid, Path.ROOT );
         
         if( p == null ) throw new ItemNotFoundException( "There is no item with UUID "+uuid+" in the repository.");
@@ -681,7 +702,19 @@ public class FileProvider implements RepositoryProvider
 
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
+        m_hitCount[Count.FindReferences.ordinal()]++;
+
         return findReferencesFromPath(ws, uuid, Path.ROOT);
+    }
+
+    public long getCount(Count item)
+    {
+        return m_hitCount[item.ordinal()];
+    }
+
+    public void resetCounts()
+    {
+        m_hitCount = new long[Count.values().length];
     }
     
 }

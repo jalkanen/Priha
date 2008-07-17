@@ -44,18 +44,6 @@ public class PrihaRepositoryStub extends RepositoryStub
 
             return r;
         }
-        catch (ClassNotFoundException e)
-        {
-            throw new RepositoryStubException(e.getMessage());
-        }
-        catch (InstantiationException e)
-        {
-            throw new RepositoryStubException(e.getMessage());
-        }
-        catch (IllegalAccessException e)
-        {
-            throw new RepositoryStubException(e.getMessage());
-        }
         catch (LoginException e)
         {
             throw new RepositoryStubException(e.getMessage());

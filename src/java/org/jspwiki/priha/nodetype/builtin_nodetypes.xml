@@ -403,6 +403,64 @@
       </propertyDefinition>
    </nodetype>
 
+   <nodetype>
+      <name>nt:resource</name>
+      <supertypes>nt:base,mix:referenceable</supertypes>
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName>jcr:data</primaryItemName>
+
+      <propertyDefinition>
+          <name>jcr:encoding</name>
+          <requiredType>String</requiredType>
+          <valueConstraints/>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>COPY</onParentVersion>
+          <protected>false</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+
+      <propertyDefinition>
+          <name>jcr:mimeType</name>
+          <requiredType>String</requiredType>
+          <valueConstraints/>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>COPY</onParentVersion>
+          <protected>false</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+      <propertyDefinition>
+          <name>jcr:data</name>
+          <requiredType>Binary</requiredType>
+          <valueConstraints/>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>COPY</onParentVersion>
+          <protected>false</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+      <propertyDefinition>
+          <name>jcr:lastModified</name>
+          <requiredType>Date</requiredType>
+          <valueConstraints/>
+          <defaultValues/>
+          <autoCreated>false</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>IGNORE</onParentVersion>
+          <protected>false</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+   </nodetype>
+
+   <!--==========================================================
+                    PRIHA SPECIFIC NODETYPES
+       ========================================================== -->
+   
    <!--  This is a nodetype for a basic referenceable node.  It is doubtful it
          is usable outside the priha tests. -->
    <nodetype>

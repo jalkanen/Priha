@@ -1,0 +1,54 @@
+
+Configuring Priha
+=================
+
+TBD
+
+THE PROPERTY FILE
+=================
+
+By default, Priha looks for the "priha.properties" file from your classpath, both
+under the classpath root as well as /WEB-INF/.
+
+
+Providers
+---------
+
+Priha does not yet support multiple providers, but the configuration makes
+you think it does.
+
+First, you define a provider and give it a nickname; in the following example
+it's "myProvider".
+
+    priha.provider.myProvider.class = org.mycompany.priha.MyProvider
+
+You can also define more properties to your provider.  These are appended
+to the nick.
+
+    priha.provider.myProvider.param1 = value1
+
+This would be passed to the MyProvider instance as "param1" with a value of "value1".
+
+Finally, you declare which provider you want to use by listing its nickname in the
+"priha.providers" parameter.
+
+    priha.providers = myProvider
+
+
+
+The defaultProvider
+-------------------
+
+The nickname "defaultProvider" is reserved for the built-in default provider
+(which is a FileProvider).  You can look at the FileProvider javadocs to
+see what configuration options it has.
+
+Priha uses the defaultProvider in the absence of any other "priha.providers" line.
+
+
+LOGGING
+=======
+
+Priha uses the Java 5 "java.util.logging" package.  Yes, it could use commons-logging,
+but one of the goals was to reduce the amount of external library dependencies.
+So there.

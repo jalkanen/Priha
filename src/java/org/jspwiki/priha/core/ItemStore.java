@@ -2,6 +2,7 @@ package org.jspwiki.priha.core;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 
 import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
@@ -12,11 +13,9 @@ import org.jspwiki.priha.util.Path;
 
 public interface ItemStore
 {
-    void open(RepositoryImpl repository, Credentials credentials, String workspaceName) throws NoSuchWorkspaceException, RepositoryException;
+    void open(Credentials credentials, String workspaceName) throws NoSuchWorkspaceException, RepositoryException;
     
-    void start(RepositoryImpl repository);
-
-    void stop(RepositoryImpl repository);
+    void stop();
     
     void close(WorkspaceImpl ws);
 

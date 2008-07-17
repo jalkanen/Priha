@@ -36,6 +36,9 @@ to, because they are not useful (yet) in JSPWiki context) are:
     
     * HA or clustering support.  These should be left to an industrial-scale
       JSR implementation.
+      
+    * JNDI
+    
 
 REQUIREMENTS
 ============

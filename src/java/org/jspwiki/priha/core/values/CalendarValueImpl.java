@@ -27,6 +27,13 @@ public class CalendarValueImpl extends ValueImpl implements Value
         m_value = c;
     }
 
+    public CalendarValueImpl(String value) throws ValueFormatException
+    {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime( parse(value) );
+        m_value = cal;
+    }
+
     public int getType()
     {
         return PropertyType.DATE;

@@ -1,3 +1,14 @@
+2008-07-17  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.18
+        
+        * Fixed a number of minor conversion exceptions (jeez the TCK
+        is tight).  58/454 failures...
+        
+        * Reworked configuration completely (it works now) and added
+        some basic documentation about the configuration to 
+        doc/Configuration.txt
+
 2008-07-16  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.17

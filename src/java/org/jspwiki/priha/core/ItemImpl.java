@@ -148,6 +148,9 @@ public abstract class ItemImpl implements Item
 
     public void refresh(boolean keepChanges) throws InvalidItemStateException, RepositoryException
     {
+        if( !m_session.itemExists(m_path) ) 
+            throw new InvalidItemStateException("You cannot refresh an Item which has been deleted!");
+        
         m_session.refresh( keepChanges, m_path );
     }
 
@@ -204,6 +207,7 @@ public abstract class ItemImpl implements Item
      */
     protected void postSave()
     {
-        m_state = ItemState.EXISTS;        
+        m_state = ItemState.EXISTS;
+        m_modified = false;
     }
 }

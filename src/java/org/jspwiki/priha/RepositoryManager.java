@@ -19,9 +19,14 @@
  */
 package org.jspwiki.priha;
 
+import java.io.IOException;
+import java.util.Properties;
 import java.util.prefs.Preferences;
 
+import org.jspwiki.priha.core.ProviderManager;
 import org.jspwiki.priha.core.RepositoryImpl;
+import org.jspwiki.priha.util.ConfigurationException;
+import org.jspwiki.priha.util.FileUtil;
 
 
 /**
@@ -33,6 +38,12 @@ import org.jspwiki.priha.core.RepositoryImpl;
 public class RepositoryManager
 {
     private static RepositoryImpl m_repository = null;
+     
+    private static final String[] PROPERTYPATHS = 
+    {
+        "/priha.properties",
+        "/WEB-INF/priha.properties"
+    };
     
     /**
      *  Returns a default repository object for no-pain setup.
@@ -42,16 +53,24 @@ public class RepositoryManager
      *  @throws InstantiationException
      *  @throws IllegalAccessException
      */
-    public static RepositoryImpl getRepository() throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    public static RepositoryImpl getRepository() throws ConfigurationException
     {
-        return getRepository( Preferences.systemNodeForPackage(RepositoryManager.class) );
+        try
+        {
+            return getRepository( FileUtil.findProperties(PROPERTYPATHS) );
+        }
+        catch (IOException e)
+        {
+            throw new ConfigurationException("Unable to load property file:"+e.getMessage());
+        }
     }
     
-    public static RepositoryImpl getRepository( Preferences prefs ) throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    public static RepositoryImpl getRepository( Properties prefs ) throws ConfigurationException
     {
         if( m_repository == null )
             m_repository = new RepositoryImpl( prefs );
         
         return m_repository;
     }
+    
 }

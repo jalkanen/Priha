@@ -1,15 +1,17 @@
 package org.jspwiki.priha.core;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Properties;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 
 import javax.jcr.*;
 
 import org.jspwiki.priha.Release;
+import org.jspwiki.priha.util.ConfigurationException;
+import org.jspwiki.priha.util.FileUtil;
 
 public class RepositoryImpl implements Repository
 {
@@ -19,8 +21,6 @@ public class RepositoryImpl implements Repository
     public static final String   DEFAULT_WORKSPACE = "default";
 
     private NamespaceRegistry    m_namespaceRegistry;
-
-    private Preferences          m_preferences;
 
     private static String[] DESCRIPTORS = {
         Repository.SPEC_NAME_DESC,                "Content Repository for Java Technology API",
@@ -40,28 +40,57 @@ public class RepositoryImpl implements Repository
         Repository.QUERY_XPATH_DOC_ORDER,         STR_FALSE
     };
 
-    private Properties m_properties = new Properties();
+
+    /**
+     *  Defines which paths are attempted to locate the default property file.
+     */
+    private static final String[] DEFAULT_PROPERTIES = 
+    {
+       "/priha_default.properties",
+       "/WEB-INF/priha_default.properties"
+    };
+    
+    private Properties m_properties;
 
     private Logger log = Logger.getLogger( getClass().getName() );
 
     private SessionManager m_sessionManager = new SessionManager();
     private ProviderManager m_providerManager;
     
-    public RepositoryImpl( Preferences prefs ) throws ClassNotFoundException, InstantiationException, IllegalAccessException
+    public RepositoryImpl( Properties prefs ) throws ConfigurationException
     {
-        m_preferences = prefs;
+        try
+        {
+            m_properties = new Properties( FileUtil.findProperties(DEFAULT_PROPERTIES) );
+        }
+        catch (IOException e)
+        {
+            throw new ConfigurationException("Loading of default properties failed");
+        }
+        if( prefs.isEmpty() )
+            log.warning("No \"priha.properties\" found, using just the default properties");
 
-        m_providerManager = new ProviderManager( this, prefs );
+        m_properties.putAll( prefs );
+
+        m_providerManager = new ProviderManager( this );
+        
+        Runtime.getRuntime().addShutdownHook( new ShutdownThread() );
         
         log.info( "G'day, Matilda!  Priha "+Release.VERSTR+" has been initialized." );
         log.fine( "Using configuration from "+prefs.toString() );
     }
 
+    
     public String getProperty(String key)
     {
         return m_properties.getProperty(key);
     }
 
+    public String getProperty( String key, String defValue )
+    {
+        return m_properties.getProperty(key,defValue);
+    }
+    
     protected ProviderManager getProviderManager()
     {
         return m_providerManager;
@@ -80,7 +109,7 @@ public class RepositoryImpl implements Repository
 
     public Enumeration getPropertyNames()
     {
-        return m_properties.keys();
+        return m_properties.propertyNames();
     }
 
     public String getDescriptor(String key)
@@ -106,11 +135,6 @@ public class RepositoryImpl implements Repository
         }
 
         return keys;
-    }
-
-    public Preferences getPreferences()
-    {
-        return m_preferences;
     }
 
     public Session login(Credentials credentials, String workspaceName)
@@ -169,5 +193,15 @@ public class RepositoryImpl implements Repository
             return session;
         }
 
+    }
+    
+    private class ShutdownThread extends Thread
+    {
+        @Override
+        public void run()
+        {
+            m_providerManager.stop();
+        }
+        
     }
 }

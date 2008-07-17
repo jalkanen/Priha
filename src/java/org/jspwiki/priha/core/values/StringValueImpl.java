@@ -84,7 +84,9 @@ public class StringValueImpl extends ValueImpl implements Value
         
         try
         {
-            return new ByteArrayInputStream( ((String)m_value).getBytes("UTF-8") );
+            return new ByteArrayInputStream( m_value != null ?
+                ((String)m_value).getBytes("UTF-8") :
+                    new byte[0] );
         }
         catch (UnsupportedEncodingException e)
         {

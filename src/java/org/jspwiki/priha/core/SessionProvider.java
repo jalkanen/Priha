@@ -4,6 +4,9 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import javax.jcr.*;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.nodetype.PropertyDefinition;
 
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
@@ -192,7 +195,7 @@ public class SessionProvider
         throws RepositoryException,
                NoSuchWorkspaceException
     {
-        m_source.open((RepositoryImpl)m_session.getRepository(), credentials, workspaceName);
+        m_source.open(credentials, workspaceName);
     }
 
     public void remove(ItemImpl item) throws RepositoryException
@@ -200,14 +203,9 @@ public class SessionProvider
         m_items.put( item.getInternalPath(), item );
     }
 
-    public void start()
-    {
-        m_source.start( (RepositoryImpl)m_session.getRepository() );
-    }
-
     public void stop()
     {
-        m_source.stop((RepositoryImpl)m_session.getRepository());
+        m_source.stop();
     }
 
     public boolean hasPendingChanges()
@@ -222,6 +220,9 @@ public class SessionProvider
 
     public void save(Path path) throws RepositoryException
     {
+        //
+        //  Do the actual save.
+        //
         for( Iterator<Entry<Path, ItemImpl>> i = m_items.entrySet().iterator(); i.hasNext(); )
         {
             Entry<Path, ItemImpl> entry = i.next();
@@ -272,6 +273,7 @@ public class SessionProvider
             }
         }
     }
+
 
     public Collection<? extends PropertyImpl> getProperties(Path path) throws RepositoryException
     {

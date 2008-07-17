@@ -7,10 +7,15 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
+import java.util.Properties;
+import java.util.logging.Logger;
+
+import org.jspwiki.priha.core.RepositoryImpl;
 
 public class FileUtil
 {
     private static final int BUFFER_SIZE = 4096;
+    private static Logger log = Logger.getLogger(FileUtil.class.getName());
     
     /**
      *  Just copies all characters from <I>in</I> to <I>out</I>.  The copying
@@ -111,5 +116,31 @@ public class FileUtil
                 throw (CharacterCodingException) ex.fillInStackTrace();
             }
         }
+    }
+
+    /**
+     *  Takes a list of paths and attempts to locate a property file from
+     *  the list.  The first one which can be loaded is parsed and returned.
+     *  
+     *  @param propertyPaths
+     *  @return
+     *  @throws IOException
+     */
+    public static Properties findProperties(String[] propertyPaths) throws IOException
+    {
+        Properties props = new Properties();
+    
+        for( int i = 0; i < propertyPaths.length; i++ )
+        {
+            InputStream in = RepositoryImpl.class.getResourceAsStream(propertyPaths[i]);
+            
+            if( in != null )
+            {
+                props.load(in);
+                log.fine("Loaded properties from "+propertyPaths[i]);
+                break;
+            }
+        }
+        return props;
     }
 }

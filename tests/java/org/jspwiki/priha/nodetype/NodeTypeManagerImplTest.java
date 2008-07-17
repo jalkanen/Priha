@@ -3,8 +3,10 @@ package org.jspwiki.priha.nodetype;
 import java.io.InputStream;
 import java.util.logging.LogManager;
 
+import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
@@ -14,6 +16,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.jspwiki.priha.RepositoryManager;
+import org.jspwiki.priha.TestUtil;
 import org.jspwiki.priha.core.RepositoryImpl;
 
 public class NodeTypeManagerImplTest extends TestCase
@@ -33,6 +36,9 @@ public class NodeTypeManagerImplTest extends TestCase
         }
 
         m_repository = RepositoryManager.getRepository();
+        
+        TestUtil.emptyRepo(m_repository);
+
         m_session = m_repository.login();
 
         m_mgr = (NodeTypeManagerImpl)m_session.getWorkspace().getNodeTypeManager();
@@ -85,6 +91,31 @@ public class NodeTypeManagerImplTest extends TestCase
         assertTrue( "is referenceable", mixin.isNodeType("mix:referenceable") );
     }
 
+    public void testAllowAddNode() throws Exception
+    {
+        try
+        {
+            Node nd = m_session.getRootNode().addNode("test","nt:file");
+        
+            nd.addNode("globbo","nt:unstructured");
+        
+            m_session.save();
+            
+            fail("Allowed adding; should fail!");
+        }
+        catch( ConstraintViolationException e ) {/* Expected */ }       
+    }
+
+    public void testAllowAddNode2() throws Exception
+    {
+        Node nd = m_session.getRootNode().addNode("test","nt:file");
+        
+        nd.addNode("jcr:content","nt:unstructured");
+        
+        m_session.save();
+        
+        assertTrue( m_session.itemExists("/test/jcr:content") );
+    }
 
     public static Test suite()
     {

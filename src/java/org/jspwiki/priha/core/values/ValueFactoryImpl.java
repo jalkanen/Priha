@@ -8,6 +8,7 @@ import javax.jcr.*;
 
 import org.jspwiki.priha.core.NodeImpl;
 import org.jspwiki.priha.core.binary.BinarySource;
+import org.jspwiki.priha.util.FileUtil;
 
 
 public class ValueFactoryImpl implements ValueFactory
@@ -55,8 +56,7 @@ public class ValueFactoryImpl implements ValueFactory
             case PropertyType.BINARY:
                 return new StreamValueImpl( (ValueImpl)value );
         }
-        
-        
+           
         throw new ValueFormatException("Illegal type "+ PropertyType.nameFromValue( value.getType() ) );
     }
     
@@ -110,6 +110,72 @@ public class ValueFactoryImpl implements ValueFactory
     }
 
 
+    public ValueImpl createValue(boolean value, int type) throws ValueFormatException
+    {
+        switch( type )
+        {
+            case PropertyType.BOOLEAN:
+                return new BooleanValueImpl(value);
+                                
+            case PropertyType.STRING:
+                return new StringValueImpl( Boolean.toString(value) );
+                
+            case PropertyType.BINARY:
+                try
+                {
+                    return new StreamValueImpl( Boolean.toString(value) );
+                }
+                catch (IOException e)
+                {
+                    throw new ValueFormatException("Cannot create a binary object");
+                }
+        }
+        
+        throw new ValueFormatException("Illegal type "+PropertyType.nameFromValue(type));
+    }
+
+    public ValueImpl createValue(InputStream value, int type) throws ValueFormatException
+    {
+        try
+        {
+            switch (type)
+            {
+                case PropertyType.BOOLEAN:
+                    return new BooleanValueImpl(FileUtil.readContents(value, "UTF-8"));
+
+                case PropertyType.DOUBLE:
+                    return new DoubleValueImpl(FileUtil.readContents(value, "UTF-8"));
+
+                case PropertyType.LONG:
+                    return new LongValueImpl(FileUtil.readContents(value, "UTF-8"));
+
+                case PropertyType.DATE:
+                    return new CalendarValueImpl(FileUtil.readContents(value, "UTF-8"));
+
+                case PropertyType.NAME:
+                    return new NameValueImpl(FileUtil.readContents(value, "UTF-8"));
+
+                case PropertyType.PATH:
+                    return new PathValueImpl(FileUtil.readContents(value, "UTF-8"));
+
+                case PropertyType.REFERENCE:
+                    return new ReferenceValueImpl(FileUtil.readContents(value, "UTF-8"));
+
+                case PropertyType.STRING:
+                    return new StringValueImpl(FileUtil.readContents(value, "UTF-8"));
+
+                case PropertyType.BINARY:
+                    return new StreamValueImpl(value);
+            }
+        }
+        catch (IOException e)
+        {
+            throw new ValueFormatException("Unable to read data from binary stream");
+        }
+        
+        throw new ValueFormatException("Illegal type "+PropertyType.nameFromValue(type));
+    }
+
     public ValueImpl createValue(String value, int type) throws ValueFormatException
     {
         switch( type )
@@ -122,6 +188,9 @@ public class ValueFactoryImpl implements ValueFactory
                 
             case PropertyType.LONG:
                 return new LongValueImpl(value);
+                
+            case PropertyType.DATE:
+                return new CalendarValueImpl(value);
                 
             case PropertyType.NAME:
                 return new NameValueImpl(value);

@@ -2,6 +2,7 @@ package org.jspwiki.priha.providers;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 
 import javax.jcr.*;
 
@@ -16,15 +17,26 @@ import org.jspwiki.priha.util.PropertyList;
  *  <li>A RepositoryProvider shall not cache the Session object</li>
  *  <li>A RepositoryProvider shall be thread-safe</li>
  *  </ul>
- *  
- *  @author jalkanen
  *
+ *  <p>
+ *  The RepositoryProvider lifecycle is as follows.
+ *  <ol>
+ *  <li>When Priha first starts up and parses its configuration, it locates each
+ *      RepositoryProvider from the configuration, and calls its <code>start()</code>
+ *      method to notify that it exists.</li>
+ *  <li>Once the user then grabs a Session object, the RepositoryProvider is
+ *      notified via the <code>open()</code> method.</li>
+ *  <li>The user now uses all of the other methods from the repo.</li>
+ *  <li>Once the user chooses to logout, then the <code>close()</code> method
+ *      is called.</li>
+ *  <li>Then, finally, when Priha closes down, the <code>stop()</code> method
+ *      will be called.  Priha installs its own shutdown hook for this case.</li>
+ *  </ol>
  */
 public interface RepositoryProvider
 {
     /**
-     *  Opens a repository.  Called only once when the Repository is
-     *  created.
+     *  Opens a repository.  Called whenever a session login() is performed.
      *  
      * @param rep
      * @param credentials
@@ -39,23 +51,23 @@ public interface RepositoryProvider
                NoSuchWorkspaceException;
     
     /**
-     *  Starts access to a repository.  This is called only when the
-     *  repository starts.
-     *
+     *  Starts access to a repository.  This is called only once per
+     *  RepositoryProvider lifecycle.
      */
-    public void start( RepositoryImpl rep );
+    public void start( RepositoryImpl repository, 
+                       Properties     properties );
     
     /**
-     *  Stops a given repository.  This is called whenever the repository
-     *  can go safely to sleep.
+     *  Stops a given repository.  This may be called without a preceding call
+     *  to stop().  All allocated resources can now be deallocated.
      *  
      *  @param rep
      */
     public void stop( RepositoryImpl rep );
     
     /**
-     *  The repository will no longer be used.  This may be called without a preceding call
-     *  to stop().
+     *  The repository will no longer be used by a session, so any session-specific
+     *  things can now be deallocated.
      *  
      *  @param ws
      */

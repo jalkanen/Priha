@@ -1,9 +1,6 @@
 package org.jspwiki.priha.core;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.prefs.Preferences;
+import java.util.*;
 
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
@@ -16,11 +13,9 @@ import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.nodetype.NodeTypeManagerImpl;
 import org.jspwiki.priha.providers.RepositoryProvider;
+import org.jspwiki.priha.util.ConfigurationException;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
-
-import com.opensymphony.oscache.base.Cache;
-import com.opensymphony.oscache.base.NeedsRefreshException;
 
 /**
  *  This is a front-end class for managing single or, in the future, multiple providers
@@ -33,41 +28,89 @@ import com.opensymphony.oscache.base.NeedsRefreshException;
  */
 public class ProviderManager implements ItemStore
 {
-    private static final int   DEFAULT_CACHE_SIZE = 1;
     private RepositoryProvider m_provider;
     private static final String DEFAULT_PROVIDER = "org.jspwiki.priha.providers.FileProvider";
     private RepositoryImpl     m_repository;
     
-    public ProviderManager( RepositoryImpl repository, Preferences prefs )
+    public ProviderManager( RepositoryImpl repository ) throws ConfigurationException
     {
-        String className = prefs.get( "provider",  DEFAULT_PROVIDER );
-
         m_repository = repository;
+
+        initialize();
+    }
+
+    public static final String PROP_PRIHA_PROVIDERS = "priha.providers";
+    public static final String PROP_PRIHA_PROVIDER_PREFIX = "priha.provider.";
+    public static final String DEFAULT_PROVIDERLIST = "defaultProvider";
+    
+    private void initialize() throws ConfigurationException
+    {
+        String providerList = m_repository.getProperty( PROP_PRIHA_PROVIDERS );
         
+        String[] providers = providerList.split("\\s");
+        
+        if( providers.length == 0 )
+            throw new ConfigurationException("Required property missing",PROP_PRIHA_PROVIDERS);
+        if( providers.length > 1 ) 
+            throw new ConfigurationException("Currently only a single provider is supported.");
+        
+        Properties props = filterProperties(providers[0]);
+        
+        String className = props.getProperty("class");
+        
+        RepositoryProvider p = instantiateProvider( className, props );
+
+        m_provider = p;
+    }
+    
+    private Properties filterProperties( String providerName )
+    {
+        Properties props = new Properties();
+        
+        String prefix = PROP_PRIHA_PROVIDER_PREFIX + providerName + ".";
+        
+        for( Enumeration e = m_repository.getPropertyNames(); e.hasMoreElements(); )
+        {
+            String key = (String)e.nextElement();
+            
+            if( key.startsWith(prefix) )
+            {
+                String val = m_repository.getProperty(key);
+                key = key.substring(prefix.length());
+                
+                props.setProperty(key, val);
+            }
+        }
+        
+        return props;
+    }
+    
+    private RepositoryProvider instantiateProvider(String className, Properties props) throws ConfigurationException
+    {
         Class cl;
+        RepositoryProvider provider;
         try
         {
             cl = Class.forName( className );
-            m_provider = (RepositoryProvider) cl.newInstance();
-            m_provider.start( repository );
+            provider = (RepositoryProvider) cl.newInstance();
+            provider.start( m_repository, props );
         }
         catch (ClassNotFoundException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace( );
+            throw new ConfigurationException("Could not find provider class",className);
         }
         catch (InstantiationException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new ConfigurationException("Could not instantiate provider class",className);
         }
         catch (IllegalAccessException e)
         {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            throw new ConfigurationException("Could not access provider class",className);
         }
+ 
+        return provider;
     }
-
+    
     /**
      *  Checks whether a node exists in the repository.
      *  
@@ -244,24 +287,14 @@ public class ProviderManager implements ItemStore
         return m_provider.nodeExists(ws, path);
     }
 
-    public void open(RepositoryImpl repository, Credentials credentials, String workspaceName) throws NoSuchWorkspaceException, RepositoryException
-    {
-        m_provider.open(repository, credentials, workspaceName);
-    }
-
     public void putProperty(WorkspaceImpl ws, PropertyImpl pi) throws RepositoryException
     {
         m_provider.putPropertyValue( ws, pi );   
     }
 
-    public void start(RepositoryImpl repository)
+    public void stop()
     {
-        m_provider.start(repository);
-    }
-
-    public void stop(RepositoryImpl repository)
-    {
-        m_provider.stop(repository);
+        m_provider.stop(m_repository);
     }
 
     public Collection<? extends PropertyImpl> getReferences(WorkspaceImpl ws, String uuid) throws RepositoryException

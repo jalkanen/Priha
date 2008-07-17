@@ -50,24 +50,6 @@ public class JNDIRegistrationServlet extends HttpServlet
             
             s.logout();
         }
-        catch (ClassNotFoundException e1)
-        {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-            return;
-        }
-        catch (InstantiationException e1)
-        {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-            return;
-        }
-        catch (IllegalAccessException e1)
-        {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-            return;
-        }
         catch (LoginException e)
         {
             // TODO Auto-generated catch block

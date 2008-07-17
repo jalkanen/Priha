@@ -12,8 +12,7 @@ import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.VersionException;
 
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
-import org.jspwiki.priha.core.values.ValueImpl;
-import org.jspwiki.priha.nodetype.PropertyDefinitionImpl;
+import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.util.Path;
 
 public class PropertyImpl extends ItemImpl implements Property, Comparable<PropertyImpl>
@@ -23,7 +22,9 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     private Value[]            m_value;
     private Multi              m_multi = Multi.UNDEFINED;
     PropertyDefinition         m_definition;
-
+    int                        m_type = PropertyType.UNDEFINED;
+    ValueFactoryImpl           m_valueFactory = ValueFactoryImpl.getInstance();
+    
     public PropertyImpl( SessionImpl session, Path path, PropertyDefinition propDef )
     {
         super( session, path );
@@ -47,6 +48,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         m_value = ValueFactoryImpl.getInstance().cloneValues( pi.m_value );
         m_multi = pi.m_multi;
         m_definition = pi.m_definition;
+        m_type = pi.m_type;
     }
 
     public boolean getBoolean() throws ValueFormatException, RepositoryException
@@ -154,7 +156,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
 
     public int getType() throws RepositoryException
     {
-        return m_value[0].getType();
+        return m_type;
     }
 
     public Value getValue() throws ValueFormatException, RepositoryException
@@ -193,8 +195,10 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( value == null )
         {
             remove();
+            return;
         }
 
+        m_type = value.getType();
         m_value = new Value[1];
 
         m_value[0] = value;
@@ -208,6 +212,11 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                          ConstraintViolationException,
                                          RepositoryException
     {
+        GenericNodeType parentType = (GenericNodeType) getParent().getPrimaryNodeType();
+        
+        if( !parentType.canSetProperty( getName(), value ) )
+            throw new ConstraintViolationException("Setting of this property is forbidden");
+
         loadValue( value );
         markModified();
     }
@@ -219,6 +228,11 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                             ConstraintViolationException,
                                             RepositoryException
     {
+        GenericNodeType parentType = (GenericNodeType) getParent().getPrimaryNodeType();
+        
+        if( !parentType.canSetProperty( getName(), values ) )
+            throw new ConstraintViolationException("Setting of this property is forbidden:");
+
         loadValue(values);
         
         markModified();
@@ -244,22 +258,25 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( m_multi == Multi.SINGLE )
             throw new ValueFormatException("Attempted to set a MULTI Value object to a SINGLE property "+m_path);
 
-        if( values == null || values.length == 0 )
+        if( values == null )
         {
             remove();
+            return;
         }
-        
+
         // Clean away null values from the array
         
         ArrayList<Value> ls = new ArrayList<Value>();
         for( int i = 0; i < values.length; i++ )
         {
             if( values[i] != null )
-                ls.add(ValueFactoryImpl.getInstance().createValue( values[i] ));
+                ls.add( values[i] );
         }
         m_value = ls.toArray( new Value[ls.size()] );
-
+       
         m_multi = Multi.MULTI;
+        
+        if( m_value.length > 0 ) m_type = m_value[0].getType();
     }
 
     public void setValue(String value)
@@ -272,8 +289,9 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( value == null )
         {
             remove();
+            return;
         }
-        setValue( ValueFactoryImpl.getInstance().createValue(value) );
+        setValue( m_valueFactory.createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.STRING : m_type ) );
     }
 
     public void setValue(String[] values)
@@ -283,9 +301,10 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                              ConstraintViolationException,
                                              RepositoryException
     {
-        if( values == null || values.length == 0)
+        if( values == null )
         {
             remove();
+            return;
         }
 
         ArrayList<Value> ls = new ArrayList<Value>();
@@ -294,6 +313,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             if( values[i] != null )
                 ls.add(ValueFactoryImpl.getInstance().createValue( values[i] ));
         }
+        m_type = PropertyType.STRING;
         setValue( ls.toArray( new Value[ls.size()] ) );
     }
 
@@ -307,9 +327,10 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( value == null )
         {
             remove();
+            return;
         }
 
-        setValue( ValueFactoryImpl.getInstance().createValue(value) );
+        setValue( m_valueFactory.createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.BINARY : m_type ) );
     }
 
     public void setValue(long value)
@@ -319,7 +340,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                         ConstraintViolationException,
                                         RepositoryException
     {
-        setValue( ValueFactoryImpl.getInstance().createValue(value) );
+        setValue( m_valueFactory.createValue(value) );
     }
 
     public void setValue(double value)
@@ -329,7 +350,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                           ConstraintViolationException,
                                           RepositoryException
     {
-        setValue( ValueFactoryImpl.getInstance().createValue(value) );
+        setValue( m_valueFactory.createValue(value) );
     }
 
     public void setValue(Calendar value)
@@ -343,7 +364,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         {
             remove();
         }
-        setValue( ValueFactoryImpl.getInstance().createValue(value) );
+        setValue( m_valueFactory.createValue(value) );
     }
 
     public void setValue(boolean value)
@@ -353,7 +374,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                            ConstraintViolationException,
                                            RepositoryException
     {
-        setValue( ValueFactoryImpl.getInstance().createValue(value) );
+        setValue( m_valueFactory.createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.BOOLEAN : m_type ) );
     }
 
     public void setValue(Node value)
@@ -371,7 +392,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         {
             try
             {
-                setValue( ValueFactoryImpl.getInstance().createValue(value.getUUID(), PropertyType.REFERENCE) );
+                setValue( m_valueFactory.createValue(value.getUUID(), PropertyType.REFERENCE) );
             }
             catch( UnsupportedRepositoryOperationException e )
             {
@@ -389,7 +410,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         }
         else
         {
-            setValue( ValueFactoryImpl.getInstance().createValue(value,type) );
+            setValue( m_valueFactory.createValue(value,type) );
         }
     }
 

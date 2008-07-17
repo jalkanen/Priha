@@ -57,9 +57,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         
         if( populateDefaults )
         {
-            setProperty( "jcr:primaryType", m_primaryType.getName(), PropertyType.NAME );
+            internalSetProperty( "jcr:primaryType", m_primaryType.getName(), PropertyType.NAME );
         }
     }
+
 
     protected NodeImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
@@ -101,7 +102,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         catch( PathNotFoundException e )
         {
             Value[] values = new Value[] { vf.createValue(mixinName,PropertyType.NAME) };
-            setProperty( JCR_MIXIN_TYPES, values, PropertyType.NAME );
+            internalSetProperty( JCR_MIXIN_TYPES, values, PropertyType.NAME );
         }
 
         autoCreateProperties();
@@ -120,12 +121,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         NodeDefinition nd = m_primaryType.findNodeDefinition(relpath);
 
-        GenericNodeType nt = (GenericNodeType) nd.getDefaultPrimaryType();
-
-        if( nt == null )
+        if( nd == null )
         {
             throw new ConstraintViolationException("Cannot assign a child type to this node, since there is no default type.");
         }
+        
+        GenericNodeType nt = (GenericNodeType) nd.getDefaultPrimaryType();
 
         return nt;
     }
@@ -183,8 +184,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 assignedType = (GenericNodeType) getNodeTypeManager().getNodeType( primaryNodeTypeName );
             }
 
-            assignedNodeDef = assignedType.findNodeDefinition( absPath.getLastComponent() );
+            assignedNodeDef = m_primaryType.findNodeDefinition( absPath.getLastComponent() );
 
+            if( assignedNodeDef == null )
+            {
+                throw new ConstraintViolationException("No node definition for this node type");
+            }
+            
             //
             //  Check for same name siblings
             //
@@ -199,6 +205,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 }
             }
 
+            //
+            //  Check if parent allows adding this.
+            //
+            if( !parent.getDefinition().getDeclaringNodeType().canAddChildNode(absPath.getLastComponent()) )
+            {
+                throw new ConstraintViolationException("Parent node does not allow adding nodes of name "+absPath.getLastComponent());
+            }
 
             //
             //  Node type and definition are now okay, so we'll create the node
@@ -555,6 +568,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     private void autoCreateProperties(NodeType nt) throws RepositoryException, ValueFormatException, VersionException, LockException, ConstraintViolationException
     {
+        ValueFactoryImpl vfi = ValueFactoryImpl.getInstance();
+        
         for( PropertyDefinition pd : nt.getPropertyDefinitions() )
         {
             if( pd.isAutoCreated() && !hasProperty(pd.getName()) )
@@ -568,7 +583,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
                 if( JCR_UUID.equals(pi.getName()) )
                 {
-                    pi.setValue( UUID.randomUUID().toString() );
+                    pi.loadValue( vfi.createValue( UUID.randomUUID().toString() ) );
+                }
+                
+                if( "jcr:created".equals(pi.getName() ))
+                {
+                    pi.loadValue( vfi.createValue( Calendar.getInstance() ) );
                 }
 
                 addChildProperty( pi );
@@ -799,7 +819,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         {
             if( hasProperty("jcr:primaryType") )
             {
-                throw new RepositoryException("The object has already been assigned a primary type!");
+                throw new ConstraintViolationException("The object has already been assigned a primary type!");
             }
 
             //  We know where this belongs to.
@@ -828,12 +848,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
             Path p = propertypath.getParentPath();
 
-            NodeImpl nd = (NodeImpl) m_session.getItem(p);
+            NodeImpl parentNode = (NodeImpl) m_session.getItem(p);
 
             boolean ismultiple = value instanceof Object[];
 
-            PropertyDefinition pd = ((GenericNodeType)nd.getPrimaryNodeType()).findPropertyDefinition(name,ismultiple);
-
+            GenericNodeType parentType = (GenericNodeType)parentNode.getPrimaryNodeType();
+            
+            PropertyDefinition pd = parentType.findPropertyDefinition(name,ismultiple);
+            
             prop = new PropertyImpl( m_session, propertypath, pd );
             addChildProperty( prop );
             markModified();
@@ -918,6 +940,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return p;
     }
 
+    private PropertyImpl internalSetProperty(String name, Value[] values, int type) throws PathNotFoundException, RepositoryException
+    {
+        PropertyImpl p = prepareProperty( name, values );
+
+        p.loadValue( values );
+
+        return p;       
+    }
+
+
     public Property setProperty(String name, Value[] values, int type)
                                                                       throws ValueFormatException,
                                                                           VersionException,
@@ -959,18 +991,27 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         //
         //  For this method, we create a proper value array according to the type information.
         //
-        Value[] newVals = new Value[values.length];
-
-        for( int i = 0; i < values.length; i++ )
+        if( values == null )
         {
-            newVals[i] = ValueFactoryImpl.getInstance().createValue( values[i], type );
+            Property p = getProperty(name);
+            p.remove();
+            return p;
         }
+        
+        PropertyImpl p = prepareProperty( name, values );
 
-        PropertyImpl p = prepareProperty( name, newVals );
-
-        p.setValue( newVals );
+        p.setValue( values );
 
         return p;
+    }
+
+    private PropertyImpl internalSetProperty(String name, String value, int type) throws PathNotFoundException, RepositoryException
+    {
+        PropertyImpl prop = prepareProperty(name,value);
+        
+        prop.loadValue( ValueFactoryImpl.getInstance().createValue(value,type) );
+        
+        return prop;
     }
 
     public Property setProperty(String name, String value)
@@ -1205,7 +1246,19 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             throw new ConstraintViolationException(getPath()+" has already been removed");
 
         if( getPath().equals("/") || getPath().equals("/jcr:system") ) return; // Refuse to remove
+
+        NodeType parentType = getParent().getPrimaryNodeType();
         
+        if( !parentType.canRemoveItem(getName()) &&
+            ((NodeImpl)getParent()).getState() != ItemState.REMOVED )
+        {
+            throw new ConstraintViolationException("Attempted to delete a mandatory child node:"+getInternalPath());
+        }
+
+        m_session.remove( this );
+        markModified();
+        m_state = ItemState.REMOVED;
+
         for( NodeIterator ndi = getNodes(); ndi.hasNext(); )
         {
             Node nd = ndi.nextNode();
@@ -1213,10 +1266,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             nd.remove();
         }
 
-        m_session.remove( this );
-        markModified();
-        m_state = ItemState.REMOVED;
-        
         log.fine("Removed "+getPath());
     }
 
@@ -1279,7 +1328,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
             if( m_definition == null )
             {
-                throw new RepositoryException("Cannot assign a node definition!");
+                throw new RepositoryException("Cannot assign a node definition for "+m_path);
             }
 
         }
