@@ -30,14 +30,25 @@ public class PrihaRepositoryStub extends RepositoryStub
 
                 if(testroot.startsWith("/")) testroot = testroot.substring(1);
 
+                Node testRoot;
+                
                 if( !s.getRootNode().hasNode(testroot) )
                 {
-                    Node nd = s.getRootNode().addNode(testroot);
-                    nd = nd.addNode("footest");
-                    nd.addMixin("mix:referenceable");
-                    
-                    s.save();
+                    testRoot = s.getRootNode().addNode(testroot);
                 }
+                else
+                {
+                    testRoot = s.getRootNode().getNode(testroot);
+                }
+
+                if( !testRoot.hasNode("footest") )
+                {
+                    Node nd = testRoot.addNode("footest");
+                    nd.addMixin("mix:referenceable");
+                }
+                
+                s.save();
+                
                 s.logout();
                 r.setProperty("stub.initialized", "true");
             }

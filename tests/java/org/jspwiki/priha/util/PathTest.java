@@ -50,7 +50,7 @@ public class PathTest extends TestCase
         assertTrue( "p1->p2", p1.isParentOf(p2) );
         assertFalse( "p2->p1", p2.isParentOf(p1) );
         
-        assertFalse( "p1=p1", p1.isParentOf(p1));
+        assertTrue( "p1=p1", p1.isParentOf(p1));
     }
 
     public void testIsParentOf2() throws Exception

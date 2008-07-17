@@ -327,7 +327,7 @@ public class SessionImpl implements Session
             ni.sanitize();
                 
             m_provider.addNode( ni );
-            ni.markModified();
+            ni.markModified(false);
                 
             save();
         }

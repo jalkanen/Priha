@@ -325,7 +325,7 @@ public class Path
      */
     public boolean isParentOf( Path p )
     {
-        if( p.depth() > depth() || (depth() == 0) )
+        if( p.depth() >= depth() )
         {
             for( int i = 0; i < m_components.length; i++ )
             {

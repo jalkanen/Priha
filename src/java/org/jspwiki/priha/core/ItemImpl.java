@@ -175,14 +175,14 @@ public abstract class ItemImpl implements Item
         return "Node["+m_path.toString()+"]";
     }
 
-    protected void markModified()
+    protected void markModified(boolean isModified)
     {
         try
         {
-            m_modified = true;
+            m_modified = isModified;
             m_session.markDirty(this);
             
-            if( !getInternalPath().isRoot() ) ((NodeImpl)getParent()).markModified();
+            if( !getInternalPath().isRoot() ) ((NodeImpl)getParent()).markModified(true);
         }
         catch( Exception e ) {} // This is fine.  I guess.
     }

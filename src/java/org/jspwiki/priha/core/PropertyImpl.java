@@ -217,8 +217,8 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( !parentType.canSetProperty( getName(), value ) )
             throw new ConstraintViolationException("Setting of this property is forbidden");
 
+        markModified( m_value != null );
         loadValue( value );
-        markModified();
     }
 
     public void setValue(Value[] values)
@@ -233,9 +233,8 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( !parentType.canSetProperty( getName(), values ) )
             throw new ConstraintViolationException("Setting of this property is forbidden:");
 
+        markModified( m_value != null );
         loadValue(values);
-        
-        markModified();
     }
 
     /**
@@ -265,12 +264,23 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         }
 
         // Clean away null values from the array
+        // and also check that the values are all of the same type
         
         ArrayList<Value> ls = new ArrayList<Value>();
+        
+        int type = PropertyType.UNDEFINED;
+        
         for( int i = 0; i < values.length; i++ )
         {
             if( values[i] != null )
+            {
+                if( type == PropertyType.UNDEFINED )
+                    type = values[i].getType();
+                else if( values[i].getType() != type )
+                    throw new ValueFormatException("All Values must be of the same type!");
+
                 ls.add( values[i] );
+            }
         }
         m_value = ls.toArray( new Value[ls.size()] );
        
@@ -446,7 +456,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         nd.removeProperty(this);
         
         m_state = ItemState.REMOVED;
-        markModified();
+        markModified(true);
     }
 
     public void setDefinition(PropertyDefinition pd)

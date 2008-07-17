@@ -3,7 +3,7 @@
         * 0.0.18
         
         * Fixed a number of minor conversion exceptions (jeez the TCK
-        is tight).  58/454 failures...
+        is tight).  49/454 failures...
         
         * Reworked configuration completely (it works now) and added
         some basic documentation about the configuration to 

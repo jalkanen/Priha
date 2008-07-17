@@ -1,6 +1,8 @@
 package org.jspwiki.priha.core;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -14,6 +16,7 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 
+import org.jspwiki.priha.core.binary.MemoryBinarySource;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.nodetype.NodeDefinitionImpl;
@@ -47,7 +50,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         m_definition  = original.m_definition;
     }
     
-    protected NodeImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
+    protected NodeImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         super( session, path );
@@ -62,10 +65,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     }
 
 
-    protected NodeImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
+    protected NodeImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        this( session, path.toString(), primaryType, nDef, populateDefaults );
+        this( session, new Path(path), primaryType, nDef, populateDefaults );
     }
         
 
@@ -107,7 +110,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
         autoCreateProperties();
 
-        markModified();
+        markModified(true);
     }
 
     /**
@@ -221,7 +224,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
             ni.sanitize();
 
-            ni.markModified();
+            ni.markModified(false);
             m_session.addNode( ni );
         }
         catch( InvalidPathException e)
@@ -832,7 +835,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                      primaryDef );
 
             addChildProperty( prop );
-            markModified();
+            markModified(false);
             return prop;
         }
 
@@ -857,15 +860,21 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             PropertyDefinition pd = parentType.findPropertyDefinition(name,ismultiple);
             
             prop = new PropertyImpl( m_session, propertypath, pd );
-            addChildProperty( prop );
-            markModified();
+            prop.markModified(false);
         }
-
+        else
+        {
+            markModified(true);
+        }
+        
         if( value == null )
         {
             removeProperty(prop);
         }
-
+        else
+        {
+            addChildProperty( prop );
+        }
         return prop;
     }
 
@@ -895,7 +904,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         prop.m_state = ItemState.REMOVED;
         // m_properties.remove(prop);
-        markModified();
+        markModified(true);
     }
 
     public Property setProperty(String name, Value value)
@@ -957,7 +966,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                                           ConstraintViolationException,
                                                                           RepositoryException
     {
-        if( values.length > 0 && type != values[0].getType() )
+        if( values == null )
+        {
+            Property p = getProperty(name);
+            p.remove();
+            return p;
+        }
+        
+        if( values.length > 0 && values[0] != null && type != values[0].getType() )
             throw new ValueFormatException("Do not know how to convert between types, sorry.");
 
         PropertyImpl p = prepareProperty( name, values );
@@ -1034,28 +1050,22 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                                         ConstraintViolationException,
                                                                         RepositoryException
     {
-        switch(type)
+        if( value == null )
         {
-            case PropertyType.STRING:
-                return setProperty( name, value );
-
-            case PropertyType.LONG:
-                return setProperty( name, Long.parseLong(value) );
-
-            case PropertyType.BOOLEAN:
-                return setProperty( name, Boolean.parseBoolean(value) );
-
-            case PropertyType.DOUBLE:
-                return setProperty( name, Double.parseDouble(value) );
-
-            case PropertyType.NAME:
-            case PropertyType.PATH:
-            case PropertyType.REFERENCE:
-                Value val = ValueFactoryImpl.getInstance().createValue( value, type );
-                return setProperty( name, val );
-
-            default:
-                throw new UnsupportedRepositoryOperationException("We do not support setProperty for type "+type);
+            Property p = getProperty(name);
+            p.remove();
+            return p;
+        }
+        
+        try
+        {
+            Value val = ValueFactoryImpl.getInstance().createValue( value, type );
+            return setProperty( name, val );
+        }
+        catch( ValueFormatException e )
+        {
+            // This is kind of stupid to start throwing the same exception again.
+            throw new ConstraintViolationException(e.getMessage());
         }
     }
 
@@ -1243,8 +1253,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         if( m_state == ItemState.REMOVED )
-            throw new ConstraintViolationException(getPath()+" has already been removed");
-
+            //throw new ConstraintViolationException(getPath()+" has already been removed");
+            return; // Die nicely
+            
         if( getPath().equals("/") || getPath().equals("/jcr:system") ) return; // Refuse to remove
 
         NodeType parentType = getParent().getPrimaryNodeType();
@@ -1256,7 +1267,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         }
 
         m_session.remove( this );
-        markModified();
+        markModified(true);
         m_state = ItemState.REMOVED;
 
         for( NodeIterator ndi = getNodes(); ndi.hasNext(); )
