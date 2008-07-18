@@ -14,8 +14,8 @@ under the classpath root as well as /WEB-INF/.
 Providers
 ---------
 
-Priha does not yet support multiple providers, but the configuration makes
-you think it does.
+Priha supports multiple physical providers, however, they are probably fairly
+useless to most people.  Here is how you configure a single provider:
 
 First, you define a provider and give it a nickname; in the following example
 it's "myProvider".
@@ -44,6 +44,64 @@ The nickname "defaultProvider" is reserved for the built-in default provider
 see what configuration options it has.
 
 Priha uses the defaultProvider in the absence of any other "priha.providers" line.
+
+
+Multiple providers
+------------------
+
+It is fairly easy to configure multiple providers; first, you need to define
+several RepositoryProvider instances.  In this case, we define one with
+your company provider to store most of your content, and then we'll set up
+a FileProvider to store your large files (stored under /largefiles/).
+
+   priha.provider.myProvider.class = org.mycompany.priha.MyProvider
+   priha.provider.myProvider.prefix = /
+   
+   priha.provider.myOtherProvider.class = org.jspwiki.priha.providers.FileProvider
+   priha.provider.myOtherProvider.prefix = /largefiles/
+   
+Then we'll set up the provider list:
+
+   priha.providers = myOtherProvider myProvider
+   
+Note the order - the most specific one must come first!  If your provider
+does not seem to be called properly, please check the order.
+
+
+
+Setting up caching
+------------------
+
+Caches are just special RepositoryProviders, who sit between the main Priha
+content management, and on top of the real providers.  Your provider might
+then use some additional caching, but in most cases Priha caching should
+be more efficient.
+
+The cache is set up per provider.  Here's how you configure Ehcache using
+the built-in EhCachingProvider and the built-in default provider:
+
+   priha.provider.ehcache.class = org.jspwiki.priha.providers.EhCachingProvider
+   priha.provider.ehcache.realProvider = defaultProvider
+   priha.provider.ehcache.size = 5000
+
+   priha.providers = ehcache
+
+Of course, you can take the multi-provider approach as well.  This example
+defines two providers, and caches all the calls to a MyProvider, but leaves
+all calls to a FileProvider uncached.
+
+   priha.provider.myProvider.class = org.mycompany.priha.MyProvider
+   priha.provider.myProvider.prefix = /
+   
+   priha.provider.myOtherProvider.class = org.jspwiki.priha.providers.FileProvider
+   priha.provider.myOtherProvider.prefix = /largefiles/
+
+   priha.provider.ehcache.class = org.jspwiki.priha.providers.EhCachingProvider
+   priha.provider.ehcache.realProvider = myProvider
+   priha.provider.ehcache.size = 1000
+
+   priha.providers = myOtherProvider ehcache
+
 
 
 LOGGING

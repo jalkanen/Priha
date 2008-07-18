@@ -167,7 +167,7 @@ public class WorkspaceImpl
      *  @return
      * @throws InvalidPathException 
      */
-    public boolean nodeExists(Path path) throws InvalidPathException
+    public boolean nodeExists(Path path) throws RepositoryException
     {
         return m_providerManager.hasNode(this, path);
     }

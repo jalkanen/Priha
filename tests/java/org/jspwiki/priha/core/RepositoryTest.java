@@ -203,7 +203,7 @@ public class RepositoryTest extends TestCase
     
     /** The size of a million can be configured here. ;-) */
     
-    private static final int MILLION_ITERATIONS = 1000;
+    private static final int MILLION_ITERATIONS = 100;
     
     public void testMillionSaves() throws Exception
     {
@@ -290,6 +290,32 @@ public class RepositoryTest extends TestCase
         Property p2 = (Property) m_session.getItem("/binarytest/blob");
         
         assertEquals( content, p2.getString() );
+    }
+    
+    public void testMultiProviders() throws Exception
+    {
+        Repository r = RepositoryManager.getRepository("multiprovidertest.properties");
+        
+        TestUtil.emptyRepo(r);
+        
+        Session s = r.login();
+        
+        Node nd = s.getRootNode().addNode("largefiles");
+        nd.addNode("test");
+        nd.setProperty("reallybig", "0");
+        
+        nd = s.getRootNode().addNode("small");
+        nd.setProperty("reallysmall", "foobar");
+        
+        s.save();
+        
+        File f = new File("/tmp/priha/fileprovider/workspaces/default/small/reallysmall/");
+        
+        assertTrue("small", f.exists() && f.isDirectory() );
+        
+        File f2 = new File("/tmp/priha/fileprovider2/workspaces/default/largefiles/test/reallybig/");
+        
+        assertTrue("big", f2.exists() && f2.isDirectory() );
     }
     
     /**

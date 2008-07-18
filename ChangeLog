@@ -1,5 +1,10 @@
 2008-07-18  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.0.20
+        
+        * Added ability to manage multiple providers (though this
+        does not quite work yet).
+
         * 0.0.19
         
         * Added the EhCachingProvider to provide a significant boost

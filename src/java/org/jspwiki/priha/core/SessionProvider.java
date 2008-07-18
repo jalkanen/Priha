@@ -151,7 +151,7 @@ public class SessionProvider
         return response;
     }
 
-    public List<Path> listNodes(Path parentpath)
+    public List<Path> listNodes(Path parentpath) throws RepositoryException
     {
         ArrayList<Path> res = new ArrayList<Path>();
         
@@ -168,7 +168,7 @@ public class SessionProvider
         return res;
     }
 
-    public Collection<? extends String> listWorkspaces()
+    public Collection<? extends String> listWorkspaces() throws RepositoryException
     {
         return m_source.listWorkspaces();
     }
@@ -178,7 +178,7 @@ public class SessionProvider
         m_source.move(m_workspace, srcpath, destpath);
     }
 
-    public boolean nodeExists(Path path)
+    public boolean nodeExists(Path path) throws RepositoryException
     {
         ItemImpl ni = m_items.get( path );
 

@@ -1,5 +1,6 @@
 package org.jspwiki.priha.providers;
 
+import java.lang.management.ManagementFactory;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
@@ -8,11 +9,13 @@ import java.util.logging.Logger;
 import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
+import javax.management.MBeanServer;
 
 import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 import net.sf.ehcache.Statistics;
+import net.sf.ehcache.management.ManagementService;
 
 import org.jspwiki.priha.core.PropertyImpl;
 import org.jspwiki.priha.core.ProviderManager;
@@ -72,6 +75,11 @@ public class EhCachingProvider implements RepositoryProvider
         
         m_valueCache = m_cacheManager.getCache( cacheName );
         
+        //
+        //  Register to MBeanServer
+        //
+        MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
+        ManagementService.registerMBeans(m_cacheManager, mBeanServer, false, false, false, true);
 
         log.fine("Started EHCache with real provider class "+m_realProvider.getClass().getName());
     }

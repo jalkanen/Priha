@@ -8,6 +8,7 @@ import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 
+import org.jspwiki.priha.util.ConfigurationException;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 
@@ -25,13 +26,13 @@ public interface ItemStore
 
     ItemImpl getItem(WorkspaceImpl ws, Path path) throws InvalidPathException, RepositoryException;
 
-    List<? extends Path> listNodes(WorkspaceImpl m_workspace, Path parentpath);
+    List<? extends Path> listNodes(WorkspaceImpl m_workspace, Path parentpath) throws RepositoryException;
 
-    Collection<? extends String> listWorkspaces();
+    Collection<? extends String> listWorkspaces() throws RepositoryException;
 
     void move(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException;
 
-    boolean nodeExists(WorkspaceImpl m_workspace, Path path);
+    boolean nodeExists(WorkspaceImpl m_workspace, Path path) throws RepositoryException;
 
 
     void remove(WorkspaceImpl m_workspace, Path path) throws RepositoryException;

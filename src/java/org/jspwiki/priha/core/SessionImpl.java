@@ -58,7 +58,7 @@ public class SessionImpl implements Session
         }
     }
 
-    public List<Path> listNodes( Path parentpath )
+    public List<Path> listNodes( Path parentpath ) throws RepositoryException
     {
         return m_provider.listNodes(parentpath);
     }
@@ -91,12 +91,12 @@ public class SessionImpl implements Session
         }
     }
 
-    boolean hasNode( String absPath )
+    boolean hasNode( String absPath ) throws RepositoryException
     {
         return hasNode( PathFactory.getPath(absPath) );
     }
     
-    boolean hasNode( Path absPath )
+    boolean hasNode( Path absPath ) throws RepositoryException
     {
         return m_provider.nodeExists( absPath );
     }

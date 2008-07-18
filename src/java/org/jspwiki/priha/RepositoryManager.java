@@ -113,4 +113,26 @@ public class RepositoryManager
         return new RepositoryImpl( prefs );
     }
     
+    public static RepositoryImpl getRepository( String propertyFilename ) throws ConfigurationException
+    {
+        String[] propertyPaths = { propertyFilename, 
+                                   "/"+propertyFilename,
+                                   "/WEB-INF/propertyFileName" };
+        
+        try
+        {
+            Properties props = FileUtil.findProperties(propertyPaths);
+            
+            if( props == null || props.isEmpty() )
+            {
+                throw new ConfigurationException("The defined property file could not be located");
+            }
+            
+            return new RepositoryImpl(props);
+        }
+        catch (IOException e)
+        {
+            throw new ConfigurationException("Unable to find or read the property file!");
+        }
+    }
 }

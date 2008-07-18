@@ -1,6 +1,7 @@
 package org.jspwiki.priha.core;
 
 import java.util.*;
+import java.util.logging.Logger;
 
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
@@ -18,18 +19,18 @@ import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 
 /**
- *  This is a front-end class for managing single or, in the future, multiple providers
+ *  This is a front-end class for managing multiple providers
  *  for a single repository.
- *  <p>
- *  This class also provides caching and some additional helper functions over
- *  the regular Provider interface.
  *  <p>
  *  The ProviderManager is a singleton per Repository.
  */
 public class ProviderManager implements ItemStore
 {
-    private RepositoryProvider m_provider;
-    private RepositoryImpl     m_repository;
+    private ProviderInfo[]       m_providers;
+
+    private RepositoryImpl       m_repository;
+    
+    private Logger               log = Logger.getLogger(ProviderManager.class.getName());
     
     public ProviderManager( RepositoryImpl repository ) throws ConfigurationException
     {
@@ -50,16 +51,34 @@ public class ProviderManager implements ItemStore
         
         if( providers.length == 0 )
             throw new ConfigurationException("Required property missing",PROP_PRIHA_PROVIDERS);
-        if( providers.length > 1 ) 
-            throw new ConfigurationException("Currently only a single provider is supported.");
-        
-        Properties props = filterProperties(m_repository,providers[0]);
-        
-        String className = props.getProperty("class");
-        
-        RepositoryProvider p = instantiateProvider( m_repository, className, props );
 
-        m_provider = p;
+        m_providers = new ProviderInfo[providers.length];
+        for( int i = 0; i < providers.length; i++ )
+        {
+            Properties props = filterProperties(m_repository,providers[i]);
+        
+            String className = props.getProperty("class");
+            String prefix    = props.getProperty("prefix","");
+
+            log.fine("Provider "+i+": "+providers[i]+" is a "+className);
+            RepositoryProvider p = instantiateProvider( m_repository, className, props );
+
+            m_providers[i] = new ProviderInfo();
+            m_providers[i].provider = p;
+            m_providers[i].prefix   = prefix;            
+        }
+    }
+    
+    private final RepositoryProvider getProvider(Path p) throws ConfigurationException
+    {
+        String path = p.toString();
+        
+        for( ProviderInfo pi : m_providers )
+        {
+            if( path.startsWith(pi.prefix) ) return pi.provider;
+        }
+        
+        throw new ConfigurationException("Unmapped path found: "+p);
     }
     
     public static Properties filterProperties( RepositoryImpl repository, String providerName )
@@ -117,38 +136,48 @@ public class ProviderManager implements ItemStore
      * @return
      * @throws InvalidPathException 
      */
-    public boolean hasNode( WorkspaceImpl ws, Path path ) throws InvalidPathException
+    public boolean hasNode( WorkspaceImpl ws, Path path ) throws InvalidPathException, ConfigurationException
     {
-        return m_provider.nodeExists( ws, path );
+        return getProvider(path).nodeExists( ws, path );
     }
     
     public void open(Credentials credentials, String workspaceName) 
         throws NoSuchWorkspaceException, RepositoryException
     {
-        m_provider.open( m_repository, credentials, workspaceName );
+        for( ProviderInfo pi : m_providers )
+        {
+            pi.provider.open( m_repository, credentials, workspaceName );
+        }
     }
 
 
     private Object getPropertyValue(WorkspaceImpl impl, Path ptPath) throws RepositoryException
     {
-        Object stored = m_provider.getPropertyValue( impl, ptPath );
+        Object stored = getProvider(ptPath).getPropertyValue( impl, ptPath );
             
         return stored;
     }
 
-    public Collection<String> listWorkspaces()
+    /**
+     *  Workspaces are determined by the provider which maps against the root path.
+     * @throws ConfigurationException 
+     */
+    public Collection<String> listWorkspaces() throws ConfigurationException
     {
-        return m_provider.listWorkspaces();
+        return getProvider(Path.ROOT).listWorkspaces();
     }
 
-    public List<Path>listNodes(WorkspaceImpl impl, Path path)
+    public List<Path>listNodes(WorkspaceImpl impl, Path path) throws ConfigurationException
     {
-        return m_provider.listNodes( impl, path );
+        return getProvider(path).listNodes( impl, path );
     }
 
     public void close(WorkspaceImpl impl)
     {
-        m_provider.close( impl );
+        for( ProviderInfo pi : m_providers )
+        {
+            pi.provider.close( impl );
+        }
     }
 
     /**
@@ -160,7 +189,7 @@ public class ProviderManager implements ItemStore
      */
     public void remove(WorkspaceImpl impl, Path path) throws RepositoryException
     {
-        m_provider.remove( impl, path );
+        getProvider(path).remove( impl, path );
     }
 
     /**
@@ -226,10 +255,10 @@ public class ProviderManager implements ItemStore
     {
         Path path = ni.getInternalPath();
         
-        if( !path.isRoot() && !m_provider.nodeExists(ws, path.getParentPath()) )
+        if( !path.isRoot() && !getProvider(path).nodeExists(ws, path.getParentPath()) )
             throw new ConstraintViolationException("Parent path is missing");
         
-        m_provider.addNode(ws, path);
+        getProvider(path).addNode(ws, path);
     }
 
     public void copy(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException
@@ -239,9 +268,19 @@ public class ProviderManager implements ItemStore
 
     public NodeImpl findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
-        Path path = m_provider.findByUUID(ws, uuid);
+        for( ProviderInfo pi : m_providers )
+        {
+            try
+            {
+                Path path = pi.provider.findByUUID(ws, uuid);
         
-        return loadNode(ws, path);
+                return loadNode(ws, path);
+            }
+            catch(ItemNotFoundException e)
+            {}
+        }
+        
+        throw new ItemNotFoundException("Could not locate a node by this UUID");
     }
  
     
@@ -267,26 +306,34 @@ public class ProviderManager implements ItemStore
         throw new UnsupportedRepositoryOperationException();
     }
 
-    public boolean nodeExists(WorkspaceImpl ws, Path path)
+    public boolean nodeExists(WorkspaceImpl ws, Path path) throws ConfigurationException
     {
-        return m_provider.nodeExists(ws, path);
+        return getProvider(path).nodeExists(ws, path);
     }
 
     public void putProperty(WorkspaceImpl ws, PropertyImpl pi) throws RepositoryException
     {
-        m_provider.putPropertyValue( ws, pi );   
+        getProvider(pi.getInternalPath()).putPropertyValue( ws, pi );   
     }
 
     public void stop()
     {
-        m_provider.stop(m_repository);
+        for( ProviderInfo pi : m_providers )
+        {
+            pi.provider.stop(m_repository);
+        }
     }
 
     public Collection<? extends PropertyImpl> getReferences(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
         ArrayList<PropertyImpl> result = new ArrayList<PropertyImpl>();
         
-        List<Path> paths = m_provider.findReferences( ws, uuid );
+        List<Path> paths = new ArrayList<Path>();
+        
+        for( ProviderInfo pi : m_providers )
+        {
+            paths.addAll(pi.provider.findReferences( ws, uuid ));
+        }
         
         for( Path path : paths )
         {
@@ -300,7 +347,12 @@ public class ProviderManager implements ItemStore
 
     public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        return m_provider.listProperties(ws, path);
+        return getProvider(path).listProperties(ws, path);
     }
 
+    private class ProviderInfo
+    {
+        public String             prefix;
+        public RepositoryProvider provider;
+    }
 }
