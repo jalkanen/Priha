@@ -2,8 +2,8 @@ package org.jspwiki.priha.core.values;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
 import java.util.Calendar;
 
 import javax.jcr.PropertyType;
@@ -11,8 +11,9 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 
-public class StringValueImpl extends ValueImpl implements Value
+public class StringValueImpl extends ValueImpl implements Value, Serializable
 {
+    private static final long serialVersionUID = 6874691155431565288L;
     String m_value;
     
     public StringValueImpl( String value )

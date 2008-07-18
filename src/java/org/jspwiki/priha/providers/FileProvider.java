@@ -511,7 +511,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
         if( !inf.exists() )
         {
-            throw new PathNotFoundException("The property metadata file was not found.");
+            throw new PathNotFoundException("The property metadata file was not found: "+inf.getAbsolutePath());
         }
         Properties props = new Properties();
         InputStream in = null;

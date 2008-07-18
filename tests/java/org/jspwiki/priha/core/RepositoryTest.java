@@ -3,6 +3,7 @@ package org.jspwiki.priha.core;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Logger;
 
@@ -14,6 +15,7 @@ import junit.framework.TestSuite;
 
 import org.jspwiki.priha.RepositoryManager;
 import org.jspwiki.priha.TestUtil;
+import org.jspwiki.priha.util.Path;
 
 public class RepositoryTest extends TestCase
 {
@@ -201,10 +203,12 @@ public class RepositoryTest extends TestCase
     
     /** The size of a million can be configured here. ;-) */
     
-    private static final int MILLION_ITERATIONS = 100;
+    private static final int MILLION_ITERATIONS = 1000;
     
     public void testMillionSaves() throws Exception
     {
+        ArrayList<Path> propertyPaths = new ArrayList<Path>();
+        
         Session s = m_repository.login();
 
         Node nd = s.getRootNode();
@@ -216,13 +220,14 @@ public class RepositoryTest extends TestCase
             String name = "x-"+getUniqueID();
             
             Node n = nd.addNode( name );
-            n.setProperty( "test", getUniqueID() );
+            Property p = n.setProperty( "test", getUniqueID() );
+            propertyPaths.add( ((ItemImpl)p).getInternalPath() );
         }
         
         s.save();
         
         long stop = System.currentTimeMillis();
-        System.out.println("Saves took "+(stop-start)+"ms");
+        TestUtil.printSpeed("Save", MILLION_ITERATIONS, start, stop );
         
         start = System.currentTimeMillis();
         
@@ -241,7 +246,31 @@ public class RepositoryTest extends TestCase
         }
         
         stop = System.currentTimeMillis();
-        System.out.println("Reads took "+(stop-start)+"ms");
+        TestUtil.printSpeed("Sequential read", MILLION_ITERATIONS, start, stop );
+        
+        Random rand = new Random();
+        
+        start = System.currentTimeMillis();
+        
+        for( int i = 0; i < MILLION_ITERATIONS; i++ )
+        {
+            int item = rand.nextInt( propertyPaths.size() );
+            
+            Item ii = s.getItem( propertyPaths.get(item).toString() );
+
+            assertFalse( ii.getPath(), ii.isNode() );
+            assertEquals( ii.getName(), 6, ((Property)ii).getString().length() );
+        }
+        
+        stop = System.currentTimeMillis();
+        TestUtil.printSpeed("Random read", MILLION_ITERATIONS, start, stop );
+        
+        start = System.currentTimeMillis();
+
+        TestUtil.emptyRepo(m_repository);
+        
+        stop = System.currentTimeMillis();
+        TestUtil.printSpeed("remove", MILLION_ITERATIONS, start, stop );        
     }
 
     public void testBinaryProperty() throws Exception

@@ -221,6 +221,37 @@ public class SessionProvider
     public void save(Path path) throws RepositoryException
     {
         //
+        //  Test referential integrity.
+        //
+        for( Iterator<Entry<Path, ItemImpl>> i = m_items.entrySet().iterator(); i.hasNext(); )
+        {
+            Entry<Path, ItemImpl> entry = i.next();
+            
+            ItemImpl ii = entry.getValue();
+            
+            if( path.isParentOf(ii.getInternalPath()) )
+            {
+                if( ii.isNode() && ii.getState() == ItemState.REMOVED )
+                {
+                    try
+                    {
+                        Collection<PropertyImpl> refs = getReferences( ((NodeImpl)ii).getUUID() );
+                        
+                        for( PropertyImpl pi : refs )
+                        {
+                            if( pi.getState() != ItemState.REMOVED )
+                                throw new ReferentialIntegrityException("Attempted to remove a Node which still has references");
+                        }
+                    }
+                    catch( UnsupportedRepositoryOperationException e )
+                    {
+                        // Does not have an UUID, so cannot be referenced.
+                    }
+                }
+            }
+        }
+        
+        //
         //  Do the actual save.
         //
         for( Iterator<Entry<Path, ItemImpl>> i = m_items.entrySet().iterator(); i.hasNext(); )

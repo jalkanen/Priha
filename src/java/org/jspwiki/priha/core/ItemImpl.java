@@ -8,6 +8,7 @@ import javax.jcr.version.VersionException;
 
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
+import org.jspwiki.priha.util.PathFactory;
 
 public abstract class ItemImpl implements Item
 {
@@ -20,7 +21,7 @@ public abstract class ItemImpl implements Item
     
     public ItemImpl( SessionImpl session, String path )
     {
-        this( session, new Path(path) );
+        this( session, PathFactory.getPath(path) );
     }
     
     public ItemImpl(SessionImpl session, Path path)

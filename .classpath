@@ -11,8 +11,9 @@
 	<classpathentry kind="lib" path="lib/jackrabbit-1.0.jar"/>
 	<classpathentry kind="lib" path="tests/etc"/>
 	<classpathentry kind="lib" path="lib/javax.servlet.jar"/>
-	<classpathentry kind="lib" path="lib/oscache-2.4.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging-api.jar"/>
+	<classpathentry kind="lib" path="lib/ehcache-1.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/backport-util-concurrent-3.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.launching.macosx.MacOSXType/JVM 1.5.0"/>
 	<classpathentry kind="lib" path="etc"/>
 	<classpathentry kind="output" path="build"/>

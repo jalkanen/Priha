@@ -18,6 +18,7 @@ import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
+import org.jspwiki.priha.util.PathFactory;
 import org.jspwiki.priha.xml.StreamContentHandler;
 import org.jspwiki.priha.xml.XMLExport;
 import org.xml.sax.ContentHandler;
@@ -92,7 +93,7 @@ public class SessionImpl implements Session
 
     boolean hasNode( String absPath )
     {
-        return hasNode( new Path(absPath) );
+        return hasNode( PathFactory.getPath(absPath) );
     }
     
     boolean hasNode( Path absPath )
@@ -198,7 +199,7 @@ public class SessionImpl implements Session
     
     public Item getItem(String absPath) throws PathNotFoundException, RepositoryException
     {
-        return getItem( new Path(absPath) );
+        return getItem( PathFactory.getPath(absPath) );
     }
 
     public String[] getLockTokens()
@@ -277,7 +278,7 @@ public class SessionImpl implements Session
 
     public boolean itemExists(String absPath) throws RepositoryException
     {
-        return itemExists( new Path(absPath) );
+        return itemExists( PathFactory.getPath(absPath) );
     }
 
     public void logout()

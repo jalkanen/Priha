@@ -52,7 +52,7 @@ public class SessionImplTest extends TestCase
         
         String s = out.toString("UTF-8");
 
-        System.out.println(s);
+        //System.out.println(s);
         assertTrue("Barbapapa wrong", s.indexOf("Barba&lt;papa&gt;") != -1 );
         assertTrue("pim wrong", s.indexOf("pimpim&amp;") != -1 );
         assertTrue("pop wrong", s.indexOf("poppop&quot;") != -1 );

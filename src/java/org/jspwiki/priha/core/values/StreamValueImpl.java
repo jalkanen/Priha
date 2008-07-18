@@ -13,6 +13,8 @@ import org.jspwiki.priha.core.binary.BinarySource;
 import org.jspwiki.priha.core.binary.MemoryBinarySource;
 import org.jspwiki.priha.util.FileUtil;
 
+// FIXME: This class does not yet implement Serializable - it needs to serialize
+//        itself as a proper bytearraystream or use the serialization from the BinarySource
 public class StreamValueImpl extends ValueImpl implements Value
 {
     private BinarySource m_value;

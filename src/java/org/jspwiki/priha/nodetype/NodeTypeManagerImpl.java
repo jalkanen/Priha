@@ -54,9 +54,7 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         }
     }
 
-    // FIXME: Should really return only a singleton per Repository.  Now, clashes are possible,
-    //        when multiple sessions are opened.
-    public static NodeTypeManagerImpl getInstance(Workspace ws)
+    public static synchronized NodeTypeManagerImpl getInstance(Workspace ws)
         throws RepositoryException
     {
         if( c_instance == null )

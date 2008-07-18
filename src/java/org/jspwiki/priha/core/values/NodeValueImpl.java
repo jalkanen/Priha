@@ -2,8 +2,8 @@ package org.jspwiki.priha.core.values;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.Serializable;
 
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 
@@ -13,7 +13,7 @@ import org.jspwiki.priha.core.NodeImpl;
  *  Superclass of all classes which reference a Node
  *  
  */
-public abstract class NodeValueImpl extends ValueImpl implements Value
+public abstract class NodeValueImpl extends ValueImpl implements Value, Serializable
 {
     protected int m_type;
     protected String m_value;

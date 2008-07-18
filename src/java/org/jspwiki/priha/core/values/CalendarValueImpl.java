@@ -2,6 +2,7 @@ package org.jspwiki.priha.core.values;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -12,8 +13,9 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 
-public class CalendarValueImpl extends ValueImpl implements Value
+public class CalendarValueImpl extends ValueImpl implements Value, Serializable
 {
+    private static final long serialVersionUID = -8918655334999478605L;
     private Calendar m_value;
     private static ThreadLocal<SimpleDateFormat> c_isoFormat = new ThreadLocal<SimpleDateFormat>() {
         protected synchronized SimpleDateFormat initialValue()

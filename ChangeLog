@@ -1,3 +1,16 @@
+2008-07-18  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.19
+        
+        * Added the EhCachingProvider to provide a significant boost
+        to content access.
+        
+        * Added PathFactory to make memory consumption lighter
+        
+        * Some minor optimizations here and there.
+        
+        * TCK fails: 48/454.
+        
 2008-07-17  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.18

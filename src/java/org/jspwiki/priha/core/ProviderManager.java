@@ -29,7 +29,6 @@ import org.jspwiki.priha.util.Path;
 public class ProviderManager implements ItemStore
 {
     private RepositoryProvider m_provider;
-    private static final String DEFAULT_PROVIDER = "org.jspwiki.priha.providers.FileProvider";
     private RepositoryImpl     m_repository;
     
     public ProviderManager( RepositoryImpl repository ) throws ConfigurationException
@@ -54,28 +53,28 @@ public class ProviderManager implements ItemStore
         if( providers.length > 1 ) 
             throw new ConfigurationException("Currently only a single provider is supported.");
         
-        Properties props = filterProperties(providers[0]);
+        Properties props = filterProperties(m_repository,providers[0]);
         
         String className = props.getProperty("class");
         
-        RepositoryProvider p = instantiateProvider( className, props );
+        RepositoryProvider p = instantiateProvider( m_repository, className, props );
 
         m_provider = p;
     }
     
-    private Properties filterProperties( String providerName )
+    public static Properties filterProperties( RepositoryImpl repository, String providerName )
     {
         Properties props = new Properties();
         
         String prefix = PROP_PRIHA_PROVIDER_PREFIX + providerName + ".";
         
-        for( Enumeration e = m_repository.getPropertyNames(); e.hasMoreElements(); )
+        for( Enumeration e = repository.getPropertyNames(); e.hasMoreElements(); )
         {
             String key = (String)e.nextElement();
             
             if( key.startsWith(prefix) )
             {
-                String val = m_repository.getProperty(key);
+                String val = repository.getProperty(key);
                 key = key.substring(prefix.length());
                 
                 props.setProperty(key, val);
@@ -85,7 +84,7 @@ public class ProviderManager implements ItemStore
         return props;
     }
     
-    private RepositoryProvider instantiateProvider(String className, Properties props) throws ConfigurationException
+    public static RepositoryProvider instantiateProvider(RepositoryImpl rep, String className, Properties props) throws ConfigurationException
     {
         Class cl;
         RepositoryProvider provider;
@@ -93,7 +92,7 @@ public class ProviderManager implements ItemStore
         {
             cl = Class.forName( className );
             provider = (RepositoryProvider) cl.newInstance();
-            provider.start( m_repository, props );
+            provider.start( rep, props );
         }
         catch (ClassNotFoundException e)
         {
@@ -177,8 +176,6 @@ public class ProviderManager implements ItemStore
     {
         NodeImpl ni = null;
         
-        // List<String> properties = m_provider.listProperties( ws, path );
-    
         Path ptPath = path.resolve("jcr:primaryType");
         PropertyImpl primaryType = ws.createPropertyImpl( ptPath );
     
@@ -196,19 +193,7 @@ public class ProviderManager implements ItemStore
     
         ni = new NodeImpl( (SessionImpl)ws.getSession(), path, type, nd, false );
         ni.m_state = ItemState.EXISTS;
-        //ni.autoCreateProperties();
 
-        /*
-        for( String name : properties )
-        {
-            ptPath = path.resolve(name);
-            
-            PropertyImpl p = loadProperty(ws, ni, ptPath, name);
-            
-            // ni.addChildProperty( p );
-            ni.updateCachedProperties( p );
-        }
-*/
         return ni;
     }
 

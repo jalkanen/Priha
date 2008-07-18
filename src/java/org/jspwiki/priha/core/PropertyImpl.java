@@ -447,9 +447,12 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         //
-        // Sanity check - the primary type cannot be deleted.
+        // Sanity check - the primary type cannot be deleted unless the
+        // node itself is also deleted.
         //
-        if( getName().equals("jcr:primaryType") ) return;
+        if( getName().equals("jcr:primaryType") && 
+            ((NodeImpl)getParent()).getState() != ItemState.REMOVED &&
+            m_path.getParentPath().isRoot() ) return;
         		
         NodeImpl nd = (NodeImpl)getParent();
 

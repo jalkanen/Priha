@@ -43,9 +43,14 @@ to, because they are not useful (yet) in JSPWiki context) are:
 REQUIREMENTS
 ============
 
-Priha requires and takes advantage of Java 5 (JDK 1.5).  Priha requires no
-other libraries; however to compile and run the JCR tests you need the included
-libraries as well as the servlet-api.jar.
+Priha requires and takes advantage of Java 5 (JDK 1.5).  To compile and run the JCR 
+tests you need the included libraries.
+
+To run Priha, you need:
+* a JAXP-compliant XML parser library somewhere in your classpath (the one with JDK5 is fine)
+* jcr-1.0.jar somewhere in the classpath as well
+
+That's it!
 
 LICENSE
 =======

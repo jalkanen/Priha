@@ -68,7 +68,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     protected NodeImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        this( session, new Path(path), primaryType, nDef, populateDefaults );
+        this( session, PathFactory.getPath(path), primaryType, nDef, populateDefaults );
     }
         
 
@@ -559,8 +559,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     void autoCreateProperties() throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        log.finer( "Autocreating properties for "+m_path );
-
         autoCreateProperties( getPrimaryNodeType() );
 
         for( NodeType nt : getMixinNodeTypes() )
@@ -577,10 +575,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         {
             if( pd.isAutoCreated() && !hasProperty(pd.getName()) )
             {
-                log.finer("Autocreating property "+pd.getName());
+                log.finest("Autocreating property "+pd.getName());
 
                 String path = m_path + "/" + pd.getName();
-                PropertyImpl pi = new PropertyImpl(m_session,new Path(path),pd);
+                PropertyImpl pi = new PropertyImpl(m_session,PathFactory.getPath(path),pd);
 
                 // FIXME: Add default value generation
 
@@ -903,7 +901,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     protected void removeProperty(PropertyImpl prop)
     {
         prop.m_state = ItemState.REMOVED;
-        // m_properties.remove(prop);
         markModified(true);
     }
 
@@ -1270,6 +1267,17 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         markModified(true);
         m_state = ItemState.REMOVED;
 
+        //
+        //  Remove properties
+        //
+        for( PropertyIterator pit = getProperties(); pit.hasNext(); )
+        {
+            pit.nextProperty().remove();
+        }
+        
+        //
+        //  Remove children
+        //
         for( NodeIterator ndi = getNodes(); ndi.hasNext(); )
         {
             Node nd = ndi.nextNode();
@@ -1277,7 +1285,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             nd.remove();
         }
 
-        log.fine("Removed "+getPath());
+        log.finer("Removed "+getPath());
     }
 
     /**

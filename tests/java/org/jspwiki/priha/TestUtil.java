@@ -30,4 +30,13 @@ public class TestUtil
             i.nextNode().remove();
         }
     }
+
+
+    public static void printSpeed( String msg, int iters, long start, long end )
+    {
+        long time = end - start;
+        float itersSec = (iters*100)/((float)time/1000) / 100;
+        
+        System.out.println( msg + ":" + iters + " iterations in "+time+" ms ("+itersSec+" iterations/second)");
+    }
 }

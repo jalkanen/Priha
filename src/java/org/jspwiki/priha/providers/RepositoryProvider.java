@@ -8,6 +8,7 @@ import javax.jcr.*;
 
 import org.jspwiki.priha.core.*;
 import org.jspwiki.priha.core.values.ValueImpl;
+import org.jspwiki.priha.util.ConfigurationException;
 import org.jspwiki.priha.util.Path;
 import org.jspwiki.priha.util.PropertyList;
 
@@ -53,9 +54,10 @@ public interface RepositoryProvider
     /**
      *  Starts access to a repository.  This is called only once per
      *  RepositoryProvider lifecycle.
+     * @throws ConfigurationException If the repository cannot be started due to a faulty configuration.
      */
     public void start( RepositoryImpl repository, 
-                       Properties     properties );
+                       Properties     properties ) throws ConfigurationException;
     
     /**
      *  Stops a given repository.  This may be called without a preceding call

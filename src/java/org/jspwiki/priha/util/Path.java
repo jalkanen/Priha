@@ -19,6 +19,7 @@
  */
 package org.jspwiki.priha.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -28,8 +29,10 @@ import java.util.Arrays;
  *
  *  @author jalkanen
  */
-public class Path
+public class Path implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     /**
      *  This is a static instance of the root path so that you don't have
      *  to create it every single time you use it (as it happens quite often).
@@ -44,6 +47,14 @@ public class Path
 
     private String  m_cachedString;
 
+    private Path    m_cachedParentPath;
+    
+    /** This constructor is useful only to subclasses or serialization. */
+    protected Path()
+    {
+        m_components = new String[0];
+    }
+    
     protected Path( String[] components, boolean absolute )
     {
         m_components = components;
@@ -174,9 +185,16 @@ public class Path
     public Path getParentPath()
         throws InvalidPathException
     {
+        if( m_cachedParentPath != null )
+        {
+            return m_cachedParentPath;
+        }
+        
         if( isRoot() ) throw new InvalidPathException("Root has no parent");
         
-        return getSubpath( 0, depth()-1 );
+        m_cachedParentPath = getSubpath( 0, depth()-1 );
+        
+        return m_cachedParentPath;
     }
 
     /**

@@ -1,5 +1,6 @@
 package org.jspwiki.priha.core.values;
 
+import java.io.Serializable;
 import java.util.Calendar;
 
 import javax.jcr.PropertyType;
@@ -7,8 +8,9 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
 
-public class DoubleValueImpl extends ValueImpl implements Value
+public class DoubleValueImpl extends ValueImpl implements Value, Serializable
 {
+    private static final long serialVersionUID = -3927800064326452318L;
     private Double m_value;
     
     public DoubleValueImpl( double value )

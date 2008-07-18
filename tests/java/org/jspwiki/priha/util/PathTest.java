@@ -1,5 +1,7 @@
 package org.jspwiki.priha.util;
 
+import org.jspwiki.priha.TestUtil;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -76,7 +78,7 @@ public class PathTest extends TestCase
         
         long end = System.currentTimeMillis();
 
-        printSpeed( "Path creation", SPEED_ITERS, start, end );
+        TestUtil.printSpeed( "Path creation", SPEED_ITERS, start, end );
         
         start = System.currentTimeMillis();
         for( int i = 0; i < SPEED_ITERS; i++ )
@@ -87,7 +89,7 @@ public class PathTest extends TestCase
         }
         end = System.currentTimeMillis();
         
-        printSpeed( "Basic resolve", SPEED_ITERS, start, end );
+        TestUtil.printSpeed( "Basic resolve", SPEED_ITERS, start, end );
         
         start = System.currentTimeMillis();
         for( int i = 0; i < SPEED_ITERS; i++ )
@@ -98,7 +100,7 @@ public class PathTest extends TestCase
         }
         end = System.currentTimeMillis();
         
-        printSpeed( "getParentPath()", SPEED_ITERS, start, end );        
+        TestUtil.printSpeed( "getParentPath()", SPEED_ITERS, start, end );        
 
         start = System.currentTimeMillis();
         for( int i = 0; i < SPEED_ITERS-1; i++ )
@@ -109,16 +111,8 @@ public class PathTest extends TestCase
         }
         end = System.currentTimeMillis();
         
-        printSpeed( "equals()", SPEED_ITERS, start, end );        
+        TestUtil.printSpeed( "equals()", SPEED_ITERS, start, end );        
 
-    }
-    
-    private void printSpeed( String msg, int iters, long start, long end )
-    {
-        long time = end - start;
-        float itersSec = (iters*100)/((float)time/1000) / 100;
-        
-        System.out.println( msg + ":" + iters + " iterations in "+time+" ms ("+itersSec+" iterations/second)");
     }
     
     public static Test suite()
