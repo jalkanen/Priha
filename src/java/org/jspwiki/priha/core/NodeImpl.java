@@ -341,8 +341,50 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                                     AccessDeniedException,
                                                                     RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        Session internalSession = m_session.getRepository().login(workspaceName);
+        Path    correspondingPath;
+        
+        try
+        {
+            String uuid = null;
+            NodeImpl nd = this;
+            
+            //
+            //  Find the nearest parent with the correct UUID
+            //
+            while( uuid == null && !nd.getInternalPath().isRoot() )
+            {
+                try
+                {
+                    uuid = nd.getUUID();
+                }
+                catch( UnsupportedRepositoryOperationException e ) 
+                {
+                    nd = (NodeImpl)nd.getParent();
+                }
+            }
+            
+            correspondingPath = getInternalPath().getSubpath( nd.getDepth() );
+            
+            if( uuid != null )
+            {
+                NodeImpl nodeInOtherWS = (NodeImpl)internalSession.getNodeByUUID(uuid);
+            
+                return nodeInOtherWS.getInternalPath().resolve(correspondingPath.toString()).toString();
+            }
+            else
+            {
+                return ((NodeImpl)internalSession.getRootNode()).getNode(correspondingPath).getPath();
+            }
+        }
+        catch( PathNotFoundException e )
+        {
+            throw new ItemNotFoundException();
+        }
+        finally
+        {
+            internalSession.logout();
+        }
     }
 
     public NodeDefinition getDefinition() throws RepositoryException

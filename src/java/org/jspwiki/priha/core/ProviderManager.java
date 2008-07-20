@@ -26,8 +26,9 @@ import org.jspwiki.priha.util.Path;
  */
 public class ProviderManager implements ItemStore
 {
+    private HashMap<String,ProviderInfo> m_workspaceAccess;
     private ProviderInfo[]       m_providers;
-
+    
     private RepositoryImpl       m_repository;
     
     private Logger               log = Logger.getLogger(ProviderManager.class.getName());
@@ -39,12 +40,14 @@ public class ProviderManager implements ItemStore
         initialize();
     }
 
-    public static final String PROP_PRIHA_PROVIDERS = "priha.providers";
+    public static final String PROP_PRIHA_PROVIDERS       = "priha.providers";
     public static final String PROP_PRIHA_PROVIDER_PREFIX = "priha.provider.";
-    public static final String DEFAULT_PROVIDERLIST = "defaultProvider";
+    public static final String DEFAULT_PROVIDERLIST       = "defaultProvider";
     
     private void initialize() throws ConfigurationException
     {
+        m_workspaceAccess = new HashMap<String,ProviderInfo>();
+
         String providerList = m_repository.getProperty( PROP_PRIHA_PROVIDERS );
         
         String[] providers = providerList.split("\\s");
@@ -53,20 +56,35 @@ public class ProviderManager implements ItemStore
             throw new ConfigurationException("Required property missing",PROP_PRIHA_PROVIDERS);
 
         m_providers = new ProviderInfo[providers.length];
+        
         for( int i = 0; i < providers.length; i++ )
         {
             Properties props = filterProperties(m_repository,providers[i]);
         
             String className = props.getProperty("class");
-            String prefix    = props.getProperty("prefix","");
-
+            
+            if( className == null )
+                throw new ConfigurationException("Provider "+providers[i]+" does not declare a class name. "+
+                                                 "There should be a property called '"+PROP_PRIHA_PROVIDER_PREFIX+providers[i]+".class' in your properties.");                
+            
+            String workspaceList = props.getProperty("workspaces","default");
+            
+            String[] workspaces = workspaceList.split("\\s");
+            
             log.fine("Provider "+i+": "+providers[i]+" is a "+className);
             RepositoryProvider p = instantiateProvider( m_repository, className, props );
 
             m_providers[i] = new ProviderInfo();
             m_providers[i].provider   = p;
-            m_providers[i].prefix     = prefix;
-            m_providers[i].nodePrefix = prefix.endsWith("/") ? prefix.substring(0,prefix.length()-1) : prefix;
+            m_providers[i].workspaces = workspaces;
+            
+            for( String ws : workspaces )
+            {
+                if( m_workspaceAccess.containsKey(ws) )
+                    throw new ConfigurationException("Workspace "+ws+" is defined multiple times.  Very likely you have forgotten to declare a workspace property for a Provider declaration.");
+                
+                m_workspaceAccess.put(ws, m_providers[i]);
+            }
         }
     }
     
@@ -83,17 +101,14 @@ public class ProviderManager implements ItemStore
      * @return
      * @throws ConfigurationException
      */
-    private final RepositoryProvider getProvider(Path p) throws ConfigurationException
+    private final RepositoryProvider getProvider(WorkspaceImpl wi, Path p) throws ConfigurationException
     {
-        String path = p.toString();
+        ProviderInfo pi = m_workspaceAccess.get(wi.getName());
+
+        if( pi != null )
+            return pi.provider;
         
-        for( ProviderInfo pi : m_providers )
-        {
-            if( path.startsWith(pi.prefix) || path.equals(pi.nodePrefix) ) 
-                return pi.provider;
-        }
-        
-        throw new ConfigurationException("Unmapped path found: "+p);
+        throw new ConfigurationException("Nonexistant workspace: "+wi.getName());
     }
     
     /**
@@ -175,27 +190,29 @@ public class ProviderManager implements ItemStore
     public void open(Credentials credentials, String workspaceName) 
         throws NoSuchWorkspaceException, RepositoryException
     {
-        for( ProviderInfo pi : m_providers )
-        {
-            pi.provider.open( m_repository, credentials, workspaceName );
-        }
+        ProviderInfo pi = m_workspaceAccess.get(workspaceName);
+
+        if( pi == null ) throw new NoSuchWorkspaceException("No such workspace: '"+workspaceName+"'");
+        
+        pi.provider.open( m_repository, credentials, workspaceName );
     }
 
 
     private Object getPropertyValue(WorkspaceImpl impl, Path ptPath) throws RepositoryException
     {
-        Object stored = getProvider(ptPath).getPropertyValue( impl, ptPath );
+        Object stored = getProvider(impl,ptPath).getPropertyValue( impl, ptPath );
             
         return stored;
     }
 
     /**
-     *  Workspaces are determined by the provider which maps against the root path.
-     * @throws ConfigurationException 
+     *  Returns the set of workspaces declared in the config file.
+     *  
+     *  @throws ConfigurationException 
      */
     public Collection<String> listWorkspaces() throws ConfigurationException
     {
-        return getProvider(Path.ROOT).listWorkspaces();
+        return m_workspaceAccess.keySet();
     }
 
     public List<Path>listNodes(WorkspaceImpl impl, Path path) throws RepositoryException
@@ -227,7 +244,7 @@ public class ProviderManager implements ItemStore
      */
     public void remove(WorkspaceImpl impl, Path path) throws RepositoryException
     {
-        getProvider(path).remove( impl, path );
+        getProvider(impl,path).remove( impl, path );
     }
 
     /**
@@ -296,7 +313,7 @@ public class ProviderManager implements ItemStore
         if( !path.isRoot() && !nodeExists(ws, path.getParentPath()) )
             throw new ConstraintViolationException("Parent path is missing");
         
-        getProvider(path).addNode(ws, path);
+        getProvider(ws,path).addNode(ws, path);
     }
 
     public void copy(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException
@@ -345,12 +362,12 @@ public class ProviderManager implements ItemStore
 
     public boolean nodeExists(WorkspaceImpl ws, Path path) throws ConfigurationException
     {
-        return getProvider(path).nodeExists(ws, path);
+        return getProvider(ws,path).nodeExists(ws, path);
     }
 
     public void putProperty(WorkspaceImpl ws, PropertyImpl pi) throws RepositoryException
     {
-        getProvider(pi.getInternalPath()).putPropertyValue( ws, pi );   
+        getProvider(ws,pi.getInternalPath()).putPropertyValue( ws, pi );   
     }
 
     public void stop()
@@ -384,13 +401,12 @@ public class ProviderManager implements ItemStore
 
     public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        return getProvider(path).listProperties(ws, path);
+        return getProvider(ws,path).listProperties(ws, path);
     }
 
     private class ProviderInfo
     {
-        public String             prefix;
-        public String             nodePrefix;
+        public String[]           workspaces;
         public RepositoryProvider provider;
     }
 }

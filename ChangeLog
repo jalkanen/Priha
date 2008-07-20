@@ -1,5 +1,17 @@
 2008-07-20  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.0.23
+        
+        * Read through the workspace section of JCR spec again,
+        slapped forehead, and added multiple workspace support.
+        
+        * Node.getCorrespondingNodePath() works now, though without
+        any constraint checking yet.
+        
+        * Added javadoc generation.
+        
+        * 39 out of 454 TCK tests fail now.
+
         * 0.0.22
         
         * Session.move() works now.

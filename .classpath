@@ -9,7 +9,7 @@
 	<classpathentry kind="lib" path="lib/xercesImpl-2.6.2.jar"/>
 	<classpathentry kind="lib" path="lib/concurrent-1.3.4.jar"/>
 	<classpathentry kind="lib" path="lib/jackrabbit-1.0.jar"/>
-	<classpathentry kind="lib" path="tests/etc"/>
+	<classpathentry exported="true" kind="lib" path="tests/etc"/>
 	<classpathentry kind="lib" path="lib/javax.servlet.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging-api.jar"/>
 	<classpathentry kind="lib" path="lib/ehcache-1.5.0.jar" sourcepath="/Users/jalkanen/Java/ehcache-1.5.0/ehcache-1.5.0-sources.jar"/>

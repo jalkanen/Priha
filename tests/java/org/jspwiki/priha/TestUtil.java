@@ -7,19 +7,29 @@ public class TestUtil
 
     public static void emptyRepo(Repository repository) throws LoginException, RepositoryException
     {
-        Session s = repository.login();
-        
-        s.refresh(false);
-        deleteTree( s.getRootNode() );
-        
-        for( PropertyIterator i = s.getRootNode().getProperties(); i.hasNext(); )
+        Session anonSession = repository.login();
+     
+        String[] workspaces = anonSession.getWorkspace().getAccessibleWorkspaceNames();
+       
+        for( String ws : workspaces )
         {
-            Property p = i.nextProperty();
+            System.out.println("Emptying repo "+ws);
+            Session s = repository.login(ws);
+        
+            s.refresh(false);
+            deleteTree( s.getRootNode() );
+        
+            for( PropertyIterator i = s.getRootNode().getProperties(); i.hasNext(); )
+            {
+                Property p = i.nextProperty();
             
-            p.remove();
+                p.remove();
+            }
+        
+            s.save();
         }
         
-        s.save();        
+        anonSession.logout();
     }
 
     

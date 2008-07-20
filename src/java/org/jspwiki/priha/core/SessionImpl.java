@@ -47,7 +47,7 @@ public class SessionImpl implements Session
         m_workspace  = new WorkspaceImpl( this, name, rep.getProviderManager() );
         m_provider   = new SessionProvider( this, rep.getProviderManager() );
         
-        if( !hasNode("/"+JCR_SYSTEM) )
+        if( !hasNode("/") )
         {
             repopulate();
         }

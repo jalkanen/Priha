@@ -61,6 +61,9 @@ public class EhCachingProvider implements RepositoryProvider
         
         String className = props.getProperty("class");
         
+        String workspaceList = properties.getProperty("workspaces");
+        if( workspaceList != null ) props.setProperty("workspaces", workspaceList);
+        
         m_realProvider = ProviderManager.instantiateProvider(repository, className, props);
 
         String cacheName = props.getProperty("cacheName", DEFAULT_CACHENAME);

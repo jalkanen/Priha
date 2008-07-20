@@ -269,17 +269,24 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.Start.ordinal()]++;
         
-        String wsname = props.getProperty("workspace", "default");
+        String wsList = props.getProperty("workspaces", "default");
         m_root = new File(props.getProperty("directory"));
         
         log.fine("Initializing FileProvider with root "+m_root);
-        File wsroot = getWorkspaceDir(wsname);
         
-        if( !wsroot.exists() )
+        String[] workspaces = wsList.split("\\s");
+        
+        for( String wsname : workspaces )
         {
-            wsroot.mkdirs();
-            log.finer("Created workspace directory "+wsroot);
+            File wsroot = getWorkspaceDir(wsname);
+        
+            if( !wsroot.exists() )
+            {
+                wsroot.mkdirs();
+                log.finer("Created workspace directory "+wsroot);
+            }
         }
+        
     }
 
     public void close(WorkspaceImpl ws)

@@ -190,14 +190,14 @@ public class SessionProvider
         
         return m_source.nodeExists(m_workspace, path);
     }
-
+/*
     public void open( Credentials credentials, String workspaceName)
         throws RepositoryException,
                NoSuchWorkspaceException
     {
         m_source.open(credentials, workspaceName);
     }
-
+*/
     public void remove(ItemImpl item) throws RepositoryException
     {
         m_items.put( item.getInternalPath(), item );

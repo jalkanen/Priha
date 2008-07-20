@@ -22,8 +22,8 @@ public class PrihaRepositoryStub extends RepositoryStub
 
             if( r.getProperty("stub.initialized") == null )
             {
-                String testws = getProperty(PROP_WORKSPACE_NAME);
-                Session s = r.login(testws);
+                //String testws = getProperty(PROP_WORKSPACE_NAME);
+                Session s = r.login();
 
                 String testroot = getProperty(PROP_TESTROOT);
                 if( testroot == null) throw new RepositoryStubException("No testroot defined");
