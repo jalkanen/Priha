@@ -35,6 +35,25 @@ Finally, you declare which provider you want to use by listing its nickname in t
     priha.providers = myProvider
 
 
+Multiple workspaces
+-------------------
+
+Some providers can provide multiple workspaces.  You can easily add more
+workspaces by declaring them in the property file as well, by using the
+"workspaces" property.  For example, to have two workspaces, "default" and
+"test", add the following:
+
+   priha.provider.myProvider.workspaces = default test
+   
+Note that in the absences of this declaration, there is always a workspace
+called "default".  When the user calls Session.login() with no parameters,
+the "default" workspace is used.  However, if you do define the workspaces
+in your config, then you must remember to declare the default workspace as
+well (or else Session.login() will fail to work).
+
+Also, you may only define a workspace once - these are unique across a set
+of providers.
+
 
 The defaultProvider
 -------------------
@@ -52,20 +71,17 @@ Multiple providers
 It is fairly easy to configure multiple providers; first, you need to define
 several RepositoryProvider instances.  In this case, we define one with
 your company provider to store most of your content, and then we'll set up
-a FileProvider to store your large files (stored under /largefiles/).
+a FileProvider to store your large files (stored in the attachments workspace).
 
    priha.provider.myProvider.class = org.mycompany.priha.MyProvider
-   priha.provider.myProvider.prefix = /
+   priha.provider.myProvider.workspaces = default
    
    priha.provider.myOtherProvider.class = org.jspwiki.priha.providers.FileProvider
-   priha.provider.myOtherProvider.prefix = /largefiles/
+   priha.provider.myOtherProvider.workspaces = attachments
    
 Then we'll set up the provider list:
 
    priha.providers = myOtherProvider myProvider
-   
-Note the order - the most specific one must come first!  If your provider
-does not seem to be called properly, please check the order.
 
 
 
@@ -91,20 +107,26 @@ defines two providers, and caches all the calls to a MyProvider, but leaves
 all calls to a FileProvider uncached.
 
    priha.provider.myProvider.class = org.mycompany.priha.MyProvider
-   priha.provider.myProvider.prefix = /
    
    priha.provider.myOtherProvider.class = org.jspwiki.priha.providers.FileProvider
-   priha.provider.myOtherProvider.prefix = /largefiles/
+   priha.provider.myOtherProvider.workspaces = largefiles
 
    priha.provider.ehcache.class = org.jspwiki.priha.providers.EhCachingProvider
    priha.provider.ehcache.realProvider = myProvider
    priha.provider.ehcache.size = 1000
+   priha.provider.ehcache.workspaces = default
 
    priha.providers = myOtherProvider ehcache
 
 Note that if you want to have different caches for different providers, they
 must have different names - otherwise Priha will happily reuse the same
 EhCache object!  Please see EhCachingProvider javadoc for further discussion.
+
+Notice also that the workspace definitions are only used for those providers
+that you actually define on the "priha.providers" line.  If you use a caching
+provider, it will automatically pass down the workspace list to the underlying
+provider.
+
 
 LOGGING
 =======
