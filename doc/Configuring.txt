@@ -102,7 +102,9 @@ all calls to a FileProvider uncached.
 
    priha.providers = myOtherProvider ehcache
 
-
+Note that if you want to have different caches for different providers, they
+must have different names - otherwise Priha will happily reuse the same
+EhCache object!  Please see EhCachingProvider javadoc for further discussion.
 
 LOGGING
 =======

@@ -11,10 +11,9 @@ import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 import javax.management.MBeanServer;
 
-import net.sf.ehcache.Cache;
-import net.sf.ehcache.CacheManager;
-import net.sf.ehcache.Element;
-import net.sf.ehcache.Statistics;
+import net.sf.ehcache.*;
+import net.sf.ehcache.constructs.blocking.BlockingCache;
+import net.sf.ehcache.constructs.blocking.LockTimeoutException;
 import net.sf.ehcache.management.ManagementService;
 
 import org.jspwiki.priha.core.PropertyImpl;
@@ -40,9 +39,12 @@ import org.jspwiki.priha.util.Path;
  */
 public class EhCachingProvider implements RepositoryProvider
 {
+    private static final int    DEFAULT_CACHESIZE = 5000;
+    private static final String DEFAULT_CACHENAME = "priha.ehCache";
+    
     private Logger log = Logger.getLogger(EhCachingProvider.class.getName());
     private CacheManager m_cacheManager;
-    private Cache m_valueCache;
+    private Ehcache m_valueCache;
     private RepositoryProvider m_realProvider;
     
     public EhCachingProvider()
@@ -61,19 +63,31 @@ public class EhCachingProvider implements RepositoryProvider
         
         m_realProvider = ProviderManager.instantiateProvider(repository, className, props);
 
-        String cacheName = props.getProperty("cacheName", "priha.ehCache");
+        String cacheName = props.getProperty("cacheName", DEFAULT_CACHENAME);
         
-        int size = Integer.parseInt( props.getProperty("size","5000") );
+        int size = Integer.parseInt( props.getProperty("size", Integer.toString(DEFAULT_CACHESIZE) ) );
         
-        Cache myCache = m_cacheManager.getCache( cacheName );
+        Ehcache myCache = m_cacheManager.getEhcache( cacheName );
         
         if( myCache == null )
         {
-            myCache = new Cache(cacheName, size, false, true, 30, 10);
+            myCache = new Cache(cacheName, size, false, true, 30, 20);
+
+            //
+            //  For some completely unfathomable reason, the BlockingCache blocks
+            //  on the same thread every 5-10 calls to getPropertyValue() on OSX 10.4,
+            //  both Java5 and Java6.  So until I figure out what is going on,
+            //  we can't use it :-(
+            //
+            
+//            myCache = new BlockingCache(myCache));
+//            
+//            ((BlockingCache)myCache).setTimeoutMillis( 10*1000 );
+
             m_cacheManager.addCache(myCache);
         }
         
-        m_valueCache = m_cacheManager.getCache( cacheName );
+        m_valueCache = m_cacheManager.getEhcache( cacheName );
         
         //
         //  Register to MBeanServer
@@ -156,47 +170,105 @@ public class EhCachingProvider implements RepositoryProvider
 
     public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        Element e = m_valueCache.get( getVid(ws,path) );
-        if( e != null )
+//        System.out.print("Property: "+Thread.currentThread());
+//        System.out.flush();
+//        long start = System.currentTimeMillis();
+        try
         {
-            return e.getObjectValue();
+            Element e = m_valueCache.get( getVid(ws,path) );
+            if( e != null )
+            {
+                return e.getObjectValue();
+            }
+        
+            Object o = m_realProvider.getPropertyValue(ws, path);
+        
+            e = new Element( getVid(ws,path), o );
+        
+            m_valueCache.put( e );
+            return o;
         }
-        
-        Object o = m_realProvider.getPropertyValue(ws, path);
-        
-        e = new Element( getVid(ws,path), o );
-        
-        m_valueCache.put( e );
-        
-        return o;
+        catch( LockTimeoutException e )
+        {
+            throw new RepositoryException("Lock timeout getting propery value");
+        }
+        catch( RuntimeException e )
+        {
+            // Release lock
+            m_valueCache.put( new Element(getVid(ws,path),null) );
+            throw new RepositoryException("Error getting propery value");
+        }
+        finally {
+//            System.out.println(" --- released: "+(System.currentTimeMillis() - start));
+        }
     }
 
-    public List<Path> listNodes(WorkspaceImpl ws, Path parentpath)
+    public List<Path> listNodes(WorkspaceImpl ws, Path parentpath) throws RepositoryException
     {
-        Element e = m_valueCache.get( getNid(ws,parentpath) );
-        if( e != null ) return (List<Path>)e.getValue();
+//        System.out.print ("listNodes: "+Thread.currentThread());
+//        long start = System.currentTimeMillis();
+
+        try
+        {
+            Element e = m_valueCache.get( getNid(ws,parentpath) );
+            if( e != null ) return (List<Path>)e.getValue();
         
-        List<Path> list = m_realProvider.listNodes(ws, parentpath);
+            List<Path> list = m_realProvider.listNodes(ws, parentpath);
         
-        e = new Element( getNid(ws,parentpath), list );
+            e = new Element( getNid(ws,parentpath), list );
         
-        m_valueCache.put( e );
+            m_valueCache.put( e );
         
-        return list;
+            return list;
+        }
+        catch( LockTimeoutException e )
+        {
+            throw new RepositoryException("Lock timeout getting propery value");
+        }
+        catch( RuntimeException e )
+        {
+            // Release lock
+            m_valueCache.put( new Element(getNid(ws,parentpath),null) );
+            throw new RepositoryException("Error getting propery value");
+        }
+        finally {
+//            System.out.println(" --- released: "+(System.currentTimeMillis() - start));
+        }
+
     }
 
     public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        Element e = m_valueCache.get( getPid(ws,path) );
+//        System.out.print ("listProperties: "+Thread.currentThread());
+//        long start = System.currentTimeMillis();
+
+        try
+        {
+            Element e = m_valueCache.get( getPid(ws,path) );
         
-        if( e != null ) return (List<String>)e.getValue();
+            if( e != null ) return (List<String>)e.getValue();
         
-        List<String> list = m_realProvider.listProperties(ws, path);
+            List<String> list = m_realProvider.listProperties(ws, path);
         
-        e = new Element( getPid(ws,path), list );
-        m_valueCache.put( e );
-        
-        return list;
+            e = new Element( getPid(ws,path), list );
+            m_valueCache.put( e );
+            
+            return list;
+        }
+        catch( LockTimeoutException e )
+        {
+            throw new RepositoryException("Lock timeout listing properties");
+        }
+        catch( RuntimeException e )
+        {
+            // Release lock
+            m_valueCache.put( new Element(getPid(ws,path),null) );
+            throw new RepositoryException("Error listing properties");
+        }
+        finally {
+//            System.out.println(" --- released: "+(System.currentTimeMillis() - start));
+        }
+
     }
 
     public Collection<String> listWorkspaces()

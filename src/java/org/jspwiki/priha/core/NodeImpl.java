@@ -739,9 +739,29 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                                                  LockException,
                                                  RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-
+        Property mixinTypes = getProperty("jcr:mixinTypes");
+        
+        Value[] vals = mixinTypes.getValues();
+        
+        boolean found = false;
+        
+        for( int i = 0; i < vals.length; i++ )
+        {
+            if( vals[i].getString().equals(mixinName) )
+            {
+                vals[i] = null;
+                found = true;
+            }
+        }
+        
+        if( found )
+        {
+            mixinTypes.setValue( vals );
+        }
+        else
+        {
+            throw new NoSuchNodeTypeException("No such mixin type to remove: "+mixinName);
+        }
     }
 
     public void restore(String versionName, boolean removeExisting)

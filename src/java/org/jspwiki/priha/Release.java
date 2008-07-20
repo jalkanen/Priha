@@ -20,31 +20,60 @@ package org.jspwiki.priha;
 /**
  *  Details the release information.  This class is executable, i.e.
  *  you can run
- *  <code>
+ *  <pre>
  *  % java -jar priha.jar org.jspwiki.priha.Release
  *  Priha Content Repository
  *  1.0.2
- *  (C) Janne Jalkanen 2007
- *  </code>
+ *  (C) Janne Jalkanen 2007-2009
+ *  </pre>
  *  The first line is the application name, the second line is the version,
  *  and the third line is the copyright.
+ *  <p>
+ *  You may also use the argument "-versiononly" which will only print
+ *  the version string.  E.g.
  *
- *  @author jalkanen
+ *  <pre>
+ *  % java -jar priha.jar org.jspwiki.priha.Release -versiononly
+ *  1.0.2
+ *  </pre>
  *
  */
 public class Release
 {
-
+    /**
+     *  The application name.  Value is {@value}.
+     */
     public static final String APPNAME       = "Priha Content Repository";
 
+    /**
+     *  The copyright string.  Value is {@value}.
+     */
     public static final String COPYRIGHT     = "(C) Janne Jalkanen 2007-2008";
 
+    /**
+     *  The current major version.
+     */
     public static final int    VERSION       = 0;
+    
+    /**
+     *  The current minor version.
+     */
     public static final int    REVISION      = 0;
-    public static final int    MINORREVISION = 20;
+    
+    /**
+     *  The current minor revision.
+     */
+    public static final int    MINORREVISION = 22;
 
+    /**
+     *  The version string of the form version.revision.minorrevision.  At
+     *  the time of the generation of this documentation, it was {@value}.
+     */
     public static final String VERSTR        = VERSION+"."+REVISION+"."+MINORREVISION;
 
+    /**
+     *  A static method which can be run to print the version information.
+     */
     public static final void main(String[] argv)
     {
         if( argv.length > 0 && argv[0].equals("-versiononly") )

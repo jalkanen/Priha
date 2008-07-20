@@ -1,9 +1,22 @@
+2008-07-20  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.22
+        
+        * Session.move() works now.
+        
+2008-07-19  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.21
+        
+        * Fixed multiple provider support; now it actually works.
+        
 2008-07-18  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.20
         
         * Added ability to manage multiple providers (though this
-        does not quite work yet).
+        does not quite work yet).  Also improved documentation
+        on configuration (in doc/Configuration.txt) quite a bit.
 
         * 0.0.19
         

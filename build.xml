@@ -63,5 +63,19 @@
      
        <delete dir="build"/>
    
+    </target>
+ 
+    <target name="javadoc">
+       <mkdir dir="doc/javadoc"/>
+       <javadoc destdir="doc/javadoc">
+          <packageset dir="src/java">
+            <include name="org/jspwiki/**" />
+          </packageset>
+          <classpath>
+             <fileset dir="lib">
+               <include name="*.jar"/>  
+             </fileset> 
+          </classpath> 
+       </javadoc> 
     </target>   
 </project>

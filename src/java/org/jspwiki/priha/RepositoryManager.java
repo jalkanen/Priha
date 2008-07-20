@@ -1,21 +1,19 @@
-/* 
+/*
     Priha - A JSR-170 implementation library.
 
     Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
-    This program is free software; you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation; either version 2.1 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with this program; if not, write to the Free Software
-    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+    Licensed under the Apache License, Version 2.0 (the "License"); 
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at 
+    
+      http://www.apache.org/licenses/LICENSE-2.0 
+      
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+    See the License for the specific language governing permissions and 
+    limitations under the License. 
  */
 package org.jspwiki.priha;
 
@@ -113,6 +111,24 @@ public class RepositoryManager
         return new RepositoryImpl( prefs );
     }
     
+    /**
+     *  Returns a new repository object by locating the property file given.  This
+     *  method also guarantees a new Repository object.
+     *  <p>
+     *  This class is somewhat lenient in how it searches the property file.  It
+     *  first tries the name as-is, then it tries to locate the file from the
+     *  classpath root, and then it tries to search your WEB-INF library.
+     *  
+     *  <p>
+     *  Note that if you do get two Repositories who share the same property file,
+     *  you will almost certainly hit some nasty race conditions with the repository
+     *  itself.  So be very, very careful.
+     *  
+     *  @param propertyFilename A name for the property file.
+     *  @return A JCR Repository.
+     *  @throws ConfigurationException If the repository cannot be configured or the
+     *                                 property file cannot be located.
+     */
     public static RepositoryImpl getRepository( String propertyFilename ) throws ConfigurationException
     {
         String[] propertyPaths = { propertyFilename, 

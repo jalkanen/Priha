@@ -81,6 +81,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      */
     private File getNodeDir( Workspace ws, String path )
     {
+        if( path.equals("/jcr:system") || path.startsWith("/jcr:system/" ) ) 
+        {
+            return new File( m_root, getPathFilename(path) );
+        }
+        
         File wsDir   = getWorkspaceDir( getWorkspaceFilename(ws) );
         File nodeDir = new File( wsDir, getPathFilename(path) );
         

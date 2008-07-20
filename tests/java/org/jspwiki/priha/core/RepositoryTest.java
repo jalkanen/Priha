@@ -301,21 +301,34 @@ public class RepositoryTest extends TestCase
         Session s = r.login();
         
         Node nd = s.getRootNode().addNode("largefiles");
-        nd.addNode("test");
-        nd.setProperty("reallybig", "0");
+        nd = nd.addNode("test");
+        nd.setProperty("reallybig", 42);
         
         nd = s.getRootNode().addNode("small");
         nd.setProperty("reallysmall", "foobar");
         
         s.save();
         
-        File f = new File("/tmp/priha/fileprovider/workspaces/default/small/reallysmall/");
+        File f = new File("/tmp/priha/fileprovider/workspaces/default/small/reallysmall.info");
         
-        assertTrue("small", f.exists() && f.isDirectory() );
+        assertTrue("small", f.exists() );
         
-        File f2 = new File("/tmp/priha/fileprovider2/workspaces/default/largefiles/test/reallybig/");
+        File f2 = new File("/tmp/priha/fileprovider2/workspaces/default/largefiles/test/reallybig.info");
         
-        assertTrue("big", f2.exists() && f2.isDirectory() );
+        assertTrue("big", f2.exists() );
+        
+        Property p = (Property)s.getItem("/small/reallysmall");
+        assertEquals("small content","foobar",p.getString());
+        
+        p = (Property)s.getItem("/largefiles/test/reallybig");
+        assertEquals("big content", p.getLong(), 42 );
+        
+        s.logout();
+        
+        TestUtil.emptyRepo(r);
+        
+        assertFalse("small remove", f.exists());
+        assertFalse("big remove", f2.exists());
     }
     
     /**

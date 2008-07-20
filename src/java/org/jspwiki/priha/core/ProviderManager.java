@@ -64,23 +64,52 @@ public class ProviderManager implements ItemStore
             RepositoryProvider p = instantiateProvider( m_repository, className, props );
 
             m_providers[i] = new ProviderInfo();
-            m_providers[i].provider = p;
-            m_providers[i].prefix   = prefix;            
+            m_providers[i].provider   = p;
+            m_providers[i].prefix     = prefix;
+            m_providers[i].nodePrefix = prefix.endsWith("/") ? prefix.substring(0,prefix.length()-1) : prefix;
         }
     }
     
+    /**
+     *  [0] = /largefiles/
+     *  [1] = /
+     *  
+     *  "/"  => 1
+     *  "/largefiles" => 0
+     *  "/largefiles2" => 1
+     *  "/largefiles/foo" => 0
+     *  
+     * @param p
+     * @return
+     * @throws ConfigurationException
+     */
     private final RepositoryProvider getProvider(Path p) throws ConfigurationException
     {
         String path = p.toString();
         
         for( ProviderInfo pi : m_providers )
         {
-            if( path.startsWith(pi.prefix) ) return pi.provider;
+            if( path.startsWith(pi.prefix) || path.equals(pi.nodePrefix) ) 
+                return pi.provider;
         }
         
         throw new ConfigurationException("Unmapped path found: "+p);
     }
     
+    /**
+     *  Filters the properties set when the Repository was created to find
+     *  the property set for a provider.
+     *  <p>
+     *  Essentially returns a property set where all instances of
+     *  <code>priha.provider.[providerName].property = value</code>
+     *  are replaced with <code>property = value</code>.
+     *  
+     * @param repository The repository from which the properties are read
+     * @param providerName The name to filter with
+     * @return A valid set of Properties.  It can also be empty, if there
+     *         were no properties defined for this providerName.
+     * @see ProviderManager#instantiateProvider(RepositoryImpl, String, Properties) 
+     */
     public static Properties filterProperties( RepositoryImpl repository, String providerName )
     {
         Properties props = new Properties();
@@ -103,6 +132,20 @@ public class ProviderManager implements ItemStore
         return props;
     }
     
+    /**
+     *  Instantiates a RepositoryProvider using the given class name and
+     *  the properties, and calls its start() method.
+     *  
+     *  @param rep The RepositoryImpl who will own this RepositoryProvider
+     *  @param className The FQN of the class.
+     *  @param props A filtered set of Properties
+     *  @return A started RepositoryProvider.
+     *  
+     *  @throws ConfigurationException If the provider cannot be instantiated or the configuration
+     *                                 is faulty.
+     *                                 
+     *  @see ProviderManager#filterProperties(RepositoryImpl, String)
+     */
     public static RepositoryProvider instantiateProvider(RepositoryImpl rep, String className, Properties props) throws ConfigurationException
     {
         Class cl;
@@ -127,18 +170,6 @@ public class ProviderManager implements ItemStore
         }
  
         return provider;
-    }
-    
-    /**
-     *  Checks whether a node exists in the repository.
-     *  
-     * @param path
-     * @return
-     * @throws InvalidPathException 
-     */
-    public boolean hasNode( WorkspaceImpl ws, Path path ) throws InvalidPathException, ConfigurationException
-    {
-        return getProvider(path).nodeExists( ws, path );
     }
     
     public void open(Credentials credentials, String workspaceName) 
@@ -167,9 +198,16 @@ public class ProviderManager implements ItemStore
         return getProvider(Path.ROOT).listWorkspaces();
     }
 
-    public List<Path>listNodes(WorkspaceImpl impl, Path path) throws ConfigurationException
+    public List<Path>listNodes(WorkspaceImpl impl, Path path) throws RepositoryException
     {
-        return getProvider(path).listNodes( impl, path );
+        ArrayList<Path> list = new ArrayList<Path>();
+        
+        for( ProviderInfo pi : m_providers )
+        {
+            list.addAll( pi.provider.listNodes( impl, path ) );
+        }
+        
+        return list;
     }
 
     public void close(WorkspaceImpl impl)
@@ -255,7 +293,7 @@ public class ProviderManager implements ItemStore
     {
         Path path = ni.getInternalPath();
         
-        if( !path.isRoot() && !getProvider(path).nodeExists(ws, path.getParentPath()) )
+        if( !path.isRoot() && !nodeExists(ws, path.getParentPath()) )
             throw new ConstraintViolationException("Parent path is missing");
         
         getProvider(path).addNode(ws, path);
@@ -302,8 +340,7 @@ public class ProviderManager implements ItemStore
 
     public void move(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        
     }
 
     public boolean nodeExists(WorkspaceImpl ws, Path path) throws ConfigurationException
@@ -353,6 +390,7 @@ public class ProviderManager implements ItemStore
     private class ProviderInfo
     {
         public String             prefix;
+        public String             nodePrefix;
         public RepositoryProvider provider;
     }
 }

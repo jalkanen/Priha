@@ -58,6 +58,24 @@ public class SessionImplTest extends TestCase
         assertTrue("pop wrong", s.indexOf("poppop&quot;") != -1 );
     }
     
+    public void testMove() throws Exception
+    {
+        Node nd = m_session.getRootNode().addNode("source");
+        nd = nd.addNode("tobemoved");
+        nd.setProperty("test", 20);
+        nd = nd.addNode("childprop");
+        nd.setProperty("test2", "foo");
+        
+        nd = m_session.getRootNode().addNode("dest");
+        
+        m_session.save();
+        
+        m_session.move("/source/tobemoved", "/dest/newnode");
+        
+        assertTrue( "node", m_session.hasNode("/dest/newnode") );
+        assertEquals( "prop", 20, m_session.getRootNode().getProperty("dest/newnode/test").getLong() );
+    }
+    
     public static Test suite()
     {
         return new TestSuite( SessionImplTest.class );

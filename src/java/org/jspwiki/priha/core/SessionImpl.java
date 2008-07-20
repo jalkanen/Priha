@@ -292,9 +292,46 @@ public class SessionImpl implements Session
 
     public void move(String srcAbsPath, String destAbsPath) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Session.move()");
+        if( hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
+        
+        Node nd = getRootNode().getNode(srcAbsPath);
+        
+        //System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
+        
+        String newDestPath = destAbsPath;
+        
+        Node destnode = getRootNode().addNode( newDestPath, nd.getPrimaryNodeType().getName() );
+        
+        for( NodeIterator ni = nd.getNodes(); ni.hasNext(); )
+        {
+            Node child = ni.nextNode();
 
+            String relPath = nd.getName();
+            
+            move( child.getPath(), destAbsPath+"/"+relPath );
+        }
+        
+        for( PropertyIterator pi = nd.getProperties(); pi.hasNext(); )
+        {
+            Property p = pi.nextProperty();
+
+            //newDestPath = destAbsPath + "/" + nd.getName() + "/" + p.getName();
+            //System.out.println("  property "+p.getPath()+" ==> "+newDestPath );
+            
+            if( !p.getName().equals("jcr:primaryType") )
+            {
+                if( p.getDefinition().isMultiple() )
+                {
+                    destnode.setProperty( p.getName(), p.getValues() );
+                }
+                else
+                {
+                    destnode.setProperty( p.getName(), p.getValue() );
+                }
+            }
+        }
+        
+        nd.remove();
     }
 
     void refresh( boolean keepChanges, Path path ) throws RepositoryException

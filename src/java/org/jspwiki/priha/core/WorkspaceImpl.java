@@ -19,6 +19,7 @@ import org.jspwiki.priha.nodetype.NodeTypeManagerImpl;
 import org.jspwiki.priha.query.PrihaQueryManager;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
+import org.jspwiki.priha.util.PathFactory;
 import org.xml.sax.ContentHandler;
 
 public class WorkspaceImpl
@@ -138,9 +139,7 @@ public class WorkspaceImpl
 
     public void move(String srcAbsPath, String destAbsPath) throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
-        // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException("Workspace.move()");
-
     }
 
     public void restore(Version[] versions, boolean removeExisting) throws ItemExistsException, UnsupportedRepositoryOperationException, VersionException, LockException, InvalidItemStateException, RepositoryException
@@ -169,7 +168,7 @@ public class WorkspaceImpl
      */
     public boolean nodeExists(Path path) throws RepositoryException
     {
-        return m_providerManager.hasNode(this, path);
+        return m_providerManager.nodeExists(this, path);
     }
 
 }
