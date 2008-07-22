@@ -8,6 +8,34 @@
             Priha build file.
     </description>
 
+    <path id="path.tests">
+       <!-- <pathelement location="${jarfile}" />
+       <pathelement location="${testjarfile}" /> -->
+       <fileset dir="lib">
+          <include name="*.jar" />
+          <exclude name="jackrabbit*" />
+       </fileset>
+     <!--   
+       <fileset dir="tests/lib">
+          <include name="*.jar" />
+       </fileset>
+       -->
+       <pathelement path="tests/etc" />
+       <pathelement path="build" />
+       <pathelement path="etc" />
+     
+       <fileset dir="${user.home}/.maven/repository/org.apache.jackrabbit/jars/">
+          <include name="*-1.4.jar"/>
+       </fileset>
+     
+       <fileset dir="${user.home}/.m2/repository/">
+          <include name="org/slf4j/**/*.jar"/>
+          <include name="commons-collections/**/*3.2.jar"/>
+          <include name="org/apache/lucene/lucene-core/2.2.0/*.jar"/>
+          <include name="org/apache/derby/derby/10.2.1.6/*.jar"/>
+       </fileset>
+    </path>
+   
     <!-- ================================= 
           target: jar            
          ================================= -->
@@ -77,5 +105,33 @@
              </fileset> 
           </classpath> 
        </javadoc> 
+    </target> 
+ 
+    <target name="perftests" depends="compile">
+       <mkdir dir="tests/reports"/>
+       <mkdir dir="/tmp/reports"/>
+        
+       <delete dir="repository" />
+        
+       <junit printsummary="yes" haltonfailure="no" fork="yes">
+        <classpath>
+           <path refid="path.tests" />
+        </classpath>
+        <formatter type="plain" />
+        <formatter type="xml" usefile="yes" />
+        <batchtest todir="tests/reports">
+           <fileset dir="tests/java">
+                <include name="**/PerformanceTest.java" />
+           </fileset>
+        </batchtest>
+       </junit>  
+     
+
+        <junitreport todir="/tmp/reports">
+           <fileset dir="tests/reports">
+              <include name="**/TEST-*.xml" />
+           </fileset>
+           <report format="noframes" todir="/tmp/reports" />
+        </junitreport>   
     </target>   
 </project>

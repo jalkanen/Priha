@@ -1,3 +1,18 @@
+2008-07-23  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.24
+
+        * Implemented initial locking support.  Lock tests currently fail
+        9 out of 19.
+        
+        * Total fails 38 out of 454.
+
+        * Added JdbcProvider (though the schema is pretty much braindead)
+        
+        * Added MemoryProvider (for anyone who wants to do testing)
+        
+        * Added performance tests
+
 2008-07-20  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.23

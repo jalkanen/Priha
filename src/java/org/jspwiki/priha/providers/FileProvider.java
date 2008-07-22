@@ -520,7 +520,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         File nodeDir = getNodeDir( ws, path.getParentPath().toString() );
        
         File inf = new File( nodeDir, path.getLastComponent()+".info" );
-
+        
         if( !inf.exists() )
         {
             throw new PathNotFoundException("The property metadata file was not found: "+inf.getAbsolutePath());
