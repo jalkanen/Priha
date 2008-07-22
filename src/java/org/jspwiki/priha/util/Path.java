@@ -29,7 +29,7 @@ import java.util.Arrays;
  *
  *  @author jalkanen
  */
-public class Path implements Serializable
+public class Path implements Comparable, Serializable
 {
     private static final long serialVersionUID = 1L;
 
@@ -375,5 +375,10 @@ public class Path implements Serializable
     public int hashCode()
     {
         return toString().hashCode() + 13;
+    }
+
+    public int compareTo(Object o)
+    {
+        return toString().compareTo( ((Path)o).toString() );
     }
 }
