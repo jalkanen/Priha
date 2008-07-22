@@ -96,7 +96,15 @@ public class EhCachingProvider implements RepositoryProvider
         //  Register to MBeanServer
         //
         MBeanServer mBeanServer = ManagementFactory.getPlatformMBeanServer();
-        ManagementService.registerMBeans(m_cacheManager, mBeanServer, false, false, false, true);
+        
+        try
+        {
+            ManagementService.registerMBeans(m_cacheManager, mBeanServer, false, false, false, true);
+        }
+        catch( CacheException e )
+        {
+            // Failure is not fatal.
+        }
 
         log.fine("Started EHCache with real provider class "+m_realProvider.getClass().getName());
     }
