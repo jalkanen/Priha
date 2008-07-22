@@ -4,7 +4,6 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
@@ -201,77 +200,6 @@ public class RepositoryTest extends TestCase
         assertTrue( "test node not found", testFound );
     }
     
-    /** The size of a million can be configured here. ;-) */
-    
-    private static final int MILLION_ITERATIONS = 100;
-    
-    public void testMillionSaves() throws Exception
-    {
-        ArrayList<Path> propertyPaths = new ArrayList<Path>();
-        
-        Session s = m_repository.login();
-
-        Node nd = s.getRootNode();
-        
-        long start = System.currentTimeMillis();
-
-        for( int i = 0; i < MILLION_ITERATIONS; i++ )
-        {
-            String name = "x-"+getUniqueID();
-            
-            Node n = nd.addNode( name );
-            Property p = n.setProperty( "test", getUniqueID() );
-            propertyPaths.add( ((ItemImpl)p).getInternalPath() );
-        }
-        
-        s.save();
-        
-        long stop = System.currentTimeMillis();
-        TestUtil.printSpeed("Save", MILLION_ITERATIONS, start, stop );
-        
-        start = System.currentTimeMillis();
-        
-        nd = s.getRootNode();
-        
-        for( NodeIterator i = nd.getNodes(); i.hasNext(); )
-        {
-            Node n = i.nextNode();
-            
-            //  Skip nodes which weren't created in this test.
-            if( n.getName().startsWith("x-") )
-            {
-                Property p = n.getProperty("test");
-                assertEquals( p.getName(), 6, p.getString().length() );
-            }
-        }
-        
-        stop = System.currentTimeMillis();
-        TestUtil.printSpeed("Sequential read", MILLION_ITERATIONS, start, stop );
-        
-        Random rand = new Random();
-        
-        start = System.currentTimeMillis();
-        
-        for( int i = 0; i < MILLION_ITERATIONS; i++ )
-        {
-            int item = rand.nextInt( propertyPaths.size() );
-            
-            Item ii = s.getItem( propertyPaths.get(item).toString() );
-
-            assertFalse( ii.getPath(), ii.isNode() );
-            assertEquals( ii.getName(), 6, ((Property)ii).getString().length() );
-        }
-        
-        stop = System.currentTimeMillis();
-        TestUtil.printSpeed("Random read", MILLION_ITERATIONS, start, stop );
-        
-        start = System.currentTimeMillis();
-
-        TestUtil.emptyRepo(m_repository);
-        
-        stop = System.currentTimeMillis();
-        TestUtil.printSpeed("remove", MILLION_ITERATIONS, start, stop );        
-    }
 
     public void testBinaryProperty() throws Exception
     {
@@ -279,7 +207,7 @@ public class RepositoryTest extends TestCase
         
         nd = nd.addNode("binarytest");
         
-        String content = getUniqueID();
+        String content = TestUtil.getUniqueID();
         
         InputStream in = new ByteArrayInputStream( content.getBytes() );
         
@@ -334,25 +262,6 @@ public class RepositoryTest extends TestCase
         assertFalse("big remove", f2.exists());
     }
     
-    /**
-     *  Returns a random string of six uppercase characters.
-     *
-     *  @return A random string
-     */
-    private static String getUniqueID()
-    {
-        StringBuffer sb = new StringBuffer();
-        Random rand = new Random();
-
-        for( int i = 0; i < 6; i++ )
-        {
-            char x = (char)('A'+rand.nextInt(26));
-
-            sb.append(x);
-        }
-
-        return sb.toString();
-    }
     public static Test suite()
     {
         return new TestSuite( RepositoryTest.class );
