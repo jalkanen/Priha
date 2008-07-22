@@ -17,6 +17,8 @@ import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 
 import org.jspwiki.priha.core.binary.MemoryBinarySource;
+import org.jspwiki.priha.core.locks.LockImpl;
+import org.jspwiki.priha.core.locks.LockManager;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.nodetype.NodeDefinitionImpl;
@@ -152,6 +154,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         NodeImpl ni = null;
         try
         {
+            //
+            //  Are we locked without a token?
+            //
+            
+            if( isLockedWithoutToken() )
+                throw new LockException("This node is locked and cannot add a child Node!");
+            
             //
             //  Check out if parent is okay with the addition of this node
             //
@@ -400,11 +409,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return 1;
     }
 
-    public Lock getLock() throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-    }
 
     public NodeType[] getMixinNodeTypes() throws RepositoryException
     {
@@ -698,19 +702,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return m_session.hasProperty( abspath );
     }
 
-    public boolean holdsLock() throws RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-    }
-
     public boolean isCheckedOut() throws RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-    }
-
-    public boolean isLocked() throws RepositoryException
     {
         // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException();
@@ -738,17 +730,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return true;
     }
 
-    public Lock lock(boolean isDeep, boolean isSessionScoped)
-                                                             throws UnsupportedRepositoryOperationException,
-                                                                 LockException,
-                                                                 AccessDeniedException,
-                                                                 InvalidItemStateException,
-                                                                 RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-    }
-
+    
     public NodeIterator merge(String srcWorkspace, boolean bestEffort)
                                                                       throws NoSuchWorkspaceException,
                                                                           AccessDeniedException,
@@ -874,6 +856,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         PropertyImpl prop = null;
 
+        if( isLockedWithoutToken() )
+            throw new LockException("Path is locked");
+        
         //
         //  Because we rely quite a lot on the primary property, we need to go and
         //  handle it separately.
@@ -904,6 +889,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             prop = (PropertyImpl) getProperty(name);
         }
         catch( PathNotFoundException e ){}
+        catch( ItemNotFoundException e ){}
 
         if( prop == null )
         {
@@ -1212,17 +1198,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return p;
     }
 
-    public void unlock()
-                        throws UnsupportedRepositoryOperationException,
-                            LockException,
-                            AccessDeniedException,
-                            InvalidItemStateException,
-                            RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-
-    }
 
     public void update(String srcWorkspaceName)
                                                throws NoSuchWorkspaceException,
@@ -1508,5 +1483,127 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                 throw new ConstraintViolationException("Node is missing property "+pd.getName());
             }
         }
+    }
+    
+    /*==============================================================================
+     *
+     *  Locking
+     *  
+     */
+    
+    LockManager m_lockManager = LockManager.getInstance(getSession().getWorkspace());
+    
+    public Lock lock(boolean isDeep, boolean isSessionScoped)
+                                                             throws UnsupportedRepositoryOperationException,
+                                                                 LockException,
+                                                                 AccessDeniedException,
+                                                                 InvalidItemStateException,
+                                                                 RepositoryException
+    {
+        if( !hasMixinType("mix:lockable") )
+            throw new UnsupportedRepositoryOperationException("This node is not lockable: "+m_path);
+        
+        if( m_state == ItemState.NEW )
+            throw new LockException("This node has no persistent state");
+        
+        if( isModified() )
+            throw new InvalidItemStateException("You may only lock Nodes which are not currently modified");
+        
+        LockImpl lock = new LockImpl( m_session, getInternalPath(), isDeep );
+      
+        m_session.addLockToken( lock.getToken() );
+        setProperty("jcr:lockOwner", lock.getLockOwner());
+        setProperty("jcr:lockIsDeep", isDeep);
+        
+        save();
+      
+        m_lockManager.addLock( lock );
+        
+        return lock;
+    }
+
+    public void unlock() throws UnsupportedRepositoryOperationException,
+        LockException,
+        AccessDeniedException,
+        InvalidItemStateException,
+        RepositoryException
+    {
+        LockImpl lock = m_lockManager.getLock(m_path);
+        
+        if( lock == null )
+            throw new LockException("This Node has not been locked.");
+        
+        if( lock.getLockToken() == null )
+            throw new LockException("This Session does not own this Lock, so it cannot be unlocked.");
+        
+        if( isModified() )
+            throw new InvalidItemStateException("This Node must not be modified prior to unlocking");
+        
+        Property p = getProperty("jcr:lockOwner");
+        p.remove();
+        p = getProperty("jcr:lockIsDeep");
+        p.remove();
+        
+        m_session.removeLockToken( lock.getLockToken() );
+        m_lockManager.removeLock( lock );
+        
+        save();
+    }
+
+
+    public Lock getLock() throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException
+    {
+        LockImpl li = m_lockManager.findLock( getInternalPath() );
+        
+        //
+        //  Must return a clone of the Lock which is particular to this session.
+        //
+        
+        if( li != null )
+            li = new LockImpl( li, m_session );
+        
+        return li;
+    }
+
+
+    public boolean holdsLock() throws RepositoryException
+    {
+        LockImpl li = m_lockManager.getLock( getInternalPath() );
+
+        return li != null;
+    }
+    
+
+    public boolean isLocked() throws RepositoryException
+    {
+        LockImpl li = m_lockManager.findLock( getInternalPath() );
+
+        return li != null;
+    }
+
+    /**
+     *  Returns true, if this Node is locked but the Session which owns
+     *  this Node does not hold a token to modify it.
+     *  
+     *  @return True, if you cannot modify this Node due to missing token.
+     */
+    protected boolean isLockedWithoutToken()
+    {
+        try
+        {
+            LockImpl li = (LockImpl) getLock();
+            
+            if( li != null && li.getLockToken() == null )
+            {
+                return true;
+            }
+        
+        }
+        catch( RepositoryException e )
+        {
+            log.warning("Don't quite know what happened "+e.getMessage());
+        }
+        
+        return false;
     }
 }

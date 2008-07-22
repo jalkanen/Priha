@@ -14,6 +14,7 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.version.VersionException;
 
+import org.jspwiki.priha.core.locks.LockManager;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.util.InvalidPathException;
@@ -33,7 +34,8 @@ public class SessionImpl implements Session
     private static final String JCR_SYSTEM = "jcr:system";
     private RepositoryImpl m_repository;
     private WorkspaceImpl  m_workspace;
-
+    private List<String>   m_lockTokens = new ArrayList<String>();
+    
     private SimpleCredentials m_credentials;
 
     private Logger         log = Logger.getLogger( getClass().getName() );
@@ -110,14 +112,14 @@ public class SessionImpl implements Session
             if( !ii.isNode() ) return true;
         }
         catch( PathNotFoundException e) {}
+        catch( ItemNotFoundException e) {}
         
         return false;
     }
     
     public void addLockToken(String lt)
     {
-        // TODO Auto-generated method stub
-        // throw new UnsupportedRepositoryOperationException();
+        m_lockTokens.add(lt);
     }
 
     public void checkPermission(String absPath, String actions) throws AccessControlException, RepositoryException
@@ -204,8 +206,7 @@ public class SessionImpl implements Session
 
     public String[] getLockTokens()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return m_lockTokens.toArray( new String[m_lockTokens.size()] );
     }
 
     public String getNamespacePrefix(String uri) throws NamespaceException, RepositoryException
@@ -240,8 +241,7 @@ public class SessionImpl implements Session
 
     public String getUserID()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return "anonymous";
     }
 
     public ValueFactory getValueFactory() throws UnsupportedRepositoryOperationException, RepositoryException
@@ -285,6 +285,7 @@ public class SessionImpl implements Session
     {
         if( isLive() )
         {
+            LockManager.getInstance(m_workspace).expireSessionLocks();
             m_workspace.logout();
             m_workspace = null;
         }
@@ -381,8 +382,7 @@ public class SessionImpl implements Session
 
     public void removeLockToken(String lt)
     {
-        // TODO Auto-generated method stub
-
+        m_lockTokens.remove(lt);
     }
 
     public void save() throws AccessDeniedException, ItemExistsException, ConstraintViolationException, InvalidItemStateException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException

@@ -251,6 +251,8 @@ public class SessionProvider
             }
         }
         
+        List<Path> toberemoved = new ArrayList<Path>();
+        
         //
         //  Do the actual save.
         //
@@ -268,15 +270,21 @@ public class SessionProvider
                     
                     switch( ni.getState() )
                     {
-                        case NEW:
                         case EXISTS:
+                            ni.preSave();
+                            // Nodes which exist don't need to be added.
+                            ni.postSave();
+                            break;
+                            
+                        case NEW:
                             ni.preSave();
                             m_source.addNode( m_workspace, ni );
                             ni.postSave();
                             break;
                         
                         case REMOVED:
-                            m_source.remove( m_workspace, ni.getInternalPath() );
+                            //m_source.remove( m_workspace, ni.getInternalPath() );
+                            toberemoved.add(ni.getInternalPath());
                             break;
                     }
                 }
@@ -294,7 +302,8 @@ public class SessionProvider
                             break;
                                 
                         case REMOVED:
-                            m_source.remove( m_workspace, pi.getInternalPath() );
+                            // m_source.remove( m_workspace, pi.getInternalPath() );
+                            toberemoved.add(pi.getInternalPath());
                             break;                     
                     }
                 }
@@ -302,6 +311,26 @@ public class SessionProvider
                 i.remove();
                 
             }
+        }
+        
+        //
+        //  Finally, do the remove.  First, sort all in a reverse
+        //  depth order (longest first).
+        //
+        
+        Collections.sort( toberemoved, new Comparator<Path>() {
+
+            public int compare(Path o1, Path o2)
+            {
+                return o2.depth() - o1.depth();
+            }
+            
+        });
+        
+        for( Path p : toberemoved )
+        {
+            //System.out.println("Removing "+p);
+            m_source.remove(m_workspace, p);
         }
     }
 

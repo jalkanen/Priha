@@ -15,6 +15,7 @@ import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 
+import org.jspwiki.priha.core.locks.LockManager;
 import org.jspwiki.priha.nodetype.NodeTypeManagerImpl;
 import org.jspwiki.priha.query.PrihaQueryManager;
 import org.jspwiki.priha.util.InvalidPathException;
@@ -29,7 +30,8 @@ public class WorkspaceImpl
     private String              m_name;
     private ProviderManager     m_providerManager;
     private NodeTypeManagerImpl m_nodeTypeManager;
-
+    private LockManager         m_lockManager;
+    
     public WorkspaceImpl( SessionImpl session, String name, ProviderManager mgr )
         throws RepositoryException
     {
@@ -37,6 +39,7 @@ public class WorkspaceImpl
         m_name     = name;
         m_providerManager = mgr;
         m_nodeTypeManager = NodeTypeManagerImpl.getInstance(this);
+        m_lockManager = LockManager.getInstance(this);
     }
 
     /**
