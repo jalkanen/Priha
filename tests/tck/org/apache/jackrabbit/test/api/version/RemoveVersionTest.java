@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -22,10 +22,11 @@ import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Node;
 import javax.jcr.ReferentialIntegrityException;
+import javax.jcr.Value;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
-import java.util.Arrays;
+import javax.jcr.version.VersionIterator;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,7 +83,25 @@ public class RemoveVersionTest extends AbstractVersionTest {
         try {
             versionableNode2.remove();
         } finally {
+            versionableNode2 = null;
+            version = null;
+            version2 = null;
+            vHistory = null;
             super.tearDown();
+        }
+    }
+
+    /**
+     * Test removed version gets invalid
+     */
+    public void testRemovedInvalid() throws Exception {
+        versionableNode.getVersionHistory().removeVersion(version.getName());
+        // assert: version has become invalid
+        try {
+            version.getPredecessors();
+            fail("Removed version still operational.");
+        } catch (RepositoryException e) {
+            // expected
         }
     }
 
@@ -95,18 +114,22 @@ public class RemoveVersionTest extends AbstractVersionTest {
     public void testRemoveVersionAdjustPredecessorSet() throws RepositoryException {
 
         // retrieve predecessors to test and remove the version
-        List predecList = new ArrayList(Arrays.asList(version.getPredecessors()));
+        List predecPaths = new ArrayList();
+        Version[] predec = version.getPredecessors();
+        for (int i = 0; i < predec.length; i++) {
+            predecPaths.add(predec[i].getPath());
+        }
         vHistory.removeVersion(version.getName());
 
         // new predecessors of the additional version
         Version[] predec2 = version2.getPredecessors();
         for (int i = 0; i < predec2.length; i++) {
-            if (!predecList.remove(predec2[i])) {
+            if (!predecPaths.remove(predec2[i].getPath())) {
                 fail("All predecessors of the removed version must be made predecessors of it's original successor version.");
             }
         }
 
-        if (!predecList.isEmpty()) {
+        if (!predecPaths.isEmpty()) {
             fail("All predecessors of the removed version must be made predecessors of it's original successor version.");
         }
     }
@@ -124,8 +147,12 @@ public class RemoveVersionTest extends AbstractVersionTest {
         vHistory.removeVersion(version.getName());
 
         for (int i = 0; i < predec.length; i++) {
-            List successorList = Arrays.asList(predec[i].getSuccessors());
-            if (!successorList.contains(version2)) {
+            boolean isContained = false;
+            Version[] succ = predec[i].getSuccessors();
+            for (int j = 0; j < succ.length; j++) {
+                isContained |= succ[j].isSame(version2);
+            }
+            if (!isContained) {
                 fail("Removing a version must make all it's successor version to successors of the removed version's predecessors.");
             }
         }
@@ -172,14 +199,16 @@ public class RemoveVersionTest extends AbstractVersionTest {
      * version is still referenced by another node.
      * @tck.config nodetype name of a node type that supports a reference
      *  property.
-     * @tck.config nodename2 name of the node created with <code>nodetype</code>.
+     * @tck.config nodename4 name of the node created with <code>nodetype</code>.
      * @tck.config propertyname1 a single value reference property available
      *  in <code>nodetype</code>.
      */
-    public void testReferentialIntegrityException() throws RepositoryException {
+    public void testReferentialIntegrityException() throws RepositoryException, NotExecutableException {
         // create reference: n1.p1 -> version
-        Node n1 = testRootNode.addNode(nodeName2, testNodeType);
-        n1.setProperty(propertyName1, superuser.getValueFactory().createValue(version));
+        Node n1 = testRootNode.addNode(nodeName4, testNodeType);
+        Value refValue = superuser.getValueFactory().createValue(version);
+        ensureCanSetProperty(n1, propertyName1, refValue);
+        n1.setProperty(propertyName1, refValue);
         testRootNode.save();
 
         try {
@@ -191,4 +220,45 @@ public class RemoveVersionTest extends AbstractVersionTest {
         catch (ReferentialIntegrityException e) {
             // success
         }
-    }}
+    }
+
+    /**
+     * Checks if all versions but the base and root one can be removed.
+     */
+    public void testRemoveAllBut2() throws RepositoryException {
+        String baseVersion = versionableNode.getBaseVersion().getName();
+        VersionHistory vh = versionableNode.getVersionHistory();
+        VersionIterator vi = vh.getAllVersions();
+        while (vi.hasNext()) {
+            Version currenVersion = vi.nextVersion();
+            String versionName = currenVersion.getName();
+            if (!versionName.equals("jcr:rootVersion") && !versionName.equals(baseVersion)) {
+                vh.removeVersion(versionName);
+            }
+        }
+    }
+
+    /**
+     * Checks if all versions by the base and root one can be removed.
+     */
+    public void testRemoveRootVersion() throws RepositoryException {
+        try {
+            versionableNode.getVersionHistory().getRootVersion().remove();
+            fail("Removal of root version should throw an exception.");
+        } catch (RepositoryException e) {
+            // ignore
+        }
+    }
+
+    /**
+     * Checks if all versions by the base and root one can be removed.
+     */
+    public void testRemoveBaseVersion() throws RepositoryException {
+        try {
+            versionableNode.getBaseVersion().remove();
+            fail("Removal of base version should throw an exception.");
+        } catch (RepositoryException e) {
+            // ignore
+        }
+    }
+}

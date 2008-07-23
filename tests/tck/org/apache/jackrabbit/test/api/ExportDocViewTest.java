@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,7 +17,7 @@
 package org.apache.jackrabbit.test.api;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
-import org.apache.xerces.util.XMLChar;
+import org.apache.jackrabbit.test.XMLChar;
 
 import org.xml.sax.SAXException;
 import org.xml.sax.ContentHandler;
@@ -26,6 +26,9 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Attr;
 import org.w3c.dom.NamedNodeMap;
 
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.TransformerException;
@@ -75,11 +78,11 @@ public class ExportDocViewTest extends AbstractJCRTest {
     private final boolean NORECURSE = true, RECURSE = false;
 
     /**
-     * Resolved QName for jcr:xmltext
+     * Resolved Name for jcr:xmltext
      */
     private String JCR_XMLTEXT;
     /**
-     * Resolved QName for jcr:xmlcharacters
+     * Resolved Name for jcr:xmlcharacters
      */
     private String JCR_XMLDATA;
     /**
@@ -134,47 +137,50 @@ public class ExportDocViewTest extends AbstractJCRTest {
         file.delete();
         if (session != null) {
             session.logout();
+            session = null;
         }
+        workspace = null;
+        nsr = null;
         super.tearDown();
     }
 
     public void testExportDocView_handler_session_skipBinary_noRecurse()
-            throws IOException, RepositoryException, SAXException {
+            throws IOException, RepositoryException, SAXException, TransformerException {
         doTestExportDocView(CONTENTHANDLER, SKIPBINARY, NORECURSE);
     }
 
     public void testExportDocView_handler_session_skipBinary_recurse()
-            throws IOException, RepositoryException, SAXException {
+            throws IOException, RepositoryException, SAXException, TransformerException {
         doTestExportDocView(CONTENTHANDLER, SKIPBINARY, RECURSE);
     }
 
     public void testExportDocView_handler_session_saveBinary_noRecurse()
-            throws IOException, RepositoryException, SAXException {
+            throws IOException, RepositoryException, SAXException, TransformerException {
         doTestExportDocView(CONTENTHANDLER, SAVEBINARY, NORECURSE);
     }
 
     public void testExportDocView_handler_session_saveBinary_recurse()
-            throws IOException, RepositoryException, SAXException {
+            throws IOException, RepositoryException, SAXException, TransformerException {
         doTestExportDocView(CONTENTHANDLER, SAVEBINARY, RECURSE);
     }
 
     public void testExportDocView_stream_session_skipBinary_recurse()
-            throws IOException, RepositoryException, SAXException {
+            throws IOException, RepositoryException, SAXException, TransformerException {
         doTestExportDocView(STREAM, SKIPBINARY, RECURSE);
     }
 
     public void testExportDocView_stream_session_skipBinary_noRecurse()
-            throws IOException, RepositoryException, SAXException {
+            throws IOException, RepositoryException, SAXException, TransformerException {
         doTestExportDocView(STREAM, SKIPBINARY, NORECURSE);
     }
 
     public void testExportDocView_stream_session_saveBinary_noRecurse()
-            throws IOException, RepositoryException, SAXException {
+            throws IOException, RepositoryException, SAXException, TransformerException {
         doTestExportDocView(STREAM, SAVEBINARY, NORECURSE);
     }
 
     public void testExportDocView_stream_session_saveBinary_recurse()
-            throws IOException, RepositoryException, SAXException {
+            throws IOException, RepositoryException, SAXException, TransformerException {
         doTestExportDocView(STREAM, SAVEBINARY, RECURSE);
     }
 
@@ -194,18 +200,24 @@ public class ExportDocViewTest extends AbstractJCRTest {
      * @param noRecurse
      */
     public void doTestExportDocView(boolean withHandler, boolean skipBinary, boolean noRecurse)
-            throws RepositoryException, IOException, SAXException {
+            throws RepositoryException, IOException, SAXException, TransformerException {
 
         this.skipBinary = skipBinary;
         this.noRecurse = noRecurse;
         this.withHandler = withHandler;
         BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(file));
-        if (withHandler) {
-            ContentHandler handler =
-                    new org.apache.xml.serialize.XMLSerializer(os, null).asContentHandler();
-            session.exportDocumentView(testPath, handler, skipBinary, noRecurse);
-        } else {
-            session.exportDocumentView(testPath, os, skipBinary, noRecurse);
+        try {
+            if (withHandler) {
+                SAXTransformerFactory stf =
+                    (SAXTransformerFactory) SAXTransformerFactory.newInstance();
+                TransformerHandler th = stf.newTransformerHandler();
+                th.setResult(new StreamResult(os));
+                session.exportDocumentView(testPath, th, skipBinary, noRecurse);
+            } else {
+                session.exportDocumentView(testPath, os, skipBinary, noRecurse);
+            }
+        } finally {
+            os.close();
         }
 
         // build the DOM tree
@@ -292,7 +304,7 @@ public class ExportDocViewTest extends AbstractJCRTest {
             throws RepositoryException, IOException {
 
         NodeIterator nodeIter = node.getNodes();
-        if (getSize(nodeIter) == 0) {
+        if (getSize(node.getNodes()) == 0) {
             assertTrue("Exported node " + node.getPath() + " has child elements " +
                     "although it has no child nodes ", 0 == countChildElems(elem));
         } else {
@@ -432,8 +444,9 @@ public class ExportDocViewTest extends AbstractJCRTest {
     private void checkAttribute(Property prop, Attr attribute) throws RepositoryException {
 
         boolean isBinary = (prop.getType() == PropertyType.BINARY);
+        boolean isMultiple = prop.getDefinition().isMultiple();
         if (skipBinary) {
-            if (isBinary) {
+            if (isBinary && !(isMultiple && !exportMultivalProps)) {
                 assertEquals("Value of binary property " + prop.getPath() +
                         " exported although skipBinary is true",
                         attribute.getValue().length(), 0);
@@ -445,7 +458,7 @@ public class ExportDocViewTest extends AbstractJCRTest {
         }
         // saveBinary
         else {
-            if (isBinary) {
+            if (isBinary && !(isMultiple && !exportMultivalProps)) {
                 assertTrue("Binary property " + prop.getPath() +
                         " not exported although skipBinary is false", attribute != null);
             }
@@ -469,9 +482,16 @@ public class ExportDocViewTest extends AbstractJCRTest {
         boolean isMultiple = prop.getDefinition().isMultiple();
         boolean isValidName = XMLChar.isValidName(name);
 
-        if (exportMultivalProps && isMultiple) {
-            assertTrue("Not all multivalued properties are exported: "
-                    + prop.getPath() + " is not exported.", attribute != null);
+        if (isMultiple) {
+            if (exportMultivalProps) {
+                assertTrue("Not all multivalued properties are exported: "
+                        + prop.getPath() + " is not exported.", attribute != null);
+            } else {
+                // skipping multi-valued properties entirely is legal
+                // according to "6.4.2.5 Multi-value Properties" of the
+                // jsr-170 specification
+                return;
+            }
         }
         // check anyway the other flag
         if (exportInvalidXmlNames && !isValidName) {
@@ -542,16 +562,6 @@ public class ExportDocViewTest extends AbstractJCRTest {
                 }
             } else {
                 val = prop.getString();
-                if (exportMultivalProps) {
-                    val = escapeValues(val);
-                } else {
-                    // we could not decide if the repository exports multivalued
-                    // properties so we consider both possibilities
-                    String escapedVal = escapeValues(val);
-                    if (escapedVal.equals(attrVal)) {
-                        val = escapedVal;
-                    }
-                }
             }
         }
         if (isBinary && skipBinary) {
@@ -561,8 +571,9 @@ public class ExportDocViewTest extends AbstractJCRTest {
                     " exported although skipBinary is true",
                     "", attrVal);
         } else {
-            assertEquals("Value of property " + prop.getPath() +
-                    " is not exported correctly: ", val, attrVal);
+            assertTrue("Value of property " + prop.getPath() +
+                    " is not exported correctly: " + attrVal,
+                    val.equals(attrVal) || escapeValues(val).equals(attrVal));
         }
     }
 
@@ -576,6 +587,7 @@ public class ExportDocViewTest extends AbstractJCRTest {
     private void compareNamespaces(Element root) throws RepositoryException {
 
         Properties nameSpaces = new AttributeSeparator(root).getNsAttrs();
+        // check if all namespaces exist that were exported
         for (Enumeration e = nameSpaces.keys(); e.hasMoreElements();) {
             String prefix = (String) e.nextElement();
             String URI = nameSpaces.getProperty(prefix);
@@ -585,8 +597,18 @@ public class ExportDocViewTest extends AbstractJCRTest {
             assertEquals("Uri of prefix " + prefix + "is not exported correctly.",
                     nsr.getURI(prefix), URI);
         }
-        assertEquals("Not all namespace declarations are exported.",
-                nameSpaces.size(), nsr.getPrefixes().length - 1);
+
+        String[] registeredNamespaces = nsr.getURIs();
+        // check if all required namespaces are exported
+        for (int i = 0; i < registeredNamespaces.length; i++) {
+            String prefix = nsr.getPrefix(registeredNamespaces[i]);
+            // skip default namespace and xml namespaces
+            if (prefix.length() == 0 || prefix.startsWith("xml")) {
+                continue;
+            } else {
+                assertTrue("namespace: " + registeredNamespaces[i] + " not exported", nameSpaces.keySet().contains(prefix));
+            }
+        }
     }
 
     /**
@@ -604,7 +626,7 @@ public class ExportDocViewTest extends AbstractJCRTest {
         long exported = countChildElems(elem);
         // child tree is exported too
         if (!noRecurse) {
-            size = getSize(iter);
+            size = getSize(node.getNodes());
             while (iter.hasNext()) {
                 Node n = iter.nextNode();
                 String name = n.getName();
@@ -635,7 +657,7 @@ public class ExportDocViewTest extends AbstractJCRTest {
             throws RepositoryException {
 
         PropertyIterator iter = node.getProperties();
-        long size = getSize(iter);
+        long size = getSize(node.getProperties());
         long exported = new AttributeSeparator(elem).getNonNsAttrs().size();
         while (iter.hasNext()) {
             Property prop = iter.nextProperty();
@@ -768,6 +790,9 @@ public class ExportDocViewTest extends AbstractJCRTest {
             PropertyIterator iter = node.getProperties();
             while (iter.hasNext()) {
                 Property prop = iter.nextProperty();
+                if (!exportMultivalProps && prop.getDefinition().isMultiple()) {
+                    continue;
+                }
                 if (!XMLChar.isValidName(prop.getName())) {
                     // property exported?
                     exportInvalidXmlNames = isExportedProp(prop, elem);
@@ -944,22 +969,28 @@ public class ExportDocViewTest extends AbstractJCRTest {
         Value[] vals = prop.getValues();
         // order of multi values is preserved.
         // multival with empty array is exported as empty string
-        String exportedVal = "";
+        StringBuffer exportedVal = new StringBuffer();
 
+        String space = "";
         if (isBinary) {
             for (int i = 0; i < vals.length; i++) {
-                exportedVal += encodeBase64(vals[i].getStream());
-                exportedVal += " ";
+                exportedVal.append(space);
+                InputStream in = vals[i].getStream();
+                try {
+                    exportedVal.append(encodeBase64(in));
+                } finally {
+                    in.close();
+                }
+                space = " ";
             }
         } else {
             for (int i = 0; i < vals.length; i++) {
-                exportedVal += escapeValues(vals[i].getString());
-                exportedVal += " ";
+                exportedVal.append(space);
+                exportedVal.append(escapeValues(vals[i].getString()));
+                space = " ";
             }
         }
-        // remove the last space again
-        exportedVal = exportedVal.substring(0, exportedVal.length() - 1);
-        return exportedVal;
+        return exportedVal.toString();
     }
 
     /**
@@ -1112,9 +1143,9 @@ public class ExportDocViewTest extends AbstractJCRTest {
 
                 if (xmlnsURI.equals(attribute.getNamespaceURI())) {
                     String localName = attribute.getLocalName();
-                    // empty prefix
+                    // ignore setting default namespace
                     if (xmlnsPrefix.equals(localName)) {
-                        localName = "";
+                        continue;
                     }
                     nsAttrs.put(localName, attribute.getValue());
                 } else {

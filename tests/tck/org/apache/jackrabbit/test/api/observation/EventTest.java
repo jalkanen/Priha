@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -42,8 +42,8 @@ public class EventTest extends AbstractObservationTest {
         addEventListener(result, Event.NODE_ADDED);
         Node addedNode = testRootNode.addNode(nodeName1, testNodeType);
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
         assertEquals("Wrong number of events returned", 1, events.length);
         String path = events[0].getPath();
         String absPath = addedNode.getPath();
@@ -75,8 +75,8 @@ public class EventTest extends AbstractObservationTest {
         addEventListener(result, Event.NODE_ADDED);
         testRootNode.addNode(nodeName1, testNodeType);
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
         assertEquals("Wrong number of events returned", 1, events.length);
         int type = events[0].getType();
         assertEquals("Event did not return correct event type", Event.NODE_ADDED, type);

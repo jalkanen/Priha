@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -43,6 +43,24 @@ public class WorkspaceCloneTest extends AbstractWorkspaceCopyBetweenTest {
     public void testCloneNodes() throws RepositoryException {
         // clone referenceable node below non-referenceable node
         String dstAbsPath = node2W2.getPath() + "/" + node1.getName();
+        workspaceW2.clone(workspace.getName(), node1.getPath(), dstAbsPath, true);
+
+        // there should not be any pending changes after clone
+        assertFalse(superuserW2.hasPendingChanges());
+    }
+
+    /**
+     * If successful, the changes are persisted immediately, there is no need to
+     * call save.
+     */
+    public void testCloneNodesTwice() throws RepositoryException {
+        // clone referenceable node below non-referenceable node
+        String dstAbsPath = node2W2.getPath() + "/" + node1.getName();
+
+        Node folder = node1.addNode(nodeName3);
+        folder.addMixin(mixReferenceable);
+        node1.save();
+        workspaceW2.clone(workspace.getName(), node1.getPath(), dstAbsPath, true);
         workspaceW2.clone(workspace.getName(), node1.getPath(), dstAbsPath, true);
 
         // there should not be any pending changes after clone

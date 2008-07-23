@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -22,7 +22,6 @@ import org.apache.jackrabbit.test.NotExecutableException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.Session;
 import javax.jcr.Node;
-import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.ItemNotFoundException;
@@ -30,8 +29,9 @@ import javax.jcr.InvalidItemStateException;
 import javax.jcr.ItemExistsException;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.Repository;
+import javax.jcr.Value;
+import javax.jcr.PropertyType;
 import javax.jcr.lock.LockException;
-import java.util.StringTokenizer;
 
 /**
  * <code>NodeTest</code> contains all test cases for the
@@ -56,22 +56,6 @@ public class NodeTest extends AbstractJCRTest {
 
         // login to second workspace
         superuserW2 = helper.getSuperuserSession(workspaceName);
-        // create the test root node
-        Node root = superuserW2.getRootNode();
-        if (root.hasNode(testPath)) {
-            // clean test root
-            Node testNode = root.getNode(testPath);
-            for (NodeIterator children = testNode.getNodes(); children.hasNext();) {
-                children.nextNode().remove();
-            }
-        } else {
-            StringTokenizer names = new StringTokenizer(testPath, "/");
-            Node currentNode = superuserW2.getRootNode();
-            while (names.hasMoreTokens()) {
-                currentNode = currentNode.addNode(names.nextToken(), testNodeType);
-            }
-        }
-        superuserW2.save();
     }
 
     /**
@@ -79,17 +63,13 @@ public class NodeTest extends AbstractJCRTest {
      */
     public void tearDown() throws Exception {
         try {
-            // delete all children of test root node
-            Node rootNodeW2 = (Node) superuserW2.getItem(testRootNode.getPath());
-            for (NodeIterator children = rootNodeW2.getNodes(); children.hasNext();) {
-                children.nextNode().remove();
-            }
-            // save changes
-            superuserW2.save();
-            // log out
-            superuserW2.logout();
+            cleanUpTestRoot(superuserW2);
         } catch (RepositoryException e) {
             log.println("Exception in tearDown: " + e.toString());
+        } finally {
+            // log out
+            superuserW2.logout();
+            superuserW2 = null;
         }
 
         super.tearDown();
@@ -124,7 +104,11 @@ public class NodeTest extends AbstractJCRTest {
      * Calls {@link javax.jcr.Node#getCorrespondingNodePath(String)} on  a node
      * that has no corresponding node in second workspace
      */
-    public void testGetCorrespondingNodePathItemNotFoundException() throws RepositoryException {
+    public void testGetCorrespondingNodePathItemNotFoundException() throws RepositoryException, NotExecutableException {
+      
+        // make sure the repository supports multiple workspaces
+        super.ensureMultipleWorkspacesSupported();
+      
         // get default workspace test root node using superuser session
         Node defaultRootNode = (Node) superuser.getItem(testRootNode.getPath());
 
@@ -147,7 +131,10 @@ public class NodeTest extends AbstractJCRTest {
      * Creates a node with same path in both workspaces to check if {@link
      * javax.jcr.Node#getCorrespondingNodePath(String)} works properly.
      */
-    public void testGetCorrespondingNodePath() throws RepositoryException {
+    public void testGetCorrespondingNodePath() throws RepositoryException, NotExecutableException {
+      
+        // make sure the repository supports multiple workspaces
+        super.ensureMultipleWorkspacesSupported();
 
         // get default workspace test root node using superuser session
         Node defaultRootNode = (Node) superuser.getItem(testRootNode.getPath());
@@ -181,7 +168,10 @@ public class NodeTest extends AbstractJCRTest {
      * a String property that can be modified in <code>javax.jcr.tck.nodetype</code>
      * for testing</li> </ul>
      */
-    public void testUpdateInvalidItemStateException() throws RepositoryException {
+    public void testUpdateInvalidItemStateException() throws RepositoryException, NotExecutableException {
+
+        // make sure the repository supports multiple workspaces
+        super.ensureMultipleWorkspacesSupported();
 
         // get default workspace test root node using superuser session
         Node defaultRootNode = (Node) superuser.getItem(testRootNode.getPath());
@@ -275,7 +265,11 @@ public class NodeTest extends AbstractJCRTest {
      * name of a String property that can be modified in
      * <code>javax.jcr.tck.nodetype</code> for testing</li> </ul>
      */
-    public void testUpdate() throws RepositoryException {
+    public void testUpdate() throws RepositoryException, NotExecutableException {
+
+        // make sure the repository supports multiple workspaces
+        super.ensureMultipleWorkspacesSupported();
+
         // get default workspace test root node using superuser session
         Node defaultRootNode = (Node) superuser.getItem(testRootNode.getPath());
 
@@ -317,8 +311,8 @@ public class NodeTest extends AbstractJCRTest {
     public void testAddNodeConstraintViolationExceptionUndefinedNodeType() throws RepositoryException {
         // get default workspace test root node using superuser session
         Node defaultRootNode = (Node) superuser.getItem(testRootNode.getPath());
-
-        Node defaultTestNode = defaultRootNode.addNode(nodeName1, ntBase);
+        String nodetype = testNodeTypeNoChildren == null ? ntBase : testNodeTypeNoChildren;
+        Node defaultTestNode = defaultRootNode.addNode(nodeName1, nodetype);
 
         try {
             defaultTestNode.addNode(nodeName2);
@@ -358,7 +352,7 @@ public class NodeTest extends AbstractJCRTest {
 
     /**
      * Tries to create a node using {@link javax.jcr.Node#addNode(String,
-            * String)}  at a location where there is already a node with same name and
+     * String)}  at a location where there is already a node with same name and
      * the parent does not allow same name siblings. <br/><br/> This should
      * throw an {@link javax.jcr.ItemExistsException }. <br/><br> Prerequisites:
      * <ul> <li><code>javax.jcr.tck.NodeTest.testAddNodeItemExistsException.nodetype<code>
@@ -380,6 +374,7 @@ public class NodeTest extends AbstractJCRTest {
         try {
             // try to add a node with same name again
             defaultTestNode.addNode(nodeName3, testNodeType);
+            defaultRootNode.save();
             fail("Adding a node to a location where same name siblings are not allowed, but a node with same name" +
                     " already exists should throw ItemExistsException ");
         } catch (ItemExistsException e) {
@@ -555,6 +550,7 @@ public class NodeTest extends AbstractJCRTest {
             // try to remove already deleted node with session 2
             try {
                 defaultTestNodeSession2.remove();
+                testSession.save();
                 fail("Removing a node already deleted by other session should throw an InvalidItemStateException!");
             } catch (InvalidItemStateException e) {
                 //ok, works as expected
@@ -635,7 +631,7 @@ public class NodeTest extends AbstractJCRTest {
 
         Session session = testRootNode.getSession();
 
-        if (session.getRepository().getDescriptor(Repository.OPTION_LOCKING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_LOCKING_SUPPORTED)) {
             throw new NotExecutableException("Locking is not supported.");
         }
 
@@ -683,7 +679,7 @@ public class NodeTest extends AbstractJCRTest {
 
         Session session = testRootNode.getSession();
 
-        if (session.getRepository().getDescriptor(Repository.OPTION_LOCKING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_LOCKING_SUPPORTED)) {
             throw new NotExecutableException("Locking is not supported.");
         }
 
@@ -713,8 +709,9 @@ public class NodeTest extends AbstractJCRTest {
 
             try {
                 subNode.remove();
-                fail("Node.remove() must throw a LockException if the parent " +
-                        "of the node is locked");
+                session.save();
+                fail("Removal of a Node must throw a LockException upon remove() " +
+                     "or upon save() if the parent of the node is locked");
             } catch (LockException e) {
                 // success
             }
@@ -748,13 +745,13 @@ public class NodeTest extends AbstractJCRTest {
         // save the new node
         defaultRootNode.save();
 
-        // accuire the same node with session 2
+        // acquire the same node with session 2
         Node testNode2 = (Node) superuser.getItem(testNode1.getPath());
 
         // check if they have the same property
-        assertEquals("Two references of same node have different properties", testNode1.getProperty(propertyName1), testNode2.getProperty(propertyName1));
+        assertTrue("Two references of same node have different properties", testNode1.getProperty(propertyName1).isSame(testNode2.getProperty(propertyName1)));
         // check if they have the same child
-        assertEquals("Two references of same node have different children", testNode1.getNode(nodeName1), testNode2.getNode(nodeName1));
+        assertTrue("Two references of same node have different children", testNode1.getNode(nodeName1).isSame(testNode2.getNode(nodeName1)));
         // check state methods
         assertEquals("Two references of same node have different State for Node.isCheckedOut()", testNode1.isCheckedOut(), testNode2.isCheckedOut());
         assertEquals("Two references of same node have different State for Node.isLocked()", testNode1.isLocked(), testNode2.isLocked());
@@ -763,7 +760,7 @@ public class NodeTest extends AbstractJCRTest {
         assertEquals("Two references of same node have different State for Node.isNode()", testNode1.isNode(), testNode2.isNode());
         assertEquals("Two references of same node have different State for Node.isNodeType()", testNode1.isNodeType(testNodeType), testNode2.isNodeType(testNodeType));
         assertTrue("Two references of same node should return true for Node1.isSame(Node2)", testNode1.isSame(testNode2));
-        assertEquals("Two references of same node have different Definitions", testNode1.getDefinition(), testNode2.getDefinition());
+        assertEquals("Two references of same node have different Definitions", testNode1.getDefinition().getName(), testNode2.getDefinition().getName());
     }
 
     /**
@@ -907,7 +904,6 @@ public class NodeTest extends AbstractJCRTest {
 
             // save the changes
             session2.save();
-
             // call refresh on session 1
             defaultRootNode.refresh(false);
 
@@ -1129,10 +1125,10 @@ public class NodeTest extends AbstractJCRTest {
         Node defaultRootNode = (Node) superuser.getItem(testRootNode.getPath());
 
         Node testNode = defaultRootNode.addNode(nodeName1, testNodeType);
-        testNode.addMixin(mixReferenceable);
 
+        Value mixinName = superuser.getValueFactory().createValue(mixLockable, PropertyType.NAME);
         try {
-            testNode.setProperty(jcrMixinTypes,mixLockable);
+            testNode.setProperty(jcrMixinTypes, new Value[]{mixinName});
             fail("Manually setting jcr:mixinTypes should throw a ConstraintViolationException");
         }
         catch (ConstraintViolationException success) {

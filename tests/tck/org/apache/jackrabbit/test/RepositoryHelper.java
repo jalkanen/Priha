@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -16,14 +16,12 @@
  */
 package org.apache.jackrabbit.test;
 
-import javax.jcr.*;
-
-import org.jspwiki.priha.RepositoryManager;
-import org.jspwiki.priha.core.RepositoryImpl;
-
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.Credentials;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Properties;
 
 /**
  * Utility class to get access to {@link javax.jcr.Session} instances.
@@ -63,19 +61,14 @@ public class RepositoryHelper {
      * @throws RepositoryException if the repository could not be obtained.
      */
     public Repository getRepository() throws RepositoryException {
-
-        try
-        {
-            repoStub = RepositoryStub.getInstance(configuration);
-
+        try {
+            if (repoStub == null) {
+                repoStub = RepositoryStub.getInstance(configuration);
+            }
             return repoStub.getRepository();
+        } catch (RepositoryStubException e) {
+            throw new RepositoryException("Failed to get Repository instance.", e);
         }
-        catch (RepositoryStubException e)
-        {
-            e.printStackTrace();
-            throw new RepositoryException(e);
-        }
-
     }
 
     /**

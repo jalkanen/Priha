@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -19,6 +19,7 @@ package org.apache.jackrabbit.test.api;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 
 import javax.jcr.Node;
+import javax.jcr.ValueFactory;
 
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -36,12 +37,21 @@ public class SetPropertyCalendarTest extends AbstractJCRTest {
 
     private Node testNode;
 
+    private ValueFactory vFactory;
+
     private Calendar c1 = new GregorianCalendar(2005, 1, 10, 14, 8, 56);
     private Calendar c2 = new GregorianCalendar(1945, 1, 6, 16, 20, 0);
 
     protected void setUp() throws Exception {
         super.setUp();
         testNode = testRootNode.addNode(nodeName1, testNodeType);
+        vFactory = superuser.getValueFactory();
+    }
+
+    protected void tearDown() throws Exception {
+        testNode = null;
+        vFactory = null;
+        super.tearDown();
     }
 
     /**
@@ -52,8 +62,8 @@ public class SetPropertyCalendarTest extends AbstractJCRTest {
         testNode.setProperty(propertyName1, c1);
         superuser.save();
         assertEquals("Setting property with Node.setProperty(String, Calendar) and Session.save() not working",
-                c1,
-                testNode.getProperty(propertyName1).getDate());
+                vFactory.createValue(c1),
+                testNode.getProperty(propertyName1).getValue());
     }
 
     /**
@@ -66,8 +76,8 @@ public class SetPropertyCalendarTest extends AbstractJCRTest {
         testNode.setProperty(propertyName1, c2);
         superuser.save();
         assertEquals("Modifying property with Node.setProperty(String, Calendar) and Session.save() not working",
-                c2,
-                testNode.getProperty(propertyName1).getDate());
+                vFactory.createValue(c2),
+                testNode.getProperty(propertyName1).getValue());
     }
 
     /**
@@ -78,8 +88,8 @@ public class SetPropertyCalendarTest extends AbstractJCRTest {
         testNode.setProperty(propertyName1, c1);
         testRootNode.save();
         assertEquals("Setting property with Node.setProperty(String, Calendar) and parentNode.save() not working",
-                c1,
-                testNode.getProperty(propertyName1).getDate());
+                vFactory.createValue(c1),
+                testNode.getProperty(propertyName1).getValue());
     }
 
     /**
@@ -92,8 +102,8 @@ public class SetPropertyCalendarTest extends AbstractJCRTest {
         testNode.setProperty(propertyName1, c2);
         testRootNode.save();
         assertEquals("Modifying property with Node.setProperty(String, Calendar) and parentNode.save() not working",
-                c2,
-                testNode.getProperty(propertyName1).getDate());
+                vFactory.createValue(c2),
+                testNode.getProperty(propertyName1).getValue());
     }
 
     /**

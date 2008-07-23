@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -50,11 +50,6 @@ public class NodeDefTest extends AbstractJCRTest {
     private NodeTypeManager manager;
 
     /**
-     * The root node of the default workspace
-     */
-    private Node rootNode;
-
-    /**
      * If <code>true</code> indicates that the test found a mandatory node
      */
     private boolean foundMandatoryNode = false;
@@ -68,7 +63,8 @@ public class NodeDefTest extends AbstractJCRTest {
 
         session = helper.getReadOnlySession();
         manager = session.getWorkspace().getNodeTypeManager();
-        rootNode = session.getRootNode();
+        // re-fetch testRootNode with read-only session
+        testRootNode = (Node) session.getItem(testRoot);
     }
 
     /**
@@ -77,7 +73,9 @@ public class NodeDefTest extends AbstractJCRTest {
     protected void tearDown() throws Exception {
         if (session != null) {
             session.logout();
+            session = null;
         }
+        manager = null;
         super.tearDown();
     }
 
@@ -150,7 +148,7 @@ public class NodeDefTest extends AbstractJCRTest {
      * org.apache.jackrabbit.test.NotExecutableException} is thrown.
      */
     public void testIsMandatory() throws RepositoryException, NotExecutableException {
-        traverse(rootNode);
+        traverse(testRootNode);
         if (!foundMandatoryNode) {
             throw new NotExecutableException("Workspace does not contain any node with a mandatory child node definition");
         }
@@ -204,8 +202,7 @@ public class NodeDefTest extends AbstractJCRTest {
                     for (int j = 0; j < requiredTypes.length; j++) {
                         NodeType requiredType = requiredTypes[j];
 
-                        boolean isSubType = false;
-                        isSubType = compareWithRequiredType(requiredType,
+                        boolean isSubType = compareWithRequiredType(requiredType,
                                 defaultType);
 
                         assertTrue("The NodeType returned by " +
@@ -274,8 +271,8 @@ public class NodeDefTest extends AbstractJCRTest {
      * Returns true if defaultType or one of its supertypes is of the same
      * NodeType as requiredType.
      *
-     * @param requiredType: one of the required primary types of a NodeDef
-     * @param defaultType:  the default primary type of a NodeDef
+     * @param requiredType one of the required primary types of a NodeDef
+     * @param defaultType  the default primary type of a NodeDef
      */
     private boolean compareWithRequiredType(NodeType requiredType,
                                             NodeType defaultType) {

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -42,6 +42,11 @@ public class SetPropertyLongTest extends AbstractJCRTest {
         testNode = testRootNode.addNode(nodeName1, testNodeType);
     }
 
+    protected void tearDown() throws Exception {
+        testNode = null;
+        super.tearDown();
+    }
+
     /**
      * Tests if adding a property with <code>Node.setProperty(String,
      * long)</code> works with <code>Session.save()</code>
@@ -49,7 +54,7 @@ public class SetPropertyLongTest extends AbstractJCRTest {
     public void testNewLongPropertySession() throws Exception {
         testNode.setProperty(propertyName1, l1);
         superuser.save();
-        assertEquals("Setting property with Node.setProperty(String, double) and Session.save() not working",
+        assertEquals("Setting property with Node.setProperty(String, long) and Session.save() not working",
                 new Long(l1),
                 new Long(testNode.getProperty(propertyName1).getLong()));
     }
@@ -63,7 +68,7 @@ public class SetPropertyLongTest extends AbstractJCRTest {
         superuser.save();
         testNode.setProperty(propertyName1, l2);
         superuser.save();
-        assertEquals("Modifying property with Node.setProperty(String, double) and Session.save() not working",
+        assertEquals("Modifying property with Node.setProperty(String, long) and Session.save() not working",
                 new Long(l2),
                 new Long(testNode.getProperty(propertyName1).getLong()));
     }
@@ -75,7 +80,7 @@ public class SetPropertyLongTest extends AbstractJCRTest {
     public void testNewLongPropertyParent() throws Exception {
         testNode.setProperty(propertyName1, l1);
         testRootNode.save();
-        assertEquals("Setting property with Node.setProperty(String, double) and parentNode.save() not working",
+        assertEquals("Setting property with Node.setProperty(String, long) and parentNode.save() not working",
                 new Long(l1),
                 new Long(testNode.getProperty(propertyName1).getLong()));
     }
@@ -89,7 +94,7 @@ public class SetPropertyLongTest extends AbstractJCRTest {
         testRootNode.save();
         testNode.setProperty(propertyName1, l2);
         testRootNode.save();
-        assertEquals("Modifying property with Node.setProperty(String, double) and parentNode.save() not working",
+        assertEquals("Modifying property with Node.setProperty(String, long) and parentNode.save() not working",
                 new Long(l2),
                 new Long(testNode.getProperty(propertyName1).getLong()));
     }

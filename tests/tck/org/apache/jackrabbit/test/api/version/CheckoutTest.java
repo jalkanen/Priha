@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -98,57 +98,6 @@ public class CheckoutTest extends AbstractVersionTest {
     public void testCheckoutTwiceDoesNotThrow() throws RepositoryException {
         versionableNode.checkout();
         versionableNode.checkout();
-    }
-
-    /**
-     * Test if Node.checkout() has no effect if the versionable node has been
-     * checked out before.
-     * <p/>
-     * As 'has no effect' means that the whole repository is in the exact same
-     * state as before and this isn't testable easily we test here only if the
-     * properties of the current node don't change (tested by a copy of the
-     * original node and compare the not autocreated properties (autocreated
-     * properties only because autocreated properties like UUID, creationdate
-     * etc will not be equal as expected)).
-     */
-    public void testCheckOutAlreadyCheckedOutNode() throws RepositoryException {
-        versionableNode.checkout();
-
-        // build a copy of versionableNode.
-        String copiedNodePath = testRoot + "/" + nodeName2;
-        superuser.getWorkspace().copy(versionableNode.getPath(), copiedNodePath);
-        Node copiedNode = (Node) superuser.getItem(copiedNodePath);
-
-        // perform 2nd checkout
-        versionableNode.checkout();
-
-        // check if the values of all not autocreated properties of
-        // the original node are equal to the ones of the copied node.
-        PropertyIterator propIt = versionableNode.getProperties();
-        while (propIt.hasNext()) {
-            Property origProp = propIt.nextProperty();
-            Property copyProp = copiedNode.getProperty(origProp.getName());
-            if (!origProp.getDefinition().isAutoCreated()) {
-                if (origProp.getDefinition().isMultiple()) {
-                    Value[] origValues = origProp.getValues();
-                    Value[] copyValues = copyProp.getValues();
-                    int i = 0;
-                    while (i < origValues.length) {
-                        if (!origValues[i].equals(copyValues[i])) {
-                            fail("After calling Node.checkout() on an already checket-out versionable node must not have changed property '" + origProp.getName() + "'.");
-                        }
-                        i++;
-                    }
-                } else {
-                    if (!origProp.getValue().equals(copyProp.getValue())) {
-                        fail("After calling Node.checkout() on an already checket-out versionable node must not have changed property '" + origProp.getName() + "'.");
-                    }
-                }
-            }
-        }
-
-        // success if passed: neither of the properties (exluding autocreated ones) changed
-        // between first and second checkout.
     }
 
     /**

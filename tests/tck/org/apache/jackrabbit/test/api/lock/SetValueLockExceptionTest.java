@@ -1,9 +1,10 @@
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -41,9 +42,6 @@ import java.io.ByteArrayInputStream;
  * @keywords level2
  */
 public class SetValueLockExceptionTest extends AbstractJCRTest {
-
-    private Session lockingSession;
-    private Session session;
 
     private Node testNode;
 
@@ -83,17 +81,16 @@ public class SetValueLockExceptionTest extends AbstractJCRTest {
      */
     public void setUp() throws Exception {
         super.setUp();
-        Repository repo = helper.getRepository();
-        if (repo.getDescriptor(Repository.OPTION_LOCKING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_LOCKING_SUPPORTED)) {
             throw new NotExecutableException("SetValueLockExceptionTest "
                     + "not executable: Locking not supported");
         }
         else {
-            lockingSession = superuser;
-
             // add a lockable node
             testNode = testRootNode.addNode(nodeName1, testNodeType);
-            testNode.addMixin(mixLockable);
+            if (needsMixin(testNode, mixLockable)) {
+                testNode.addMixin(mixLockable);
+            }
 
             // add properties
             dateValue = Calendar.getInstance();
@@ -101,15 +98,23 @@ public class SetValueLockExceptionTest extends AbstractJCRTest {
             binaryValue = createRandomString(10).getBytes();
 
             ByteArrayInputStream in = new ByteArrayInputStream(binaryValue);
+            ensureCanSetProperty(testNode, binaryProp, PropertyType.BINARY, false);
             testNode.setProperty(binaryProp, in);
+            ensureCanSetProperty(testNode, booleanProp, PropertyType.BOOLEAN, false);
             testNode.setProperty(booleanProp, booleanValue);
+            ensureCanSetProperty(testNode, dateProp, PropertyType.DATE, false);
             testNode.setProperty(dateProp, dateValue);
+            ensureCanSetProperty(testNode, doubleProp, PropertyType.DOUBLE, false);
             testNode.setProperty(doubleProp, doubleValue);
+            ensureCanSetProperty(testNode, longProp, PropertyType.LONG, false);
             testNode.setProperty(longProp, longValue);
             if (referenceNode != null) {
+                ensureCanSetProperty(testNode, referenceProp, PropertyType.REFERENCE, false);
                 testNode.setProperty(referenceProp, referenceNode);
             }
+            ensureCanSetProperty(testNode, stringProp, PropertyType.STRING, false);
             testNode.setProperty(stringProp, stringValue);
+            ensureCanSetProperty(testNode, multiStringProp, PropertyType.STRING, true);
             testNode.setProperty(multiStringProp, multiString);
             testRootNode.save();
         }
@@ -119,7 +124,9 @@ public class SetValueLockExceptionTest extends AbstractJCRTest {
         if (testNode.holdsLock()) {
             testNode.unlock();
         }
-        lockingSession.save();
+        testNode = null;
+        referenceNode = null;
+        superuser.save();
         super.tearDown();
     }
 
@@ -135,12 +142,11 @@ public class SetValueLockExceptionTest extends AbstractJCRTest {
         // lock if not yet locked
         if (!testNode.holdsLock()) {
             testNode.lock(false, false);
-            lockingSession.save();
+            superuser.save();
         }
 
         // another session
-        session = helper.getReadWriteSession();
-
+        Session session = helper.getReadWriteSession();
         try {
             Node node = (Node) session.getItem(testNode.getPath());
             Property prop = null;
@@ -208,6 +214,8 @@ public class SetValueLockExceptionTest extends AbstractJCRTest {
                     + "if the parent node holds a Lock.");
         } catch (LockException le) {
             // ok
+        } finally {
+            session.logout();
         }
     }
 
@@ -225,7 +233,6 @@ public class SetValueLockExceptionTest extends AbstractJCRTest {
      * Create a referenceable node under the testRootNode
      * or null if it is not possible to create one.
      * @param name
-     * @return
      * @throws RepositoryException
      */
     public Node createReferenceableNode(String name) throws RepositoryException {
@@ -233,16 +240,16 @@ public class SetValueLockExceptionTest extends AbstractJCRTest {
         try {
             Node node = testRootNode.getNode(name);
             node.remove();
-            lockingSession.save();
+            superuser.save();
         } catch (PathNotFoundException pnfe) {
             // ok
         }
         // a referenceable node
-        Node n1 = testRootNode.addNode(name);
+        Node n1 = testRootNode.addNode(name, testNodeType);
         if (n1.canAddMixin(mixReferenceable)) {
             n1.addMixin(mixReferenceable);
             // make sure jcr:uuid is available
-            lockingSession.save();
+            superuser.save();
             return n1;
         }
         else {

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -29,6 +29,8 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.NodeType;
+import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * <code>SetPropertyConstraintViolationExceptionTest</code> tests if
@@ -257,14 +259,19 @@ public class SetPropertyConstraintViolationExceptionTest extends AbstractJCRTest
         }
 
         // test of signature setProperty(String name, InputStream value)
+        InputStream in = valueNotSatisfied1.getStream();
         try {
-            node.setProperty(propDef.getName(), valueNotSatisfied1.getStream());
+            node.setProperty(propDef.getName(), in);
             node.save();
             fail("setProperty(String name, InputStream value) must throw a " +
                     "ConstraintViolationException if the change would violate a " +
                     "node type constraint either immediately or on save");
         } catch (ConstraintViolationException e) {
             // success
+        } finally {
+            try {
+                in.close();
+            } catch (IOException ignore) {}
         }
 
         // test of signature setProperty(String name, Value value)

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -21,7 +21,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.observation.Event;
 
 /**
- * Test cases for {@link javax.jcr.observation.Event.NODE_REMOVED} events.
+ * Test cases for {@link javax.jcr.observation.Event#NODE_REMOVED} events.
  * <p/>
  * Configuration requirements are:<br/>
  * The {@link #testRoot} must allow child nodes of type {@link #testNodeType}.
@@ -47,9 +47,9 @@ public class NodeRemovedTest extends AbstractObservationTest {
         testRootNode.save();
         foo.remove();
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
-        checkNodeRemoved(events, new String[]{nodeName1});
+        removeEventListener(result);
+        checkNodeRemoved(events, new String[]{nodeName1}, null);
     }
 
     /**
@@ -60,13 +60,13 @@ public class NodeRemovedTest extends AbstractObservationTest {
         EventResult result = new EventResult(log);
         addEventListener(result, Event.NODE_REMOVED);
         Node n1 = testRootNode.addNode(nodeName1, testNodeType);
-        n1.addNode(nodeName2);
+        n1.addNode(nodeName2, testNodeType);
         testRootNode.save();
         n1.remove();
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
-        checkNodeRemoved(events, new String[]{nodeName1, nodeName1 + "/" + nodeName2});
+        removeEventListener(result);
+        checkNodeRemoved(events, new String[]{nodeName1, nodeName1 + "/" + nodeName2}, null);
     }
 
 }

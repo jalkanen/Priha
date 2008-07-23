@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,15 +17,14 @@
 package org.apache.jackrabbit.test.api;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
+import org.apache.jackrabbit.test.NotExecutableException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Attr;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
 import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
 import javax.jcr.nodetype.NodeTypeManager;
@@ -39,6 +38,15 @@ import javax.jcr.RepositoryException;
 import javax.jcr.PathNotFoundException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Result;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Arrays;
@@ -127,31 +135,49 @@ abstract class AbstractImportXmlTest extends AbstractJCRTest {
     public void setUp() throws Exception {
         super.setUp();
 
-        dom = factory.newDocumentBuilder();
-        file = File.createTempFile("docViewImportTest", ".xml");
-        log.print("Tempfile: " + file.getAbsolutePath());
-        session = superuser;
-        workspace = session.getWorkspace();
-        // create the target nodes for the imports
-        target = testRoot + "/target";
-        targetNode = createAncestors(target);
-        refTarget = testRoot + "/refTarget";
-        refTargetNode = createAncestors(refTarget);
-
-        nsp = workspace.getNamespaceRegistry();
-        ntManager = workspace.getNodeTypeManager();
-
-        // construct a namespace not existing in the repository
-        unusedPrefix = getUnusedPrefix();
-        unusedURI = getUnusedURI();
-        referenced = nodeName1;
-        referencing = nodeName2;
-        // test if jcr:uuid of mix:referenceable node type is respected
-        respectMixRef = isMixRefRespected();
+        try {
+            dom = factory.newDocumentBuilder();
+            file = File.createTempFile("docViewImportTest", ".xml");
+            log.print("Tempfile: " + file.getAbsolutePath());
+            session = superuser;
+            workspace = session.getWorkspace();
+            // create the target nodes for the imports
+            target = testRoot + "/target";
+            targetNode = createAncestors(target);
+            refTarget = testRoot + "/refTarget";
+            refTargetNode = createAncestors(refTarget);
+  
+            nsp = workspace.getNamespaceRegistry();
+            ntManager = workspace.getNodeTypeManager();
+  
+            // construct a namespace not existing in the repository
+            unusedPrefix = getUnusedPrefix();
+            unusedURI = getUnusedURI();
+            referenced = nodeName1;
+            referencing = nodeName2;
+            // test if jcr:uuid of mix:referenceable node type is respected
+            respectMixRef = isMixRefRespected();
+        }
+        catch (Exception ex) {
+            if (file != null) {
+                file.delete();
+                file = null;
+            }
+            throw (ex);
+        }
     }
 
     public void tearDown() throws Exception {
-        file.delete();
+        if (file != null) {
+            file.delete();
+            file = null;
+        }
+        session = null;
+        workspace = null;
+        ntManager = null;
+        nsp = null;
+        targetNode = null;
+        refTargetNode = null;
         super.tearDown();
     }
 
@@ -237,7 +263,7 @@ abstract class AbstractImportXmlTest extends AbstractJCRTest {
      */
     public void importWithHandler(String absPath, Document document,
                                   int uuidBehaviour, boolean withWorkspace)
-            throws RepositoryException, SAXException, IOException {
+            throws Exception {
 
         serialize(document);
         BufferedInputStream bin = new BufferedInputStream(new FileInputStream(file));
@@ -248,11 +274,14 @@ abstract class AbstractImportXmlTest extends AbstractJCRTest {
         } else {
             handler = session.getImportContentHandler(absPath, uuidBehaviour);
         }
-        XMLReader parser = XMLReaderFactory.createXMLReader("org.apache.xerces.parsers.SAXParser");
-        parser.setContentHandler(handler);
 
-        InputSource source = new InputSource(bin);
-        parser.parse(source);
+        XMLReader reader = XMLReaderFactory.createXMLReader();
+        reader.setFeature("http://xml.org/sax/features/namespaces", true);
+        reader.setFeature("http://xml.org/sax/features/namespace-prefixes", false);
+
+        reader.setContentHandler(handler);
+        reader.parse(new InputSource(bin));
+
         if (!withWorkspace) {
             session.save();
         }
@@ -272,7 +301,12 @@ abstract class AbstractImportXmlTest extends AbstractJCRTest {
     public boolean isMixRefRespected() throws RepositoryException, IOException {
         boolean respected = false;
         if (supportsNodeType(mixReferenceable)) {
-            String uuid = createReferenceableNode(referenced);
+            String uuid;
+            try {
+                uuid = createReferenceableNode(referenced);
+            } catch (NotExecutableException e) {
+                return false;
+            }
             Document document = dom.newDocument();
             Element root = document.createElement(rootElem);
             root.setAttribute(XML_NS + ":jcr", NS_JCR_URI);
@@ -302,8 +336,10 @@ abstract class AbstractImportXmlTest extends AbstractJCRTest {
      * @param name
      * @return
      * @throws RepositoryException
+     * @throws NotExecutableException if the created node is not referenceable
+     * and cannot be made referenceable by adding mix:referenceable.
      */
-    public String createReferenceableNode(String name) throws RepositoryException {
+    public String createReferenceableNode(String name) throws RepositoryException, NotExecutableException {
         // remove a yet existing node at the target
         try {
             Node node = testRootNode.getNode(name);
@@ -313,7 +349,13 @@ abstract class AbstractImportXmlTest extends AbstractJCRTest {
             // ok
         }
         // a referenceable node
-        Node n1 = testRootNode.addNode(name);
+        Node n1 = testRootNode.addNode(name, testNodeType);
+        if (!n1.isNodeType(mixReferenceable) && !n1.canAddMixin(mixReferenceable)) {
+            n1.remove();
+            session.save();
+            throw new NotExecutableException("node type " + testNodeType +
+                    " does not support mix:referenceable");
+        }
         n1.addMixin(mixReferenceable);
         // make sure jcr:uuid is available
         testRootNode.save();
@@ -334,9 +376,10 @@ abstract class AbstractImportXmlTest extends AbstractJCRTest {
      * @throws RepositoryException
      * @throws IOException
      */
-    public void importRefNodeDocument(String absPath, String uuid, int uuidBehaviour,
-                                      boolean withWorkspace, boolean withHandler)
-            throws RepositoryException, IOException, SAXException {
+    public void importRefNodeDocument(
+            String absPath, String uuid, int uuidBehaviour,
+            boolean withWorkspace, boolean withHandler)
+            throws Exception {
 
         Document document = dom.newDocument();
         Element root = document.createElement(rootElem);
@@ -390,9 +433,16 @@ abstract class AbstractImportXmlTest extends AbstractJCRTest {
     public void serialize(Document document) throws IOException {
         BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(file));
         try {
-            OutputFormat format = new OutputFormat("xml", "UTF-8", true);
-            XMLSerializer serializer = new XMLSerializer(bos, format);
-            serializer.serialize(document);
+            // disable pretty printing/default line wrapping!
+            Transformer t = TransformerFactory.newInstance().newTransformer();
+            t.setOutputProperty(OutputKeys.METHOD, "xml");
+            t.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+            t.setOutputProperty(OutputKeys.INDENT, "no");
+            Source s = new DOMSource(document);
+            Result r = new StreamResult(bos);
+            t.transform(s, r);
+        } catch (TransformerException te) {
+            throw (IOException) new IOException(te.getMessage()).initCause(te);
         } finally {
             bos.close();
         }
@@ -420,7 +470,7 @@ abstract class AbstractImportXmlTest extends AbstractJCRTest {
         String prefix = TEST_PREFIX;
         int i = 0;
         while (prefixes.contains(prefix)) {
-            prefix += i++;
+            prefix = TEST_PREFIX + i++;
         }
         return prefix;
     }
@@ -436,7 +486,7 @@ abstract class AbstractImportXmlTest extends AbstractJCRTest {
         String uri = TEST_URI;
         int i = 0;
         while (uris.contains(uri)) {
-            uri += i++;
+            uri = TEST_URI + i++;
         }
         return uri;
     }

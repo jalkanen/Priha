@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -64,12 +64,12 @@ public class NodeMovedTest extends AbstractObservationTest {
         addEventListener(removeNodeListener, Event.NODE_REMOVED);
         superuser.move(n1.getPath(), testRoot + "/" + nodeName3);
         testRootNode.save();
-        removeEventListener(addNodeListener);
-        removeEventListener(removeNodeListener);
         Event[] added = addNodeListener.getEvents(DEFAULT_WAIT_TIMEOUT);
         Event[] removed = removeNodeListener.getEvents(DEFAULT_WAIT_TIMEOUT);
-        checkNodeAdded(added, new String[]{nodeName3});
-        checkNodeRemoved(removed, new String[]{nodeName1});
+        removeEventListener(addNodeListener);
+        removeEventListener(removeNodeListener);
+        checkNodeAdded(added, new String[]{nodeName3}, new String[]{nodeName3 + "/" + nodeName2});
+        checkNodeRemoved(removed, new String[]{nodeName1}, new String[]{nodeName1 + "/" + nodeName2});
     }
 
     /**
@@ -98,12 +98,12 @@ public class NodeMovedTest extends AbstractObservationTest {
         addEventListener(removeNodeListener, Event.NODE_REMOVED);
         superuser.move(n2.getPath(), testRoot + "/" + nodeName2);
         testRootNode.save();
-        removeEventListener(addNodeListener);
-        removeEventListener(removeNodeListener);
         Event[] added = addNodeListener.getEvents(DEFAULT_WAIT_TIMEOUT);
         Event[] removed = removeNodeListener.getEvents(DEFAULT_WAIT_TIMEOUT);
-        checkNodeAdded(added, new String[]{nodeName2});
-        checkNodeRemoved(removed, new String[]{nodeName1 + "/" + nodeName2});
+        removeEventListener(addNodeListener);
+        removeEventListener(removeNodeListener);
+        checkNodeAdded(added, new String[]{nodeName2}, null);
+        checkNodeRemoved(removed, new String[]{nodeName1 + "/" + nodeName2}, null);
     }
 
     /**
@@ -136,11 +136,11 @@ public class NodeMovedTest extends AbstractObservationTest {
         // remove n1
         n1.remove();
         testRootNode.save();
-        removeEventListener(addNodeListener);
-        removeEventListener(removeNodeListener);
         Event[] added = addNodeListener.getEvents(DEFAULT_WAIT_TIMEOUT);
         Event[] removed = removeNodeListener.getEvents(DEFAULT_WAIT_TIMEOUT);
-        checkNodeAdded(added, new String[]{nodeName3 + "/" + nodeName2});
-        checkNodeRemoved(removed, new String[]{nodeName1 + "/" + nodeName2, nodeName1});
+        removeEventListener(addNodeListener);
+        removeEventListener(removeNodeListener);
+        checkNodeAdded(added, new String[]{nodeName3 + "/" + nodeName2}, null);
+        checkNodeRemoved(removed, new String[]{nodeName1 + "/" + nodeName2, nodeName1}, null);
     }
 }

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -60,20 +60,16 @@ abstract class AbstractWorkspaceSameNameSibsTest extends AbstractWorkspaceCopyBe
         // make sure 'sameNameSibsTrue' nodetype is properly defined
         try {
             sameNameSibsTrueNodeType = ntMgr.getNodeType(getProperty(PROP_SAME_NAME_SIBS_TRUE_NODE_TYPE));
-            if (sameNameSibsTrueNodeType == null) {
-                fail("Property 'sameNameSibsTrueNodeType' does not define a nodetype where sameNameSibs are allowed: '" + sameNameSibsTrueNodeType.getName() + "'");
-            } else {
-                NodeDefinition[] childNodeDefs = sameNameSibsTrueNodeType.getDeclaredChildNodeDefinitions();
-                boolean isSameNameSibs = false;
-                for (int i = 0; i < childNodeDefs.length; i++) {
-                    if (childNodeDefs[i].allowsSameNameSiblings()) {
-                        isSameNameSibs = true;
-                        break;
-                    }
+            NodeDefinition[] childNodeDefs = sameNameSibsTrueNodeType.getDeclaredChildNodeDefinitions();
+            boolean isSameNameSibs = false;
+            for (int i = 0; i < childNodeDefs.length; i++) {
+                if (childNodeDefs[i].allowsSameNameSiblings()) {
+                    isSameNameSibs = true;
+                    break;
                 }
-                if (!isSameNameSibs) {
-                    throw new NotExecutableException("Property 'sameNameSibsTrueNodeType' does not define a nodetype where sameNameSibs are allowed: '" + sameNameSibsTrueNodeType.getName() + "'");
-                }
+            }
+            if (!isSameNameSibs) {
+                throw new NotExecutableException("Property 'sameNameSibsTrueNodeType' does not define a nodetype where sameNameSibs are allowed: '" + sameNameSibsTrueNodeType.getName() + "'");
             }
         } catch (NoSuchNodeTypeException e) {
             fail("Property 'sameNameSibsTrueNodeType' does not define an existing nodetype: '" + sameNameSibsTrueNodeType + "'");
@@ -83,24 +79,26 @@ abstract class AbstractWorkspaceSameNameSibsTest extends AbstractWorkspaceCopyBe
         // make sure 'sameNameSibsFalse' nodetype is properly defined
         try {
             sameNameSibsFalseNodeType = ntMgr.getNodeType(getProperty(PROP_SAME_NAME_SIBS_FALSE_NODE_TYPE));
-            if (sameNameSibsFalseNodeType == null) {
-                fail("Property 'sameNameSibsFalseNodeType' does define a nodetype where sameNameSibs are allowed: '" + sameNameSibsFalseNodeType.getName() + "'");
-            } else {
-                NodeDefinition[] childNodeDefs = sameNameSibsFalseNodeType.getDeclaredChildNodeDefinitions();
-                boolean isSameNameSibs = true;
-                for (int i = 0; i < childNodeDefs.length; i++) {
-                    if (!childNodeDefs[i].allowsSameNameSiblings()) {
-                        isSameNameSibs = false;
-                        break;
-                    }
+            NodeDefinition[] childNodeDefs = sameNameSibsFalseNodeType.getDeclaredChildNodeDefinitions();
+            boolean isSameNameSibs = true;
+            for (int i = 0; i < childNodeDefs.length; i++) {
+                if (!childNodeDefs[i].allowsSameNameSiblings()) {
+                    isSameNameSibs = false;
+                    break;
                 }
-                if (isSameNameSibs) {
-                    fail("Property 'sameNameSibsFalseNodeType' does define a nodetype where sameNameSibs are allowed: '" + sameNameSibsFalseNodeType.getName() + "'");
-                }
+            }
+            if (isSameNameSibs) {
+                fail("Property 'sameNameSibsFalseNodeType' does define a nodetype where sameNameSibs are not allowed: '" + sameNameSibsFalseNodeType.getName() + "'");
             }
         } catch (NoSuchNodeTypeException e) {
             fail("Property 'sameNameSibsFalseNodeType' does not define an existing nodetype: '" + sameNameSibsFalseNodeType + "'");
         }
 
+    }
+
+    protected void tearDown() throws Exception {
+        sameNameSibsTrueNodeType = null;
+        sameNameSibsFalseNodeType = null;
+        super.tearDown();
     }
 }

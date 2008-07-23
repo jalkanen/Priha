@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -19,6 +19,7 @@ package org.apache.jackrabbit.test;
 import junit.framework.TestResult;
 
 import javax.jcr.Node;
+import javax.jcr.PropertyType;
 import javax.jcr.Session;
 import javax.jcr.NodeIterator;
 import javax.jcr.RepositoryException;
@@ -26,6 +27,12 @@ import javax.jcr.NamespaceRegistry;
 import javax.jcr.Repository;
 import javax.jcr.NamespaceException;
 import javax.jcr.RangeIterator;
+import javax.jcr.Value;
+import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.PropertyDefinition;
+
 import java.util.StringTokenizer;
 import java.util.Random;
 import java.util.List;
@@ -95,6 +102,11 @@ public abstract class AbstractJCRTest extends JUnitTest {
      * JCR Name jcr:frozenNode using the namespace resolver of the current session.
      */
     protected String jcrFrozenNode;
+
+    /**
+     * JCR Name jcr:frozenUuid using the namespace resolver of the current session.
+     */
+    protected String jcrFrozenUuid;
 
     /**
      * JCR Name jcr:rootVersion using the namespace resolver of the current session.
@@ -192,6 +204,11 @@ public abstract class AbstractJCRTest extends JUnitTest {
     protected String testNodeType;
 
     /**
+     * A node type that does not allow any child nodes, such as nt:base.
+     */
+    protected String testNodeTypeNoChildren;
+
+    /**
      * Name of a node that will be created during a test case.
      */
     protected String nodeName1;
@@ -252,6 +269,7 @@ public abstract class AbstractJCRTest extends JUnitTest {
         // cut off '/' to build testPath
         testPath = testRoot.substring(1);
         testNodeType = getProperty(RepositoryStub.PROP_NODETYPE);
+        testNodeTypeNoChildren = getProperty(RepositoryStub.PROP_NODETYPENOCHILDREN);
         // setup node names
         nodeName1 = getProperty(RepositoryStub.PROP_NODE_NAME1);
         if (nodeName1 == null) {
@@ -292,6 +310,7 @@ public abstract class AbstractJCRTest extends JUnitTest {
         jcrCreated = superuser.getNamespacePrefix(NS_JCR_URI) + ":created";
         jcrVersionHistory = superuser.getNamespacePrefix(NS_JCR_URI) + ":versionHistory";
         jcrFrozenNode = superuser.getNamespacePrefix(NS_JCR_URI) + ":frozenNode";
+        jcrFrozenUuid = superuser.getNamespacePrefix(NS_JCR_URI) + ":frozenUuid";
         jcrRootVersion = superuser.getNamespacePrefix(NS_JCR_URI) + ":rootVersion";
         jcrBaseVersion = superuser.getNamespacePrefix(NS_JCR_URI) + ":baseVersion";
         jcrUUID = superuser.getNamespacePrefix(NS_JCR_URI) + ":uuid";
@@ -310,7 +329,7 @@ public abstract class AbstractJCRTest extends JUnitTest {
         ntQuery = superuser.getNamespacePrefix(NS_NT_URI) + ":query";
 
         // setup custom namespaces
-        if (helper.getRepository().getDescriptor(Repository.LEVEL_2_SUPPORTED) != null) {
+        if (isSupported(Repository.LEVEL_2_SUPPORTED)) {
             NamespaceRegistry nsReg = superuser.getWorkspace().getNamespaceRegistry();
             String namespaces = getProperty(RepositoryStub.PROP_NAMESPACES);
             if (namespaces != null) {
@@ -334,58 +353,44 @@ public abstract class AbstractJCRTest extends JUnitTest {
                 // test root is the root node
                 testRootNode = superuser.getRootNode();
             } else if (!superuser.getRootNode().hasNode(testPath)) {
+                cleanUp();
                 fail("Workspace does not contain test data at: " + testRoot);
             } else {
                 testRootNode = superuser.getRootNode().getNode(testPath);
             }
-        } else {
-            Node root = superuser.getRootNode();
-            if (root.hasNode(testPath)) {
-                // clean test root
-                testRootNode = root.getNode(testPath);
-                for (NodeIterator children = testRootNode.getNodes(); children.hasNext();) {
-                    children.nextNode().remove();
-                }
-            } else {
-                // create nodes to testPath
-                StringTokenizer names = new StringTokenizer(testPath, "/");
-                Node currentNode = root;
-                while (names.hasMoreTokens()) {
-                    String name = names.nextToken();
-                    if (currentNode.hasNode(name)) {
-                        currentNode = currentNode.getNode(name);
-                    } else {
-                        currentNode = currentNode.addNode(name, testNodeType);
-                    }
-                }
-                testRootNode = currentNode;
+        } else if (isSupported(Repository.LEVEL_2_SUPPORTED)) {
+            testRootNode = cleanUpTestRoot(superuser);
+            // also clean second workspace
+            Session s = helper.getSuperuserSession(workspaceName);
+            try {
+                cleanUpTestRoot(s);
+            } finally {
+                s.logout();
             }
-            root.save();
+        } else {
+            cleanUp();
+            fail("Test case requires level 2 support.");
         }
     }
 
-    protected void tearDown() throws Exception {
+    protected void cleanUp() throws Exception {
         if (superuser != null) {
             try {
-                if (!isReadOnly) {
-                    // do a 'rollback'
-                    superuser.refresh(false);
-                    Node root = superuser.getRootNode();
-                    if (root.hasNode(testPath)) {
-                        // clean test root
-                        testRootNode = root.getNode(testPath);
-                        for (NodeIterator children = testRootNode.getNodes(); children.hasNext();) {
-                            children.nextNode().remove();
-                        }
-                        root.save();
-                    }
+                if (!isReadOnly && isSupported(Repository.LEVEL_2_SUPPORTED)) {
+                    cleanUpTestRoot(superuser);
                 }
             } catch (Exception e) {
                 log.println("Exception in tearDown: " + e.toString());
             } finally {
                 superuser.logout();
+                superuser = null;
             }
         }
+        testRootNode = null;
+    }
+    
+    protected void tearDown() throws Exception {
+        cleanUp();
         super.tearDown();
     }
 
@@ -513,4 +518,153 @@ public abstract class AbstractJCRTest extends JUnitTest {
         return tmp.toString();
     }
 
+    /**
+     * Returns <code>true</code> if this repository support a certain optional
+     * feature; otherwise <code>false</code> is returned. If there is no
+     * such <code>descriptorKey</code> present in the repository, this method
+     * also returns false.
+     *
+     * @param descriptorKey the descriptor key.
+     * @return <code>true</code> if the option is supported.
+     * @throws RepositoryException if an error occurs.
+     */
+    protected boolean isSupported(String descriptorKey) throws RepositoryException {
+        return "true".equals(helper.getRepository().getDescriptor(descriptorKey));
+    }
+    
+    /**
+     * Checks that the repository supports multiple workspace, otherwise aborts with
+     * {@link NotExecutableException}.
+     * @throws NotExecutableException when the repository only supports a single
+     * workspace
+     */
+    protected void ensureMultipleWorkspacesSupported() throws RepositoryException, NotExecutableException {
+        String workspacenames[] = superuser.getWorkspace().getAccessibleWorkspaceNames();
+        if (workspacenames == null || workspacenames.length < 2) {
+            throw new NotExecutableException("This repository does not seem to support multiple workspaces.");
+        }
+    }
+
+
+    private boolean canSetProperty(NodeType nodeType, String propertyName, int propertyType, boolean isMultiple) {
+        PropertyDefinition propDefs[] = nodeType.getPropertyDefinitions();
+
+        for (int i = 0; i < propDefs.length; i++) {
+            if (propDefs[i].getName().equals(propertyName) || propDefs[i].getName().equals("*")) {
+                if ((propDefs[i].getRequiredType() == propertyType || propDefs[i].getRequiredType() == PropertyType.UNDEFINED)
+                    && propDefs[i].isMultiple() == isMultiple) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean canSetProperty(Node node, String propertyName, int propertyType, boolean isMultiple) throws RepositoryException {
+
+        if (canSetProperty(node.getPrimaryNodeType(), propertyName, propertyType, isMultiple)) {
+            return true;
+        }
+        else {
+            NodeType mixins[] = node.getMixinNodeTypes();
+            boolean canSetIt = false;
+            for (int i = 0; i < mixins.length && !canSetIt; i++) {
+                canSetIt |= canSetProperty(mixins[i], propertyName, propertyType, isMultiple);
+            }
+            return canSetIt;
+        }
+    }
+
+    /**
+     * Checks that the repository can set the property to the required type, otherwise aborts with
+     * {@link NotExecutableException}.
+     * @throws NotExecutableException when setting the property to the required
+     * type is not supported
+     */
+    protected void ensureCanSetProperty(Node node, String propertyName, int propertyType, boolean isMultiple) throws NotExecutableException, RepositoryException {
+
+        if (! canSetProperty(node, propertyName, propertyType, isMultiple)) {
+            throw new NotExecutableException("configured property name " + propertyName + " can not be set on node " + node.getPath());
+        }
+    }
+
+    /**
+     * Checks that the repository can set the property to the required type, otherwise aborts with
+     * {@link NotExecutableException}.
+     * @throws NotExecutableException when setting the property to the required
+     * type is not supported
+     */
+    protected void ensureCanSetProperty(Node node, String propertyName, Value value) throws NotExecutableException, RepositoryException {
+        ensureCanSetProperty(node, propertyName, value.getType(), false);
+    }
+
+    /**
+     * Checks that the repository can set the property to the required type, otherwise aborts with
+     * {@link NotExecutableException}.
+     * @throws NotExecutableException when setting the property to the required
+     * type is not supported
+     */
+    protected void ensureCanSetProperty(Node node, String propertyName, Value[] values) throws NotExecutableException, RepositoryException {
+      
+        int propertyType = values.length == 0 ? PropertyType.UNDEFINED : values[0].getType();
+        
+        if (! canSetProperty(node, propertyName, propertyType, true)) {
+            throw new NotExecutableException("configured property name " + propertyName + " can not be set on node " + node.getPath());
+        }
+    }
+
+    /**
+     * Checks whether the node already has the specified mixin node type
+     */
+    protected boolean needsMixin(Node node, String mixin) throws RepositoryException {
+        return ! node.getSession().getWorkspace().getNodeTypeManager().getNodeType(node.getPrimaryNodeType().getName()).isNodeType(mixin);
+    }
+
+    /**
+     * Reverts any pending changes made by <code>s</code> and deletes any nodes
+     * under {@link #testRoot}. If there is no node at {@link #testRoot} then
+     * the necessary nodes are created.
+     *
+     * @param s the session to clean up.
+     * @return the {@link javax.jcr.Node} that represents the test root.
+     * @throws RepositoryException if an error occurs.
+     */
+    protected Node cleanUpTestRoot(Session s) throws RepositoryException {
+        // do a 'rollback'
+        s.refresh(false);
+        Node root = s.getRootNode();
+        Node testRootNode;
+        if (root.hasNode(testPath)) {
+            // clean test root
+            testRootNode = root.getNode(testPath);
+            for (NodeIterator children = testRootNode.getNodes(); children.hasNext();) {
+                Node child = children.nextNode();
+                NodeDefinition nodeDef = child.getDefinition();
+                if (!nodeDef.isMandatory() && !nodeDef.isProtected()) {
+                    // try to remove child
+                    try {
+                        child.remove();
+                    } catch (ConstraintViolationException e) {
+                        log.println("unable to remove node: " + child.getPath());
+                    }
+                }
+            }
+        } else {
+            // create nodes to testPath
+            StringTokenizer names = new StringTokenizer(testPath, "/");
+            Node currentNode = root;
+            while (names.hasMoreTokens()) {
+                String name = names.nextToken();
+                if (currentNode.hasNode(name)) {
+                    currentNode = currentNode.getNode(name);
+                } else {
+                    currentNode = currentNode.addNode(name, testNodeType);
+                }
+            }
+            testRootNode = currentNode;
+        }
+        s.save();
+        return testRootNode;
+    }
 }

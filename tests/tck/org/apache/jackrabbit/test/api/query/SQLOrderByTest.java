@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -47,11 +47,11 @@ public class SQLOrderByTest extends AbstractQueryTest {
         isReadOnly = true;
         super.setUp();
         // setup common base statement
-        StringBuffer tmp = new StringBuffer("SELECT ").append(propertyName1);
-        tmp.append(" FROM ").append(testNodeType);
-        tmp.append(" WHERE ").append(propertyName1).append(" IS NOT NULL");
+        StringBuffer tmp = new StringBuffer("SELECT ").append(escapeIdentifierForSQL(propertyName1));
+        tmp.append(" FROM ").append(escapeIdentifierForSQL(testNodeType));
+        tmp.append(" WHERE ").append(escapeIdentifierForSQL(propertyName1)).append(" IS NOT NULL");
         tmp.append(" ORDER BY ");
-        tmp.append(propertyName1);
+        tmp.append(escapeIdentifierForSQL(propertyName1));
         baseStatement = tmp.toString();
     }
 

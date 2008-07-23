@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -39,27 +39,27 @@ import java.util.ArrayList;
 public abstract class AbstractQueryTest extends AbstractJCRTest {
 
     /**
-     * Resolved QName for jcr:score
+     * Resolved Name for jcr:score
      */
     protected String jcrScore;
 
     /**
-     * Resolved QName for jcr:path
+     * Resolved Name for jcr:path
      */
     protected String jcrPath;
 
     /**
-     * Resolved QName for jcr:root
+     * Resolved Name for jcr:root
      */
     protected String jcrRoot;
 
     /**
-     * Resolved QName for jcr:contains
+     * Resolved Name for jcr:contains
      */
     protected String jcrContains;
 
     /**
-     * Resolved QName for jcr:deref
+     * Resolved Name for jcr:deref
      */
     protected String jcrDeref;
 
@@ -150,6 +150,13 @@ public abstract class AbstractQueryTest extends AbstractJCRTest {
         long count = itr.getSize();
         if (count == 0) {
             log.println(" NONE");
+        } else if (count == -1) {
+            // have to count in a loop
+            count = 0;
+            while (itr.hasNext()) {
+                itr.nextRow();
+                count++;
+            }
         }
         assertEquals("Wrong hit count.", hits, count);
     }
@@ -205,23 +212,23 @@ public abstract class AbstractQueryTest extends AbstractJCRTest {
     protected void evaluateResultOrder(QueryResult queryResult, String propName,
                                        boolean descending)
             throws RepositoryException, NotExecutableException {
-        RowIterator rows = queryResult.getRows();
-        if (getSize(rows) < 2) {
+        NodeIterator nodes = queryResult.getNodes();
+        if (getSize(nodes) < 2) {
             fail("Workspace does not contain sufficient content to test ordering on result nodes.");
         }
-        // need to re-aquire rows, {@link #getSize} may consume elements.
-        rows = queryResult.getRows();
+        // need to re-aquire nodes, {@link #getSize} may consume elements.
+        nodes = queryResult.getNodes();
         int changeCnt = 0;
-        String last = "";
-        while (rows.hasNext()) {
-            String value = rows.nextRow().getValue(propName).getString();
+        String last = descending ? "\uFFFF" : "";
+        while (nodes.hasNext()) {
+            String value = nodes.nextNode().getProperty(propName).getString();
             int cp = value.compareTo(last);
             // if value changed evaluate if the ordering is correct
             if (cp != 0) {
                 changeCnt++;
-                if (cp == 1 && descending) {
+                if (cp > 0 && descending) {
                     fail("Repository doesn't order properly descending");
-                } else if (cp == -1 && !descending) {
+                } else if (cp < 0 && !descending) {
                     fail("Repository doesn't order properly ascending");
                 }
             }
@@ -285,15 +292,6 @@ public abstract class AbstractQueryTest extends AbstractJCRTest {
             assertTrue(path + " is not expected to be part of the result set", expectedPaths.contains(path));
         }
     }
-    /**
-     * Test if the requested Descriptor is registred at repository
-     *
-     * @param descriptor to be searched.
-     * @return true if descriptor is contained in the repository
-     */
-    protected boolean hasDescriptor(String descriptor) {
-        return superuser.getRepository().getDescriptor(descriptor) != null;
-    }
 
     /**
      * Returns the nodes in <code>it</code> as an array of Nodes.
@@ -306,5 +304,21 @@ public abstract class AbstractQueryTest extends AbstractJCRTest {
             nodes.add(it.nextNode());
         }
         return (Node[]) nodes.toArray(new Node[nodes.size()]);
+    }
+    
+    /**
+     * Escape an identifier suitable for the SQL parser
+     * @TODO currently only handles dash character 
+     */
+    protected String escapeIdentifierForSQL(String identifier) {
+      
+        boolean needsEscaping = identifier.indexOf('-') >= 0;
+        
+        if (!needsEscaping) {
+            return identifier;
+        }
+        else {
+            return '"' + identifier + '"';
+        }
     }
 }

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -72,6 +72,13 @@ public class SetValueDateTest extends AbstractJCRTest {
         superuser.save();
     }
 
+    protected void tearDown() throws Exception {
+        value = null;
+        node = null;
+        property1 = null;
+        super.tearDown();
+    }
+
     /**
      * Test the persistence of a property modified with an DateValues parameter
      * and saved from the Session
@@ -79,7 +86,7 @@ public class SetValueDateTest extends AbstractJCRTest {
     public void testDateSession() throws RepositoryException {
         property1.setValue(value);
         superuser.save();
-        assertEquals("Date node property not saved", value.getDate(), property1.getValue().getDate());
+        assertEquals("Date node property not saved", value, property1.getValue());
     }
 
     /**
@@ -89,7 +96,8 @@ public class SetValueDateTest extends AbstractJCRTest {
     public void testDateParent() throws RepositoryException {
         property1.setValue(value.getDate());
         node.save();
-        assertEquals("Date node property not saved", value.getDate(), property1.getValue().getDate());
+        Value orig = superuser.getValueFactory().createValue(value.getDate());
+        assertEquals("Date node property not saved", orig, property1.getValue());
     }
 
     /**

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -56,4 +56,27 @@ public class OnParentVersionIgnoreTest extends AbstractOnParentVersionTest {
 
         assertEquals("On restore of a OnParentVersion-IGNORE property P, the current value of P must be left unchanged.", p.getString(), newPropValue);
     }
+
+    /**
+     * Test the restore of a OnParentVersion-Ignore node
+     *
+     * @throws javax.jcr.RepositoryException
+     */
+    public void testRestoreNode() throws RepositoryException {
+
+        versionableNode.checkout();
+        Version v = versionableNode.checkin();
+        versionableNode.checkout();
+
+        // add 'ignore' child
+        String childName = addChildNode(OPVAction).getName();
+        versionableNode.save();
+        
+        versionableNode.restore(v, false);
+
+        if (!versionableNode.hasNode(childName)) {
+            fail("On restore of a OnParentVersion-Ignore child node, the node needs to be untouched.");
+        }
+    }
+
 }

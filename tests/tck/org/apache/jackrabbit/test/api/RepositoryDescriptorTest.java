@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -39,13 +39,21 @@ public class RepositoryDescriptorTest extends AbstractJCRTest {
     private static final Set requiredDescriptorKeys = new HashSet();
 
     static {
-        requiredDescriptorKeys.add(Repository.SPEC_VERSION_DESC);
         requiredDescriptorKeys.add(Repository.LEVEL_1_SUPPORTED);
-        requiredDescriptorKeys.add(Repository.SPEC_NAME_DESC);
+        requiredDescriptorKeys.add(Repository.LEVEL_2_SUPPORTED);
+        requiredDescriptorKeys.add(Repository.OPTION_LOCKING_SUPPORTED);
+        requiredDescriptorKeys.add(Repository.OPTION_OBSERVATION_SUPPORTED);
+        requiredDescriptorKeys.add(Repository.OPTION_QUERY_SQL_SUPPORTED);
+        requiredDescriptorKeys.add(Repository.OPTION_TRANSACTIONS_SUPPORTED);
+        requiredDescriptorKeys.add(Repository.OPTION_VERSIONING_SUPPORTED);
+        requiredDescriptorKeys.add(Repository.QUERY_XPATH_DOC_ORDER);
+        requiredDescriptorKeys.add(Repository.QUERY_XPATH_POS_INDEX);
+        requiredDescriptorKeys.add(Repository.REP_NAME_DESC);
         requiredDescriptorKeys.add(Repository.REP_VENDOR_DESC);
         requiredDescriptorKeys.add(Repository.REP_VENDOR_URL_DESC);
         requiredDescriptorKeys.add(Repository.REP_VERSION_DESC);
-        requiredDescriptorKeys.add(Repository.REP_NAME_DESC);
+        requiredDescriptorKeys.add(Repository.SPEC_NAME_DESC);
+        requiredDescriptorKeys.add(Repository.SPEC_VERSION_DESC);
     }
 
     /** The session for the tests */
@@ -66,6 +74,7 @@ public class RepositoryDescriptorTest extends AbstractJCRTest {
     protected void tearDown() throws Exception {
         if (session != null) {
             session.logout();
+            session = null;
         }
         super.tearDown();
     }

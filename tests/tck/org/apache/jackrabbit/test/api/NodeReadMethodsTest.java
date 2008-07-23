@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -81,7 +81,9 @@ public class NodeReadMethodsTest extends AbstractJCRTest {
     protected void tearDown() throws Exception {
         if (session != null) {
             session.logout();
+            session = null;
         }
+        childNode = null;
         super.tearDown();
     }
 
@@ -112,10 +114,10 @@ public class NodeReadMethodsTest extends AbstractJCRTest {
     /**
      * Tests if getName() returns same as last name returned by getPath()
      */
-    public void testGetName() throws RepositoryException {
-        assertEquals("getName() of root must be an empty string",
-                "",
-                session.getRootNode().getName());
+    public void testGetName() throws RepositoryException, NotExecutableException {
+        if (childNode == null) {
+            throw new NotExecutableException("Workspace does not have sufficient content to run this test.");
+        }
 
         // build name from path
         String path = childNode.getPath();
@@ -497,7 +499,7 @@ public class NodeReadMethodsTest extends AbstractJCRTest {
 
         // test that an empty NodeIterator is returned
         // when the pattern is not matching any child node
-        String pattern0 = notExistingPropertyName.toString();
+        String pattern0 = notExistingPropertyName.toString().replaceAll(":", "");
         NodeIterator properties0 = node.getNodes(pattern0);
         try {
             properties0.nextNode();
@@ -638,7 +640,7 @@ public class NodeReadMethodsTest extends AbstractJCRTest {
         Node node = locateNodeWithoutPrimaryItem(testRootNode);
 
         if (node == null) {
-            throw new NotExecutableException("Workspace does not contain a node with primary item defined");
+            throw new NotExecutableException("Workspace does not contain a node without primary item defined");
         }
 
         try {
@@ -771,14 +773,14 @@ public class NodeReadMethodsTest extends AbstractJCRTest {
                     node.hasNode(n.getName()));
             notExistingNodeName.append(n.getName() + "X");
         }
-        if (notExistingNodeName.equals("")) {
+        if (notExistingNodeName.toString().equals("")) {
             throw new NotExecutableException("Workspace does not have sufficient content for this test. " +
                     "Root node must have at least one child node.");
         }
 
         assertFalse("hasNode(String relPath) returns true although " +
                 "node at relPath is not existing",
-                node.hasNode(notExistingNodeName.toString()));
+                node.hasNode(notExistingNodeName.toString().replaceAll(":", "")));
     }
 
     /**
@@ -824,13 +826,13 @@ public class NodeReadMethodsTest extends AbstractJCRTest {
                     node.hasProperty(p.getName()));
             notExistingPropertyName.append(p.getName() + "X");
         }
-        if (notExistingPropertyName.equals("")) {
+        if (notExistingPropertyName.toString().equals("")) {
             fail("Root node must at least have one property: jcr:primaryType");
         }
 
         assertFalse("node.hasProperty(\"relPath\") returns true " +
                 "although property at relPath is not existing",
-                node.hasProperty(notExistingPropertyName.toString()));
+                node.hasProperty(notExistingPropertyName.toString().replaceAll(":", "")));
     }
 
     /**
@@ -978,7 +980,7 @@ public class NodeReadMethodsTest extends AbstractJCRTest {
 
         NodeIterator nodes = node.getNodes();
         while (nodes.hasNext()) {
-            Node n = locateNodeWithPrimaryItem(nodes.nextNode());
+            Node n = locateNodeWithoutPrimaryItem(nodes.nextNode());
             if (n != null) {
                 return n;
             }
@@ -1010,7 +1012,7 @@ public class NodeReadMethodsTest extends AbstractJCRTest {
                 return n;
             } else {
                 Node returnedNode = locateNodeWithSameNameSiblings(n);
-                if (n != null) {
+                if (returnedNode != null) {
                     return returnedNode;
                 }
             }

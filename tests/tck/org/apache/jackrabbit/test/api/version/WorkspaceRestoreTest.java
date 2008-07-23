@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -38,9 +38,15 @@ import javax.jcr.ItemExistsException;
  * @executeClass org.apache.jackrabbit.test.api.version.WorkspaceRestoreTest
  * @keywords versioning
  */
-public class WorkspaceRestoreTest extends RestoreTest {
+public class WorkspaceRestoreTest extends AbstractVersionTest {
 
     Session wSuperuser;
+
+    Version version;
+    Version version2;
+    Version rootVersion;
+
+    Node versionableNode2;
     Node wTestRoot;
     Node wVersionableNode;
     Node wVersionableNode2;
@@ -51,6 +57,18 @@ public class WorkspaceRestoreTest extends RestoreTest {
     protected void setUp() throws Exception {
         super.setUp();
 
+        version = versionableNode.checkin();
+        versionableNode.checkout();
+        version2 = versionableNode.checkin();
+        versionableNode.checkout();
+        rootVersion = versionableNode.getVersionHistory().getRootVersion();
+
+        // build a second versionable node below the testroot
+        try {
+            versionableNode2 = createVersionableNode(testRootNode, nodeName2, versionableNodeType);
+        } catch (RepositoryException e) {
+            fail("Failed to create a second versionable node: " + e.getMessage());
+        }
         try {
             wSuperuser = helper.getSuperuserSession(workspaceName);
         } catch (RepositoryException e) {
@@ -112,13 +130,24 @@ public class WorkspaceRestoreTest extends RestoreTest {
     protected void tearDown() throws Exception {
         try {
             // remove all versionable nodes below the test
+            versionableNode2.remove();
             wVersionableNode.remove();
             wVersionableNode2.remove();
             wTestRoot.save();
+        } finally {
             if (wSuperuser != null) {
                 wSuperuser.logout();
+                wSuperuser = null;
             }
-        } finally {
+            version = null;
+            version2 = null;
+            rootVersion = null;
+            versionableNode2 = null;
+            wTestRoot = null;
+            wVersionableNode = null;
+            wVersionableNode2 = null;
+            wVersionableChildNode = null;
+            wChildVersion = null;
             super.tearDown();
         }
     }

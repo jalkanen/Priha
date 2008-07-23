@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -72,6 +72,27 @@ public class SetPropertyValueTest extends AbstractJCRTest {
         vArrayWithNulls[3] = superuser.getValueFactory().createValue("z");
     }
 
+    protected void tearDown() throws Exception {
+        testNode = null;
+        v1 = null;
+        v2 = null;
+        for (int i = 0; i < vArray1.length; i++) {
+            vArray1[i] = null;
+        }
+        for (int i = 0; i < vArray2.length; i++) {
+            vArray2[i] = null;
+        }
+        for (int i = 0; i < vArrayMixed.length; i++) {
+            vArrayMixed[i] = null;
+        }
+        for (int i = 0; i < vArrayNull.length; i++) {
+            vArrayNull[i] = null;
+        }
+        for (int i = 0; i < vArrayWithNulls.length; i++) {
+            vArrayWithNulls[i] = null;
+        }
+        super.tearDown();
+    }
 
     /**
      * Value
@@ -374,11 +395,11 @@ public class SetPropertyValueTest extends AbstractJCRTest {
      * the value array by removing all null values
      */
     public void testCompactValueArrayWithNulls() throws Exception {
-        testRootNode.setProperty(propertyName2, vArrayWithNulls);
+        testNode.setProperty(propertyName2, vArrayWithNulls);
         superuser.save();
         assertEquals("Node.setProperty(String, valueArrayWithNulls[]) did not compact the value array by removing the null values",
                 2,
-                testRootNode.getProperty(propertyName2).getValues().length);
+                testNode.getProperty(propertyName2).getValues().length);
     }
 
     /**

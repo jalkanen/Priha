@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -63,6 +63,13 @@ public class NodeUUIDTest extends AbstractJCRTest {
 
         // create a node with a jcr:uuid property to serve as target
         Node refTargetNode = defaultRootNode.addNode(nodeName2, getProperty("nodetype2"));
+        // make sure, mix:referenceable is effective. some impls may require a save() call.
+        defaultRootNode.save();
+
+
+        // abort test if the repository does not allow setting
+        // reference properties on this node
+        ensureCanSetProperty(referencingNode, propertyName1, referencingNode.getSession().getValueFactory().createValue(refTargetNode));
 
         // set the reference
         referencingNode.setProperty(propertyName1, refTargetNode);
@@ -84,13 +91,15 @@ public class NodeUUIDTest extends AbstractJCRTest {
 
     /**
      * Moves a referencable node using {@link javax.jcr.Session#move(String,
-            * String)} with one session and saves afterward changes made with a second
+     * String)} with one session and saves afterward changes made with a second
      * session to the moved node using {@link Node#save()}.<br/> <br/>
      * Procedure: <ul> <li>Creates node 1 and node 2 with session 1</li>
      * <li>Gets reference to node 1 using session 2</li> <li>Session 1 moves
      * node 1 under node 2, saves changes</li> <li>Session 2 modifes node 1,
-     * saves</li> </ul> This should work since the modified node is identified
-     * by its UUID, not by position in repository. <br><br>Prerequisites: <ul>
+     * saves</li> </ul> This should work (since the modified node is identified
+     * by its UUID, not by position in repository) or throw an
+     * <code>InvalidItemStateException</code> if 'move' is reported to the second
+     * session as a sequence of remove and add events. <br><br>Prerequisites: <ul>
      * <li><code>javax.jcr.tck.NodeUUIDTest.nodetype2</code> must have the mixin
      * type <code>mix:referenceable</code> assigned.</li>
      * <li><code>javax.jcr.tck.NodeUUIDTest.testSaveMovedRefNode.propertyname1</code>
@@ -123,11 +132,15 @@ public class NodeUUIDTest extends AbstractJCRTest {
             superuser.save();
 
             // modify some prop of the moved node with session 2
-            refTargetNodeSession2.setProperty(propertyName1, "test");
+            try {
+                refTargetNodeSession2.setProperty(propertyName1, "test");
 
-            // save it
-            refTargetNodeSession2.save();
-            // ok, works as expected
+                // save it
+                refTargetNodeSession2.save();
+                // ok, works as expected
+            } catch (InvalidItemStateException e) {
+                // ok as well.
+            }
         } finally {
             testSession.logout();
         }

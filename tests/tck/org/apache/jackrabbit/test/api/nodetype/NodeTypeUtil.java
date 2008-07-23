@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -16,7 +16,7 @@
  */
 package org.apache.jackrabbit.test.api.nodetype;
 
-import org.apache.jackrabbit.core.util.ISO8601;
+import org.apache.jackrabbit.test.ISO8601;
 
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -40,7 +40,7 @@ public class NodeTypeUtil {
     public static final int ANY_PROPERTY_TYPE = -1;
 
     /**
-     * Locate a child node def parsing all node types
+     * Locate a non-protected child node def parsing all node types
      *
      * @param session                  the session to access the node types
      * @param regardDefaultPrimaryType if true, the default primary type of the
@@ -71,10 +71,31 @@ public class NodeTypeUtil {
 
         while (types.hasNext()) {
             NodeType type = types.nextNodeType();
+
+            // node types with more than one residual child node definition
+            // will cause trouble in test cases. the implementation
+            // might pick another definition than the definition returned by
+            // this method, when a child node is set.
+            NodeDefinition[] childDefs = type.getChildNodeDefinitions();
+            int residuals = 0;
+            for (int i = 0; i < childDefs.length; i++) {
+                if (childDefs[i].getName().equals("*")) {
+                    residuals++;
+                }
+            }
+            if (residuals > 1) {
+                // more than one residual, not suitable for tests
+                continue;
+            }
+
             NodeDefinition nodeDefs[] = type.getDeclaredChildNodeDefinitions();
 
             for (int i = 0; i < nodeDefs.length; i++) {
                 NodeDefinition nodeDef = nodeDefs[i];
+
+                if (nodeDef.isProtected()) {
+                    continue;
+                }
 
                 if (nodeDef.getRequiredPrimaryTypes().length > 1) {
                     // behaviour of implementations that support multiple multiple inheritance
@@ -97,7 +118,7 @@ public class NodeTypeUtil {
                     continue;
                 }
 
-                if (!residual && i == 0) {
+                if (!residual) {
                     // if another child node def is a residual definition
                     // overjump the current node type
                     NodeDefinition nodeDefsAll[] = type.getChildNodeDefinitions();
@@ -245,10 +266,46 @@ public class NodeTypeUtil {
                     continue;
                 }
 
+                // also skip property residual property definition if there
+                // is another residual definition
+                if (residual) {
+                    // check if there is another residual property def
+                    if (getNumResidualPropDefs(type) > 1) {
+                        continue;
+                    }
+                }
+
+                if (!residual) {
+                    // if not looking for a residual property def then there
+                    // must not be any residual definition at all on the node
+                    // type
+                    if (getNumResidualPropDefs(type) > 0) {
+                        continue;
+                    }
+                }
+
                 return propDef;
             }
         }
         return null;
+    }
+
+    /**
+     * Returns the number of residual property definitions of <code>type</code>
+     * including its base types.
+     * @param type the node type
+     * @return the number of residual property definitions.
+     */
+    private static int getNumResidualPropDefs(NodeType type) {
+        PropertyDefinition[] pDefs = type.getPropertyDefinitions();
+        int residuals = 0;
+        for (int j = 0; j < pDefs.length; j++) {
+            PropertyDefinition pDef = pDefs[j];
+            if (pDef.getName().equals("*")) {
+                residuals++;
+            }
+        }
+        return residuals;
     }
 
     /**
@@ -327,17 +384,19 @@ public class NodeTypeUtil {
         NodeTypeIterator types = manager.getAllNodeTypes();
         while (types.hasNext()) {
             NodeType type = types.nextNodeType();
-            NodeType superTypes[] = type.getSupertypes();
-            boolean isSubType = false;
-            for (int i = 0; i < superTypes.length; i++) {
-                String name = superTypes[i].getName();
-                if (name.equals(legalType)) {
-                    isSubType = true;
-                    break;
+            if (!type.getName().equals(legalType)) {
+                NodeType superTypes[] = type.getSupertypes();
+                boolean isSubType = false;
+                for (int i = 0; i < superTypes.length; i++) {
+                    String name = superTypes[i].getName();
+                    if (name.equals(legalType)) {
+                        isSubType = true;
+                        break;
+                    }
                 }
-            }
-            if (!isSubType) {
-                return type.getName();
+                if (!isSubType) {
+                    return type.getName();
+                }
             }
         }
         return null;

@@ -1,13 +1,10 @@
 package org.jspwiki.priha.core.locks;
 
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import javax.jcr.Workspace;
 
-import org.jspwiki.priha.core.SessionImpl;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 
@@ -90,11 +87,35 @@ public class LockManager
 
     public void expireSessionLocks()
     {
+        // FIXME: incorrect
         m_locks.clear();
     }
 
     public void removeLock(LockImpl lock)
     {
         m_locks.remove(lock.getPath());
+    }
+
+    /**
+     *  Checks if any of the children of this Node hold a lock
+     *  to which the session does not hold a key to.
+     *  
+     *  @param internalPath
+     *  @return
+     */
+    public boolean hasChildLock(Path internalPath)
+    {
+        for( Path p : m_locks.keySet() )
+        {
+            //TODO Slightly unoptimal
+            if( internalPath.isParentOf(p) ) 
+            {
+                LockImpl li = m_locks.get(p);
+                
+                if( li.getLockToken() == null ) return true;
+            }
+        }
+        
+        return false;
     }
 }

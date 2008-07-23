@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -30,6 +30,8 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.NodeType;
+import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * <code>SetValueConstraintViolationExceptionTest</code> tests if setValue()
@@ -89,14 +91,19 @@ public class SetValueConstraintViolationExceptionTest extends AbstractJCRTest {
         }
 
         // test of signature setValue(InputStream value)
+        InputStream in = valueNotSatisfied1.getStream();
         try {
-            prop.setValue(valueNotSatisfied1.getStream());
+            prop.setValue(in);
             node.save();
             fail("setValue(InputStream value) must throw a ConstraintViolationException " +
                     "if the change would violate a node type constraint " +
                     "either immediately or on save");
         } catch (ConstraintViolationException e) {
             // success
+        } finally {
+            try {
+                in.close();
+            } catch (IOException ignore) {}
         }
 
         // test of signature setValue(Value value)
@@ -440,6 +447,9 @@ public class SetValueConstraintViolationExceptionTest extends AbstractJCRTest {
             // create a referenceable node not satisfying the constraint
             nodeNotSatisfied = testRootNode.addNode(nodeName4, nodeTypeNotSatisfied);
             nodeNotSatisfied.addMixin(mixReferenceable);
+
+            // some implementations may require a save after addMixin()
+            testRootNode.save();
 
             prop = node.setProperty(propDef.getName(), nodeSatisfied);
             testRootNode.save();
@@ -805,12 +815,15 @@ public class SetValueConstraintViolationExceptionTest extends AbstractJCRTest {
             // create a referenceable node satisfying the constraint
             nodeSatisfied = testRootNode.addNode(nodeName3, nodeTypeSatisfied);
             nodeSatisfied.addMixin(mixReferenceable);
-            Value valueSatisfied = superuser.getValueFactory().createValue(nodeSatisfied);
 
             // create a referenceable node not satisfying the constraint
             nodeNotSatisfied = testRootNode.addNode(nodeName4, nodeTypeNotSatisfied);
             nodeNotSatisfied.addMixin(mixReferenceable);
+            
+            // some implementations may require a save after addMixin()
+            testRootNode.save();
 
+            Value valueSatisfied = superuser.getValueFactory().createValue(nodeSatisfied);
             prop = node.setProperty(propDef.getName(), new Value[]{valueSatisfied});
             testRootNode.save();
         } catch (ConstraintViolationException e) {

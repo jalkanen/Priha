@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -51,11 +51,11 @@ public class AddEventListenerTest extends AbstractObservationTest {
         EventResult listener = new EventResult(log);
         obsMgr.addEventListener(listener, Event.NODE_ADDED, testRoot + "/" + nodeName1, true, null, null, false);
         Node n = testRootNode.addNode(nodeName1, testNodeType);
-        n.addNode(nodeName2);
+        n.addNode(nodeName2, testNodeType);
         testRootNode.save();
-        obsMgr.removeEventListener(listener);
         Event[] events = listener.getEvents(DEFAULT_WAIT_TIMEOUT);
-        checkNodeAdded(events, new String[]{nodeName1, nodeName1 + "/" + nodeName2});
+        obsMgr.removeEventListener(listener);
+        checkNodeAdded(events, new String[]{nodeName1 + "/" + nodeName2}, null);
     }
 
     /**
@@ -66,11 +66,11 @@ public class AddEventListenerTest extends AbstractObservationTest {
         EventResult listener = new EventResult(log);
         obsMgr.addEventListener(listener, Event.NODE_ADDED, testRoot + "/" + nodeName1, false, null, null, false);
         Node n = testRootNode.addNode(nodeName1, testNodeType);
-        n.addNode(nodeName2);
+        n.addNode(nodeName2, testNodeType);
         testRootNode.save();
-        obsMgr.removeEventListener(listener);
         Event[] events = listener.getEvents(DEFAULT_WAIT_TIMEOUT);
-        checkNodeAdded(events, new String[]{nodeName1});
+        obsMgr.removeEventListener(listener);
+        checkNodeAdded(events, new String[]{nodeName1 + "/" + nodeName2}, null);
     }
 
     /**
@@ -86,8 +86,8 @@ public class AddEventListenerTest extends AbstractObservationTest {
         n1.setProperty(propertyName1, "foo");
         n2.setProperty(propertyName1, "foo");
         testRootNode.save();
-        obsMgr.removeEventListener(listener);
         Event[] events = listener.getEvents(DEFAULT_WAIT_TIMEOUT);
+        obsMgr.removeEventListener(listener);
         checkPropertyAdded(events, new String[]{nodeName1 + "/" + propertyName1});
     }
 
@@ -107,8 +107,8 @@ public class AddEventListenerTest extends AbstractObservationTest {
 
         testRootNode.addNode(nodeName1, testNodeType);
         testRootNode.save();
-        obsMgr.removeEventListener(listener);
         Event[] events = listener.getEvents(DEFAULT_WAIT_TIMEOUT);
+        obsMgr.removeEventListener(listener);
         assertEquals("EventListener must not receive own modification when noLocal=true", 0, events.length);
     }
 
@@ -136,8 +136,8 @@ public class AddEventListenerTest extends AbstractObservationTest {
         n1.setProperty(propertyName1, "foo");
         n2.setProperty(propertyName1, "foo");
         testRootNode.save();
-        obsMgr.removeEventListener(listener);
         Event[] events = listener.getEvents(DEFAULT_WAIT_TIMEOUT);
+        obsMgr.removeEventListener(listener);
         checkPropertyAdded(events, new String[]{nodeName1 + "/" + propertyName1});
     }
 
@@ -168,9 +168,9 @@ public class AddEventListenerTest extends AbstractObservationTest {
         } finally {
             s.logout();
         }
-        obsMgr.removeEventListener(listener);
         Event[] events = listener.getEvents(DEFAULT_WAIT_TIMEOUT);
-        checkNodeAdded(events, new String[]{nodeName1 + "/" + nodeName3});
+        obsMgr.removeEventListener(listener);
+        checkNodeAdded(events, new String[]{nodeName1 + "/" + nodeName3}, null);
     }
 
     //-------------------------< internal >-------------------------------------
@@ -189,8 +189,10 @@ public class AddEventListenerTest extends AbstractObservationTest {
     private Node createReferenceable(String nodeName, String nodeType)
             throws RepositoryException {
         Node n = testRootNode.addNode(nodeName, nodeType);
-        if (!n.isNodeType(mixReferenceable)) {
+        if (needsMixin(n, mixReferenceable)) {
             n.addMixin(mixReferenceable);
+            // some implementations may require a save after addMixin()
+            testRootNode.save();
         }
         return n;
     }

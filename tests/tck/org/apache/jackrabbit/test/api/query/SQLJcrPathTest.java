@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -22,10 +22,10 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryResult;
+import java.util.Arrays;
 
 /**
- * Tests if the jcr:path property is returned at the correct position in the
- * query result.
+ * Tests if the jcr:path property is returned in the query result.
  *
  * @test
  * @sources SQLJcrPathTest.java
@@ -53,13 +53,13 @@ public class SQLJcrPathTest extends AbstractQueryTest {
     protected void tearDown() throws Exception {
         if (session != null) {
             session.logout();
+            session = null;
         }
         super.tearDown();
     }
     
     /**
-     * Verify that the jcr:path is the last property from the found property
-     * names when the query statement does not use a contains function.
+     * Verify that the jcr:path is present in the query result.
      */
     public void testJcrPath() throws RepositoryException, NotExecutableException {
         String nodeTypeName = session.getRootNode().getPrimaryNodeType().getName();
@@ -69,10 +69,7 @@ public class SQLJcrPathTest extends AbstractQueryTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(queryStatement, Query.SQL);
         QueryResult result = query.execute();
 
-        String[] propNames = result.getColumnNames();
-        if (propNames.length > 0) {
-            // jcr:path should be the last column
-            assertEquals(jcrPath + " should be the last property", jcrPath, propNames[propNames.length - 1]);
-        }
+        assertTrue("jcr:path must be present in query result row",
+                Arrays.asList(result.getColumnNames()).contains(jcrPath));
     }
 }

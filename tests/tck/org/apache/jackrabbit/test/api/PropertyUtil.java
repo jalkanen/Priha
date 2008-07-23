@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -30,6 +30,8 @@ import javax.jcr.NamespaceRegistry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.io.BufferedInputStream;
+import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * This class provides various utility methods that are used by the property
@@ -144,9 +146,10 @@ public class PropertyUtil {
      *
      * @param node the node to start traverse
      * @param type the property type to search for
+     * @param multiple whether the property should be multivalued (<code>null</code>: does not matter)
      * @return the property found or null if no property is found
      */
-    public static Property searchProp(Session session, Node node, int type)
+    public static Property searchProp(Session session, Node node, int type, Boolean multiple)
             throws RepositoryException, ValueFormatException {
 
         Property prop = null;
@@ -155,7 +158,7 @@ public class PropertyUtil {
             for (PropertyIterator props = node.getProperties(); props.hasNext();) {
                 Property property = props.nextProperty();
                 propType = property.getType();
-                if (propType == type) {
+                if (propType == type && (multiple == null || multiple.booleanValue() == property.getDefinition().isMultiple())) {
                     prop = property;
                     break;
                 }
@@ -164,7 +167,7 @@ public class PropertyUtil {
         if (prop == null) {
             for (NodeIterator nodes = node.getNodes(); nodes.hasNext();) {
                 Node n = nodes.nextNode();
-                prop = searchProp(session, n, type);
+                prop = searchProp(session, n, type, multiple);
                 if (prop != null) {
                     break;
                 }
@@ -281,14 +284,22 @@ public class PropertyUtil {
      */
     public static long countBytes(Value val) {
         int length = 0;
+        InputStream in = null;
         try {
-            BufferedInputStream bin = new BufferedInputStream(val.getStream());
+            in = val.getStream();
+            BufferedInputStream bin = new BufferedInputStream(in);
             while (bin.read() != -1) {
                 length++;
             }
             bin.close();
         } catch (Exception e) {
             length = -1;
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException ignore) {}
+            }
         }
         return length;
     }
@@ -416,6 +427,24 @@ public class PropertyUtil {
         return multiVal;
     }
 
-
-
+    /**
+     * Retrieve a single valued property from the given node.
+     *
+     * @param node
+     * @return the property found or null if no property is found.
+     */
+    public static Property searchSingleValuedProperty(Node node)
+            throws RepositoryException, ValueFormatException {
+        PropertyIterator props = node.getProperties();
+        while (props.hasNext()) {
+            Property p = props.nextProperty();
+            if (!p.getDefinition().isMultiple()) {
+                return p;
+            }
+        }
+        // should never get here, since every Node must provide the jcr:primaryType
+        // property, which is single valued.
+        return null;
+    }
 }
+

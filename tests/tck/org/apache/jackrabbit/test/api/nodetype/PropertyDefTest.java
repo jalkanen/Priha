@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -76,11 +76,6 @@ public class PropertyDefTest extends AbstractJCRTest {
     private NodeTypeManager manager;
 
     /**
-     * The root node of the default workspace
-     */
-    private Node rootNode;
-
-    /**
      * If <code>true</code> indicates that the test found a mandatory property
      */
     private boolean foundMandatoryProperty = false;
@@ -94,7 +89,8 @@ public class PropertyDefTest extends AbstractJCRTest {
 
         session = helper.getReadOnlySession();
         manager = session.getWorkspace().getNodeTypeManager();
-        rootNode = session.getRootNode();
+        // re-fetch testRootNode with read-only session
+        testRootNode = (Node) session.getItem(testRoot);
     }
 
     /**
@@ -103,7 +99,9 @@ public class PropertyDefTest extends AbstractJCRTest {
     protected void tearDown() throws Exception {
         if (session != null) {
             session.logout();
+            session = null;
         }
+        manager = null;
         super.tearDown();
     }
 
@@ -172,7 +170,7 @@ public class PropertyDefTest extends AbstractJCRTest {
      * org.apache.jackrabbit.test.NotExecutableException} is thrown.
      */
     public void testIsMandatory() throws RepositoryException, NotExecutableException {
-        traverse(rootNode);
+        traverse(testRootNode);
         if (!foundMandatoryProperty) {
             throw new NotExecutableException("Workspace does not contain any node with a mandatory property definition");
         }
@@ -389,7 +387,8 @@ public class PropertyDefTest extends AbstractJCRTest {
                 foundMandatoryProperty = true;
                 String name = propDef.getName();
 
-                assertTrue("Node instance does not contain value for mandatory property.", node.hasProperty(name));
+                assertTrue("Node " + node.getPath() + " does not contain " +
+                        "value for mandatory property: " + name, node.hasProperty(name));
                 // todo check back with latest spec!
                 /*
                 try {

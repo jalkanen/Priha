@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -60,14 +60,13 @@ public class NodeAddMixinTest extends AbstractJCRTest {
 
         // test if mixin is written to property jcr:mixinTypes immediately
         Value mixinValues[] = node.getProperty(jcrMixinTypes).getValues();
-        if (mixinValues.length != 1) {
-            fail("Mixin node must be added to property " +
-                    jcrMixinTypes + " immediately.");
+        boolean found = false;
+        for (int i = 0; i < mixinValues.length; i++) {
+            found |= mixinName.equals(mixinValues[i].getString());
         }
-        assertEquals("Mixin was not properly assigned to property " + jcrMixinTypes + ": ",
-                mixinName,
-                mixinValues[0].getString());
-
+        if (! found) {
+            fail("Mixin type must be added to property " + jcrMixinTypes + " immediately.");
+        }
 
         // it is implementation-specific if a added mixin is available
         // before or after save therefore save before further tests
@@ -75,13 +74,13 @@ public class NodeAddMixinTest extends AbstractJCRTest {
 
         // test if added mixin is available by node.getMixinNodeTypes()
         NodeType mixins[] = node.getMixinNodeTypes();
-        if (mixins.length != 1) {
-            fail("Mixin node not added.");
+        found = false;
+        for (int i = 0; i < mixins.length; i++) {
+            found |= mixinName.equals(mixins[i].getName());
         }
-        assertEquals("Mixin was not properly assigned: ",
-                mixinName,
-                mixins[0].getName());
-
+        if (! found) {
+            fail("Mixin '" + mixinName+ "' type not added.");
+        }
     }
 
     /**
@@ -93,7 +92,7 @@ public class NodeAddMixinTest extends AbstractJCRTest {
         Session session = testRootNode.getSession();
         String nonExistingMixinName = NodeMixinUtil.getNonExistingMixinName(session);
 
-        Node node = testRootNode.addNode(nodeName1);
+        Node node = testRootNode.addNode(nodeName1, testNodeType);
 
         try {
             node.addMixin(nonExistingMixinName);
@@ -119,7 +118,7 @@ public class NodeAddMixinTest extends AbstractJCRTest {
 
         Session session = testRootNode.getSession();
 
-        if (session.getRepository().getDescriptor(Repository.OPTION_LOCKING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_LOCKING_SUPPORTED)) {
             throw new NotExecutableException("Locking is not supported.");
         }
 
@@ -151,7 +150,10 @@ public class NodeAddMixinTest extends AbstractJCRTest {
             node2.lock(true, true);
 
             try {
+                // implementation specific: either throw LockException upon
+                // addMixin or upon save.
                 node.addMixin(mixinName);
+                node.save();
                 fail("Node.addMixin(String mixinName) must throw a LockException " +
                         "if the node is locked.");
             } catch (LockException e) {
@@ -178,7 +180,7 @@ public class NodeAddMixinTest extends AbstractJCRTest {
 
         Session session = testRootNode.getSession();
 
-        if (session.getRepository().getDescriptor(Repository.OPTION_LOCKING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_LOCKING_SUPPORTED)) {
             throw new NotExecutableException("Versioning is not supported.");
         }
 
@@ -223,8 +225,14 @@ public class NodeAddMixinTest extends AbstractJCRTest {
 
         // get session an create default node
         Node node = testRootNode.addNode(nodeName1, testNodeType);
-
-        node.addMixin(mixReferenceable);
+        if (needsMixin(node, mixReferenceable)) {
+            node.addMixin(mixReferenceable);
+        }
+        // implementation specific: mixin may take effect only upon save
+        testRootNode.save();
+        
+        // check that it did
+        assertTrue(node.isNodeType(mixReferenceable));
 
         // test if jcr:uuid is not null, empty or throws a exception
         // (format of value is not defined so we can only test if not empty)

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -26,7 +26,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.observation.Event;
 
 /**
- * Test cases for {@link javax.jcr.observation.Event.PROPERTY_CHANGED} events.
+ * Test cases for {@link javax.jcr.observation.Event#PROPERTY_CHANGED} events.
  * <p/>
  * Configuration requirements are:<br/>
  * The {@link #testRoot} must allow child nodes of type {@link #testNodeType}.
@@ -54,8 +54,8 @@ public class PropertyChangedTest extends AbstractObservationTest {
         addEventListener(result, Event.PROPERTY_CHANGED);
         node.getProperty(propertyName1).setValue("foobar");
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
         checkPropertyChanged(events, new String[]{nodeName1 + "/" + propertyName1});
     }
 
@@ -74,8 +74,8 @@ public class PropertyChangedTest extends AbstractObservationTest {
         node.getProperty(propertyName1).setValue("foobar");
         node.getProperty(propertyName2).setValue("foobar");
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
         checkPropertyChanged(events, new String[]{nodeName1 + "/" + propertyName1,
                                                   nodeName1 + "/" + propertyName2});
     }
@@ -93,8 +93,8 @@ public class PropertyChangedTest extends AbstractObservationTest {
         node.getProperty(propertyName1).setValue("foobar");
         node.setProperty(propertyName2, "bar");    // will not fire prop changed event
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
         checkPropertyChanged(events, new String[]{nodeName1 + "/" + propertyName1});
     }
 
@@ -127,8 +127,8 @@ public class PropertyChangedTest extends AbstractObservationTest {
         n.getProperty(propertyName1).remove();
         n.setProperty(propertyName1, v2);
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
 
         if (events.length == 1) {
             checkPropertyChanged(events, new String[]{nodeName1 + "/" + propertyName1});

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -43,12 +43,24 @@ public class SQLJoinTest extends AbstractQueryTest {
      */
     public void testJoin() throws RepositoryException {
         Node n1 = testRootNode.addNode(nodeName1, testNodeType);
-        n1.addMixin(mixReferenceable);
-        testRootNode.addNode(nodeName2, testNodeType);
+        String testMixin = mixReferenceable;
+        if (needsMixin(n1, testMixin)) {
+            n1.addMixin(testMixin);
+        }
+        else {
+            testMixin = mixVersionable;
+            if (needsMixin(n1, testMixin)) {
+                n1.addMixin(testMixin);
+            }
+        }
+
+        Node n2 = testRootNode.addNode(nodeName2, testNodeType);
         testRootNode.save();
 
+        assertFalse("Node at " + n2.getPath() + " should not have mixin " + testMixin, n2.isNodeType(testMixin));
+
         StringBuffer query = new StringBuffer("SELECT * FROM ");
-        query.append(testNodeType).append(", ").append(mixReferenceable);
+        query.append(testNodeType).append(", ").append(testMixin);
         query.append(" WHERE ");
         query.append(testNodeType).append(".").append(jcrPath);
         query.append(" = ");
@@ -64,12 +76,24 @@ public class SQLJoinTest extends AbstractQueryTest {
      */
     public void testJoinNtBase() throws RepositoryException {
         Node n1 = testRootNode.addNode(nodeName1, testNodeType);
-        n1.addMixin(mixReferenceable);
-        testRootNode.addNode(nodeName2, testNodeType);
+        String testMixin = mixReferenceable;
+        if (needsMixin(n1, testMixin)) {
+            n1.addMixin(testMixin);
+        }
+        else {
+            testMixin = mixVersionable;
+            if (needsMixin(n1, testMixin)) {
+                n1.addMixin(testMixin);
+            }
+        }
+
+        Node n2 = testRootNode.addNode(nodeName2, testNodeType);
         testRootNode.save();
 
+        assertFalse("Node at " + n2.getPath() + " should not have mixin " + testMixin, n2.isNodeType(testMixin));
+
         StringBuffer query = new StringBuffer("SELECT * FROM ");
-        query.append(ntBase).append(", ").append(mixReferenceable);
+        query.append(ntBase).append(", ").append(testMixin);
         query.append(" WHERE ");
         query.append(testNodeType).append(".").append(jcrPath);
         query.append(" = ");
@@ -85,9 +109,13 @@ public class SQLJoinTest extends AbstractQueryTest {
      */
     public void testJoinFilterPrimaryType() throws RepositoryException {
         Node n1 = testRootNode.addNode(nodeName1, testNodeType);
-        n1.addMixin(mixReferenceable);
+        if (needsMixin(n1, mixReferenceable)) {
+            n1.addMixin(mixReferenceable);
+        }
         Node n2 = testRootNode.addNode(nodeName2, ntBase);
-        n2.addMixin(mixReferenceable);
+        if (needsMixin(n2, mixReferenceable)) {
+            n2.addMixin(mixReferenceable);
+        }
         testRootNode.save();
 
         StringBuffer query = new StringBuffer("SELECT * FROM ");
@@ -112,7 +140,9 @@ public class SQLJoinTest extends AbstractQueryTest {
      */
     public void testJoinSNS() throws RepositoryException, NotExecutableException {
         Node n1 = testRootNode.addNode(nodeName1, testNodeType);
-        n1.addMixin(mixReferenceable);
+        if (needsMixin(n1, mixReferenceable)) {
+            n1.addMixin(mixReferenceable);
+        }
         if (!n1.getDefinition().allowsSameNameSiblings()) {
             throw new NotExecutableException("Node at " + testRoot + " does not allow same name siblings with name " + nodeName1);
         }

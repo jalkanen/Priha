@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -25,6 +25,7 @@ import javax.jcr.Session;
 import javax.jcr.lock.LockException;
 import javax.jcr.version.VersionException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.query.Query;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.NotExecutableException;
@@ -48,17 +49,19 @@ public class SaveTest extends AbstractJCRTest {
     }
 
     /**
-     * Stores a {@link javax.jcr.query.Query.XPATH} query at:
+     * Stores a {@link javax.jcr.query.Query#XPATH} query at:
      * <code>testRoot + "/" + nodeName1</code>.
+     * @throws NotExecutableException if nt:query is not supported.
      */
-    public void testSave() throws RepositoryException {
+    public void testSave() throws RepositoryException, NotExecutableException {
+        checkNtQuery();
         Query query = superuser.getWorkspace().getQueryManager().createQuery(statement, Query.XPATH);
         query.storeAsNode(testRoot + "/" + nodeName1);
 
         assertTrue("Node has not been stored", testRootNode.hasNode(nodeName1));
 
         Node queryNode = testRootNode.getNode(nodeName1);
-        assertEquals("Query node is not of type nt:query", ntQuery, queryNode.getPrimaryNodeType().getName());
+        assertTrue("Query node is not of type nt:query", queryNode.isNodeType(ntQuery));
 
         Query query2 = superuser.getWorkspace().getQueryManager().getQuery(queryNode);
         assertEquals("Persisted query does not match initial query.", query.getStatement(), query2.getStatement());
@@ -66,27 +69,39 @@ public class SaveTest extends AbstractJCRTest {
 
     /**
      * Tests if an {@link javax.jcr.ItemExistsException} is thrown when a query
-     * is stored on an existing node.
+     * is stored on an existing node and same name siblings are not allowed.
+     * @throws NotExecutableException if nt:query is not supported.
      */
-    public void testItemExistsException() throws RepositoryException {
+    public void testItemExistsException() throws RepositoryException, NotExecutableException {
+        checkNtQuery();
         Query query = superuser.getWorkspace().getQueryManager().createQuery(statement, Query.XPATH);
-        query.storeAsNode(testRoot + "/" + nodeName1);
+        Node qNode = query.storeAsNode(testRoot + "/" + nodeName1);
 
         // create another one
         query = superuser.getWorkspace().getQueryManager().createQuery(statement, Query.XPATH);
         try {
             query.storeAsNode(testRoot + "/" + nodeName1);
-            fail("Query.storeAsNode() did not throw ItemExistsException");
+            if (!qNode.getDefinition().allowsSameNameSiblings()) {
+                // must throw if same name siblings are not allowed
+                fail("Query.storeAsNode() did not throw ItemExistsException");
+            }
         } catch (ItemExistsException e) {
-            // expected behaviour
+            if (qNode.getDefinition().allowsSameNameSiblings()) {
+                fail("Query.storeAsNode() must not throw ItemExistsException " +
+                        "when same name siblings are allowed");
+            } else {
+                // expected behaviour
+            }
         }
     }
 
     /**
      * Tests if a {@link javax.jcr.PathNotFoundException} is thrown when a query
      * is stored to a non existent path.
+     * @throws NotExecutableException if nt:query is not supported.
      */
-    public void testPathNotFoundException() throws RepositoryException {
+    public void testPathNotFoundException() throws RepositoryException, NotExecutableException {
+        checkNtQuery();
         Query query = superuser.getWorkspace().getQueryManager().createQuery(statement, Query.XPATH);
         try {
             query.storeAsNode(testRoot + "/" + nodeName1 + "/" + nodeName1);
@@ -105,10 +120,12 @@ public class SaveTest extends AbstractJCRTest {
      * not already versionable.
      * Then the test tries to store a query as <code>nodeName2</code> under node
      * <code>nodeName1</code>.
+     * @throws NotExecutableException if nt:query is not supported.
      */
     public void testVersionException() throws RepositoryException, NotExecutableException {
+        checkNtQuery();
         // check if repository supports versioning
-        if (superuser.getRepository().getDescriptor(Repository.OPTION_VERSIONING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_VERSIONING_SUPPORTED)) {
             throw new NotExecutableException();
         }
 
@@ -141,9 +158,10 @@ public class SaveTest extends AbstractJCRTest {
      * The test creates a node <code>nodeName1</code> of type <code>testNodeType</code>
      * under <code>testRoot</code>. Then the test tries to store a query as
      * <code>nodeName2</code> under <code>nodeName1</code>.
-     *
+     * @throws NotExecutableException if nt:query is not supported.
      */
-    public void testConstraintViolationException() throws RepositoryException {
+    public void testConstraintViolationException() throws RepositoryException, NotExecutableException {
+        checkNtQuery();
         Query query = superuser.getWorkspace().getQueryManager().createQuery(statement, Query.XPATH);
         testRootNode.addNode(nodeName1, testNodeType);
         try {
@@ -162,10 +180,12 @@ public class SaveTest extends AbstractJCRTest {
      * under <code>testRoot</code> and locks the node with the superuser session.
      * Then the test tries to store a query as <code>nodeName2</code> under
      * <code>nodeName1</code> with the readWrite <code>Session</code>.
+     * @throws NotExecutableException if nt:query is not supported.
      */
     public void testLockException() throws RepositoryException, NotExecutableException {
+        checkNtQuery();
         // check if repository supports locking
-        if (superuser.getRepository().getDescriptor(Repository.OPTION_LOCKING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_LOCKING_SUPPORTED)) {
             throw new NotExecutableException();
         }
         // create a node that is lockable
@@ -197,14 +217,33 @@ public class SaveTest extends AbstractJCRTest {
     /**
      * Tests if the a {@link javax.jcr.RepositoryException} is thrown when
      * an malformed path is passed in {@link javax.jcr.query.Query#storeAsNode(String)}.
+     * @throws NotExecutableException if nt:query is not supported.
      */
-    public void testRepositoryException() throws RepositoryException {
+    public void testRepositoryException() throws RepositoryException, NotExecutableException {
+        checkNtQuery();
         Query query = superuser.getWorkspace().getQueryManager().createQuery(statement, Query.XPATH);
         try {
             query.storeAsNode(testRoot + "/invalid[path");
             fail("Query.storeAsNode() must throw RepositoryException on malformed path.");
         } catch (RepositoryException e) {
             // expected behaviour
+        }
+    }
+
+    //-------------------------------< internal >-------------------------------
+
+    /**
+     * Checks if the repository supports the nt:query node type otherwise throws
+     * a <code>NotExecutableException</code>.
+     *
+     * @throws NotExecutableException if nt:query is not supported.
+     */
+    private void checkNtQuery() throws RepositoryException, NotExecutableException {
+        try {
+            superuser.getWorkspace().getNodeTypeManager().getNodeType(ntQuery);
+        } catch (NoSuchNodeTypeException e) {
+            // not supported
+            throw new NotExecutableException("repository does not support nt:query");
         }
     }
 }

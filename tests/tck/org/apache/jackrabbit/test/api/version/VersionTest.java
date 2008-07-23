@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -28,6 +28,7 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.PropertyIterator;
 import javax.jcr.Value;
 import javax.jcr.PropertyType;
+import javax.jcr.lock.LockException;
 
 import java.util.GregorianCalendar;
 import java.util.Calendar;
@@ -81,7 +82,8 @@ public class VersionTest extends AbstractVersionTest {
     protected void tearDown() throws Exception {
         // check the node out, so that it can be removed
         versionableNode.checkout();
-
+        version = null;
+        version2 = null;
         super.tearDown();
     }
 
@@ -211,26 +213,6 @@ public class VersionTest extends AbstractVersionTest {
     }
 
     /**
-     * Tests if <code>Version.getDefinition()</code> returns the correct Node
-     * definition
-     * {@link Node#getDefinition()} is implementation specific, cannot be tested.
-     */
-    /*
-    public void testGetDefinition() throws Exception {
-        assertFalse("Version.getDefinition() does not return correct Node definition", version.getDefinition().allowsSameNameSiblings());
-        assertEquals("Version.getDefinition() does not return correct Node definition", ntVersionHistory, version.getDefinition().getDeclaringNodeType().getName());
-        assertNull("Version.getDefinition() does not return correct Node definition", version.getDefinition().getDefaultPrimaryType());
-        assertEquals("Version.getDefinition() does not return correct Node definition", jcrFrozenNode, version.getDefinition().getName());
-        assertEquals("Version.getDefinition() does not return correct Node definition", OnParentVersionAction.ABORT, version.getDefinition().getOnParentVersion());
-        assertEquals("Version.getDefinition() does not return correct Node definition", jcrFrozenNode, (version.getDefinition().getRequiredPrimaryTypes())[0].getName());
-        assertFalse("Version.getDefinition() does not return correct Node definition", version.getDefinition().isAutoCreated());
-        assertFalse("Version.getDefinition() does not return correct Node definition", version.getDefinition().isMandatory());
-        assertTrue("Version.getDefinition() does not return correct Node definition", version.getDefinition().isProtected());
-    }
-    */
-
-
-    /**
      * Tests if <code>Version.getDepth()</code> returns the right depth
      */
     public void testGetDepth() throws Exception {
@@ -245,14 +227,14 @@ public class VersionTest extends AbstractVersionTest {
     }
 
     /**
-     * Tests if <code>Version.getLock()</code> throws an {@link
-     * javax.jcr.UnsupportedRepositoryOperationException}
+     * Tests if <code>Version.getLock()</code> throws a {@link
+     * javax.jcr.lock.LockException}
      */
     public void testGetLock() throws Exception {
         try {
             version.getLock();
-            fail("Version should not be lockable: Version.getLock() did not throw an UnsupportedRepositoryOperationException");
-        } catch (UnsupportedRepositoryOperationException success) {
+            fail("Version should not be lockable: Version.getLock() did not throw a LockException");
+        } catch (LockException success) {
         }
     }
 
@@ -352,29 +334,6 @@ public class VersionTest extends AbstractVersionTest {
      */
     public void testGetProperty() throws Exception {
         assertTrue("Version.getProperty(String) does not return property jcr:created", version.getProperty(jcrCreated).getName().equals(jcrCreated));
-    }
-
-    /**
-     * Tests if <code>Version.getReferences()</code> returns the right reference
-     * to the current node
-     */
-    public void testGetReferences() throws Exception {
-        PropertyIterator pi = version.getReferences();
-        boolean hasRootVersionReference = false;
-        while (pi.hasNext()) {
-            Property p = pi.nextProperty();
-            if (p.getName().equals(jcrSuccessors) && p.getDefinition().isMultiple()) {
-                Value[] values = p.getValues();
-                for (int i = 0; i < values.length; i++) {
-                    Value value = values[i];
-                    if (superuser.getNodeByUUID(value.getString()).isNodeType(ntVersion)) {
-                        hasRootVersionReference = true;
-                        break;
-                    }
-                }
-            }
-        }
-        assertTrue("Version.getReferences() does not return the jcr:successors property of the jcr:rootVersion", hasRootVersionReference);
     }
 
     /**
@@ -493,40 +452,47 @@ public class VersionTest extends AbstractVersionTest {
     }
 
     /**
-     * Tests if <code>Version.lock(boolean, boolean)</code> throws an {@link
-     * javax.jcr.UnsupportedRepositoryOperationException}
+     * Tests if <code>Version.lock(boolean, boolean)</code> throws a {@link
+     * LockException}
      */
     public void testLock() throws Exception {
         try {
             version.lock(true, true);
-            fail("Version should not be lockable: Version.lock(true,true) did not throw an UnsupportedRepositoryOperationException");
-        } catch (UnsupportedRepositoryOperationException success) {
+            fail("Version should not be lockable: Version.lock(true,true) did not throw a LockException");
+        } catch (LockException success) {
         }
         try {
             version.lock(true, false);
-            fail("Version should not be lockable: Version.lock(true,false) did not throw an UnsupportedRepositoryOperationException");
-        } catch (UnsupportedRepositoryOperationException success) {
+            fail("Version should not be lockable: Version.lock(true,false) did not throw a LockException");
+        } catch (LockException success) {
         }
         try {
             version.lock(false, true);
-            fail("Version should not be lockable: Version.lock(false,true) did not throw an UnsupportedRepositoryOperationException");
-        } catch (UnsupportedRepositoryOperationException success) {
+            fail("Version should not be lockable: Version.lock(false,true) did not throw a LockException");
+        } catch (LockException success) {
         }
         try {
             version.lock(false, false);
-            fail("Version should not be lockable: Version.lock(false,false) did not throw an UnsupportedRepositoryOperationException");
-        } catch (UnsupportedRepositoryOperationException success) {
+            fail("Version should not be lockable: Version.lock(false,false) did not throw a LockException");
+        } catch (LockException success) {
         }
     }
 
     /**
-     * Tests if <code>Version.merge(String, boolean)</code> works as expected
-     * (do nothing and return quietly)
+     * Tests if <code>Version.merge(String)</code> throws an
+     * {@link javax.jcr.nodetype.ConstraintViolationException}
      */
     public void testMerge() throws Exception {
-        // should do nothing and return quietly
-        version.merge(workspaceName, true);
-        version.merge(workspaceName, false);
+        try {
+            version.merge(workspaceName, true);
+            fail("Version.merge(String, true) did not throw an ConstraintViolationException");
+        } catch (ConstraintViolationException success) {
+        }
+        try {
+            version.merge(workspaceName, false);
+            fail("Version.merge(String, false) did not throw an ConstraintViolationException");
+        } catch (ConstraintViolationException success) {
+        }
     }
 
     /**
@@ -536,8 +502,9 @@ public class VersionTest extends AbstractVersionTest {
     public void testOrderBefore() throws Exception {
         try {
             version.orderBefore(jcrFrozenNode, null);
-            fail("Version.orderBefore(String,String) did not throw an UnsupportedRepositoryOperationException");
+            fail("Version.orderBefore(String,String) did not throw an UnsupportedRepositoryOperationException or a ConstraintViolationException");
         } catch (UnsupportedRepositoryOperationException success) {
+        } catch (ConstraintViolationException success) {
         }
     }
 
@@ -596,7 +563,7 @@ public class VersionTest extends AbstractVersionTest {
         }
         try {
             version.restore(version2, "abc", true);
-            fail("Version.restore(Version,String,boolean) did not throw an UnsupportedRepositoryOperationException");
+            fail("Version.restore(Version,String,boolean) did not throw an ConstraintViolationException");
         } catch (ConstraintViolationException success) {
         }
     }
@@ -720,23 +687,35 @@ public class VersionTest extends AbstractVersionTest {
     }
 
     /**
-     * Tests if <code>Version.unlock()</code> throws an {@link
-     * javax.jcr.UnsupportedRepositoryOperationException}
+     * Tests if <code>Version.unlock()</code> throws a {@link
+     * javax.jcr.lock.LockException}
      */
     public void testUnlock() throws Exception {
         try {
             version.unlock();
-            fail("Version should not be lockable: Version.unlock() did not throw an UnsupportedRepositoryOperationException");
-        } catch (UnsupportedRepositoryOperationException success) {
+            fail("Version should not be lockable: Version.unlock() did not throw a LockException");
+        } catch (LockException success) {
         }
     }
 
     /**
-     * Tests if <code>Version.update(String)</code> works as expected (do
-     * nothing and return quietly)
+     * Tests if <code>VersionHistory.update(String)</code> throws an
+     * {@link javax.jcr.nodetype.ConstraintViolationException}
      */
     public void testUpdate() throws Exception {
-        // should do nothing and return quietly
-        version.update(workspaceName);
+        try {
+            version.update(workspaceName);
+            fail("VersionHistory.update(String) did not throw an ConstraintViolationException");
+        } catch (ConstraintViolationException success) {
+        }
+    }
+
+    /**
+     * Tests if the jcr:frozenUuid property has the correct type
+     * @throws Exception
+     */
+    public void testFrozenUUID() throws Exception {
+        Property p = version.getNode(jcrFrozenNode).getProperty(jcrFrozenUuid);
+        assertEquals("jcr:fronzenUuid should be of type string", PropertyType.TYPENAME_STRING, PropertyType.nameFromValue(p.getType()));
     }
 }

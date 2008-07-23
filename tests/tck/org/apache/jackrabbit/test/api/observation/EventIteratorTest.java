@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -53,8 +53,8 @@ public class EventIteratorTest extends AbstractObservationTest{
         addEventListener(listener, Event.NODE_ADDED);
         testRootNode.addNode(nodeName1, testNodeType);
         testRootNode.save();
-        removeEventListener(listener);
         EventIterator events = listener.getEventIterator(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(listener);
         assertNotNull("No events delivered within " + DEFAULT_WAIT_TIMEOUT + "ms.", events);
         long size = events.getSize();
         if (size == -1) {
@@ -73,8 +73,8 @@ public class EventIteratorTest extends AbstractObservationTest{
         testRootNode.addNode(nodeName2, testNodeType);
         testRootNode.addNode(nodeName3, testNodeType);
         testRootNode.save();
-        removeEventListener(listener);
         EventIterator events = listener.getEventIterator(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(listener);
         assertNotNull("No events delivered within " + DEFAULT_WAIT_TIMEOUT + "ms.", events);
         assertEquals("Initial call to getPosition() must return 0.", 0, events.getPosition());
         events.nextEvent();
@@ -95,8 +95,8 @@ public class EventIteratorTest extends AbstractObservationTest{
         testRootNode.addNode(nodeName2, testNodeType);
         testRootNode.addNode(nodeName3, testNodeType);
         testRootNode.save();
-        removeEventListener(listener);
         EventIterator events = listener.getEventIterator(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(listener);
         assertNotNull("No events delivered within " + DEFAULT_WAIT_TIMEOUT + "ms.", events);
         // skip zero elements
         events.skip(0);

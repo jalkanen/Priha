@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -18,6 +18,7 @@ package org.apache.jackrabbit.test.api;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.NotExecutableException;
+import org.apache.jackrabbit.test.ISO8601;
 import org.apache.jackrabbit.test.api.nodetype.NodeTypeUtil;
 
 import javax.jcr.nodetype.PropertyDefinition;
@@ -27,6 +28,9 @@ import javax.jcr.Value;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Property;
+import javax.jcr.ValueFormatException;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * <code>SetPropertyAssumeTypeTest</code> tests if when setting a property
@@ -64,6 +68,7 @@ public class SetPropertyAssumeTypeTest extends AbstractJCRTest {
 
     public void setUp() throws Exception {
         super.setUp();
+        testNode = testRootNode.addNode(nodeName1, testNodeType);
 
         binaryValue = NodeTypeUtil.getValueOfType(superuser, PropertyType.BINARY);
         booleanValue = NodeTypeUtil.getValueOfType(superuser, PropertyType.BOOLEAN);
@@ -82,6 +87,28 @@ public class SetPropertyAssumeTypeTest extends AbstractJCRTest {
         nameValues = new Value[] {nameValue};
         pathValues = new Value[] {pathValue};
         stringValues = new Value[] {stringValue};
+    }
+
+    protected void tearDown() throws Exception {
+        testNode = null;
+        testPropName = null;
+        binaryValue = null;
+        booleanValue = null;
+        dateValue = null;
+        doubleValue = null;
+        longValue = null;
+        nameValue = null;
+        pathValue = null;
+        stringValue = null;
+        binaryValues = null;
+        booleanValues = null;
+        dateValues = null;
+        doubleValues = null;
+        longValues = null;
+        nameValues = null;
+        pathValues = null;
+        stringValues = null;
+        super.tearDown();
     }
 
     /**
@@ -348,6 +375,8 @@ public class SetPropertyAssumeTypeTest extends AbstractJCRTest {
 
         Node referenceableNode = testRootNode.addNode(nodeName2);
         referenceableNode.addMixin(mixReferenceable);
+        // some implementations may require a save after addMixin()
+        testRootNode.save();
 
         Property prop = testNode.setProperty(testPropName, referenceableNode);
         assertEquals("setProperty(String, Value) of a property of type undefined " +
@@ -423,24 +452,14 @@ public class SetPropertyAssumeTypeTest extends AbstractJCRTest {
      * property do not match. The exception has to be thrown either immediately
      * (by this method) or on save.
      */
-    public void testValueConstraintVioloationExceptionBecauseOfInvalidTypeParameter()
+    public void testValueConstraintViolationExceptionBecauseOfInvalidTypeParameter()
         throws NotExecutableException, RepositoryException {
 
-        // locate a property definition of type string
-        PropertyDefinition propDef =
-                NodeTypeUtil.locatePropertyDef(superuser, PropertyType.STRING, false, false, false, false);
-
-        if (propDef == null) {
-            throw new NotExecutableException("No testable property has been found.");
-        }
-
-        // create a node of type propDef.getDeclaringNodeType()
-        String nodeType = propDef.getDeclaringNodeType().getName();
-        Node testNode = testRootNode.addNode(nodeName1, nodeType);
-        String testPropName = propDef.getName();
-
         try {
-            testNode.setProperty(testPropName, stringValue, PropertyType.DATE);
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(new Date(0));
+            Value v = superuser.getValueFactory().createValue(ISO8601.format(cal));
+            testNode.setProperty(propertyName1, v, PropertyType.DATE);
             testRootNode.save();
             fail("Node.setProperty(String, Value, int) must throw a " +
                  "ConstraintViolationExcpetion if the type parameter and the " +
@@ -457,24 +476,13 @@ public class SetPropertyAssumeTypeTest extends AbstractJCRTest {
      * property do not match. The exception has to be thrown either immediately
      * (by this method) or on save.
      */
-    public void testStringConstraintVioloationExceptionBecauseOfInvalidTypeParameter()
+    public void testStringConstraintViolationExceptionBecauseOfInvalidTypeParameter()
         throws NotExecutableException, RepositoryException {
 
-        // locate a property definition of type string
-        PropertyDefinition propDef =
-                NodeTypeUtil.locatePropertyDef(superuser, PropertyType.STRING, false, false, false, false);
-
-        if (propDef == null) {
-            throw new NotExecutableException("No testable property has been found.");
-        }
-
-        // create a node of type propDef.getDeclaringNodeType()
-        String nodeType = propDef.getDeclaringNodeType().getName();
-        Node testNode = testRootNode.addNode(nodeName1, nodeType);
-        String testPropName = propDef.getName();
-
         try {
-            testNode.setProperty(testPropName, "abc", PropertyType.DATE);
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(new Date(0));
+            testNode.setProperty(propertyName1, ISO8601.format(cal), PropertyType.DATE);
             testRootNode.save();
             fail("Node.setProperty(String, Value, int) must throw a " +
                  "ConstraintViolationExcpetion if the type parameter and the " +
@@ -487,34 +495,22 @@ public class SetPropertyAssumeTypeTest extends AbstractJCRTest {
 
     /**
      * Tests if <code>Node.setProperty(String, Value[], int)</code> throws a
-     * ConstraintViolationException if the type parameter and the type of the
-     * property do not match. The exception has to be thrown either immediately
-     * (by this method) or on save.
+     * ConstraintViolationException or ValueFormatException if the type
+     * parameter and the type of the property do not match. The exception has to
+     * be thrown either immediately (by this method) or on save.
      */
-    public void testValuesConstraintVioloationExceptionBecauseOfInvalidTypeParameter()
+    public void testValuesConstraintViolationExceptionBecauseOfInvalidTypeParameter()
         throws NotExecutableException, RepositoryException {
 
-        // locate a property definition of type string
-        PropertyDefinition propDef =
-                NodeTypeUtil.locatePropertyDef(superuser, PropertyType.STRING, true, false, false, false);
-
-        if (propDef == null) {
-            throw new NotExecutableException("No testable property has been found.");
-        }
-
-        // create a node of type propDef.getDeclaringNodeType()
-        String nodeType = propDef.getDeclaringNodeType().getName();
-        Node testNode = testRootNode.addNode(nodeName1, nodeType);
-        String testPropName = propDef.getName();
-
         try {
-            testNode.setProperty(testPropName, stringValues, PropertyType.DATE);
+            testNode.setProperty(propertyName1, stringValues, PropertyType.DATE);
             testRootNode.save();
             fail("Node.setProperty(String, Value, int) must throw a " +
-                 "ConstraintViolationExcpetion if the type parameter and the " +
-                 "type of the property do not match." );
-        }
-        catch (ConstraintViolationException e) {
+                    "ConstraintViolationExcpetion or a ValueFormatException if " +
+                    "the type parameter and the type of the property do not match.");
+        } catch (ConstraintViolationException e) {
+            // success
+        } catch (ValueFormatException e) {
             // success
         }
     }

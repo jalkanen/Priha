@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -46,6 +46,12 @@ abstract class AbstractPropertyTest extends AbstractJCRTest {
      * values defined in {@link javax.jcr.PropertyType}.
      */
     protected abstract int getPropertyType();
+    
+    /**
+     * Concrete subclasses return the multivalued-ness of property they test.
+     * (<code>null</code>: does not matter)
+     */
+    protected abstract Boolean getPropertyIsMultivalued();
 
     /**
      * Sets up the fixture for the tests.
@@ -55,8 +61,9 @@ abstract class AbstractPropertyTest extends AbstractJCRTest {
         super.setUp();
         session = helper.getReadOnlySession();
 
-        prop = PropertyUtil.searchProp(session, session.getRootNode().getNode(testPath), getPropertyType());
+        prop = PropertyUtil.searchProp(session, session.getRootNode().getNode(testPath), getPropertyType(), getPropertyIsMultivalued());
         if (prop == null) {
+            cleanUp();
             String msg = "Workspace does not contain a node with a " +
                     PropertyType.nameFromValue(getPropertyType()) + " property.";
             throw new NotExecutableException(msg);
@@ -64,19 +71,28 @@ abstract class AbstractPropertyTest extends AbstractJCRTest {
         multiple = prop.getDefinition().isMultiple();
         Value val = PropertyUtil.getValue(prop);
         if (val == null) {
+            cleanUp();
             String msg = PropertyType.nameFromValue(getPropertyType()) +
                     " property does not contain a value";
             throw new NotExecutableException(msg);
         }
     }
 
+    protected void cleanUp() throws Exception {
+        if (session != null) {
+            session.logout();
+        }
+        super.cleanUp();
+    }
+    
+    
     /**
      * Releases the session aquired in {@link #setUp()}.
      */
     protected void tearDown() throws Exception {
-        if (session != null) {
-            session.logout();
-        }
+        cleanUp();
+        session = null;
+        prop = null;
         super.tearDown();
     }
 }

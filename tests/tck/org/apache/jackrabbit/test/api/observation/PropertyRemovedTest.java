@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -22,7 +22,7 @@ import javax.jcr.Property;
 import javax.jcr.observation.Event;
 
 /**
- * Test cases for {@link javax.jcr.observation.Event.PROPERTY_REMOVED} events.
+ * Test cases for {@link javax.jcr.observation.Event#PROPERTY_REMOVED} events.
  * <p/>
  * Configuration requirements are:<br/>
  * The {@link #testRoot} must allow child nodes of type {@link #testNodeType}.
@@ -43,7 +43,7 @@ public class PropertyRemovedTest extends AbstractObservationTest {
      * triggered when a property is removed.
      */
     public void testSinglePropertyRemoved() throws RepositoryException {
-        Node node = testRootNode.addNode(nodeName1);
+        Node node = testRootNode.addNode(nodeName1, testNodeType);
         Property prop1 = node.setProperty(propertyName1, "foo");
         node.setProperty(propertyName2, "bar");
         testRootNode.save();
@@ -51,8 +51,8 @@ public class PropertyRemovedTest extends AbstractObservationTest {
         addEventListener(result, Event.PROPERTY_REMOVED);
         prop1.remove();
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
         checkPropertyRemoved(events, new String[]{nodeName1 + "/" + propertyName1});
     }
 
@@ -61,7 +61,7 @@ public class PropertyRemovedTest extends AbstractObservationTest {
      * triggered when multiple properties are removed.
      */
     public void testMultiPropertyRemoved() throws RepositoryException {
-        Node node = testRootNode.addNode(nodeName1);
+        Node node = testRootNode.addNode(nodeName1, testNodeType);
         Property prop1 = node.setProperty(propertyName1, "foo");
         Property prop2 = node.setProperty(propertyName2, "bar");
         testRootNode.save();
@@ -70,8 +70,8 @@ public class PropertyRemovedTest extends AbstractObservationTest {
         prop1.remove();
         prop2.remove();
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
         checkPropertyRemoved(events, new String[]{nodeName1 + "/" + propertyName1,
                                                   nodeName1 + "/" + propertyName2});
     }

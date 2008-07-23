@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -43,9 +43,9 @@ public class OrderByMultiTypeTest extends AbstractOrderByTest {
      * Tests order by queries with a String property and a long property.
      */
     public void testMultipleOrder() throws Exception {
-        Node n1 = testRootNode.addNode(nodeName1);
-        Node n2 = testRootNode.addNode(nodeName2);
-        Node n3 = testRootNode.addNode(nodeName3);
+        Node n1 = testRootNode.addNode(nodeName1, testNodeType);
+        Node n2 = testRootNode.addNode(nodeName2, testNodeType);
+        Node n3 = testRootNode.addNode(nodeName3, testNodeType);
 
         n1.setProperty(propertyName1, "aaa");
         n1.setProperty(propertyName2, 3);

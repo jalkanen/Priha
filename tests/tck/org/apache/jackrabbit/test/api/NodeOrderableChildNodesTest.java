@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -19,7 +19,6 @@ package org.apache.jackrabbit.test.api;
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.NotExecutableException;
 
-import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.Node;
 import javax.jcr.ItemNotFoundException;
@@ -64,6 +63,13 @@ public class NodeOrderableChildNodesTest extends AbstractJCRTest {
      * The node that allows orderable child nodes
      */
     private Node parentNode;
+
+    protected void tearDown() throws Exception {
+        initialFirstNode = null;
+        initialSecondNode = null;
+        parentNode = null;
+        super.tearDown();
+    }
 
     /**
      * Tries to reorder child nodes using {@link Node#orderBefore(String, String)}
@@ -110,17 +116,25 @@ public class NodeOrderableChildNodesTest extends AbstractJCRTest {
      * that does not support child reordering. <br/><br/> This should throw and
      * {@link UnsupportedRepositoryOperationException}. Prequisites: <ul>
      * <li>javax.jcr.tck.NodeOrderableChildNodesTest.testOrderBeforeUnsupportedRepositoryOperationException.nodetype2</li>
-     * A valid node type that does not suport child node ordering.</li>
+     * A valid node type that does not support child node ordering.</li>
      * <li>javax.jcr.tck.NodeOrderableChildNodesTest.testOrderBeforeUnsupportedRepositoryOperationException.nodetype3</li>
      * A valid node type that can be added as a child. </ul>
      */
     public void testOrderBeforeUnsupportedRepositoryOperationException()
             throws RepositoryException, NotExecutableException {
-        prepareTest();
+
+        // create testNode
+        parentNode = testRootNode.addNode(nodeName1, getProperty("nodetype2"));
+        // add child node
+        Node firstNode = parentNode.addNode(nodeName2, getProperty("nodetype3"));
+        // add a second child node
+        Node secondNode = parentNode.addNode(nodeName3, getProperty("nodetype3"));
+        // save the new nodes
+        superuser.save();
 
         // ok lets try to reorder
         try {
-            parentNode.orderBefore(initialSecondNode.getName(), initialFirstNode.getName());
+            parentNode.orderBefore(secondNode.getName(), firstNode.getName());
             fail("Trying to reorder child nodes using Node.orderBefore() on node that " +
                     "does not support ordering should throw UnsupportedRepositoryException!");
         } catch (UnsupportedRepositoryOperationException e) {

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -24,7 +24,6 @@ import javax.jcr.ItemVisitor;
 import javax.jcr.Node;
 import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
-import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
@@ -76,7 +75,9 @@ public class PropertyReadMethodsTest extends AbstractJCRTest {
     protected void tearDown() throws Exception {
         if (session != null) {
             session.logout();
+            session = null;
         }
+        property = null;
         super.tearDown();
     }
 
@@ -188,11 +189,16 @@ public class PropertyReadMethodsTest extends AbstractJCRTest {
      */
     public void testIsSame() throws RepositoryException {
         // access same property through different session
-        PropertyIterator properties = testRootNode.getProperties();
-        Property otherProperty = properties.nextProperty();
-        assertTrue("isSame must return true for the same " +
-                "property retrieved through different sessions.",
-                property.isSame(otherProperty));
+        Session otherSession = helper.getReadOnlySession();
+        try {
+            Property otherProperty = otherSession.getRootNode().getNode(testPath).getProperty(property.getName());
+            assertTrue("isSame must return true for the same " +
+                    "property retrieved through different sessions.",
+                    property.isSame(otherProperty));
+        }
+        finally {
+            otherSession.logout();
+        }
     }
 
     /**
@@ -267,8 +273,12 @@ public class PropertyReadMethodsTest extends AbstractJCRTest {
      * Tests failure of Property.getValues() method for a single value
      * property.
      */
-    public void testGetValues() throws RepositoryException {
-        Property singleProp = PropertyUtil.searchProp(session, testRootNode, PropertyType.STRING);
+    public void testGetValues() throws RepositoryException, NotExecutableException {
+        Property singleProp = PropertyUtil.searchSingleValuedProperty(testRootNode);
+        if (singleProp == null) {
+            throw new NotExecutableException("No single valued property found.");
+        }
+
         try {
             singleProp.getValues();
             fail("Property.getValues() called on a single property " +
@@ -285,30 +295,29 @@ public class PropertyReadMethodsTest extends AbstractJCRTest {
     public void testGetValueCopyStoredValues()
         throws NotExecutableException, RepositoryException {
 
-        Property prop = PropertyUtil.searchMultivalProp(testRootNode, PropertyType.STRING);
+        Property prop = PropertyUtil.searchMultivalProp(testRootNode);
         if (prop == null) {
-            throw new NotExecutableException("No testable propery found.");
+            throw new NotExecutableException("No multivalued property found.");
         }
 
         // acquire the values of the property and change the zeroth value
         Value[] values = prop.getValues();
         if (values.length == 0) {
-            throw new NotExecutableException("No testable propery found.");
+            throw new NotExecutableException("No testable property found.");
         }
-        values[0] = session.getValueFactory().createValue(values[0].getString() + "abc");
+        values[0] = null;
 
-        // re-acquire the values and compare the zeroth values
+        // re-acquire the values and check if nulled value still exists
         Value[] values2 = prop.getValues();
-        String s1 = values[0].getString();
-        String s2 = values2[0].getString();
-        assertFalse("Changes on the array returned by Property.getNodes() must " +
+        assertNotNull("Changes on the array returned by Property.getValues() must " +
                 "not be reflected in the internal storage.",
-                s1.equals(s2));
+                values2[0]);
     }
 
     /**
-     * Tests that a ValueFormatExcdption is thrown in case Property.getNode is called
-     * on a multivalued exception.
+     * Tests if Property.getNode() fails with ValueFormatException for
+     * multivalued properties.
+     *
      * @throws RepositoryException
      * @throws NotExecutableException
      */
@@ -322,7 +331,7 @@ public class PropertyReadMethodsTest extends AbstractJCRTest {
             try {
                 prop.getNode();
                 fail("Property.getNode should throw a ValueFormatException in case of "
-                        + "a multivalued porerty.");
+                        + "a multivalued property.");
             } catch (ValueFormatException vfe) {
                 // ok
             }

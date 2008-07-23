@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -132,9 +132,9 @@ public class SQLQueryLevel2Test extends AbstractQueryLevel2Test {
      */
     private Statement getFullTextStatement() {
         StringBuffer tmp = new StringBuffer("SELECT ");
-        tmp.append(propertyName1);
-        tmp.append(" FROM ").append(testNodeType);
-        tmp.append(" WHERE CONTAINS(*, '''quick brown'' -cat')");
+        tmp.append(escapeIdentifierForSQL(propertyName1));
+        tmp.append(" FROM ").append(escapeIdentifierForSQL(testNodeType));
+        tmp.append(" WHERE CONTAINS(., '\"quick brown\" -cat')");
         tmp.append(" AND ").append(jcrPath).append(" LIKE '");
         tmp.append(testRoot).append("/%'");
         return new Statement(tmp.toString(), Query.SQL);
@@ -146,12 +146,12 @@ public class SQLQueryLevel2Test extends AbstractQueryLevel2Test {
      */
     private Statement getMultiValueStatement() {
         StringBuffer tmp = new StringBuffer("SELECT ");
-        tmp.append(propertyName1);
-        tmp.append(" FROM ").append(testNodeType);
+        tmp.append(escapeIdentifierForSQL(propertyName1));
+        tmp.append(" FROM ").append(escapeIdentifierForSQL(testNodeType));
         tmp.append(" WHERE 'two' IN ");
-        tmp.append(propertyName2);
+        tmp.append(escapeIdentifierForSQL(propertyName2));
         tmp.append(" AND 'existence' IN ");
-        tmp.append(propertyName1);
+        tmp.append(escapeIdentifierForSQL(propertyName1));
         tmp.append(" AND ").append(jcrPath).append(" LIKE '");
         tmp.append(testRoot).append("/%'");
         return new Statement(tmp.toString(), Query.SQL);
@@ -162,12 +162,12 @@ public class SQLQueryLevel2Test extends AbstractQueryLevel2Test {
      */
     private Statement getRangeStatement() {
         StringBuffer tmp = new StringBuffer("SELECT ");
-        tmp.append(propertyName1);
-        tmp.append(" FROM ").append(testNodeType);
+        tmp.append(escapeIdentifierForSQL(propertyName1));
+        tmp.append(" FROM ").append(escapeIdentifierForSQL(testNodeType));
         tmp.append(" WHERE ");
-        tmp.append(propertyName1);
+        tmp.append(escapeIdentifierForSQL(propertyName1));
         tmp.append(" <= 'b' AND ");
-        tmp.append(propertyName1);
+        tmp.append(escapeIdentifierForSQL(propertyName1));
         tmp.append(" > 'a'");
         tmp.append(" AND ").append(jcrPath).append(" LIKE '");
         tmp.append(testRoot).append("/%'");

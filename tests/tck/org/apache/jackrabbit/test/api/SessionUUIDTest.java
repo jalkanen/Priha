@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,11 +17,13 @@
 package org.apache.jackrabbit.test.api;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
+import org.apache.jackrabbit.test.NotExecutableException;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.ReferentialIntegrityException;
 import javax.jcr.Session;
+import javax.jcr.InvalidItemStateException;
 
 /**
  * <code>SessionUUIDTest</code> contains all tests for the {@link javax.jcr.Session}
@@ -50,7 +52,7 @@ public class SessionUUIDTest extends AbstractJCRTest {
      * <li><code>javax.jcr.tck.SessionUUIDTest.nodetype2</code> must have the mixin type <code>mix:referenceable</code> assigned.</li>
      * </ul>
      */
-    public void testSaveReferentialIntegrityException() throws RepositoryException {
+    public void testSaveReferentialIntegrityException() throws RepositoryException, NotExecutableException {
         // get default workspace test root node using superuser session
         Node defaultRootNode = (Node) superuser.getItem(testRootNode.getPath());
 
@@ -59,6 +61,16 @@ public class SessionUUIDTest extends AbstractJCRTest {
 
         // create a node with a jcr:uuid property to serve as target
         Node refTargetNode = defaultRootNode.addNode(nodeName2, getProperty("nodetype2"));
+        // implementations may only have the mix:referenceable active upon save
+        defaultRootNode.save();
+
+        if (!refTargetNode.isNodeType(mixReferenceable)) {
+            throw new NotExecutableException("Cannot test referential integrity. Node is not referenceable.");
+        }
+
+        // abort test if the repository does not allow setting
+        // reference properties on this node
+        ensureCanSetProperty(referencingNode, propertyName1, referencingNode.getSession().getValueFactory().createValue(refTargetNode));
 
         // set the reference
         referencingNode.setProperty(propertyName1, refTargetNode);
@@ -89,7 +101,9 @@ public class SessionUUIDTest extends AbstractJCRTest {
      * <li>Session 1 moves node 1 under node 2, saves changes</li>
      * <li>Session 2 modifes node 1, saves</li>
      * </ul>
-     * This should work since the modified node is identified by its UUID, not by position in repository.
+     * This should work (since the modified node is identified by its UUID, not by position in repository)
+     * or throw an <code>InvalidItemStateException</code> if 'move' is reported
+     * to the second session as a sequence of remove and add events.
      * <br><br>Prerequisites:
      * <ul>
      * <li><code>javax.jcr.tck.SessionUUIDTest.nodetype2</code> must have the mixin type <code>mix:referenceable</code> assigned.</li>
@@ -97,7 +111,7 @@ public class SessionUUIDTest extends AbstractJCRTest {
      * name of a property that can be modified in <code>nodetype2</code> for testing</li>
      * </ul>
      */
-    public void testSaveMovedRefNode() throws RepositoryException {
+    public void testSaveMovedRefNode() throws RepositoryException, NotExecutableException {
         // get default workspace test root node using superuser session
         Node defaultRootNode = (Node) superuser.getItem(testRootNode.getPath());
 
@@ -109,6 +123,10 @@ public class SessionUUIDTest extends AbstractJCRTest {
 
         // save the new nodes
         superuser.save();
+
+        if (!refTargetNode.isNodeType(mixReferenceable)) {
+            throw new NotExecutableException("Cannot test referential integrity. Node is not referenceable.");
+        }
 
         // get the moving node with session 2
         Session testSession = helper.getReadWriteSession();
@@ -122,13 +140,15 @@ public class SessionUUIDTest extends AbstractJCRTest {
             // make the move persistent with session 1
             superuser.save();
 
-            // modify some prop of the moved node with session 2
-            refTargetNodeSession2.setProperty(propertyName1, "test");
-
-            // save it
-            testSession.save();
-
-            // ok, works as expected
+            try {
+                // modify some prop of the moved node with session 2
+                refTargetNodeSession2.setProperty(propertyName1, "test");
+                // save it
+                testSession.save();
+                // ok, works as expected
+            } catch (InvalidItemStateException e) {
+                // ok as well.
+            }
         } finally {
             testSession.logout();
         }

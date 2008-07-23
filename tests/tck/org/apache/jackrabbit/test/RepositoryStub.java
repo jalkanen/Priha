@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -58,6 +58,8 @@ public abstract class RepositoryStub {
     public static final String PROP_READWRITE_NAME = "readwrite.name";
 
     public static final String PROP_NODETYPE = "nodetype";
+
+    public static final String PROP_NODETYPENOCHILDREN = "nodetypenochildren";
 
     public static final String PROP_TESTROOT = "testroot";
 
@@ -196,7 +198,7 @@ public abstract class RepositoryStub {
      * to the <code>Repository</code> returned by {@link #getRepository}.
      * <p/>
      * The <code>Credentials</code> returned has 'superuser' rights. That
-     * is, the <code>Ticket</code> object returned by {@link Repository#login}
+     * is, the <code>Session</code> object returned by {@link Repository#login(Credentials)}
      * has read write access to the whole Content Repository.
      *
      * @return a <code>Credentials</code> object, that allows to login to the
@@ -211,7 +213,7 @@ public abstract class RepositoryStub {
      * to the <code>Repository</code> returned by {@link #getRepository}.
      * <p/>
      * The <code>Credentials</code> returned has read/write rights. That
-     * is, the <code>Ticket</code> object returned by {@link Repository#login}
+     * is, the <code>Session</code> object returned by {@link Repository#login(Credentials)}
      * has read write access to the <code>Node</code> configured in the
      * JCR TCK Interview.
      * <p/>
@@ -229,7 +231,7 @@ public abstract class RepositoryStub {
      * to the <code>Repository</code> returned by {@link #getRepository}.
      * <p/>
      * The <code>Credentials</code> returned must have read-only rights. That
-     * is, the <code>Ticket</code> object returned by {@link Repository#login}
+     * is, the <code>Session</code> object returned by {@link Repository#login()}
      * has read-only access to the <code>Node</code> configured in the
      * JCR TCK Interview.
      * <p/>

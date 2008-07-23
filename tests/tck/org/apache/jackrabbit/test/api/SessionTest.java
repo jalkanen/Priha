@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -28,12 +28,7 @@ import javax.jcr.Session;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.Value;
 import javax.jcr.Repository;
-import javax.jcr.NamespaceRegistry;
 import javax.jcr.lock.LockException;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Arrays;
-import java.util.Hashtable;
 
 /**
  * <code>SessionTest</code> contains all test cases for the
@@ -67,7 +62,7 @@ public class SessionTest extends AbstractJCRTest {
         // create parent node
         Node srcParentNode = defaultRootNode.addNode(nodeName1, testNodeType);
         // create node to move
-        Node moveNode = srcParentNode.addNode(nodeName2, testNodeType);
+        Node moveNode = srcParentNode.addNode(nodeName2, getProperty("nodetype3"));
 
         // create a second node that will serve as new parent, must use a nodetype that does not allow
         // same name siblings
@@ -194,7 +189,7 @@ public class SessionTest extends AbstractJCRTest {
         // save only old parent node
         try {
             srcParentNode.save();
-            fail("Saving only the source parent node after a Session.move() operation must throw ContstraintViolationException");
+            fail("Saving only the source parent node after a Session.move() operation must throw ConstraintViolationException");
         } catch (ConstraintViolationException e) {
             // ok both work as expected
         }
@@ -237,14 +232,14 @@ public class SessionTest extends AbstractJCRTest {
     /**
      * Calls <code>{@link javax.jcr.Session#move(String src, String dest)} where
      * the parent node of src is locked.<br/> <br/> Should throw a <code>{@link
-     * javax.jcr.LockException} immediately or on save.
+     * LockException} immediately or on save.
      */
     public void testMoveLockException()
         throws NotExecutableException, RepositoryException {
 
         Session session = superuser;
 
-        if (session.getRepository().getDescriptor(Repository.OPTION_LOCKING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_LOCKING_SUPPORTED)) {
             throw new NotExecutableException("Locking is not supported.");
         }
 
@@ -270,20 +265,22 @@ public class SessionTest extends AbstractJCRTest {
 
         // access node through another session to lock it
         Session session2 = helper.getSuperuserSession();
-        Node node2 = session2.getRootNode().getNode(pathRelToRoot);
-        node2.lock(true, true);
-
         try {
-            String destPath = testRoot + "/" + nodeName2;
-            session.move(srcNode.getPath(), destPath);
-            testRootNode.save();
-            fail("A LockException is thrown either immediately or on save  if a lock prevents the move.");
-        }
-        catch (LockException e){
-            // success
-        }
+            Node node2 = session2.getRootNode().getNode(pathRelToRoot);
+            node2.lock(true, true);
 
-        session2.logout();
+            try {
+                String destPath = testRoot + "/" + nodeName2;
+                session.move(srcNode.getPath(), destPath);
+                testRootNode.save();
+                fail("A LockException is thrown either immediately or on save  if a lock prevents the move.");
+            } catch (LockException e){
+                // success
+            }
+
+        } finally {
+            session2.logout();
+        }
     }
 
     /**

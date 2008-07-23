@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 package org.apache.jackrabbit.test.api;
+
+import org.apache.jackrabbit.test.NotExecutableException;
 
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
@@ -88,11 +90,11 @@ public class WorkspaceCloneReferenceableTest extends AbstractWorkspaceReferencea
         addMixinReferenceableToNode(node1);
 
         // clone a node from default workspace to have the same uuid on second workspace
-        workspaceW2.clone(workspace.getName(), node1.getPath(), testRootNodeW2.getPath() + "/" + nodeName2, false);
+        workspaceW2.clone(workspace.getName(), node1.getPath(), testRootNodeW2.getPath() + "/" + nodeName3, false);
 
         // clone node1 from default workspace to second workspace
         try {
-            workspaceW2.clone(workspace.getName(), node1.getPath(), testRootNodeW2.getPath() + "/" + nodeName3, false);
+            workspaceW2.clone(workspace.getName(), node1.getPath(), testRootNodeW2.getPath() + "/" + nodeName4, false);
             fail("If removeExisting is false then a UUID collision should throw a ItemExistsException");
         } catch (ItemExistsException e) {
             // successful
@@ -108,7 +110,7 @@ public class WorkspaceCloneReferenceableTest extends AbstractWorkspaceReferencea
         // add mixin referenceable to node1
         addMixinReferenceableToNode(node1);
         if (node1.isNodeType(mixReferenceable)) {
-            workspaceW2.clone(workspace.getName(), node1.getPath(), testRootNodeW2.getPath() + "/" + nodeName2, false);
+            workspaceW2.clone(workspace.getName(), node1.getPath(), testRootNodeW2.getPath() + "/" + nodeName3, false);
         } else {
             fail("Node should be referenceable.");
         }
@@ -117,8 +119,8 @@ public class WorkspaceCloneReferenceableTest extends AbstractWorkspaceReferencea
         if (node2.isNodeType(mixReferenceable)) {
             fail("Node should not be referenceable.");
         } else {
-            workspaceW2.clone(workspace.getName(), node2.getPath(), testRootNodeW2.getPath() + "/" + nodeName2, false);
-            assertTrue(testRootNodeW2.hasNode(nodeName2));
+            workspaceW2.clone(workspace.getName(), node2.getPath(), testRootNodeW2.getPath() + "/" + nodeName4, false);
+            assertTrue(testRootNodeW2.hasNode(nodeName4));
         }
     }
 

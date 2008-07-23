@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -46,6 +46,14 @@ public class BinaryPropertyTest extends AbstractPropertyTest {
     }
 
     /**
+     * Returns "does not matter" (<code>null</code>).
+     * @return <code>null</code>.
+     */
+    protected Boolean getPropertyIsMultivalued() {
+        return null;
+    }
+
+    /**
      * Tests that when Value.getStream() is called a second time the same Stream
      * object is returned. Also tests that when a new Value object is requested
      * also a new Stream object is returned by calling getStream() on the new
@@ -57,10 +65,27 @@ public class BinaryPropertyTest extends AbstractPropertyTest {
         InputStream in2 = val.getStream();
         Value otherVal = PropertyUtil.getValue(prop);
         InputStream in3 = otherVal.getStream();
-        assertSame("Same InputStream object expected when " +
-                "Value.getStream is called twice.", in, in2);
-        assertNotSame("Value.getStream() called on a new value " +
-                "object should return a different Stream object.", in, in3);
+        try {
+            assertSame("Same InputStream object expected when " +
+                    "Value.getStream is called twice.", in, in2);
+            assertNotSame("Value.getStream() called on a new value " +
+                    "object should return a different Stream object.", in, in3);
+        } finally {
+            // cleaning up
+            try {
+                in.close();
+            } catch (IOException ignore) {}
+            if (in2 != in) {
+                try {
+                    in2.close();
+                } catch (IOException ignore) {}
+            }
+            if (in3 != in) {
+                try {
+                    in3.close();
+                } catch (IOException ignore) {}
+            }
+        }
     }
 
     /**
@@ -92,16 +117,31 @@ public class BinaryPropertyTest extends AbstractPropertyTest {
     public void testValue() throws IOException, RepositoryException {
         Value val = PropertyUtil.getValue(prop);
         InputStream in = val.getStream();
-        InputStream in2 = prop.getStream();
-        int b = in.read();
-        while (b != -1) {
-            int b2 = in2.read();
-            assertEquals("Value.getStream() and Property.getStream() " +
-                    "return different values.", b, b2);
-            b = in.read();
+        InputStream in2;
+        if (prop.getDefinition().isMultiple()) {
+            // prop has at least one value (checked in #setUp())
+            in2 = prop.getValues()[0].getStream();
+        } else {
+            in2 = prop.getStream();
         }
-        assertEquals("Value.getStream() and Property.getStream() " +
-                "return different values.", -1, in2.read());
+        try {
+            int b = in.read();
+            while (b != -1) {
+                int b2 = in2.read();
+                assertEquals("Value.getStream() and Property.getStream() " +
+                        "return different values.", b, b2);
+                b = in.read();
+            }
+            assertEquals("Value.getStream() and Property.getStream() " +
+                    "return different values.", -1, in2.read());
+        } finally {
+            try {
+                in.close();
+            } catch (IOException ignore) {}
+            try {
+                in2.close();
+            } catch (IOException ignore) {}
+        }
     }
 
     /**

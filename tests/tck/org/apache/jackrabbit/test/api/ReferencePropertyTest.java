@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -47,12 +47,25 @@ public class ReferencePropertyTest extends AbstractPropertyTest {
         referencedNode = prop.getNode();
     }
 
+    protected void tearDown() throws Exception {
+        referencedNode = null;
+        super.tearDown();
+    }
+
     /**
      * Returns {@link javax.jcr.PropertyType#REFERENCE}.
      * @return {@link javax.jcr.PropertyType#REFERENCE}.
      */
     protected int getPropertyType() {
         return PropertyType.REFERENCE;
+    }
+
+    /**
+     * Returns {@link Boolean#FALSE}.
+     * @return {@link Boolean#FALSE}.
+     */
+    protected Boolean getPropertyIsMultivalued() {
+        return Boolean.FALSE;
     }
 
     /**
@@ -82,7 +95,7 @@ public class ReferencePropertyTest extends AbstractPropertyTest {
                 }
             }
             assertTrue("Referencing property of node " + referenced.getName() +
-                    " nof found.", found);
+                    " not found.", found);
             assertTrue("Referenced node retrieved with getNode is different " +
                     "from the node retrieved with getNodeByUUID",
                     referenced.isSame(referencedNode));

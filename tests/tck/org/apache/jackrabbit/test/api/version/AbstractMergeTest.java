@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -103,14 +103,7 @@ public abstract class AbstractMergeTest extends AbstractJCRTest {
         workspaceW2 = superuserW2.getWorkspace();
 
         // get/create test root node on second workspace
-        if (testPath.length() == 0) {
-            // test root is the root node
-            testRootNodeW2 = superuserW2.getRootNode();
-        } else if (!superuserW2.getRootNode().hasNode(testPath)) {
-            testRootNodeW2 = superuserW2.getRootNode().addNode(testPath, testNodeType);
-        } else {
-            testRootNodeW2 = superuserW2.getRootNode().getNode(testPath);
-        }
+        testRootNodeW2 = cleanUpTestRoot(superuserW2);
 
         // initialize test nodes
         initNodes();
@@ -126,22 +119,16 @@ public abstract class AbstractMergeTest extends AbstractJCRTest {
         if (superuserW2 != null) {
             try {
                 if (!isReadOnly) {
-                    // do a 'rollback'
-                    superuserW2.refresh(false);
-                    Node rootW2 = superuserW2.getRootNode();
-                    if (rootW2.hasNode(testPath)) {
-                        // clean test root
-                        testRootNodeW2 = rootW2.getNode(testPath);
-                        for (NodeIterator children = testRootNodeW2.getNodes(); children.hasNext();) {
-                            children.nextNode().remove();
-                        }
-                        rootW2.save();
-                    }
+                    cleanUpTestRoot(superuserW2);
                 }
             } finally {
                 superuserW2.logout();
+                superuserW2 = null;
             }
         }
+        workspace = null;
+        workspaceW2 = null;
+        testRootNodeW2 = null;
 
         super.tearDown();
     }

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -90,7 +90,7 @@ public class CheckinTest extends AbstractVersionTest {
         try {
             Version v2 = versionableNode.checkin();
 
-            assertTrue("Calling checkin() on a node that is already checked-in must not have an effect.", v.equals(v2));
+            assertTrue("Calling checkin() on a node that is already checked-in must not have an effect.", v.isSame(v2));
         } catch (RepositoryException e) {
             fail("Calling checkin() on a node that is already checked-in must not throw an exception.");
         }

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -28,6 +28,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.InvalidItemStateException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.ItemExistsException;
+import javax.jcr.NodeIterator;
 
 /**
  * <code>RestoreTest</code> covers tests related to the restore methods available
@@ -73,6 +74,10 @@ public class RestoreTest extends AbstractVersionTest {
             versionableNode2.remove();
             testRootNode.save();
         } finally {
+            version = null;
+            version2 = null;
+            rootVersion = null;
+            versionableNode2 = null;
             super.tearDown();
         }
     }
@@ -278,4 +283,176 @@ public class RestoreTest extends AbstractVersionTest {
             // success
         }
     }
+
+    public void testRestoreChild1() throws RepositoryException {
+        versionableNode.addNode("child1");
+        versionableNode.save();
+        Version v1 = versionableNode.checkin();
+        versionableNode.checkout();
+        Version v2 = versionableNode.checkin();
+
+        versionableNode.restore(v1, true);
+        assertTrue("Node.restore('1.2') must not remove child node.", versionableNode.hasNode("child1"));
+
+        versionableNode.restore(version, true);
+        assertFalse("Node.restore('1.0') must remove child node.", versionableNode.hasNode("child1"));
+
+        try {
+            versionableNode.restore(v2, true);
+        } catch (RepositoryException e) {
+            fail("Node.restore('1.3') must fail.");
+        }
+    }
+
+    /**
+     * Test the restore of a versionable node using a label.
+     * @throws RepositoryException
+     */
+    public void testRestoreLabel() throws RepositoryException {
+        // V1 of versionable node
+        Version v1 = versionableNode.checkin();
+        String v1Name = v1.getName();
+
+        // mark V1 with label test1
+        versionableNode.getVersionHistory().addVersionLabel(v1Name, "test", true);
+
+        // create a new version
+        versionableNode.checkout();
+        Version v2 = versionableNode.checkin();
+
+        // restore V1 via label.
+        versionableNode.restoreByLabel("test", true);
+        assertEquals("Node.restore('test') not correctly restored",
+                v1Name, versionableNode.getBaseVersion().getName());
+    }
+
+    /**
+     * Test the restore of the OPV=Version child nodes.
+     * @throws RepositoryException
+     */
+    public void testRestoreName() throws RepositoryException {
+        // V1.0 of versionableNode has no child
+        Node child1 = versionableNode.addNode(nodeName4);
+        if (!child1.isNodeType(mixVersionable)) {
+            child1.addMixin(mixVersionable);
+        }
+        versionableNode.save();
+        // create v1.0 of child
+        Version v1Child = child1.checkin();
+
+        // V1 of versionable node has child1
+        String v1 = versionableNode.checkin().getName();
+
+        // create V1.1 of child
+        child1.checkout();
+        Version v11Child = child1.checkin();
+
+        // V2 of versionable node has child1
+        versionableNode.checkout();
+        String v2 = versionableNode.checkin().getName();
+
+        // restore 1.0 of versionable node --> no child
+        versionableNode.restore(version, true);
+        assertFalse("Node.restore('1.0') must remove child node.", versionableNode.hasNode(nodeName4));
+
+        // restore V1 via name. since child was checkin first, 1.0 should be restored
+        versionableNode.restore(v1, true);
+        assertTrue("Node.restore('test') must restore child node.", versionableNode.hasNode(nodeName4));
+        child1 = versionableNode.getNode(nodeName4);
+        assertEquals("Node.restore('test') must restore child node version 1.0.", v1Child.getName(), child1.getBaseVersion().getName());
+
+        // restore V2 via name. child should be 1.1
+        versionableNode.restore(v2, true);
+        child1 = versionableNode.getNode(nodeName4);
+        assertEquals("Node.restore('foo') must restore child node version 1.1.", v11Child.getName(), child1.getBaseVersion().getName());
+    }
+
+    /**
+     * Test the child ordering of restored nodes.
+     * @throws RepositoryException
+     */
+    public void testRestoreOrder() throws RepositoryException {
+        // create a test-root that has orderable child nodes
+        Node testRoot = versionableNode.addNode(nodeName4, "nt:unstructured");
+        testRoot.addMixin(mixVersionable);
+        versionableNode.save();
+
+        // create children of vNode and checkin
+        Node child1 = testRoot.addNode(nodeName1);
+        if (!child1.isNodeType(mixVersionable)) {
+            child1.addMixin(mixVersionable);
+        }
+        Node child2 = testRoot.addNode(nodeName2);
+        if (!child2.isNodeType(mixVersionable)) {
+            child2.addMixin(mixVersionable);
+        }
+        testRoot.save();
+        child1.checkin();
+        child2.checkin();
+        Version v1 = testRoot.checkin();
+
+        // remove node 1
+        testRoot.checkout();
+        child1.remove();
+        testRoot.save();
+        testRoot.checkin();
+
+        // restore version 1.0
+        testRoot.restore(v1, true);
+
+        // check order
+        NodeIterator iter = testRoot.getNodes();
+        assertTrue(testRoot.getName() + " should have 2 child nodes.", iter.hasNext());
+        Node n1 = iter.nextNode();
+        assertTrue(testRoot.getName() + " should have 2 child nodes.", iter.hasNext());
+        Node n2 = iter.nextNode();
+        String orderOk = nodeName1 + ", " + nodeName2;
+        String order = n1.getName() + ", " + n2.getName();
+        assertEquals("Invalid child node ordering", orderOk, order);
+    }
+
+    /**
+     * Test the child ordering of restored nodes.
+     * @throws RepositoryException
+     */
+    public void testRestoreOrder2() throws RepositoryException {
+        // create a test-root that has orderable child nodes
+        Node testRoot = versionableNode.addNode(nodeName4, "nt:unstructured");
+        testRoot.addMixin(mixVersionable);
+        versionableNode.save();
+
+        // create children of vNode and checkin
+        Node child1 = testRoot.addNode(nodeName1);
+        if (!child1.isNodeType(mixVersionable)) {
+            child1.addMixin(mixVersionable);
+        }
+        Node child2 = testRoot.addNode(nodeName2);
+        if (!child2.isNodeType(mixVersionable)) {
+            child2.addMixin(mixVersionable);
+        }
+        testRoot.save();
+        child1.checkin();
+        child2.checkin();
+        Version v1 = testRoot.checkin();
+
+        // reoder nodes
+        testRoot.checkout();
+        testRoot.orderBefore(nodeName2, nodeName1);
+        testRoot.save();
+        testRoot.checkin();
+
+        // restore version 1.0
+        testRoot.restore(v1, true);
+
+        // check order
+        NodeIterator iter = testRoot.getNodes();
+        assertTrue(testRoot.getName() + " should have 2 child nodes.", iter.hasNext());
+        Node n1 = iter.nextNode();
+        assertTrue(testRoot.getName() + " should have 2 child nodes.", iter.hasNext());
+        Node n2 = iter.nextNode();
+        String orderOk = nodeName1 + ", " + nodeName2;
+        String order = n1.getName() + ", " + n2.getName();
+        assertEquals("Invalid child node ordering", orderOk, order);
+    }
+
 }

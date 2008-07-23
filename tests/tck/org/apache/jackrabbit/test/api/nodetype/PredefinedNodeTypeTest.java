@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -28,19 +28,20 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.Value;
-import javax.jcr.nodetype.ItemDefinition;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeIterator;
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.OnParentVersionAction;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
+import org.apache.jackrabbit.test.NotExecutableException;
 
 /**
- * <code>PredefinedNodeTypeTest</code> tests if the implemented predefined node
- * types implemented correctly.
+ * <code>PredefinedNodeTypeTest</code> tests if the predefined node types are
+ * implemented correctly.
  *
  * @test
  * @sources PredefinedNodeTypeTest.java
@@ -76,7 +77,9 @@ public class PredefinedNodeTypeTest extends AbstractJCRTest {
     protected void tearDown() throws Exception {
         if (session != null) {
             session.logout();
+            session = null;
         }
+        manager = null;
         super.tearDown();
     }
 
@@ -95,97 +98,97 @@ public class PredefinedNodeTypeTest extends AbstractJCRTest {
     }
 
     /** Test for the predefined mix:lockable node type. */
-    public void testLockable() {
+    public void testLockable() throws NotExecutableException {
         testPredefinedNodeType("mix:lockable");
     }
 
     /** Test for the predefined mix:referenceable node type. */
-    public void testReferenceable() {
+    public void testReferenceable() throws NotExecutableException {
         testPredefinedNodeType("mix:referenceable");
     }
 
     /** Test for the predefined mix:versionable node type. */
-    public void testVersionable() {
+    public void testVersionable() throws NotExecutableException {
         testPredefinedNodeType("mix:versionable");
     }
 
     /** Test for the predefined nt:base node type. */
-    public void testBase() {
+    public void testBase() throws NotExecutableException {
         testPredefinedNodeType("nt:base");
     }
 
     /** Test for the predefined nt:unstructured node type. */
-    public void testUnstructured() {
+    public void testUnstructured() throws NotExecutableException {
         testPredefinedNodeType("nt:unstructured");
     }
 
     /** Test for the predefined nt:hierarchyNode node type. */
-    public void testHierarchyNode() {
+    public void testHierarchyNode() throws NotExecutableException {
         testPredefinedNodeType("nt:hierarchyNode");
     }
 
     /** Test for the predefined nt:file node type. */
-    public void testFile() {
+    public void testFile() throws NotExecutableException {
         testPredefinedNodeType("nt:file");
     }
 
     /** Test for the predefined nt:linkedFile node type. */
-    public void testLinkedFile() {
+    public void testLinkedFile() throws NotExecutableException {
         testPredefinedNodeType("nt:linkedFile");
     }
 
     /** Test for the predefined nt:folder node type. */
-    public void testFolder() {
+    public void testFolder() throws NotExecutableException {
         testPredefinedNodeType("nt:folder");
     }
 
     /** Test for the predefined nt:nodeType node type. */
-    public void testNodeType() {
+    public void testNodeType() throws NotExecutableException {
         testPredefinedNodeType("nt:nodeType");
     }
 
     /** Test for the predefined nt:propertyDef node type. */
-    public void testPropertyDef() {
+    public void testPropertyDef() throws NotExecutableException {
         testPredefinedNodeType("nt:propertyDefinition");
     }
 
     /** Test for the predefined nt:childNodeDef node type. */
-    public void testChildNodeDef() {
+    public void testChildNodeDef() throws NotExecutableException {
         testPredefinedNodeType("nt:childNodeDefinition");
     }
 
     /** Test for the predefined nt:versionHistory node type. */
-    public void testVersionHistory() {
+    public void testVersionHistory() throws NotExecutableException {
         testPredefinedNodeType("nt:versionHistory");
     }
 
     /** Test for the predefined nt:versionLabels node type. */
-    public void testVersionLabels() {
+    public void testVersionLabels() throws NotExecutableException {
         testPredefinedNodeType("nt:versionLabels");
     }
 
     /** Test for the predefined nt:version node type. */
-    public void testVersion()  {
+    public void testVersion() throws NotExecutableException {
         testPredefinedNodeType("nt:version");
     }
 
     /** Test for the predefined nt:frozenNode node type. */
-    public void testFrozenNode() {
+    public void testFrozenNode() throws NotExecutableException {
         testPredefinedNodeType("nt:frozenNode");
     }
 
     /** Test for the predefined nt:versionedChild node type. */
-    public void testVersionedChild() {
+    public void testVersionedChild() throws NotExecutableException {
         testPredefinedNodeType("nt:versionedChild");
     }
 
     /** Test for the predefined nt:query node type. */
-    public void testQuery() {
+    public void testQuery() throws NotExecutableException {
         testPredefinedNodeType("nt:query");
     }
 
     /** Test for the predefined nt:resource node type. */
-    public void testResource() {
+    public void testResource() throws NotExecutableException {
         testPredefinedNodeType("nt:resource");
     }
 
@@ -202,8 +205,11 @@ public class PredefinedNodeTypeTest extends AbstractJCRTest {
      * semantics remain the same.
      *
      * @param name node type name
+     * @throws NotExecutableException if the node type is not supported by
+     *   this repository implementation.
      */
-    private void testPredefinedNodeType(String name) {
+    private void testPredefinedNodeType(String name)
+            throws NotExecutableException {
         try {
             StringBuffer spec = new StringBuffer();
             String resource =
@@ -216,12 +222,23 @@ public class PredefinedNodeTypeTest extends AbstractJCRTest {
             }
 
             NodeType type = manager.getNodeType(name);
-            assertEquals(
-                    "Predefined node type " + name,
-                    spec.toString(),
-                    getNodeTypeSpec(type));
+            String current = getNodeTypeSpec(type);
+            if (!System.getProperty("line.separator").equals("\n")) {
+                current = normalizeLineSeparators(current);
+            }
+            String expected = normalizeLineSeparators(spec.toString());
+
+            assertEquals("Predefined node type " + name, expected, current);
         } catch (IOException e) {
             fail(e.getMessage());
+        } catch (NoSuchNodeTypeException e) {
+            // only nt:base is strictly required
+            if ("nt:base".equals(name)) {
+                fail(e.getMessage());
+            } else {
+                throw new NotExecutableException("NodeType " + name +
+                        " not supported by this repository implementation.");
+            }
         } catch (RepositoryException e) {
             fail(e.getMessage());
         }
@@ -238,19 +255,30 @@ public class PredefinedNodeTypeTest extends AbstractJCRTest {
      */
     private static String getNodeTypeSpec(NodeType type)
             throws RepositoryException {
+        String typeName = type.getName();
         StringWriter buffer = new StringWriter();
 
         PrintWriter writer = new PrintWriter(buffer);
         writer.println("NodeTypeName");
-        writer.println("  " + type.getName());
+        writer.println("  " + typeName);
         writer.println("Supertypes");
         NodeType[] supertypes = type.getDeclaredSupertypes();
-        if (supertypes.length > 0) {
-            Arrays.sort(supertypes, NODE_TYPE_COMPARATOR);
-            for (int i = 0; i < supertypes.length; i++) {
+        Arrays.sort(supertypes, NODE_TYPE_COMPARATOR);
+        boolean hasPrinted = false;
+        for (int i = 0; i < supertypes.length; i++) {
+            String name = supertypes[i].getName();
+            if (name.startsWith("nt:") ||
+                    (name.equals("mix:referenceable") &&
+                        (typeName.equals("mix:versionable") ||
+                            typeName.equals("nt:resource") ||
+                            typeName.equals("nt:versionHistory") ||
+                            typeName.equals("nt:version") ||
+                            typeName.equals("nt:frozenNode")))) {
                 writer.println("  " + supertypes[i].getName());
+                hasPrinted = true;
             }
-        } else {
+        }
+        if (!hasPrinted) {
             writer.println("  []");
         }
         writer.println("IsMixin");
@@ -260,12 +288,12 @@ public class PredefinedNodeTypeTest extends AbstractJCRTest {
         writer.println("PrimaryItemName");
         writer.println("  " + type.getPrimaryItemName());
         NodeDefinition[] nodes = type.getDeclaredChildNodeDefinitions();
-        Arrays.sort(nodes, ITEM_DEF_COMPARATOR);
+        Arrays.sort(nodes, NODE_DEF_COMPARATOR);
         for (int i = 0; i < nodes.length; i++) {
             writer.print(getChildNodeDefSpec(nodes[i]));
         }
         PropertyDefinition[] properties = type.getDeclaredPropertyDefinitions();
-        Arrays.sort(properties, ITEM_DEF_COMPARATOR);
+        Arrays.sort(properties, PROPERTY_DEF_COMPARATOR);
         for (int i = 0; i < properties.length; i++) {
             writer.print(getPropertyDefSpec(properties[i]));
         }
@@ -339,15 +367,6 @@ public class PredefinedNodeTypeTest extends AbstractJCRTest {
         }
         String type = PropertyType.nameFromValue(property.getRequiredType());
         writer.println("  RequiredType " + type.toUpperCase());
-        writer.print("  ValueConstraints [");
-        String[] constraints = property.getValueConstraints();
-        for (int i = 0; i < constraints.length; i++) {
-            if (i > 0) {
-                writer.print(',');
-            }
-            writer.print(constraints[i]);
-        }
-        writer.println("]");
         Value[] values = property.getDefaultValues();
         if (values != null && values.length > 0) {
             writer.print("  DefaultValues [");
@@ -373,20 +392,63 @@ public class PredefinedNodeTypeTest extends AbstractJCRTest {
     }
 
     /**
-     * Comparator for ordering property and node definition arrays. Item
-     * definitions are ordered by name, with the wildcard item definition
-     * ("*") ordered last.
+     * Replaces platform-dependant line-separators in <code>stringValue</code>
+     * with "\n".
+     *
+     * @param stringValue string to normalize
+     * @return the normalized string
      */
-    private static final Comparator ITEM_DEF_COMPARATOR = new Comparator() {
+    private String normalizeLineSeparators(String stringValue) {
+        // Replace "\r\n" (Windows format) with "\n" (Unix format)
+        stringValue = stringValue.replaceAll("\r\n", "\n");
+        // Replace "\r" (Mac format) with "\n" (Unix format)
+        stringValue = stringValue.replaceAll("\r", "\n");
+
+        return stringValue;
+    }
+
+    /**
+     * Comparator for ordering node definition arrays. Node definitions are
+     * ordered by name, with the wildcard item definition ("*") ordered last.
+     */
+    private static final Comparator NODE_DEF_COMPARATOR = new Comparator() {
         public int compare(Object a, Object b) {
-            ItemDefinition ida = (ItemDefinition) a;
-            ItemDefinition idb = (ItemDefinition) b;
-            if (ida.getName().equals("*") && !idb.getName().equals("*")) {
+            NodeDefinition nda = (NodeDefinition) a;
+            NodeDefinition ndb = (NodeDefinition) b;
+            if (nda.getName().equals("*") && !ndb.getName().equals("*")) {
                 return 1;
-            } else if (!ida.getName().equals("*") && idb.getName().equals("*")) {
+            } else if (!nda.getName().equals("*") && ndb.getName().equals("*")) {
                 return -1;
             } else {
-                return ida.getName().compareTo(idb.getName());
+                return nda.getName().compareTo(ndb.getName());
+            }
+        }
+    };
+
+    /**
+     * Comparator for ordering property definition arrays. Property definitions
+     * are ordered by name, with the wildcard item definition ("*") ordered
+     * last, and isMultiple flag, with <code>isMultiple==true</code> ordered last.
+     */
+    private static final Comparator PROPERTY_DEF_COMPARATOR = new Comparator() {
+        public int compare(Object a, Object b) {
+            PropertyDefinition pda = (PropertyDefinition) a;
+            PropertyDefinition pdb = (PropertyDefinition) b;
+            if (pda.getName().equals("*") && !pdb.getName().equals("*")) {
+                return 1;
+            } else if (!pda.getName().equals("*") && pdb.getName().equals("*")) {
+                return -1;
+            }
+            int result = pda.getName().compareTo(pdb.getName());
+            if (result != 0) {
+                return result;
+            }
+            if (pda.isMultiple() && !pdb.isMultiple()) {
+                return 1;
+            } else if (!pda.isMultiple() && pdb.isMultiple()) {
+                return -1;
+            } else {
+                return 0;
             }
         }
     };

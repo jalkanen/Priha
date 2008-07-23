@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -18,18 +18,14 @@ package org.apache.jackrabbit.test.api;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.NotExecutableException;
-import org.apache.jackrabbit.test.api.nodetype.NodeTypeUtil;
 
 import javax.jcr.Session;
 import javax.jcr.Property;
-import javax.jcr.PropertyType;
 import javax.jcr.Node;
 import javax.jcr.Value;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.version.VersionException;
-import javax.jcr.nodetype.PropertyDefinition;
-import javax.jcr.nodetype.NodeType;
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
 import java.util.Calendar;
@@ -67,7 +63,7 @@ public class SetValueVersionExceptionTest extends AbstractJCRTest {
         value = session.getValueFactory().createValue("abc");
         values = new Value[] {value};
 
-        if (session.getRepository().getDescriptor(Repository.OPTION_LOCKING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_VERSIONING_SUPPORTED)) {
             throw new NotExecutableException("Versioning is not supported.");
         }
 
@@ -94,12 +90,20 @@ public class SetValueVersionExceptionTest extends AbstractJCRTest {
      * Releases the session aquired in {@link #setUp()}.
      */
     protected void tearDown() throws Exception {
-        node.checkout();
-
-        if (session != null) {
-            session.logout();
+        try {
+            node.checkout();
+        } finally {
+            if (session != null) {
+                session.logout();
+                session = null;
+            }
+            node = null;
+            property = null;
+            multiProperty = null;
+            value = null;
+            values = null;
+            super.tearDown();
         }
-        super.tearDown();
     }
 
     /**
@@ -261,22 +265,36 @@ public class SetValueVersionExceptionTest extends AbstractJCRTest {
     /**
      * Tests if setValue(Node) throws a VersionException immediately
      * or on save if the parent node of this property is checked-in.
+     * @tck.config nodetype2 name of a node type with a reference property
+     * @tck.config propertyname3 name of a single value reference property
+     *   declared in nodetype2
      */
     public void testNode()
         throws NotExecutableException, RepositoryException {
 
-        // create a referenceable node
-        Node referenceableNode = testRootNode.addNode(nodeName3);
-        referenceableNode.addMixin(mixReferenceable);
+        String nodeType3 = getProperty("nodetype3");
 
-        // create a node with a reference property
-        PropertyDefinition propDef =
-                NodeTypeUtil.locatePropertyDef(session, PropertyType.REFERENCE, false, false, false, false);
-        if (propDef == null) {
-            throw new NotExecutableException("Failed to set up required test items.");
+        // create a referenceable node
+        Node referenceableNode = (nodeType3 == null)
+            ? testRootNode.addNode(nodeName3)
+            : testRootNode.addNode(nodeName3, nodeType3);
+
+        // try to make it referenceable if it is not
+        if (!referenceableNode.isNodeType(mixReferenceable)) {
+            if (referenceableNode.canAddMixin(mixReferenceable)) {
+              referenceableNode.addMixin(mixReferenceable);
+            } else {
+                throw new NotExecutableException("Failed to set up required test items.");
+            }
         }
-        NodeType nodeType = propDef.getDeclaringNodeType();
-        Node node = testRootNode.addNode(nodeName4, nodeType.getName());
+
+        // implementation specific if mixin takes effect immediately or upon save
+        testRootNode.save();
+
+        String refPropName = getProperty("propertyname3");
+        String nodeType = getProperty("nodetype2");
+
+        Node node = testRootNode.addNode(nodeName4, nodeType);
 
         // try to make it versionable if it is not
         if (!node.isNodeType(mixVersionable)) {
@@ -287,8 +305,10 @@ public class SetValueVersionExceptionTest extends AbstractJCRTest {
             }
         }
 
-        Property property = node.setProperty(propDef.getName(), referenceableNode);
+        // fail early when reference properties are not suppoerted
+        ensureCanSetProperty(node, refPropName, node.getSession().getValueFactory().createValue(referenceableNode));
 
+        Property property = node.setProperty(refPropName, referenceableNode);
         testRootNode.save();
 
         node.checkin();

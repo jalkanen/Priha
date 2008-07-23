@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -46,7 +46,7 @@ import javax.jcr.Repository;
  */
 public class TextNodeTest extends AbstractQueryTest {
 
-    /** Resolved QName for jcr:xmltext */
+    /** Resolved Name for jcr:xmltext */
     private String jcrXMLText;
 
     private String jcrXMLCharacters;
@@ -62,6 +62,7 @@ public class TextNodeTest extends AbstractQueryTest {
      */
     public void testTextNodeTest() throws RepositoryException {
         Node text1 = testRootNode.addNode(jcrXMLText);
+        text1.setProperty(jcrXMLCharacters, "foo");
         testRootNode.save();
         String xpath = "/" + jcrRoot + testRoot + "/text()";
         executeXPathQuery(superuser, xpath, new Node[]{text1});
@@ -73,7 +74,9 @@ public class TextNodeTest extends AbstractQueryTest {
      */
     public void testTextNodeTestMultiNodes() throws RepositoryException {
         Node text1 = testRootNode.addNode(jcrXMLText);
+        text1.setProperty(jcrXMLCharacters, "foo");
         Node text2 = testRootNode.addNode(nodeName1, testNodeType).addNode(jcrXMLText);
+        text2.setProperty(jcrXMLCharacters, "foo");
         testRootNode.save();
         String xpath = "/" + jcrRoot + testRoot + "//text()";
         executeXPathQuery(superuser, xpath, new Node[]{text1, text2});
@@ -101,15 +104,17 @@ public class TextNodeTest extends AbstractQueryTest {
      */
     public void testTextNodeTestWithPosition()
             throws RepositoryException, NotExecutableException {
-        if (superuser.getRepository().getDescriptor(Repository.QUERY_XPATH_POS_INDEX) == null) {
+        if (!isSupported(Repository.QUERY_XPATH_POS_INDEX)) {
             throw new NotExecutableException("Repository does not support position index");
         }
         Node text1 = testRootNode.addNode(jcrXMLText);
+        text1.setProperty(jcrXMLCharacters, "foo");
         if (!text1.getDefinition().allowsSameNameSiblings()) {
             throw new NotExecutableException("Node at path: " + testRoot + " does not allow same name siblings with name: " + jcrXMLText);
         }
         testRootNode.addNode(nodeName1, testNodeType);
         Node text2 = testRootNode.addNode(jcrXMLText);
+        text2.setProperty(jcrXMLCharacters, "foo");
         testRootNode.save();
         String xpath = "/" + jcrRoot + testRoot + "/text()[2]";
         executeXPathQuery(superuser, xpath, new Node[]{text2});

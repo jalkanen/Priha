@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -16,8 +16,7 @@
  */
 package org.apache.jackrabbit.test;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
+import org.slf4j.Logger;
 
 import java.io.Writer;
 import java.io.IOException;
@@ -38,11 +37,6 @@ public class LogPrintWriter extends PrintWriter {
      * Logger for message output.
      */
     private Logger log;
-
-    /**
-     * Default Level is debug.
-     */
-    private Level level = Level.DEBUG;
 
     /**
      * Creates a new <code>LogPrintWriter</code> which is based on a
@@ -90,16 +84,6 @@ public class LogPrintWriter extends PrintWriter {
         this.log = log;
     }
 
-    /**
-     * Sets the log level for messages written to the <code>Logger</code>
-     * instance currently set in this <code>LogPrintWriter</code>.
-     *
-     * @param level the log level to set.
-     */
-    public void setMsgLevel(Level level) {
-        this.level = level;
-    }
-
     //------------------< overrides from PrintWriter >-------------------------
 
     public void close() {
@@ -139,7 +123,7 @@ public class LogPrintWriter extends PrintWriter {
             return;
         }
         if (log != null) {
-            log.log(level, buffer);
+            log.debug(buffer.toString());
         } else {
             try {
                 out.write(buffer.toString());

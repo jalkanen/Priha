@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,7 +17,6 @@
 package org.apache.jackrabbit.test.api;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
-import org.apache.log4j.Level;
 
 import javax.jcr.Session;
 import javax.jcr.Workspace;
@@ -69,6 +68,12 @@ class TreeComparator extends AbstractJCRTest {
         session = s;
         workspace = session.getWorkspace();
         init();
+    }
+
+    public void tearDown() throws Exception {
+        session = null;
+        workspace = null;
+        super.tearDown();
     }
 
     public void setSession(Session session) {
@@ -203,7 +208,9 @@ class TreeComparator extends AbstractJCRTest {
                 log.println("Cannot create node with mixin node type: " + e);
                 // if saving failed for a node, then remove it again (or else the next save will fail on it)
                 try {
-                    n.remove();
+                    if (n != null) {
+                        n.remove();
+                    }
                 } catch (RepositoryException e1) {
                     log.println("Could not remove node: " + e);
                 }
@@ -235,7 +242,10 @@ class TreeComparator extends AbstractJCRTest {
             // the UUID during serialization.
             if (!referenceable.isNodeType(mixReferenceable)) {
                 referenceable.addMixin(mixReferenceable);
+                // some implementations may require a save after addMixin()                
+                session.save();
             }
+
             pt.setProperty(sc.referenceTestProperty, referenceable);
 
             // Create a boolean property on the root node, so I can test noRecurse and skipBinary at the same time

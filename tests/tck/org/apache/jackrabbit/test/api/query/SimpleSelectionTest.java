@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -55,6 +55,7 @@ public class SimpleSelectionTest extends AbstractQueryTest {
     protected void tearDown() throws Exception {
         if (session != null) {
             session.logout();
+            session = null;
         }
         super.tearDown();
     }
@@ -80,7 +81,7 @@ public class SimpleSelectionTest extends AbstractQueryTest {
         Query query = session.getWorkspace().getQueryManager().createQuery(propQuery, Query.XPATH);
         QueryResult result = query.execute();
 
-        assertEquals("Should have only 1 result", 1, result.getRows().getSize());
+        assertEquals("Should have only 1 result", 1, getSize(result.getRows()));
         assertTrue("Should contain the searched property",
                 Arrays.asList(result.getColumnNames()).contains(jcrPrimaryType));
     }

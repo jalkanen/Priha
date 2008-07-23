@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -68,7 +68,9 @@ public class PredicatesTest extends AbstractQueryTest {
     protected void tearDown() throws Exception {
         if (session != null) {
             session.logout();
+            session = null;
         }
+        qm = null;
         super.tearDown();
     }
 
@@ -78,7 +80,7 @@ public class PredicatesTest extends AbstractQueryTest {
      * @throws RepositoryException
      */
     public void testEquality() throws RepositoryException {
-        String stmt = "/" + jcrRoot + "/*[@" + jcrPrimaryType + "='" + nodeTypeName + "']";
+        String stmt = "/" + jcrRoot + "/" + testPath+ "/*[@" + jcrPrimaryType + "='" + nodeTypeName + "']";
 
         try {
             qm.createQuery(stmt, Query.XPATH);
@@ -93,7 +95,7 @@ public class PredicatesTest extends AbstractQueryTest {
      * @throws RepositoryException
      */
     public void testCombinedOr() throws RepositoryException {
-        String stmt = "/" + jcrRoot + "/*[@" + jcrPrimaryType + "='" + nodeTypeName + "' or @" + jcrPrimaryType + "='" + ntBase + "']";
+        String stmt = "/" + jcrRoot + "/" + testPath+ "/*[@" + jcrPrimaryType + "='" + nodeTypeName + "' or @" + jcrPrimaryType + "='" + ntBase + "']";
 
         try {
             qm.createQuery(stmt, Query.XPATH);
@@ -108,7 +110,7 @@ public class PredicatesTest extends AbstractQueryTest {
      * @throws RepositoryException
      */
     public void testOr() throws RepositoryException {
-        String stmt = "/" + jcrRoot + "/*[@" + jcrPrimaryType + " or @" + jcrMixinTypes + "]";
+        String stmt = "/" + jcrRoot + "/" + testPath+ "/*[@" + jcrPrimaryType + " or @" + jcrMixinTypes + "]";
 
         try {
             qm.createQuery(stmt, Query.XPATH);
@@ -123,7 +125,7 @@ public class PredicatesTest extends AbstractQueryTest {
      * @throws RepositoryException
      */
     public void testAnd() throws RepositoryException {
-        String stmt = "/" + jcrRoot + "/*[@" + jcrPrimaryType + " and @" + jcrMixinTypes + "]";
+        String stmt = "/" + jcrRoot + "/" + testPath+ "/*[@" + jcrPrimaryType + " and @" + jcrMixinTypes + "]";
 
         try {
             qm.createQuery(stmt, Query.XPATH);
@@ -138,7 +140,7 @@ public class PredicatesTest extends AbstractQueryTest {
      * @throws RepositoryException
      */
     public void testCombinedAnd() throws RepositoryException {
-        String stmt = "/" + jcrRoot + "/*[@" + jcrPrimaryType + "='" + nodeTypeName + "' and @" + jcrPrimaryType + "='" + ntBase + "']";
+        String stmt = "/" + jcrRoot + "/" + testPath+ "/*[@" + jcrPrimaryType + "='" + nodeTypeName + "' and @" + jcrPrimaryType + "='" + ntBase + "']";
 
         try {
             qm.createQuery(stmt, Query.XPATH);

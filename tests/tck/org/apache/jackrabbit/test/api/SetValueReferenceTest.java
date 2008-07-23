@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -74,6 +74,13 @@ public class SetValueReferenceTest extends AbstractJCRTest {
         // create a new single-value property and save it
         property1 = node.setProperty(propertyName1, value);
         superuser.save();
+    }
+
+    protected void tearDown() throws Exception {
+        value = null;
+        node = null;
+        property1 = null;
+        super.tearDown();
     }
 
     /**
@@ -148,6 +155,8 @@ public class SetValueReferenceTest extends AbstractJCRTest {
         }
         if (n.canAddMixin(mixReferenceable)) {
             n.addMixin(mixReferenceable);
+            // some implementations may require a save after addMixin()
+            n.getSession().save();
         } else {
             throw new NotExecutableException("Node is not referenceable: " + n.getPath());
         }

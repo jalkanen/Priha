@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -18,6 +18,7 @@ package org.apache.jackrabbit.test.api;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
 
+import javax.jcr.Item;
 import javax.jcr.NamespaceRegistry;
 import javax.jcr.RepositoryException;
 import javax.jcr.NamespaceException;
@@ -47,7 +48,7 @@ public class NamespaceRegistryTest extends AbstractJCRTest {
     private static final String TEST_PREFIX = "tst";
 
     /** Default value of test namespace uri */
-    private static final String TEST_URI = "www.apache.org/jackrabbit/test/namespaceRegistryTest";
+    private static final String TEST_URI = "http://www.apache.org/jackrabbit/test/namespaceRegistryTest";
 
     /** The namespace registry of the superuser session */
     private NamespaceRegistry nsp;
@@ -74,6 +75,7 @@ public class NamespaceRegistryTest extends AbstractJCRTest {
         } catch (NamespaceException e) {
             log.println("Unable to unregister name space with prefix " + namespacePrefix + ": " + e.toString());
         } finally {
+            nsp = null;
             super.tearDown();
         }
     }
@@ -136,7 +138,21 @@ public class NamespaceRegistryTest extends AbstractJCRTest {
         assertEquals("Namespace prefix was not registered.", namespacePrefix, nsp.getPrefix(namespaceUri));
         assertEquals("Namespace URI was not registered.", namespaceUri, nsp.getURI(namespacePrefix));
 
-        testRootNode.addNode(namespacePrefix + ":root");
+        Item created;
+        
+        try {
+            created = testRootNode.addNode(namespacePrefix + ":root");
+            testRootNode.save();
+        }
+        catch (RepositoryException ex) {
+            // that didn't work; maybe the repository allows a property here?
+            testRootNode.getSession().refresh(false);
+            created = testRootNode.setProperty(namespacePrefix + ":root", "test");
+            testRootNode.save();
+        }
+
+        // Need to remove it here, otherwise teardown can't unregister the NS.
+        testRootNode.getSession().getItem(created.getPath()).remove();
         testRootNode.save();
     }
 
@@ -150,6 +166,7 @@ public class NamespaceRegistryTest extends AbstractJCRTest {
         for (int t = 0; t < SYSTEM_PREFIXES.length; t++) {
             try {
                 nsp.unregisterNamespace(SYSTEM_PREFIXES[t]);
+                fail("Trying to unregister " + SYSTEM_PREFIXES[t] + " must fail");
             } catch (NamespaceException e) {
                 // expected behaviour
             }
@@ -159,6 +176,7 @@ public class NamespaceRegistryTest extends AbstractJCRTest {
         // must throw a NamespaceException.
         try {
             nsp.unregisterNamespace("ThisNamespaceIsNotCurrentlyRegistered");
+            fail("Trying to unregister an unused prefix must fail");
         } catch (NamespaceException e) {
             // expected behaviour
         }

@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -46,7 +46,7 @@ public class NodeCanAddMixinTest extends AbstractJCRTest {
 
         Session session = testRootNode.getSession();
 
-        if (session.getRepository().getDescriptor(Repository.OPTION_LOCKING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_LOCKING_SUPPORTED)) {
             throw new NotExecutableException("Locking is not supported.");
         }
 
@@ -77,6 +77,7 @@ public class NodeCanAddMixinTest extends AbstractJCRTest {
             Node node2 = session2.getRootNode().getNode(pathRelToRoot);
             node2.lock(true, true);
 
+            node.refresh(false);
             assertFalse("Node.canAddMixin(String mixinName) must return false " +
                     "if the node is locked.",
                     node.canAddMixin(mixinName));
@@ -96,7 +97,7 @@ public class NodeCanAddMixinTest extends AbstractJCRTest {
 
         Session session = testRootNode.getSession();
 
-        if (session.getRepository().getDescriptor(Repository.OPTION_LOCKING_SUPPORTED) == null) {
+        if (!isSupported(Repository.OPTION_VERSIONING_SUPPORTED)) {
             throw new NotExecutableException("Versioning is not supported.");
         }
 
@@ -134,7 +135,7 @@ public class NodeCanAddMixinTest extends AbstractJCRTest {
         Session session = testRootNode.getSession();
         String nonExistingMixinName = NodeMixinUtil.getNonExistingMixinName(session);
 
-        Node node = testRootNode.addNode(nodeName1);
+        Node node = testRootNode.addNode(nodeName1, testNodeType);
 
         try {
             node.canAddMixin(nonExistingMixinName);

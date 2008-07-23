@@ -1,10 +1,10 @@
 /*
- * Copyright 2004-2005 The Apache Software Foundation or its licensors,
- *                     as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -23,7 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Test cases for {@link javax.jcr.observation.Event.PROPERTY_ADDED} events.
+ * Test cases for {@link javax.jcr.observation.Event#PROPERTY_ADDED} events.
  * <p/>
  * Configuration requirements are:<br/>
  * The {@link #testRoot} must allow child nodes of type {@link #testNodeType}.
@@ -48,8 +48,8 @@ public class PropertyAddedTest extends AbstractObservationTest {
         addEventListener(result, Event.PROPERTY_ADDED);
         testRootNode.addNode(nodeName1, testNodeType);
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
         List paths = new ArrayList();
         for (int i = 0; i < events.length; i++) {
             paths.add(events[i].getPath());
@@ -70,8 +70,8 @@ public class PropertyAddedTest extends AbstractObservationTest {
         addEventListener(result, Event.PROPERTY_ADDED);
         foo.setProperty(propertyName1, "test content");
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
         checkPropertyAdded(events, new String[]{nodeName1 + "/" + propertyName1});
     }
 
@@ -87,8 +87,8 @@ public class PropertyAddedTest extends AbstractObservationTest {
         foo.setProperty(propertyName1, "foo");
         foo.setProperty(propertyName2, "bar");
         testRootNode.save();
-        removeEventListener(result);
         Event[] events = result.getEvents(DEFAULT_WAIT_TIMEOUT);
+        removeEventListener(result);
         checkPropertyAdded(events, new String[]{nodeName1 + "/" + propertyName1,
                                                 nodeName1 + "/" + propertyName2});
     }

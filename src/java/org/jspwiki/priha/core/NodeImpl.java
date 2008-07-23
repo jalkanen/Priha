@@ -1509,6 +1509,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         if( isModified() )
             throw new InvalidItemStateException("You may only lock Nodes which are not currently modified");
         
+        if( isDeep && m_lockManager.hasChildLock(getInternalPath()) )
+        {
+            throw new LockException("A child of this node already holds a lock, so you cannot deep lock this node.");
+        }
+        
         LockImpl lock = new LockImpl( m_session, getInternalPath(), isDeep );
       
         m_session.addLockToken( lock.getToken() );
