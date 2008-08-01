@@ -7,8 +7,6 @@ Things that Priha does not even attempt to currently do:
 
 * Querying
 
-* Locking
-
 * Versioning
 
 * All referential integrity things

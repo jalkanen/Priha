@@ -131,6 +131,6 @@ provider.
 LOGGING
 =======
 
-Priha uses the Java 5 "java.util.logging" package.  Yes, it could use commons-logging,
-but one of the goals was to reduce the amount of external library dependencies.
-So there.
+Priha uses the Java 5 "java.util.logging" package.  Yes, it could use commons-logging
+or slf4j (which is an awesome package), but one of the goals was to reduce the amount 
+of external library dependencies.  So there.
