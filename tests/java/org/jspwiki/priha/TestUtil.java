@@ -57,7 +57,7 @@ public class TestUtil
 
 
     /**
-     *  Returns a random string of six uppercase characters.
+     *  Returns a random string of sixteen uppercase characters.
      *
      *  @return A random string
      */
@@ -66,7 +66,7 @@ public class TestUtil
         StringBuffer sb = new StringBuffer();
         Random rand = new Random();
     
-        for( int i = 0; i < 6; i++ )
+        for( int i = 0; i < 16; i++ )
         {
             char x = (char)('A'+rand.nextInt(26));
     
