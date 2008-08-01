@@ -5,6 +5,10 @@
         * Added copyright preambles.
         
         * Lock rework.
+        
+        * Added the latest TCK tests from Jackrabbit repo.  While these
+        are not the official TCK tests, they are at least bugfixed.
+        The pass rate went down though.
 
 2008-07-23  Janne Jalkanen <jalkanen@ecyrd.com>
 
