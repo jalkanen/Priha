@@ -1,3 +1,20 @@
+/*
+    Priha - A JSR-170 implementation library.
+
+    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+
+    Licensed under the Apache License, Version 2.0 (the "License"); 
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at 
+    
+      http://www.apache.org/licenses/LICENSE-2.0 
+      
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+    See the License for the specific language governing permissions and 
+    limitations under the License. 
+ */
 package org.jspwiki.priha.providers;
 
 import java.io.*;
@@ -9,12 +26,19 @@ import java.util.logging.Logger;
 
 import javax.jcr.*;
 
-import org.jspwiki.priha.core.*;
+import org.jspwiki.priha.core.NodeImpl;
+import org.jspwiki.priha.core.PropertyImpl;
+import org.jspwiki.priha.core.RepositoryImpl;
+import org.jspwiki.priha.core.WorkspaceImpl;
 import org.jspwiki.priha.core.binary.FileBinarySource;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.util.Path;
 
+/**
+ *  A simple file system -based provider.  This is not particularly optimized,
+ *  especially findByUUID() is very slow.
+ */
 public class FileProvider implements RepositoryProvider, PerformanceReporter
 {
     private File m_root;
@@ -179,7 +203,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     }
 
     
-    private String getStringFormat( Workspace ws, Property p ) throws ValueFormatException, RepositoryException
+    private String getStringFormat( WorkspaceImpl ws, Property p ) throws ValueFormatException, RepositoryException
     {
         switch( p.getType() )
         {
@@ -187,7 +211,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 return Long.toString(p.getDate().getTimeInMillis());
             case PropertyType.NAME:
             case PropertyType.PATH:
-                return ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).toQName(p.getString());
+                return ws.toQName(p.getString());
             case PropertyType.BINARY:
                 return saveBinary( ws, p );
             default:
@@ -338,7 +362,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
                     String qname =  props.getProperty("qname");
                 
-                    qname = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName(qname);
+                    qname = ws.fromQName(qname);
                     proplist.add( qname );
                 }
             }
@@ -406,7 +430,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
         File nodeDir = getNodeDir( ws, property.getInternalPath().getParentPath().toString() );
         
-        String qname = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).toQName(property.getName());
+        String qname = ws.toQName(property.getName());
         
         File inf = new File( nodeDir, property.getName()+".info" );
         
@@ -490,13 +514,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         else if( propType.equals(PropertyType.TYPENAME_NAME) )
         {
             String val = readContentsAsString(propFile);
-            val = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName( val );
+            val = ws.fromQName( val );
             value = vf.createValue( val, PropertyType.NAME );
         }
         else if( propType.equals(PropertyType.TYPENAME_PATH ))
         {
             String val = readContentsAsString(propFile);
-            val = ((NamespaceRegistryImpl)ws.getNamespaceRegistry()).fromQName( val );
+            val = ws.fromQName( val );
             value = vf.createValue( val, PropertyType.PATH );
         }
         else if( propType.equals(PropertyType.TYPENAME_REFERENCE ) )

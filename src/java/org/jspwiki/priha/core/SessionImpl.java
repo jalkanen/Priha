@@ -1,3 +1,20 @@
+/*
+    Priha - A JSR-170 implementation library.
+
+    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+
+    Licensed under the Apache License, Version 2.0 (the "License"); 
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at 
+    
+      http://www.apache.org/licenses/LICENSE-2.0 
+      
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+    See the License for the specific language governing permissions and 
+    limitations under the License. 
+ */
 package org.jspwiki.priha.core;
 
 import java.io.IOException;
@@ -285,7 +302,7 @@ public class SessionImpl implements Session
     {
         if( isLive() )
         {
-            LockManager.getInstance(m_workspace).expireSessionLocks();
+            LockManager.getInstance(m_workspace).expireSessionLocks( this );
             m_workspace.logout();
             m_workspace = null;
         }
@@ -295,24 +312,28 @@ public class SessionImpl implements Session
     {
         if( hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
         
-        Node nd = getRootNode().getNode(srcAbsPath);
+        NodeImpl srcnode = (NodeImpl)getRootNode().getNode(srcAbsPath);
         
         //System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
         
         String newDestPath = destAbsPath;
+
+        LockManager lm = LockManager.getInstance( m_workspace );
+        if( lm.hasChildLock(srcnode.getInternalPath()))
+            throw new LockException("Lock on source path prevents move");
+
+        Node destnode = getRootNode().addNode( newDestPath, srcnode.getPrimaryNodeType().getName() );
         
-        Node destnode = getRootNode().addNode( newDestPath, nd.getPrimaryNodeType().getName() );
-        
-        for( NodeIterator ni = nd.getNodes(); ni.hasNext(); )
+        for( NodeIterator ni = srcnode.getNodes(); ni.hasNext(); )
         {
             Node child = ni.nextNode();
 
-            String relPath = nd.getName();
+            String relPath = srcnode.getName();
             
             move( child.getPath(), destAbsPath+"/"+relPath );
         }
         
-        for( PropertyIterator pi = nd.getProperties(); pi.hasNext(); )
+        for( PropertyIterator pi = srcnode.getProperties(); pi.hasNext(); )
         {
             Property p = pi.nextProperty();
 
@@ -332,7 +353,7 @@ public class SessionImpl implements Session
             }
         }
         
-        nd.remove();
+        srcnode.remove();
     }
 
     void refresh( boolean keepChanges, Path path ) throws RepositoryException

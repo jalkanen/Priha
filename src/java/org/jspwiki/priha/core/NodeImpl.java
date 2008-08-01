@@ -1,3 +1,20 @@
+/*
+    Priha - A JSR-170 implementation library.
+
+    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+
+    Licensed under the Apache License, Version 2.0 (the "License"); 
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at 
+    
+      http://www.apache.org/licenses/LICENSE-2.0 
+      
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+    See the License for the specific language governing permissions and 
+    limitations under the License. 
+ */
 package org.jspwiki.priha.core;
 
 import java.io.ByteArrayInputStream;
@@ -74,47 +91,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     }
         
 
-    public void addMixin(String mixinName)
-                                          throws NoSuchNodeTypeException,
-                                              VersionException,
-                                              ConstraintViolationException,
-                                              LockException,
-                                              RepositoryException
-    {
-        ValueFactory vf = ValueFactoryImpl.getInstance();
-
-        NodeType mixin = getNodeTypeManager().getNodeType(mixinName);
-
-        if( !mixin.isMixin() )
-            throw new NoSuchNodeTypeException("Type "+mixinName+" is not a mixin type!");
-
-        Property p;
-        try
-        {
-            p = getProperty(JCR_MIXIN_TYPES);
-
-            Value[] v = p.getValues();
-
-            Value[] newval = new Value[v.length+1];
-
-            for( int i = 0; i < v.length; i++ )
-            {
-                newval[i] = v[i];
-            }
-
-            newval[newval.length-1] = vf.createValue(mixinName,PropertyType.NAME);
-        }
-        catch( PathNotFoundException e )
-        {
-            Value[] values = new Value[] { vf.createValue(mixinName,PropertyType.NAME) };
-            internalSetProperty( JCR_MIXIN_TYPES, values, PropertyType.NAME );
-        }
-
-        autoCreateProperties();
-
-        markModified(true);
-    }
-
     /**
      *  Figures out what type the child node should be.
      *  
@@ -134,6 +110,21 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         GenericNodeType nt = (GenericNodeType) nd.getDefaultPrimaryType();
 
         return nt;
+    }
+
+
+    public Node addNode(String relPath)
+        throws ItemExistsException,
+               PathNotFoundException,
+               NoSuchNodeTypeException,
+               LockException,
+               VersionException,
+               ConstraintViolationException,
+               RepositoryException
+    {
+        Node nd = addNode(relPath, null);
+
+        return nd;
     }
 
     public Node addNode(String relPath, String primaryNodeTypeName)
@@ -248,102 +239,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return m_session.getWorkspace().getNodeTypeManager();
     }
 
-    public Node addNode(String relPath)
-        throws ItemExistsException,
-               PathNotFoundException,
-               NoSuchNodeTypeException,
-               LockException,
-               VersionException,
-               ConstraintViolationException,
-               RepositoryException
-    {
-        Node nd = addNode(relPath, null);
-
-        return nd;
-    }
-
-    public boolean canAddMixin(String mixinName) throws NoSuchNodeTypeException, RepositoryException
-    {
-        NodeType nt = getNodeTypeManager().getNodeType( mixinName );
-
-        if( !nt.isMixin() )
-        {
-            throw new NoSuchNodeTypeException(mixinName+" is not a mixin type!");
-        }
-        
-        if( hasMixinType(nt.getName()) )
-        {
-            return false;
-        }
-
-        // FIXME: This is rather permissive...
-
-        return true;
-    }
-
-    private boolean hasMixinType(String mixinType)
-    {
-        try
-        {
-            Property pi = getProperty( JCR_MIXIN_TYPES );
-        
-            for( Value v : pi.getValues() )
-            {
-                String mixin = v.getString();
-            
-                if( mixin.equals(mixinType) ) return true;
-            }
-        }
-        catch( RepositoryException e ) {}
-        return false;
-    }
-
-    public void cancelMerge(Version version)
-                                            throws VersionException,
-                                                InvalidItemStateException,
-                                                UnsupportedRepositoryOperationException,
-                                                RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Node.cancelMerge()");
-
-    }
-
-    public Version checkin()
-                            throws VersionException,
-                                UnsupportedRepositoryOperationException,
-                                InvalidItemStateException,
-                                LockException,
-                                RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Node.checkin()");
-    }
-
-    public void checkout() throws UnsupportedRepositoryOperationException, LockException, RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Node.checkout()");
-
-    }
-
-    public void doneMerge(Version version)
-                                          throws VersionException,
-                                              InvalidItemStateException,
-                                              UnsupportedRepositoryOperationException,
-                                              RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Node.doneMerge()");
-
-    }
-
-    public Version getBaseVersion() throws UnsupportedRepositoryOperationException, RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-    }
-
     public String getCorrespondingNodePath(String workspaceName)
                                                                 throws ItemNotFoundException,
                                                                     NoSuchWorkspaceException,
@@ -409,30 +304,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return 1;
     }
 
-
-    public NodeType[] getMixinNodeTypes() throws RepositoryException
-    {
-        ArrayList<NodeType> mixinTypes = new ArrayList<NodeType>();
-        
-        //
-        //  If there are no mixin types, then let's just return an empty array.
-        //
-        try
-        {
-            Property p = getProperty( JCR_MIXIN_TYPES );
-        
-            for( Value v : p.getValues() )
-            {
-                NodeType nt = m_session.getWorkspace().getNodeTypeManager().getNodeType( v.getString() );
-            
-                mixinTypes.add( nt );
-            }
-        }
-        catch( RepositoryException e ) {}
-        
-        return mixinTypes.toArray( new NodeType[0] );
-    }
-
     public NodeImpl getNode( Path absPath ) throws PathNotFoundException, RepositoryException
     {
         Item i = m_session.getItem(absPath);
@@ -467,38 +338,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return it;
     }
 
-    /**
-     *  Replaces a string with an other string.
-     *
-     *  @param orig Original string.  Null is safe.
-     *  @param src  The string to find.
-     *  @param dest The string to replace <I>src</I> with.
-     */
-    private final static String replaceString( String orig, String src, String dest )
-    {
-        if ( orig == null ) return null;
-        if ( src == null || dest == null ) throw new NullPointerException();
-        if ( src.length() == 0 ) return orig;
-
-        StringBuilder res = new StringBuilder();
-        int start, end = 0, last = 0;
-
-        while ( (start = orig.indexOf(src,end)) != -1 )
-        {
-            res.append( orig.substring( last, start ) );
-            res.append( dest );
-            end  = start+src.length();
-            last = start+src.length();
-        }
-
-        res.append( orig.substring( end ) );
-
-        return res.toString();
-    }
-
     public NodeIterator getNodes(String namePattern) throws RepositoryException
     {
-        Pattern p = parseJCRPattern(namePattern);
+        Pattern p = TextUtil.parseJCRPattern(namePattern);
 
         ArrayList<Node> matchedpaths = new ArrayList<Node>();
 
@@ -515,20 +357,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         }
 
         return new NodeIteratorImpl(matchedpaths);
-    }
-
-    /**
-     *  Turns a JCR pattern into a java.util.regex.Pattern
-     *
-     *  @param namePattern
-     *  @return
-     */
-    private Pattern parseJCRPattern(String namePattern)
-    {
-        namePattern = replaceString( namePattern, "*", ".*" );
-        namePattern = "^("+namePattern +")$";
-        Pattern p = Pattern.compile( namePattern );
-        return p;
     }
 
     public Item getPrimaryItem() throws ItemNotFoundException, RepositoryException
@@ -561,7 +389,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     public PropertyIterator getProperties(String namePattern) throws RepositoryException
     {
-        Pattern p = parseJCRPattern(namePattern);
+        Pattern p = TextUtil.parseJCRPattern(namePattern);
 
         ArrayList<PropertyImpl> matchedpaths = new ArrayList<PropertyImpl>();
         
@@ -702,12 +530,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return m_session.hasProperty( abspath );
     }
 
-    public boolean isCheckedOut() throws RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-    }
-
     public boolean isNodeType(String nodeTypeName) throws RepositoryException
     {
         NodeType primary = getPrimaryNodeType();
@@ -730,18 +552,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return true;
     }
 
-    
-    public NodeIterator merge(String srcWorkspace, boolean bestEffort)
-                                                                      throws NoSuchWorkspaceException,
-                                                                          AccessDeniedException,
-                                                                          MergeException,
-                                                                          LockException,
-                                                                          InvalidItemStateException,
-                                                                          RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-    }
 
     public void orderBefore(String srcChildRelPath, String destChildRelPath)
                                                                             throws UnsupportedRepositoryOperationException,
@@ -756,90 +566,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     }
 
-    public void removeMixin(String mixinName)
-                                             throws NoSuchNodeTypeException,
-                                                 VersionException,
-                                                 ConstraintViolationException,
-                                                 LockException,
-                                                 RepositoryException
-    {
-        Property mixinTypes = getProperty("jcr:mixinTypes");
-        
-        Value[] vals = mixinTypes.getValues();
-        
-        boolean found = false;
-        
-        for( int i = 0; i < vals.length; i++ )
-        {
-            if( vals[i].getString().equals(mixinName) )
-            {
-                vals[i] = null;
-                found = true;
-            }
-        }
-        
-        if( found )
-        {
-            mixinTypes.setValue( vals );
-        }
-        else
-        {
-            throw new NoSuchNodeTypeException("No such mixin type to remove: "+mixinName);
-        }
-    }
-
-    public void restore(String versionName, boolean removeExisting)
-                                                                   throws VersionException,
-                                                                       ItemExistsException,
-                                                                       UnsupportedRepositoryOperationException,
-                                                                       LockException,
-                                                                       InvalidItemStateException,
-                                                                       RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-
-    }
-
-    public void restore(Version version, boolean removeExisting)
-                                                                throws VersionException,
-                                                                    ItemExistsException,
-                                                                    UnsupportedRepositoryOperationException,
-                                                                    LockException,
-                                                                    RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-
-    }
-
-    public void restore(Version version, String relPath, boolean removeExisting)
-                                                                                throws PathNotFoundException,
-                                                                                    ItemExistsException,
-                                                                                    VersionException,
-                                                                                    ConstraintViolationException,
-                                                                                    UnsupportedRepositoryOperationException,
-                                                                                    LockException,
-                                                                                    InvalidItemStateException,
-                                                                                    RepositoryException
-    {
-        // TODO Auto-generated method stub
-
-        throw new UnsupportedRepositoryOperationException();
-    }
-
-    public void restoreByLabel(String versionLabel, boolean removeExisting)
-                                                                           throws VersionException,
-                                                                               ItemExistsException,
-                                                                               UnsupportedRepositoryOperationException,
-                                                                               LockException,
-                                                                               InvalidItemStateException,
-                                                                               RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-
-    }
 
 
     /**
@@ -924,23 +650,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return prop;
     }
 
-    /**
-     *  Checks only the properties of this Node.
-     *  
-     *  @param propertyName The name of the property to check.
-     *  @return True, if the property exists.
-     */
-    /*
-    private boolean hasChildProperty(String propertyName)
-    {
-        for( PropertyImpl pi : m_properties )
-        {
-            if( pi.m_name.equals(propertyName) ) return true;
-        }
-        
-        return false;
-    }
-    */
 
     /**
      *  Removes a given property from the node.
@@ -1216,34 +925,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return true;
     }
 
-    /**
-     *  Just simply puts a node in the repository, but does not affect anything
-     *  else, except Nodes own state.
-     *
-     *  @throws RepositoryException
-     */
-    /*
-    protected void saveItemOnly() throws RepositoryException
-    {
-        if( isModified() )
-        {
-            WorkspaceImpl ws = (WorkspaceImpl)m_session.getWorkspace();
 
-            switch( m_state )
-            {
-                case REMOVED:
-                    ws.removeItem(this);
-                    break;
-                default:
-                    ws.saveItem(this);
-                    m_state = ItemState.EXISTS;
-                    break;
-            }
-            m_modified = false;
-            m_new      = false;
-        }
-    }
-*/
     protected void internalSave() throws RepositoryException
     {
         m_session.saveNodes( getInternalPath() );
@@ -1485,6 +1167,148 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         }
     }
     
+    /*  ============================================================
+     *  
+     *  Mixins
+     *    
+     */
+    
+
+    public void addMixin(String mixinName)
+                                          throws NoSuchNodeTypeException,
+                                              VersionException,
+                                              ConstraintViolationException,
+                                              LockException,
+                                              RepositoryException
+    {
+        ValueFactory vf = ValueFactoryImpl.getInstance();
+
+        NodeType mixin = getNodeTypeManager().getNodeType(mixinName);
+
+        if( !mixin.isMixin() )
+            throw new NoSuchNodeTypeException("Type "+mixinName+" is not a mixin type!");
+
+        Property p;
+        try
+        {
+            p = getProperty(JCR_MIXIN_TYPES);
+
+            Value[] v = p.getValues();
+
+            Value[] newval = new Value[v.length+1];
+
+            for( int i = 0; i < v.length; i++ )
+            {
+                newval[i] = v[i];
+            }
+
+            newval[newval.length-1] = vf.createValue(mixinName,PropertyType.NAME);
+        }
+        catch( PathNotFoundException e )
+        {
+            Value[] values = new Value[] { vf.createValue(mixinName,PropertyType.NAME) };
+            internalSetProperty( JCR_MIXIN_TYPES, values, PropertyType.NAME );
+        }
+
+        autoCreateProperties();
+
+        markModified(true);
+    }
+
+    public boolean canAddMixin(String mixinName) throws NoSuchNodeTypeException, RepositoryException
+    {
+        NodeType nt = getNodeTypeManager().getNodeType( mixinName );
+
+        if( !nt.isMixin() )
+        {
+            throw new NoSuchNodeTypeException(mixinName+" is not a mixin type!");
+        }
+        
+        if( hasMixinType(nt.getName()) )
+        {
+            return false;
+        }
+
+        // FIXME: This is rather permissive...
+
+        return true;
+    }
+
+    private boolean hasMixinType(String mixinType)
+    {
+        try
+        {
+            Property pi = getProperty( JCR_MIXIN_TYPES );
+        
+            for( Value v : pi.getValues() )
+            {
+                String mixin = v.getString();
+            
+                if( mixin.equals(mixinType) ) return true;
+            }
+        }
+        catch( RepositoryException e ) {}
+        return false;
+    }
+
+
+
+    public NodeType[] getMixinNodeTypes() throws RepositoryException
+    {
+        ArrayList<NodeType> mixinTypes = new ArrayList<NodeType>();
+        
+        //
+        //  If there are no mixin types, then let's just return an empty array.
+        //
+        try
+        {
+            Property p = getProperty( JCR_MIXIN_TYPES );
+        
+            for( Value v : p.getValues() )
+            {
+                NodeType nt = m_session.getWorkspace().getNodeTypeManager().getNodeType( v.getString() );
+            
+                mixinTypes.add( nt );
+            }
+        }
+        catch( RepositoryException e ) {}
+        
+        return mixinTypes.toArray( new NodeType[0] );
+    }
+
+
+    public void removeMixin(String mixinName)
+                                             throws NoSuchNodeTypeException,
+                                                 VersionException,
+                                                 ConstraintViolationException,
+                                                 LockException,
+                                                 RepositoryException
+    {
+        Property mixinTypes = getProperty("jcr:mixinTypes");
+        
+        Value[] vals = mixinTypes.getValues();
+        
+        boolean found = false;
+        
+        for( int i = 0; i < vals.length; i++ )
+        {
+            if( vals[i].getString().equals(mixinName) )
+            {
+                vals[i] = null;
+                found = true;
+            }
+        }
+        
+        if( found )
+        {
+            mixinTypes.setValue( vals );
+        }
+        else
+        {
+            throw new NoSuchNodeTypeException("No such mixin type to remove: "+mixinName);
+        }
+    }
+
     /*==============================================================================
      *
      *  Locking
@@ -1514,7 +1338,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             throw new LockException("A child of this node already holds a lock, so you cannot deep lock this node.");
         }
         
-        LockImpl lock = new LockImpl( m_session, getInternalPath(), isDeep );
+        if( isLocked() )
+        {
+            throw new LockException("This Node is already locked.");
+        }
+        
+        LockImpl lock = new LockImpl( m_session,
+                                      getInternalPath(), 
+                                      isDeep,
+                                      isSessionScoped );
       
         m_session.addLockToken( lock.getToken() );
         setProperty("jcr:lockOwner", lock.getLockOwner());
@@ -1611,4 +1443,132 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         
         return false;
     }
+
+    /* ====================================================
+     * 
+     *  Versioning
+     * 
+     */
+    public boolean isCheckedOut() throws RepositoryException
+    {
+        //
+        //  This is true as long as versioning is not supported.
+        //
+        return true;
+    }
+
+
+    public void cancelMerge(Version version)
+                                            throws VersionException,
+                                                InvalidItemStateException,
+                                                UnsupportedRepositoryOperationException,
+                                                RepositoryException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException("Node.cancelMerge()");
+
+    }
+
+    public Version checkin()
+                            throws VersionException,
+                                UnsupportedRepositoryOperationException,
+                                InvalidItemStateException,
+                                LockException,
+                                RepositoryException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException("Node.checkin()");
+    }
+
+    public void checkout() throws UnsupportedRepositoryOperationException, LockException, RepositoryException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException("Node.checkout()");
+
+    }
+
+    public void doneMerge(Version version)
+                                          throws VersionException,
+                                              InvalidItemStateException,
+                                              UnsupportedRepositoryOperationException,
+                                              RepositoryException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException("Node.doneMerge()");
+
+    }
+
+    public Version getBaseVersion() throws UnsupportedRepositoryOperationException, RepositoryException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    public void restore(String versionName, boolean removeExisting)
+        throws VersionException,
+            ItemExistsException,
+            UnsupportedRepositoryOperationException,
+            LockException,
+            InvalidItemStateException,
+            RepositoryException
+    {
+//      TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException();
+
+    }
+
+    public void restore(Version version, boolean removeExisting)
+        throws VersionException,
+            ItemExistsException,
+            UnsupportedRepositoryOperationException,
+            LockException,
+            RepositoryException
+    {
+//      TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException();
+        
+    }
+
+    public void restore(Version version, String relPath, boolean removeExisting)
+                 throws PathNotFoundException,
+                     ItemExistsException,
+                     VersionException,
+                     ConstraintViolationException,
+                     UnsupportedRepositoryOperationException,
+                     LockException,
+                     InvalidItemStateException,
+                     RepositoryException
+    {
+//      TODO Auto-generated method stub
+
+        throw new UnsupportedRepositoryOperationException();
+    }
+
+    public void restoreByLabel(String versionLabel, boolean removeExisting)
+            throws VersionException,
+                ItemExistsException,
+                UnsupportedRepositoryOperationException,
+                LockException,
+                InvalidItemStateException,
+                RepositoryException
+    {
+//      TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException();
+
+    }
+
+
+
+    public NodeIterator merge(String srcWorkspace, boolean bestEffort)
+                                                                  throws NoSuchWorkspaceException,
+                                                                      AccessDeniedException,
+                                                                      MergeException,
+                                                                      LockException,
+                                                                      InvalidItemStateException,
+                                                                      RepositoryException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException();
+    }
+
 }

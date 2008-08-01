@@ -1,13 +1,38 @@
+/*
+    Priha - A JSR-170 implementation library.
+
+    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+
+    Licensed under the Apache License, Version 2.0 (the "License"); 
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at 
+    
+      http://www.apache.org/licenses/LICENSE-2.0 
+      
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+    See the License for the specific language governing permissions and 
+    limitations under the License. 
+ */
 package org.jspwiki.priha.core.locks;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Logger;
 
+import javax.jcr.Session;
 import javax.jcr.Workspace;
 
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 
+/**
+ *  A LockManager exists per static workspace.  This means that it
+ *  manages *all* the locks for a given workspace, regardless of the
+ *  Session which accesses it.
+ */
 public class LockManager
 {
     private static HashMap<String,LockManager> m_lockManagers = new HashMap<String,LockManager>();
@@ -15,12 +40,13 @@ public class LockManager
     private HashMap<Path,LockImpl> m_locks = new HashMap<Path,LockImpl>();
     private String m_workspace;
     private Logger log = Logger.getLogger( LockManager.class.getName() );
-    public LockManager(Workspace ws)
+    
+    private LockManager(Workspace ws)
     {
         m_workspace = ws.getName();
     }
     
-    public void addLock( LockImpl lock )
+    public synchronized void addLock( LockImpl lock )
     {
         m_locks.put( lock.getPath(), lock );
     }
@@ -31,7 +57,7 @@ public class LockManager
      *  @param path
      *  @return
      */
-    public LockImpl getLock( Path path )
+    public synchronized LockImpl getLock( Path path )
     {
         return m_locks.get(path);
     }
@@ -43,7 +69,7 @@ public class LockManager
      *  @param path
      *  @return
      */
-    public LockImpl findLock( Path path )
+    public synchronized LockImpl findLock( Path path )
     {
         boolean deepRequired = false;
         while( !path.isRoot() )
@@ -72,7 +98,13 @@ public class LockManager
         return null;
     }
 
-    public static LockManager getInstance(Workspace ws)
+    /**
+     *  This method must be used to access a LockManager.
+     *  
+     *  @param ws
+     *  @return
+     */
+    public static synchronized LockManager getInstance(Workspace ws)
     {
         LockManager lm = m_lockManagers.get(ws.getName());
         
@@ -85,13 +117,22 @@ public class LockManager
         return lm;
     }
 
-    public void expireSessionLocks()
+    public synchronized void expireSessionLocks( Session session )
     {
-        // FIXME: incorrect
-        m_locks.clear();
+        for( Iterator<Map.Entry<Path,LockImpl>> i = m_locks.entrySet().iterator(); i.hasNext(); )
+        {
+            Map.Entry<Path,LockImpl> e = i.next();
+            
+            LockImpl li = e.getValue();
+
+            if( li.expire(session) )
+            {
+                i.remove();
+            }
+        }
     }
 
-    public void removeLock(LockImpl lock)
+    public synchronized void removeLock(LockImpl lock)
     {
         m_locks.remove(lock.getPath());
     }
@@ -103,7 +144,7 @@ public class LockManager
      *  @param internalPath
      *  @return
      */
-    public boolean hasChildLock(Path internalPath)
+    public synchronized boolean hasChildLock(Path internalPath)
     {
         for( Path p : m_locks.keySet() )
         {

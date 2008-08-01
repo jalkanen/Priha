@@ -1,5 +1,23 @@
+/*
+    Priha - A JSR-170 implementation library.
+
+    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+
+    Licensed under the Apache License, Version 2.0 (the "License"); 
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at 
+    
+      http://www.apache.org/licenses/LICENSE-2.0 
+      
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+    See the License for the specific language governing permissions and 
+    limitations under the License. 
+ */
 package org.jspwiki.priha.core;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -11,7 +29,9 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.VersionException;
 
+import org.jspwiki.priha.core.values.StreamValueImpl;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
+import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.util.Path;
 
@@ -99,9 +119,18 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     private long getLength( Value v ) throws ValueFormatException, IllegalStateException, RepositoryException
     {
         if( v.getType() == PropertyType.BINARY )
-            return -1; // FIXME: Not yet supported
-
-        return getValue().getString().length();
+        {
+            try
+            {
+                return ((StreamValueImpl)v).getLength();
+            }
+            catch (IOException e)
+            {
+                throw new RepositoryException("Unable to get length "+e.getMessage());
+            }
+        }
+        
+        return v.getString().length();
     }
 
     public long[] getLengths() throws ValueFormatException, RepositoryException

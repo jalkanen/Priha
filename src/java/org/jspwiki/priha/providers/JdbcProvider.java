@@ -1,7 +1,23 @@
+/*
+    Priha - A JSR-170 implementation library.
+
+    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+
+    Licensed under the Apache License, Version 2.0 (the "License"); 
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at 
+    
+      http://www.apache.org/licenses/LICENSE-2.0 
+      
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+    See the License for the specific language governing permissions and 
+    limitations under the License. 
+ */
 package org.jspwiki.priha.providers;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,6 +31,7 @@ import javax.jcr.*;
 import org.jspwiki.priha.core.PropertyImpl;
 import org.jspwiki.priha.core.RepositoryImpl;
 import org.jspwiki.priha.core.WorkspaceImpl;
+import org.jspwiki.priha.core.binary.MemoryBinarySource;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.util.ConfigurationException;
@@ -22,6 +39,13 @@ import org.jspwiki.priha.util.FileUtil;
 import org.jspwiki.priha.util.Path;
 import org.jspwiki.priha.util.PathFactory;
 
+/**
+ *  A basic implementation of a Provider which stores the contents to a database.
+ *  <p>
+ *  This particular implementation is designed for HSQLDB, and not yet tested
+ *  with any other databases.
+ *
+ */
 public class JdbcProvider implements RepositoryProvider
 {
     /** The FQN of the JDBC driver class. */
@@ -184,8 +208,25 @@ public class JdbcProvider implements RepositoryProvider
 
     public Path findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        PreparedStatement ps;
+        try
+        {
+            ps = m_conn.prepareStatement( "SELECT path FROM nodes where uuid = ?" );
+            ps.setString(1, uuid);
+            
+            ResultSet rs = ps.executeQuery();
+            
+            if( rs.next() )
+            {
+                return PathFactory.getPath( rs.getString( "path" ) );
+            }
+            
+            throw new ItemNotFoundException("No UUID by this name found "+uuid);
+        }
+        catch (SQLException e)
+        {
+            throw new RepositoryException( e.getMessage() );
+        }
     }
 
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException
@@ -198,17 +239,10 @@ public class JdbcProvider implements RepositoryProvider
     {
         try
         {
-            PreparedStatement ps = m_conn.prepareStatement("SELECT type,propval FROM workspaces,propertyvalues,nodes WHERE "+
-                                                           "nodes.path = ? "+
-                                                           "AND workspaces.name = ? "+
-                                                           "AND nodes.workspace = workspaces.id " +
-                                                           "AND workspaces.id = nodes.workspace "+
-                                                           "AND nodes.id = propertyvalues.parent "+
-                                                           "AND propertyvalues.name = ?");
+            PreparedStatement ps = m_conn.prepareStatement("SELECT type,propval,multi FROM propertyvalues WHERE parent = ? AND name = ?");
             
-            ps.setString(1, path.getParentPath().toString());
-            ps.setString(2, ws.getName());
-            ps.setString(3, path.getLastComponent());
+            ps.setLong(1, getNodeId(ws, path.getParentPath()));
+            ps.setString(2, ws.toQName( path.getLastComponent() ) );
             
             ResultSet rs = ps.executeQuery();
             
@@ -216,10 +250,34 @@ public class JdbcProvider implements RepositoryProvider
             {
                 int type   = rs.getInt("type");
                 Blob value = rs.getBlob("propval");
+                boolean multi = rs.getBoolean("multi");
+                
+                if( multi )
+                {
+                    ObjectInputStream in = new ObjectInputStream( value.getBinaryStream() );
+                    
+                    int numObjects = in.readByte();
+                    
+                    ValueImpl[] v = new ValueImpl[numObjects];
+                    
+                    for( int i = 0; i < numObjects; i++ )
+                    {
+                        int length = in.readInt();
+                        byte[] ba = new byte[length];
+                        
+                        in.read(ba);
+                        
+                        v[i] = ValueFactoryImpl.getInstance().createValue( new MemoryBinarySource(ba).getStream(), type );
+                    }
+                    
+                    return v;
+                }
+                else
+                {
+                    ValueImpl v = ValueFactoryImpl.getInstance().createValue( value.getBinaryStream(), type );
             
-                ValueImpl v = ValueFactoryImpl.getInstance().createValue( value.getBinaryStream(), type );
-            
-                return v;
+                    return v;
+                }
             }
             else
             {
@@ -229,6 +287,10 @@ public class JdbcProvider implements RepositoryProvider
         catch( SQLException e )
         {
             throw new ItemNotFoundException("No such item "+path);
+        }
+        catch (IOException e)
+        {
+            throw new RepositoryException("Deserialization of value failed "+e.getMessage());
         }
     }
 
@@ -281,8 +343,8 @@ public class JdbcProvider implements RepositoryProvider
             ArrayList<String> result = new ArrayList<String>();
             while( rs.next() )
             {
-                String n = rs.getString("name");
-                
+                String qname = rs.getString("name");
+                String n = ws.fromQName(qname);
                 result.add( n );
             }
         
@@ -355,27 +417,99 @@ public class JdbcProvider implements RepositoryProvider
         return false;
     }
 
+    //
+    //  Serialization format:
+    //  Single : just Value.getStream();
+    //  Multi  : <byte numValues> [ <int length> <byte... content> ]
+    //
+    
+    private byte[] serialize( Property property ) throws ValueFormatException, IllegalStateException, RepositoryException, IOException
+    {
+        ByteArrayOutputStream ba = new ByteArrayOutputStream();
+
+        if( property.getDefinition().isMultiple() )
+        {
+            Value[] vals = property.getValues();
+            
+            ObjectOutputStream    oo = new ObjectOutputStream(ba);
+            
+            oo.writeByte( vals.length );
+            
+            for( Value v : vals )
+            {
+                ByteArrayOutputStream vba = new ByteArrayOutputStream();
+                FileUtil.copyContents(v.getStream(),vba);
+                
+                oo.writeInt( vba.size() );
+                vba.writeTo( oo );
+            }
+            
+        }
+        else
+        {
+            FileUtil.copyContents( property.getStream(), ba );
+        }
+        
+        return ba.toByteArray();
+    }
+    
     public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
     {
         try
         {
-            PreparedStatement ps = m_conn.prepareStatement("INSERT INTO propertyvalues "+
-                                                           "(parent,name,type,len,propval) "+
-                                                           "VALUES (?,?,?,?,?)");
-        
-            ps.setLong(1, getNodeId(ws,property.getInternalPath().getParentPath()));
-            ps.setString(2, property.getName());
-            ps.setInt(3, property.getType());
-            ps.setLong(4, property.getLength());
-            ps.setBinaryStream(5, property.getStream(), (int) property.getLength());
-        
+            byte[] bytes = serialize(property);
+            PreparedStatement ps;
+            long id = getNodeId(ws,property.getInternalPath().getParentPath());
+                        
+            if( property.isNew() )
+            {
+                ps = m_conn.prepareStatement("INSERT INTO propertyvalues "+
+                                             "(parent,name,type,len,propval,multi) "+
+                                             "VALUES (?,?,?,?,?,?)");
+            
+                ps.setLong(1, id);
+                ps.setString(2, property.getQName());
+                ps.setInt(3, property.getType());
+                ps.setInt(4, bytes.length);
+                ps.setBytes(5, bytes);
+                ps.setBoolean( 6, property.getDefinition().isMultiple() );
+            }            
+            else
+            {
+                ps = m_conn.prepareStatement("UPDATE propertyvalues SET len = ?, propval = ? WHERE parent = ? AND name = ?");
+                
+                ps.setInt(1, bytes.length);
+                ps.setBytes(2, bytes);
+                ps.setLong(3, id);
+                ps.setString(4, property.getQName());
+            }
+            
             int result = ps.executeUpdate();
-
+            
             if( result == 0 ) throw new RepositoryException("Update failed!?!");
+            
+            if( property.getName().equals("jcr:uuid") )
+            {
+                ps = m_conn.prepareStatement("UPDATE nodes SET uuid = ? WHERE id = ?");
+                ps.setString(1, property.getString());
+                ps.setLong(2,id);
+                
+                ps.executeUpdate();
+            }
+            
         }
         catch( SQLException e )
         {
             throw new PathNotFoundException("SQL error "+e.getMessage());
+        }
+        catch (IllegalStateException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch (IOException e)
+        {
+            throw new RepositoryException("Serialization failed "+e.getMessage());
         }
     }
 
@@ -390,13 +524,23 @@ public class JdbcProvider implements RepositoryProvider
                                          "name = ?");
 
             ps.setLong( 1, getNodeId(ws, path.getParentPath()));
-            ps.setString(2, path.getLastComponent());
-            ps.executeUpdate();
+            ps.setString(2, ws.toQName( path.getLastComponent() ) );
+            int numRows = ps.executeUpdate();
             
-            ps = m_conn.prepareStatement("DELETE FROM nodes WHERE path = ?");
-            ps.setString(1, path.toString());
+            if( numRows == 0 )
+            {
+                //
+                //  There was no property value removed, so let's remove the parent.
+                //
+                ps = m_conn.prepareStatement("DELETE from propertyvalues where parent = ?");
+                ps.setLong(1, getNodeId(ws,path) );
+                ps.executeUpdate();
+               
+                ps = m_conn.prepareStatement("DELETE FROM nodes WHERE path = ?");
+                ps.setString(1, path.toString());
             
-            ps.executeUpdate();
+                ps.executeUpdate();
+            }
         }
         catch( SQLException e )
         {

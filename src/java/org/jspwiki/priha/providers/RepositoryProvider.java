@@ -1,3 +1,20 @@
+/*
+    Priha - A JSR-170 implementation library.
+
+    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+
+    Licensed under the Apache License, Version 2.0 (the "License"); 
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at 
+    
+      http://www.apache.org/licenses/LICENSE-2.0 
+      
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+    See the License for the specific language governing permissions and 
+    limitations under the License. 
+ */
 package org.jspwiki.priha.providers;
 
 import java.util.Collection;
@@ -173,7 +190,12 @@ public interface RepositoryProvider
     public Collection<String> listWorkspaces();
 
     /**
-     *  Removes a node or a property from the repository.
+     *  Removes a node or a property from the repository.  If the removed
+     *  entity is a Node, all of its children and properties MUST also be removed
+     *  from the repository.
+     *  <p>
+     *  In addition, it MUST NOT be an error if remove() is called on a path
+     *  which is already removed.  In such a case, remove() shall fail silently.
      *  
      *  @param ws
      *  @param path

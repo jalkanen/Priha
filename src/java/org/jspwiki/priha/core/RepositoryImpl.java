@@ -1,3 +1,20 @@
+/*
+    Priha - A JSR-170 implementation library.
+
+    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+
+    Licensed under the Apache License, Version 2.0 (the "License"); 
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at 
+    
+      http://www.apache.org/licenses/LICENSE-2.0 
+      
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+    See the License for the specific language governing permissions and 
+    limitations under the License. 
+ */
 package org.jspwiki.priha.core;
 
 import java.io.IOException;
@@ -26,8 +43,8 @@ public class RepositoryImpl implements Repository
         Repository.SPEC_NAME_DESC,                "Content Repository for Java Technology API",
         Repository.SPEC_VERSION_DESC,             "1.0",
         Repository.REP_NAME_DESC,                 Release.APPNAME,
-        Repository.REP_VENDOR_DESC,               "jspwiki.org",
-        Repository.REP_VENDOR_URL_DESC,           "http://www.jspwiki.org/",
+        Repository.REP_VENDOR_DESC,               "Janne Jalkanen",
+        Repository.REP_VENDOR_URL_DESC,           "http://www.ecyrd.com/",
         Repository.REP_VERSION_DESC,              Release.VERSTR,
         Repository.LEVEL_1_SUPPORTED,             STR_TRUE,
         Repository.LEVEL_2_SUPPORTED,             STR_TRUE,
@@ -168,6 +185,26 @@ public class RepositoryImpl implements Repository
         return login( null, null );
     }
 
+    /**
+     *  Returns a Session which has write permissions to the repository.  Normally, the
+     *  user has no reason to use this method - it is used internally to sometimes modify
+     *  the repo.
+     *  <p>
+     *  This method is guaranteed to always return a Session which has all permissions
+     *  into the repository - assuming the underlying repository implementation does not
+     *  have any limitations (which it normally should not have).
+     *  
+     *  @param workspaceName The workspace to which the login is done.
+     *  @return A Priha SessionImpl object.
+     *  @throws LoginException
+     *  @throws NoSuchWorkspaceException
+     *  @throws RepositoryException
+     */
+    public SessionImpl superUserLogin(String workspaceName) throws LoginException, NoSuchWorkspaceException, RepositoryException
+    {
+        return (SessionImpl)login( null, workspaceName );
+    }
+    
     public NamespaceRegistry getGlobalNamespaceRegistry()
     {
         if( m_namespaceRegistry == null )
@@ -178,6 +215,12 @@ public class RepositoryImpl implements Repository
         return m_namespaceRegistry;
     }
 
+    /**
+     *  The SessionManager holds a list of Sessions currently owned by this Repository.  This
+     *  is used to manage the proper shutdown of the Sessions.
+     *
+     */
+    // FIXME: Should probably have a ReferenceQueue for cleaning away things like locks, etc.
     private class SessionManager
     {
         private ArrayList<WeakReference<SessionImpl>> m_sessions = new ArrayList<WeakReference<SessionImpl>>();
@@ -195,6 +238,10 @@ public class RepositoryImpl implements Repository
 
     }
     
+    /**
+     *  Stops the Provider which stores all the things in this Repository.  This is used to
+     *  manage a sane shutdown.
+     */
     private class ShutdownThread extends Thread
     {
         @Override

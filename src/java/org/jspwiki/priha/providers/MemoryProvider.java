@@ -1,3 +1,20 @@
+/*
+    Priha - A JSR-170 implementation library.
+
+    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+
+    Licensed under the Apache License, Version 2.0 (the "License"); 
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at 
+    
+      http://www.apache.org/licenses/LICENSE-2.0 
+      
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
+    See the License for the specific language governing permissions and 
+    limitations under the License. 
+ */
 package org.jspwiki.priha.providers;
 
 import java.util.*;
@@ -7,12 +24,15 @@ import javax.jcr.*;
 import org.jspwiki.priha.core.PropertyImpl;
 import org.jspwiki.priha.core.RepositoryImpl;
 import org.jspwiki.priha.core.WorkspaceImpl;
+import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.util.ConfigurationException;
 import org.jspwiki.priha.util.Path;
 
 /**
- *  Holds the contents in memory only.  It even contains some
- *  optimization for UUID-based access.
+ *  Holds the contents in memory only.   It's very fast, though creation
+ *  of the initial Session may take a while.
+ *  
+ *  Missing: QNames
  */
 public class MemoryProvider implements RepositoryProvider
 {
@@ -62,7 +82,7 @@ public class MemoryProvider implements RepositoryProvider
     {
         Object o = m_values.get(path);
         
-        if( o == null ) throw new PathNotFoundException();
+        if( o == null ) throw new PathNotFoundException(path.toString());
         
         return o;
     }
@@ -123,16 +143,22 @@ public class MemoryProvider implements RepositoryProvider
     {
         if( property.getDefinition().isMultiple() )
         {
+            //
+            //  Needed to fix a casting issue: ValueImpl[] is not a subtype of Value[], even though
+            //  ValueImpl implements Value[].
+            //
             Value[] values = property.getValues();
+            ValueImpl[] pseudovals = new ValueImpl[values.length];
+            for( int i = 0; i < values.length; i++ ) pseudovals[i] = (ValueImpl)values[i];
             
-            m_values.put( property.getInternalPath(), values );
+            m_values.put( property.getInternalPath(), pseudovals );
         }
         else
         {
             Value value = property.getValue();
             if( property.getName().equals("jcr:uuid") )
             {
-                m_uuids.put( value.getString(), property.getInternalPath() );
+                m_uuids.put( value.getString(), property.getInternalPath().getParentPath() );
             }
             
             m_values.put( property.getInternalPath(), value );    
@@ -143,19 +169,28 @@ public class MemoryProvider implements RepositoryProvider
 
     public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        boolean wasThere = m_nodePaths.remove(path);
-        
-        if( !wasThere )
+        for( Iterator<Path> i = m_nodePaths.iterator(); i.hasNext(); )
         {
-            m_values.remove( path );
+            Path p = i.next();
             
-            for( Map.Entry<String,Path> e : m_uuids.entrySet() )
+            if( path.isParentOf(p) )
+                i.remove();
+        }
+        
+        for( Iterator<Map.Entry<Path,Object>> i = m_values.entrySet().iterator(); i.hasNext(); )
+        {
+            Map.Entry<Path, Object> e = i.next();
+            
+            if( path.isParentOf(e.getKey()) )
+                i.remove();
+        }
+        
+        for( Map.Entry<String,Path> e : m_uuids.entrySet() )
+        {
+            if( path.isParentOf(e.getValue()) )
             {
-                if( e.getValue().equals(path) )
-                {
-                    m_uuids.remove(e.getKey());
-                    break;
-                }
+                m_uuids.remove(e.getKey());
+                break;
             }
         }
     }
