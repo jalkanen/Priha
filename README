@@ -1,4 +1,19 @@
-This is Priha, a JSR-170 Java Content Repository implementation. 
+
+This is Priha, a JSR-170 Java Content Repository implementation.  Unlike
+the all-singing, all-dancing, fully CRM-certified implementations, Priha
+is targeted at small applications, embedders and hobbyists, who like to
+have a simple repository model with as few external dependencies as possible.
+
+You can start off with Priha, and then just simply switch to a more efficient
+solution (like Jackrabbit) once you start to need the performance / reliability.
+
+The word "priha" is an ancient Finnish word and it roughly means a
+"young man".  It is not in common use these days, except as an idiom
+"ylen sankia priha" ("a very chubby young man").  Which, if you ever were
+to use it correctly in the presence of a Finnish person, would probably get you
+a free beer and plenty of questions.
+
+
 
 GOALS
 =====
@@ -29,8 +44,8 @@ The goals of the project are:
 The anti-goals (i.e. the things I don't particularly want to pay attention
 to, because they are not useful (yet) in JSPWiki context) are:
 
-    * Class 1 or Class 2 compliancy.  If it's not useful in JSPWiki context,
-      it will be on the back burner.
+    * Class 1 or Class 2 compliancy.  If we happen to pass the TCK, that's
+    great.  But it will happen by accident.
       
     * Transactions support
     
@@ -38,6 +53,8 @@ to, because they are not useful (yet) in JSPWiki context) are:
       JSR implementation.
       
     * JNDI
+    
+    * Custom Nodetypes
     
 
 REQUIREMENTS
@@ -52,8 +69,12 @@ To run Priha, you need:
 
 That's it!
 
+See doc/Configuration.txt for further information about how Priha is configured.
+
 LICENSE
 =======
 
-Priha will be licensed under the Apache 2.0 license.
+Priha is licensed under the Apache 2.0 license.  Please see the LICENSE file in the
+same directory as this document.
+
 
