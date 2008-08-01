@@ -15,11 +15,9 @@
           <include name="*.jar" />
           <exclude name="jackrabbit*" />
        </fileset>
-     <!--   
        <fileset dir="tests/lib">
           <include name="*.jar" />
        </fileset>
-       -->
        <pathelement path="tests/etc" />
        <pathelement path="build" />
        <pathelement path="etc" />
@@ -123,6 +121,7 @@
                 <include name="**/PerformanceTest.java" />
            </fileset>
         </batchtest>
+        <jvmarg line="-Xmx512m"/>
        </junit>  
      
 
