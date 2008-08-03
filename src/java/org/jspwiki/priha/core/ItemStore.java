@@ -19,13 +19,11 @@ package org.jspwiki.priha.core;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Properties;
 
 import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 
-import org.jspwiki.priha.util.ConfigurationException;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 

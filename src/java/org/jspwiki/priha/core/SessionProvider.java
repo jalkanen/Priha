@@ -21,9 +21,6 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import javax.jcr.*;
-import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NodeDefinition;
-import javax.jcr.nodetype.PropertyDefinition;
 
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
@@ -34,7 +31,7 @@ import org.jspwiki.priha.util.Path;
  */
 public class SessionProvider
 {
-    private SessionImpl        m_session;
+    //private SessionImpl        m_session;
     private ItemStore          m_source;
     private WorkspaceImpl      m_workspace;
     
@@ -42,7 +39,7 @@ public class SessionProvider
     
     public SessionProvider( SessionImpl session, ItemStore source )
     {
-        m_session = session;
+        //m_session = session;
         m_source  = source;
         m_workspace = (WorkspaceImpl)session.getWorkspace();
         

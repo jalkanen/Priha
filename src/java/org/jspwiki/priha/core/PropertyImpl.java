@@ -31,7 +31,6 @@ import javax.jcr.version.VersionException;
 
 import org.jspwiki.priha.core.values.StreamValueImpl;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
-import org.jspwiki.priha.core.values.ValueImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.util.Path;
 

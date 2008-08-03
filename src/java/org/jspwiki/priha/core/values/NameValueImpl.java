@@ -35,6 +35,7 @@ public class NameValueImpl extends NodeValueImpl implements Value, Serializable
 
         try
         {
+            @SuppressWarnings("unused")
             URI uri = new URI( value );
         }
         catch (URISyntaxException e)

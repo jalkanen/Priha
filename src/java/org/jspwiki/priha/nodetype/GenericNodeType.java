@@ -17,14 +17,10 @@
  */
 package org.jspwiki.priha.nodetype;
 
-import java.util.logging.Logger;
-
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
-
-import sun.util.logging.resources.logging;
 
 /**
  *  Stores the Node Types.
@@ -46,7 +42,7 @@ public class GenericNodeType
     protected boolean              m_ismixin;
     protected boolean              m_hasOrderableChildNodes;
 
-    private Logger log = Logger.getLogger(getClass().getName());
+    //private Logger log = Logger.getLogger(getClass().getName());
     
     public GenericNodeType(String name)
     {

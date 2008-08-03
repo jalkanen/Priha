@@ -29,7 +29,6 @@ import javax.jcr.RepositoryException;
 import javax.management.MBeanServer;
 
 import net.sf.ehcache.*;
-import net.sf.ehcache.constructs.blocking.BlockingCache;
 import net.sf.ehcache.constructs.blocking.LockTimeoutException;
 import net.sf.ehcache.management.ManagementService;
 
@@ -231,6 +230,7 @@ public class EhCachingProvider implements RepositoryProvider
         }
     }
 
+    @SuppressWarnings("unchecked")
     public List<Path> listNodes(WorkspaceImpl ws, Path parentpath) throws RepositoryException
     {
 //        System.out.print ("listNodes: "+Thread.currentThread());
@@ -265,6 +265,7 @@ public class EhCachingProvider implements RepositoryProvider
 
     }
 
+    @SuppressWarnings("unchecked")
     public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
 //        System.out.print ("listProperties: "+Thread.currentThread());

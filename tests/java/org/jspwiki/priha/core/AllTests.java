@@ -15,6 +15,8 @@ public class AllTests
         suite.addTest( WorkspaceImplTest.suite() );
         suite.addTest( NodeImplTest.suite() );
         suite.addTest( SessionImplTest.suite() );
+        //
+        // It is not necessary to run these, a they take quite a while.
         // suite.addTest( PerformanceTest.suite() );
         return suite;
     }

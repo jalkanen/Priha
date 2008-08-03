@@ -3,7 +3,6 @@ package org.jspwiki.priha.core;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
@@ -14,7 +13,6 @@ import junit.framework.TestSuite;
 
 import org.jspwiki.priha.RepositoryManager;
 import org.jspwiki.priha.TestUtil;
-import org.jspwiki.priha.util.Path;
 
 public class RepositoryTest extends TestCase
 {

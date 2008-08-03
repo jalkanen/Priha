@@ -16,10 +16,10 @@ public class PerformanceTest extends TestCase
 {
     /** The size of a million can be configured here. ;-) */
     
-    private static final int DEFAULT_ITERATIONS = 200;
+    private static final int DEFAULT_ITERATIONS = 1000;
     private int m_iterations = DEFAULT_ITERATIONS;
     
-    private static int BLOB_SIZE = 1024;
+    private static int BLOB_SIZE = 1024*1024*10;
     
     private Credentials m_creds = new SimpleCredentials("username","password".toCharArray());
    

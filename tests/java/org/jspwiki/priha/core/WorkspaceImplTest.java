@@ -1,8 +1,6 @@
 package org.jspwiki.priha.core;
 
-import java.util.List;
-
-import javax.jcr.*;
+import javax.jcr.Repository;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -10,7 +8,6 @@ import junit.framework.TestSuite;
 
 import org.jspwiki.priha.RepositoryManager;
 import org.jspwiki.priha.TestUtil;
-import org.jspwiki.priha.util.Path;
 
 public class WorkspaceImplTest extends TestCase
 {

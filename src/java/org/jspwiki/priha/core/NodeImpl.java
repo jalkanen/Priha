@@ -17,9 +17,7 @@
  */
 package org.jspwiki.priha.core;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -33,7 +31,6 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 
-import org.jspwiki.priha.core.binary.MemoryBinarySource;
 import org.jspwiki.priha.core.locks.LockImpl;
 import org.jspwiki.priha.core.locks.LockManager;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
@@ -1036,6 +1033,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         {
             try
             {
+                @SuppressWarnings("unused")
                 PropertyImpl primarytype = (PropertyImpl) getProperty( "jcr:primaryType" );
             }
             catch( Exception e )

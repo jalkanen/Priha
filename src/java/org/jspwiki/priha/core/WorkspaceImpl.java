@@ -19,9 +19,7 @@ package org.jspwiki.priha.core;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,7 +33,6 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.jspwiki.priha.core.locks.LockManager;
 import org.jspwiki.priha.nodetype.NodeTypeManagerImpl;
 import org.jspwiki.priha.query.PrihaQueryManager;
 import org.jspwiki.priha.util.InvalidPathException;
@@ -52,7 +49,6 @@ public class WorkspaceImpl
     private String              m_name;
     private ProviderManager     m_providerManager;
     private NodeTypeManagerImpl m_nodeTypeManager;
-    private LockManager         m_lockManager;
     
     private Logger log = Logger.getLogger(WorkspaceImpl.class.getName());
     
@@ -63,7 +59,6 @@ public class WorkspaceImpl
         m_name     = name;
         m_providerManager = mgr;
         m_nodeTypeManager = NodeTypeManagerImpl.getInstance(this);
-        m_lockManager = LockManager.getInstance(this);
     }
 
     /**

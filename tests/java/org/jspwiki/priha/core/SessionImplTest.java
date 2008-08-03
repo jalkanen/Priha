@@ -13,7 +13,6 @@ import junit.framework.TestSuite;
 import org.jspwiki.priha.RepositoryManager;
 import org.jspwiki.priha.TestUtil;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
-import org.jspwiki.priha.core.values.ValueImpl;
 
 public class SessionImplTest extends TestCase
 {
