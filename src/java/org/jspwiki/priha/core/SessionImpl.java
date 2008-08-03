@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.AccessControlException;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
@@ -30,6 +31,7 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.version.VersionException;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.jspwiki.priha.core.locks.LockManager;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
@@ -39,6 +41,7 @@ import org.jspwiki.priha.util.Path;
 import org.jspwiki.priha.util.PathFactory;
 import org.jspwiki.priha.xml.StreamContentHandler;
 import org.jspwiki.priha.xml.XMLExport;
+import org.jspwiki.priha.xml.XMLImport;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -145,43 +148,6 @@ public class SessionImpl implements Session
         throw new UnsupportedRepositoryOperationException("Session.checkPermission()");
     }
 
-    public void exportDocumentView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Session.exportDocumentView()");
-    }
-
-    public void exportDocumentView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException
-    {
-        // TODO Auto-generated method stub
-
-        throw new UnsupportedRepositoryOperationException("Session.exportDocumentView2()");
-    }
-
-    public void exportSystemView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException
-    {
-        XMLExport export = new XMLExport( this );
-        
-        export.export( absPath, contentHandler, skipBinary, noRecurse );
-    }
-
-    public void exportSystemView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException
-    {
-        XMLExport export = new XMLExport( this );
-
-        ContentHandler handler = new StreamContentHandler( out );
-        
-        try
-        {
-            export.export( absPath, handler, skipBinary, noRecurse );
-        }
-        catch (SAXException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-    }
-
     public Object getAttribute(String name)
     {
         Object res = null;
@@ -203,11 +169,6 @@ public class SessionImpl implements Session
         return new String[0];
     }
 
-    public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior) throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, RepositoryException
-    {
-        throw new UnsupportedRepositoryOperationException("Session.getImportContentHandler()");
-        // TODO Auto-generated method stub
-    }
 
     public ItemImpl getItem( Path absPath ) throws PathNotFoundException, RepositoryException
     {
@@ -279,12 +240,6 @@ public class SessionImpl implements Session
     public Session impersonate(Credentials credentials) throws LoginException, RepositoryException
     {
         throw new UnsupportedRepositoryOperationException("Session.impersonate()");
-        // TODO Auto-generated method stub
-    }
-
-    public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException, InvalidSerializedDataException, LockException, RepositoryException
-    {
-        throw new UnsupportedRepositoryOperationException("Session.importXML()");
         // TODO Auto-generated method stub
     }
 
@@ -444,6 +399,74 @@ public class SessionImpl implements Session
     public Collection<PropertyImpl> getReferences(String uuid) throws RepositoryException
     {
         return m_provider.getReferences( uuid );
+    }
+
+    /*  ========================================================================= */
+    /*  XML import/export */
+    
+    public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException, InvalidSerializedDataException, LockException, RepositoryException
+    {
+        XMLImport importer = new XMLImport( this, false, PathFactory.getPath(parentAbsPath), uuidBehavior );
+        
+        try
+        {
+            importer.doImport( in );
+        }
+        catch (ParserConfigurationException e)
+        {
+            log.log( Level.WARNING, "Could not get SAX parser", e );
+            throw new RepositoryException("Could not get SAX parser, please check logs.");
+        }
+        catch (SAXException e)
+        {
+            log.log( Level.WARNING, "Importing failed", e );
+            throw new InvalidSerializedDataException("Importing failed: "+e.getMessage());
+        }
+    }
+
+    public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior) throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, RepositoryException
+    {
+        XMLImport importer = new XMLImport( this, false, PathFactory.getPath(parentAbsPath), uuidBehavior );
+
+        return importer;
+    }
+
+
+    public void exportDocumentView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedRepositoryOperationException("Session.exportDocumentView()");
+    }
+
+    public void exportDocumentView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException
+    {
+        // TODO Auto-generated method stub
+
+        throw new UnsupportedRepositoryOperationException("Session.exportDocumentView2()");
+    }
+
+    public void exportSystemView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException
+    {
+        XMLExport export = new XMLExport( this );
+        
+        export.export( absPath, contentHandler, skipBinary, noRecurse );
+    }
+
+    public void exportSystemView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException
+    {
+        XMLExport export = new XMLExport( this );
+
+        ContentHandler handler = new StreamContentHandler( out );
+        
+        try
+        {
+            export.export( absPath, handler, skipBinary, noRecurse );
+        }
+        catch (SAXException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
 }

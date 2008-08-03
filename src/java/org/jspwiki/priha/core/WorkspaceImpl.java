@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
@@ -31,6 +33,7 @@ import javax.jcr.observation.ObservationManager;
 import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
+import javax.xml.parsers.ParserConfigurationException;
 
 import org.jspwiki.priha.core.locks.LockManager;
 import org.jspwiki.priha.nodetype.NodeTypeManagerImpl;
@@ -38,7 +41,9 @@ import org.jspwiki.priha.query.PrihaQueryManager;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 import org.jspwiki.priha.util.PathFactory;
+import org.jspwiki.priha.xml.XMLImport;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
 public class WorkspaceImpl
     implements Workspace
@@ -48,6 +53,8 @@ public class WorkspaceImpl
     private ProviderManager     m_providerManager;
     private NodeTypeManagerImpl m_nodeTypeManager;
     private LockManager         m_lockManager;
+    
+    private Logger log = Logger.getLogger(WorkspaceImpl.class.getName());
     
     public WorkspaceImpl( SessionImpl session, String name, ProviderManager mgr )
         throws RepositoryException
@@ -110,10 +117,14 @@ public class WorkspaceImpl
         return list.toArray(new String[0]);
     }
 
+    // FIXME: SuperUserSession leaks.
     public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior) throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, AccessDeniedException, RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("Workspace.getImportContentHandler()");
-        // TODO Auto-generated method stub
+        Session suSession = ((RepositoryImpl)m_session.getRepository()).superUserLogin( m_name );
+        
+        XMLImport importer = new XMLImport( suSession,true, PathFactory.getPath(parentAbsPath), uuidBehavior );
+        
+        return importer;
     }
 
     public String getName()
@@ -152,9 +163,29 @@ public class WorkspaceImpl
 
     public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, InvalidSerializedDataException, LockException, AccessDeniedException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Workspace.importXML()");
-
+        Session suSession = ((RepositoryImpl)m_session.getRepository()).superUserLogin( m_name );
+        
+        XMLImport importer = new XMLImport( suSession, true, PathFactory.getPath(parentAbsPath), uuidBehavior );
+        
+        try
+        {
+            importer.doImport( in );
+        }
+        catch (ParserConfigurationException e)
+        {
+            log.log( Level.WARNING, "Could not get SAX parser", e );
+            throw new RepositoryException("Could not get SAX parser, please check logs.");
+        }
+        catch (SAXException e)
+        {
+            log.log( Level.WARNING, "Importing failed", e );
+            throw new InvalidSerializedDataException("Importing failed: "+e.getMessage());
+        }
+        finally
+        {
+            suSession.logout();
+        }
+        
     }
 
     public void move(String srcAbsPath, String destAbsPath) throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException

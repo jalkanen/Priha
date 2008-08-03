@@ -1229,8 +1229,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             return false;
         }
 
-        // FIXME: This is rather permissive...
+        // FIXME: This is a bit complicated and slow.
 
+        if( mixinName.equals("mix:versionable") && 
+            m_session.getRepository().getDescriptor(Repository.OPTION_VERSIONING_SUPPORTED).equals("false") ) return false;
+        
         return true;
     }
 

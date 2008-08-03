@@ -13,6 +13,7 @@ public class AllTests extends TestCase
         suite.addTest( org.jspwiki.priha.nodetype.AllTests.suite() );
         suite.addTest( org.jspwiki.priha.core.AllTests.suite() );
         suite.addTest( org.jspwiki.priha.util.AllTests.suite() );
+        suite.addTest( org.jspwiki.priha.xml.AllTests.suite() );
         
         return suite;
     }

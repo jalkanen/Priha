@@ -114,24 +114,25 @@ public class PathUtil
     {
         if( component.length() == 1 )
         {
-            if( ONECHARSIMPLENAME.indexOf(component) != -1 ) throw new InvalidPathException("Invalid path");
+            if( ONECHARSIMPLENAME.indexOf(component) != -1 ) throw new InvalidPathException("Contained one of the illegal characters "+ONECHARSIMPLENAME);
         }
         else if( component.length() == 2 )
         {
             if( component.charAt(0) == '.' )
             {
                 if( ONECHARSIMPLENAME.indexOf(component.charAt(1)) != -1 )
-                    throw new InvalidPathException("Invalid path");
+                    throw new InvalidPathException("Second character was one of the illegal characters "+ONECHARSIMPLENAME);
             }
             else if( component.charAt(1) == '.' )
             {
                 if( ONECHARSIMPLENAME.indexOf(component.charAt(0)) != -1 )
-                    throw new InvalidPathException("Invalid path");
+                    throw new InvalidPathException("First character was one of the illegal characters "+ONECHARSIMPLENAME);
                 
             }
-            else
-            {
-                throw new InvalidPathException("Invalid path");
+            else if( ONECHARSIMPLENAME.indexOf(component.charAt(0)) != -1 ||
+                ONECHARSIMPLENAME.indexOf(component.charAt(1)) != -1 )
+            {    
+                    throw new InvalidPathException("Two-character path contained an illegal character "+ONECHARSIMPLENAME);
             }
         }
         else
@@ -158,7 +159,7 @@ public class PathUtil
                         continue;
                     }
                     
-                    throw new InvalidPathException("Invalid path");
+                    throw new InvalidPathException("Illegal whitespace");
                 }
             }
         }

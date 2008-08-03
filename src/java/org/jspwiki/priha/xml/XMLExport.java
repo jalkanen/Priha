@@ -34,8 +34,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 /**
- *  Exports the JCR repository as an XML tree.
- *  
+ *  Exports the JCR repository as an XML tree using the System View.
  */
 public class XMLExport
 {
@@ -48,23 +47,17 @@ public class XMLExport
         m_session = impl;
     }
 
-    
     /**
-     *  This is pretty slow... But it's okay, XML export does not need to be very speedy.
-     * @param src
-     * @return
+     *  Exports the JCR repository starting from absPath.
+     *  
+     *  @param absPath The path from which to start the exporting.
+     *  @param contentHandler The SAX ContentHandler which will receive the export events.
+     *  @param skipBinary If true, all BINARY type values will be skipped.
+     *  @param noRecurse If true, won't recurse into subdirectories.
+     *  @throws PathNotFoundException
+     *  @throws RepositoryException
+     *  @throws SAXException If the ContentHandler throws one.
      */
-    private String escapeXML( String src )
-    {
-        src = src.replaceAll("&", "&amp;");
-        src = src.replaceAll("<", "&lt;");
-        src = src.replaceAll(">", "&gt;");
-        src = src.replaceAll("\"", "&quot;");
-        src = src.replaceAll("'", "&apos;");
-        
-        return src;
-    }
-    
     public void export(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, RepositoryException, SAXException
     {
         contentHandler.startDocument();
@@ -87,7 +80,7 @@ public class XMLExport
         AttributesImpl atts = new AttributesImpl();
         
         atts.addAttribute( "", "", "sv:name", "", 
-                           startNode.getName().length() > 0 ? escapeXML(startNode.getName()) : "jcr:root");
+                           startNode.getName().length() > 0 ? XMLUtils.escapeXML(startNode.getName()) : "jcr:root");
         
         contentHandler.startElement( "", "", "sv:node", atts);
         
@@ -125,13 +118,16 @@ public class XMLExport
         contentHandler.endElement("", "", "sv:node");
     }
 
+    /**
+     *  Serializes a property value to the given ContentHandler.
+     */
     private void serializeProperty(Property p, ContentHandler contentHandler, boolean skipBinary) throws RepositoryException, SAXException
     {
         if( p.getType() == PropertyType.BINARY && skipBinary ) return;
         
         AttributesImpl atts = new AttributesImpl();
         
-        atts.addAttribute("", "", "sv:name", "", escapeXML(p.getName()));
+        atts.addAttribute("", "", "sv:name", "", XMLUtils.escapeXML(p.getName()));
         atts.addAttribute("", "", "sv:type", "", PropertyType.nameFromValue( p.getType() ) );
         contentHandler.startElement("", "", "sv:property", atts);
         
@@ -150,6 +146,9 @@ public class XMLExport
         contentHandler.endElement("", "", "sv:property");
     }
 
+    /**
+     *  Serializes a single value.
+     */
     private void serializeValue(Value v, ContentHandler contentHandler) throws SAXException, ValueFormatException, RepositoryException
     {
         AttributesImpl atts2 = new AttributesImpl();
@@ -179,7 +178,7 @@ public class XMLExport
         }
         else 
         {
-            String outval = escapeXML(v.getString());
+            String outval = XMLUtils.escapeXML(v.getString());
             contentHandler.characters( outval.toCharArray(), 0, outval.length() );
         }
         
@@ -187,8 +186,7 @@ public class XMLExport
     }
     
     /**
-     *  Implements property sorting according to JCR 6.4.1
-     *
+     *  Implements property sorting according to JSR-170 1.0 chapter 6.4.1.
      */
     private static class PropertySorter implements Comparator<PropertyImpl>
     {
