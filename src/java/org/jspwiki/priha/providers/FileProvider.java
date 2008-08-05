@@ -284,15 +284,23 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 for( File propertyFile : files )
                 {
                     Properties props = new Properties();
-            
-                    InputStream in = new FileInputStream(propertyFile);
+                    InputStream in = null;
+                    
+                    try
+                    {
+                        in = new FileInputStream(propertyFile);
                 
-                    props.load(in);
+                        props.load(in);
         
-                    String qname =  props.getProperty("qname");
+                        String qname =  props.getProperty("qname");
                 
-                    qname = ws.fromQName(qname);
-                    proplist.add( qname );
+                        qname = ws.fromQName(qname);
+                        proplist.add( qname );
+                    }
+                    finally
+                    {
+                        if( in != null ) in.close();
+                    }
                 }
             }
         }
@@ -369,6 +377,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         props.setProperty( "type",  PropertyType.nameFromValue( property.getType() ) );
         props.setProperty( "multiple", property.getDefinition().isMultiple() ? "true" : "false" );
 
+        OutputStream out = null;
+        
         try
         {
             if( property.getDefinition().isMultiple() )
@@ -387,8 +397,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 File df = new File( nodeDir, property.getName()+".data" );
                 writeValue( df, (ValueImpl)property.getValue() );
             }
-        
-            props.store( new FileOutputStream(inf), null );
+            out = new FileOutputStream(inf);
+            
+            props.store( out, null );
         }
         catch (FileNotFoundException e)
         {
@@ -400,16 +411,39 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+        finally
+        {
+            if( out != null )
+            {
+                try
+                {
+                    out.close();
+                }
+                catch (IOException e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }
     }
 
     private String readContentsAsString( File file )
         throws IOException
     {
         FileReader in = new FileReader( file );
-        StringWriter out = new StringWriter();
-        copyContents( in, out );  
         
-        return out.toString();
+        try
+        {
+            StringWriter out = new StringWriter();
+            copyContents( in, out );  
+        
+            return out.toString();
+        }
+        finally
+        {
+            in.close();
+        }
     }
     
     private ValueImpl prepareValue( WorkspaceImpl ws, File propFile, String propType )
@@ -512,8 +546,23 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
         }
         catch( IOException e )
-        {
+        {            
             throw new RepositoryException("Unable to read property file",e);
+        }
+        finally
+        {
+            if( in != null )
+            {
+                try
+                {
+                    in.close();
+                }
+                catch (IOException e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
