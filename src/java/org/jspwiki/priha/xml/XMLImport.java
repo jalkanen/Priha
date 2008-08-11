@@ -11,6 +11,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
+import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -74,7 +75,16 @@ public class XMLImport extends DefaultHandler
     {
         String primaryType = getProp(ns,"jcr:primaryType").m_values.get(0).getString();
         
-        Node nd = m_currentNode.addNode( m_currentNode.getPath() + "/" + ns.m_nodeName, primaryType );
+        String path = m_currentNode.getPath() + "/" + ns.m_nodeName;
+        
+        if( m_session.itemExists(path) )
+        {
+            throw new ItemExistsException("There already exists a node at "+path);
+        }
+        
+        // System.out.println("Importing "+path);
+        
+        Node nd = m_currentNode.addNode( path, primaryType );
         
         m_currentNode = nd;
     }
@@ -89,18 +99,6 @@ public class XMLImport extends DefaultHandler
             checkSystem();
             
             String nodeName = attrs.getValue("sv:name");
-            
-            if( m_currentStore != null )
-            {
-                try
-                {
-                    deserializeStore( m_currentStore );
-                }
-                catch (RepositoryException e)
-                {
-                    throw new SAXException("Cannot deserialize Node",e);
-                }
-            }
             
             m_currentStore = new NodeStore();
             
@@ -151,11 +149,13 @@ public class XMLImport extends DefaultHandler
         {
             try
             {
+                deserializeStore( m_currentStore );
+
                 m_currentNode = m_currentNode.getParent();
             }
             catch (RepositoryException e)
             {
-                throw new SAXException("No parent found!?!",e);
+                throw new SAXException("Could not deserialize node",e);
             }
         }
         else if( name.equals("sv:value") )

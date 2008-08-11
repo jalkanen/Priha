@@ -1,3 +1,11 @@
+2008-08-11  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.28
+        
+        * Fixed a number of issues with XML import (still does not work yet).
+        
+        * New pass rate for TCK tests is 126 fails out of 584 tests.
+
 2008-08-03  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.27

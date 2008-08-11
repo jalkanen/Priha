@@ -420,6 +420,10 @@ public class SessionImpl implements Session
         catch (SAXException e)
         {
             log.log( Level.WARNING, "Importing failed", e );
+            
+            if( e.getException() != null && e.getException() instanceof ItemExistsException ) 
+                throw (ItemExistsException) e.getException();
+            
             throw new InvalidSerializedDataException("Importing failed: "+e.getMessage());
         }
     }

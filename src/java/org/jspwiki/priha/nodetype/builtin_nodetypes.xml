@@ -483,4 +483,48 @@
       </propertyDefinition>
    </nodetype>
 
+   <!-- Define nt:unstructured -->
+   <nodetype>
+      <name>test:sameNameSibsFalseChildNodeDefinition</name>
+      <supertypes>nt:base</supertypes>
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>true</hasOrderableChildNodes>
+      <primaryItemName/>
+
+      <childNodeDefinition>
+         <name>*</name>
+         <requiredPrimaryTypes>[nt:base]</requiredPrimaryTypes>
+         <defaultPrimaryType>nt:unstructured</defaultPrimaryType>
+         <autoCreated>false</autoCreated>
+         <mandatory>false</mandatory>
+         <onParentVersion>VERSION</onParentVersion>
+         <protected>false</protected>
+         <sameNameSiblings>false</sameNameSiblings>
+      </childNodeDefinition>
+
+      <propertyDefinition>
+         <name>*</name>
+         <requiredType>undefined</requiredType>
+         <valueConstraints/>
+         <defaultValues/>
+         <autoCreated>false</autoCreated>
+         <mandatory>false</mandatory>
+         <onParentVersion>COPY</onParentVersion>
+         <protected>false</protected>
+         <multiple>true</multiple>
+      </propertyDefinition>
+
+      <propertyDefinition>
+         <name>*</name>
+         <requiredType>undefined</requiredType>
+         <valueConstraints/>
+         <defaultValues/>
+         <autoCreated>false</autoCreated>
+         <mandatory>false</mandatory>
+         <onParentVersion>COPY</onParentVersion>
+         <protected>false</protected>
+         <multiple>false</multiple>
+      </propertyDefinition>
+   </nodetype>
+
 </nodetypes>
