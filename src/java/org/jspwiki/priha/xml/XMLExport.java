@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.logging.Logger;
 
 import javax.jcr.*;
 
@@ -41,6 +42,8 @@ public class XMLExport
     private SessionImpl m_session;
     
     private static final int BINARY_BUF_SIZE = 4096;
+    
+    private static Logger log = Logger.getLogger(XMLExport.class.getName());
     
     public XMLExport(SessionImpl impl)
     {
@@ -84,6 +87,8 @@ public class XMLExport
         
         contentHandler.startElement( "", "", "sv:node", atts);
         
+        log.finest("Serializing node at "+absPath);
+        
         //
         //  Serialize the properties.  We need to sort them in a particular order
         //  according to the JCR spec.
@@ -123,7 +128,7 @@ public class XMLExport
      */
     private void serializeProperty(Property p, ContentHandler contentHandler, boolean skipBinary) throws RepositoryException, SAXException
     {
-        if( p.getType() == PropertyType.BINARY && skipBinary ) return;
+        log.finest("   Property "+p.getName());
         
         AttributesImpl atts = new AttributesImpl();
         
@@ -135,12 +140,12 @@ public class XMLExport
         {
             for( Value v : p.getValues() )
             {
-                serializeValue( v, contentHandler );
+                serializeValue( v, contentHandler, skipBinary );
             }
         }
         else
         {
-            serializeValue(p.getValue(), contentHandler);
+            serializeValue(p.getValue(), contentHandler, skipBinary);
         }
         
         contentHandler.endElement("", "", "sv:property");
@@ -149,31 +154,33 @@ public class XMLExport
     /**
      *  Serializes a single value.
      */
-    private void serializeValue(Value v, ContentHandler contentHandler) throws SAXException, ValueFormatException, RepositoryException
+    private void serializeValue(Value v, ContentHandler contentHandler, boolean skipBinary) throws SAXException, ValueFormatException, RepositoryException
     {
         AttributesImpl atts2 = new AttributesImpl();
         contentHandler.startElement("", "", "sv:value", atts2);
         
         if( v.getType() == PropertyType.BINARY )
         {
-            try
+            if( !skipBinary )
             {
-                InputStreamReader in = new InputStreamReader( new Base64.InputStream( v.getStream(), Base64.ENCODE ), "UTF-8" );
-
-                char[] buf = new char[ BINARY_BUF_SIZE ];
-                int bytes;
-                
-                while( (bytes = in.read(buf)) != -1 )
+                try
                 {
-                    contentHandler.characters(buf, 0, bytes);                    
+                    InputStreamReader in = new InputStreamReader( new Base64.InputStream( v.getStream(), Base64.ENCODE ), "UTF-8" );
+
+                    char[] buf = new char[ BINARY_BUF_SIZE ];
+                    int bytes;
+                
+                    while( (bytes = in.read(buf)) != -1 )
+                    {
+                        contentHandler.characters(buf, 0, bytes);                    
+                    }
+                }
+                catch (IOException e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
                 }
             }
-            catch (IOException e)
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            
             
         }
         else 

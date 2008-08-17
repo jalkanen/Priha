@@ -1,3 +1,10 @@
+2008-08-17  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.0.29
+        
+        * XML Import now works for System View.  All SerializationTest
+        tests now pass.  Total fail rate for tests is 110 / 584.
+
 2008-08-11  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.0.28

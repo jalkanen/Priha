@@ -202,7 +202,11 @@ public class RepositoryImpl implements Repository
      */
     public SessionImpl superUserLogin(String workspaceName) throws LoginException, NoSuchWorkspaceException, RepositoryException
     {
-        return (SessionImpl)login( null, workspaceName );
+        SessionImpl s = (SessionImpl)login( null, workspaceName );
+        
+        s.setSuper(true);
+        
+        return s;
     }
     
     public NamespaceRegistry getGlobalNamespaceRegistry()

@@ -59,6 +59,7 @@ public class SessionImpl implements Session
     private SimpleCredentials m_credentials;
 
     private Logger         log = Logger.getLogger( getClass().getName() );
+    private boolean        m_isSuperSession = false;
     
     protected SessionProvider m_provider;
 
@@ -80,6 +81,25 @@ public class SessionImpl implements Session
         }
     }
 
+    protected void setSuper(boolean value)
+    {
+        m_isSuperSession = true;
+    }
+    
+    /**
+     *  Returns true, if this Session should be considered to be a supersession,
+     *  which can do whatever it wants (that is, mostly ignore any Constraint Violations.
+     *  <p>
+     *  One should be careful, since it is possible with this method to end up in
+     *  a repository with an inconsistent state.
+     *  
+     *  @return
+     */
+    public boolean isSuper()
+    {
+        return m_isSuperSession;
+    }
+    
     public List<Path> listNodes( Path parentpath ) throws RepositoryException
     {
         return m_provider.listNodes(parentpath);

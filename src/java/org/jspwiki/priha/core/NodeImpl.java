@@ -438,6 +438,17 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         }
     }
 
+    /**
+     *  This method autocreates the properties for this node, which are marked to be automatically created
+     *  by the definition.
+     *  
+     *  @param nt The NodeType
+     *  @throws RepositoryException
+     *  @throws ValueFormatException
+     *  @throws VersionException
+     *  @throws LockException
+     *  @throws ConstraintViolationException
+     */
     private void autoCreateProperties(NodeType nt) throws RepositoryException, ValueFormatException, VersionException, LockException, ConstraintViolationException
     {
         ValueFactoryImpl vfi = ValueFactoryImpl.getInstance();

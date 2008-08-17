@@ -196,6 +196,14 @@ public class GenericNodeType
         return null;
     }
 
+    /**
+     *  Finds a property definition for a child property.  If the child property definition
+     *  for this node has a generic type ("*"), then that will be found as a last resort.
+     *  
+     *  @param name The name of the property to look for.
+     *  @param multiple If true, checks only multi properties; if false, checks only single properties.
+     *  @return A valid PropertyDefinition, or null, if no such beast can be located.
+     */
     public PropertyDefinition findPropertyDefinition( String name, boolean multiple )
     {
         for( PropertyDefinition pd : m_propertyDefinitions )
