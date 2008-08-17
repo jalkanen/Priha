@@ -266,7 +266,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( !parentType.canSetProperty( getName(), values ) )
             throw new ConstraintViolationException("Setting of this property is forbidden:");
 
-        if( m_type != PropertyType.UNDEFINED && values != null && values.length >= 1 && m_type != values[0].getType() )
+        if( m_type != PropertyType.UNDEFINED && values != null && values.length >= 1 && values[0] != null && m_type != values[0].getType() )
         {
             throw new ValueFormatException("Attempt to set a different type value to this property");
         }        

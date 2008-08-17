@@ -165,7 +165,8 @@ public class XMLExport
             {
                 try
                 {
-                    InputStreamReader in = new InputStreamReader( new Base64.InputStream( v.getStream(), Base64.ENCODE ), "UTF-8" );
+                    InputStreamReader in = new InputStreamReader( new Base64.InputStream( v.getStream(), Base64.ENCODE ), 
+                                                                  "UTF-8" );
 
                     char[] buf = new char[ BINARY_BUF_SIZE ];
                     int bytes;
