@@ -245,6 +245,11 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( !parentType.canSetProperty( getName(), value ) )
             throw new ConstraintViolationException("Setting of this property is forbidden");
 
+        if( m_type != PropertyType.UNDEFINED && value != null && m_type != value.getType() )
+        {
+            throw new ValueFormatException("Attempt to set a different type value to this property");
+        }
+        
         markModified( m_value != null );
         loadValue( value );
     }
@@ -261,6 +266,11 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( !parentType.canSetProperty( getName(), values ) )
             throw new ConstraintViolationException("Setting of this property is forbidden:");
 
+        if( m_type != PropertyType.UNDEFINED && values != null && values.length >= 1 && m_type != values[0].getType() )
+        {
+            throw new ValueFormatException("Attempt to set a different type value to this property");
+        }        
+        
         markModified( m_value != null );
         loadValue(values);
     }
@@ -345,6 +355,11 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             return;
         }
 
+        if( m_type != PropertyType.UNDEFINED && m_type != PropertyType.STRING )
+        {
+            throw new ValueFormatException("Attempt to set a different type value to this property");
+        }  
+        
         ArrayList<Value> ls = new ArrayList<Value>();
         for( int i = 0; i < values.length; i++ )
         {

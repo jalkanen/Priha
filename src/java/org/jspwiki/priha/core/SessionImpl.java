@@ -162,10 +162,13 @@ public class SessionImpl implements Session
         m_lockTokens.add(lt);
     }
 
+    /**
+     *  Priha does not mandate any permission checking.  This method just returns quietly, since
+     *  everyone has all the permissions all the time.
+     */
     public void checkPermission(String absPath, String actions) throws AccessControlException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Session.checkPermission()");
+        return;
     }
 
     public Object getAttribute(String name)
