@@ -121,7 +121,7 @@
                 <include name="**/PerformanceTest.java" />
            </fileset>
         </batchtest>
-        <jvmarg line="-Xmx512m"/>
+        <jvmarg line="-Xmx2048m"/>
        </junit>  
      
 
