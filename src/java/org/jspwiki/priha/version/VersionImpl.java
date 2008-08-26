@@ -19,8 +19,7 @@ package org.jspwiki.priha.version;
 
 import java.util.Calendar;
 
-import javax.jcr.RepositoryException;
-import javax.jcr.ValueFormatException;
+import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeDefinition;
@@ -57,20 +56,43 @@ public class VersionImpl
 
     public Calendar getCreated() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        Property p = getProperty("jcr:created");
+        
+        return p.getDate();
     }
 
     public Version[] getPredecessors() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        Property p = getProperty("jcr:predecessors");
+        
+        return collateVersions( p );
     }
 
     public Version[] getSuccessors() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        Property p = getProperty("jcr:successors");
+        
+        Version[] result = collateVersions(p);
+        
+        return result;
+    }
+
+    private Version[] collateVersions(Property p) throws ValueFormatException, RepositoryException, ItemNotFoundException
+    {
+        Value[] vals = p.getValues();
+        
+        Version[] result = new Version[vals.length];
+        
+        int i = 0;
+        for( Value v : vals )
+        {
+            String uuid = v.getString();
+           
+            Version vers = (Version) getSession().getNodeByUUID( uuid );
+            
+            result[i++] = vers;
+        }
+        return result;
     }
 
 }

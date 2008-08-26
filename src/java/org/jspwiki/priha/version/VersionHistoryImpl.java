@@ -37,7 +37,8 @@ import org.jspwiki.priha.util.Path;
 
 public class VersionHistoryImpl extends NodeImpl implements VersionHistory
 {
-    private List<Version> m_versions = new ArrayList<Version>();
+    /** Stores the UUIDs of the versions. */
+    private List<String> m_versions = new ArrayList<String>();
 
     public static VersionHistoryImpl getInstance( SessionImpl session, Path path )
         throws RepositoryException

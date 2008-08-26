@@ -8,9 +8,17 @@ The data model is rather straightforward.
 REPOSITORY MODEL
 ================
 
-Each repository may contain multiple workspaces.  In JSPWiki data model, 
-all wikis are in a single workspace, so we don't in particular need multiple
-workspaces.
+TBD
 
-A Session presents one particular set of credentials to the workspace.  In Priha,
-there is a single provider instance which is used to manage all of the sessions.
+VERSIONING MODEL
+================
+
+Versions are stored under /jcr:system/jcr:versionStorage/
+
+Each VersionHistory object is stored as
+
+/jcr:system/jcr:versionStorage/<hash1>/<hash2>/<uuid>
+
+where <hash1> is the four first characters of the uuid, and <hash2> the next four.
+
+
