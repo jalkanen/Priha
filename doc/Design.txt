@@ -21,4 +21,7 @@ Each VersionHistory object is stored as
 
 where <hash1> is the four first characters of the uuid, and <hash2> the next four.
 
+Each Version object is stored under as a child of the VersionHistory object, as follows:
+
+/jcr:system/jcr:versionStorage/<hash1>/<hash2>/<uuid>/<versionName>
 

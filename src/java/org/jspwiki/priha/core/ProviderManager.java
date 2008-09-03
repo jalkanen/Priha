@@ -34,6 +34,9 @@ import org.jspwiki.priha.providers.RepositoryProvider;
 import org.jspwiki.priha.util.ConfigurationException;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
+import org.jspwiki.priha.version.VersionHistoryImpl;
+import org.jspwiki.priha.version.VersionImpl;
+import org.jspwiki.priha.version.VersionManager;
 
 /**
  *  This is a front-end class for managing multiple providers
@@ -273,7 +276,7 @@ public class ProviderManager implements ItemStore
      *
      * @throws RepositoryException
      */
-    NodeImpl loadNode( WorkspaceImpl ws, Path path ) throws RepositoryException
+    public NodeImpl loadNode( WorkspaceImpl ws, Path path ) throws RepositoryException
     {
         NodeImpl ni = null;
         
@@ -292,7 +295,15 @@ public class ProviderManager implements ItemStore
     
         NodeDefinition nd = ntm.findNodeDefinition( primaryType.getString() );
     
-        ni = new NodeImpl( (SessionImpl)ws.getSession(), path, type, nd, false );
+        if( VersionManager.isVersionHistoryPath(path) )
+        {
+            ni = VersionHistoryImpl.getInstance( (SessionImpl)ws.getSession(), path );
+        }
+        else
+        {
+            ni = new NodeImpl( (SessionImpl)ws.getSession(), path, type, nd, false );
+        }
+        
         ni.m_state = ItemState.EXISTS;
 
         return ni;

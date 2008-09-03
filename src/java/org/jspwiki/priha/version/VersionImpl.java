@@ -35,9 +35,7 @@ public class VersionImpl
     extends NodeImpl
     implements Version
 {
-    private VersionHistoryImpl m_history;
-
-    public VersionImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef, VersionHistoryImpl history )
+    public VersionImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef )
         throws ValueFormatException,
                VersionException,
                LockException,
@@ -45,13 +43,11 @@ public class VersionImpl
                RepositoryException
     {
         super( session, path, primaryType, nDef, true );
-
-        m_history = history;
     }
 
     public VersionHistory getContainingHistory() throws RepositoryException
     {
-        return m_history;
+        return (VersionHistory)getParent();
     }
 
     public Calendar getCreated() throws RepositoryException

@@ -18,7 +18,6 @@
 package org.jspwiki.priha.version;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
@@ -37,9 +36,6 @@ import org.jspwiki.priha.util.Path;
 
 public class VersionHistoryImpl extends NodeImpl implements VersionHistory
 {
-    /** Stores the UUIDs of the versions. */
-    private List<String> m_versions = new ArrayList<String>();
-
     public static VersionHistoryImpl getInstance( SessionImpl session, Path path )
         throws RepositoryException
     {
@@ -61,61 +57,88 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
 
     public void addVersionLabel(String arg0, String arg1, boolean arg2) throws VersionException, RepositoryException
     {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedRepositoryOperationException("addVersionLabel()");
     }
 
     public VersionIterator getAllVersions() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedRepositoryOperationException("getAllVersions()");
     }
 
     public Version getRootVersion() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        return getVersion("jcr:rootVersion");
     }
 
-    public Version getVersion(String arg0) throws VersionException, RepositoryException
+    public Version getVersion(String versionName) throws VersionException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        Path p = VersionManager.getVersionStoragePath( getVersionableUUID() ).resolve(versionName);
+        
+        if( m_session.itemExists(p) )
+        {
+            return (Version) m_session.getItem( p );
+        }
+       
+        throw new VersionException("Node "+getPath()+" has no such version "+versionName);
     }
 
-    public Version getVersionByLabel(String arg0) throws RepositoryException
+    public Version getVersionByLabel(String versionLabel) throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        Node n = getNode("jcr:versionLabels");
+
+        Property p = n.getProperty(versionLabel);
+        
+        String uuid = p.getString();
+        
+        return (Version)m_session.getNodeByUUID(uuid);
     }
 
     public String[] getVersionLabels() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        ArrayList<String> result = new ArrayList<String>();
+        Node n = getNode("jcr:versionLabels");
+        
+        for( PropertyIterator pi = n.getProperties(); pi.hasNext(); )
+        {
+            Property p = pi.nextProperty();
+            
+            result.add( p.getName() );
+        }
+
+        return result.toArray(new String[result.size()]);
     }
 
     public String[] getVersionLabels(Version arg0) throws VersionException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedRepositoryOperationException("getVersionLabels(Version)");
     }
 
     public String getVersionableUUID() throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        return getProperty("jcr:versionableUuid").getString();
     }
 
-    public boolean hasVersionLabel(String arg0) throws RepositoryException
+    public boolean hasVersionLabel(String label) throws RepositoryException
     {
-        // TODO Auto-generated method stub
+        String[] labels = getVersionLabels();
+        
+        for( String s : labels )
+        {
+            if( s.equals(label) ) return true;
+        }
+        
         return false;
     }
 
-    public boolean hasVersionLabel(Version arg0, String arg1) throws VersionException, RepositoryException
+    public boolean hasVersionLabel(Version version, String label) throws VersionException, RepositoryException
     {
-        // TODO Auto-generated method stub
+        String[] labels = getVersionLabels(version);
+        
+        for( String s : labels )
+        {
+            if( s.equals(label) ) return true;
+        }
+        
         return false;
     }
 
@@ -126,14 +149,12 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
                                               VersionException,
                                               RepositoryException
     {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedRepositoryOperationException("removeVersion(String)");
     }
 
     public void removeVersionLabel(String arg0) throws VersionException, RepositoryException
     {
-        // TODO Auto-generated method stub
-
+        throw new UnsupportedRepositoryOperationException("removeVersionLabel(String)");
     }
 
 }
