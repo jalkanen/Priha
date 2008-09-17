@@ -162,7 +162,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
 
         String uuid = getValue().getString();
 
-        Node nd = (Node)m_session.getNodeByUUID( uuid );
+        Node nd = m_session.getNodeByUUID( uuid );
 
         return nd;
     }

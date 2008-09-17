@@ -35,7 +35,6 @@ import org.jspwiki.priha.util.ConfigurationException;
 import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 import org.jspwiki.priha.version.VersionHistoryImpl;
-import org.jspwiki.priha.version.VersionImpl;
 import org.jspwiki.priha.version.VersionManager;
 
 /**
@@ -151,9 +150,9 @@ public class ProviderManager implements ItemStore
         
         String prefix = PROP_PRIHA_PROVIDER_PREFIX + providerName + ".";
         
-        for( Enumeration e = repository.getPropertyNames(); e.hasMoreElements(); )
+        for( Enumeration<String> e = repository.getPropertyNames(); e.hasMoreElements(); )
         {
-            String key = (String)e.nextElement();
+            String key = e.nextElement();
             
             if( key.startsWith(prefix) )
             {
@@ -297,11 +296,11 @@ public class ProviderManager implements ItemStore
     
         if( VersionManager.isVersionHistoryPath(path) )
         {
-            ni = VersionHistoryImpl.getInstance( (SessionImpl)ws.getSession(), path );
+            ni = VersionHistoryImpl.getInstance( ws.getSession(), path );
         }
         else
         {
-            ni = new NodeImpl( (SessionImpl)ws.getSession(), path, type, nd, false );
+            ni = new NodeImpl( ws.getSession(), path, type, nd, false );
         }
         
         ni.m_state = ItemState.EXISTS;
@@ -421,7 +420,7 @@ public class ProviderManager implements ItemStore
         {
             NodeImpl nd = loadNode( ws, path.getParentPath() );
             
-            result.add( (PropertyImpl)nd.getProperty(path.getLastComponent()) );
+            result.add( nd.getProperty(path.getLastComponent()) );
         }
         
         return result;

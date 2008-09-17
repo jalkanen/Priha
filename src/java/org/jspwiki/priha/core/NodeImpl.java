@@ -29,7 +29,6 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.*;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
-import javax.jcr.version.VersionHistory;
 
 import org.jspwiki.priha.core.locks.LockImpl;
 import org.jspwiki.priha.core.locks.LockManager;
@@ -41,7 +40,7 @@ import org.jspwiki.priha.version.VersionHistoryImpl;
 import org.jspwiki.priha.version.VersionImpl;
 import org.jspwiki.priha.version.VersionManager;
 
-public class NodeImpl extends ItemImpl implements Node, Comparable
+public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 {
     private static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
     public static final String JCR_UUID = "jcr:uuid";
@@ -654,7 +653,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
         try
         {
-            prop = (PropertyImpl) getProperty(name);
+            prop = getProperty(name);
         }
         catch( PathNotFoundException e ){}
         catch( ItemNotFoundException e ){}
@@ -991,21 +990,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         internalSave();
     }
 
-    public int compareTo(Object o)
+    public int compareTo(Node nd)
     {
-        if( o instanceof NodeImpl )
+        try
         {
-            NodeImpl nd = (NodeImpl)o;
-
-            try
-            {
-                return getPath().compareTo(nd.getPath());
-            }
-            catch( RepositoryException e )
-            {} // FIXME: This should never occur
+            return getPath().compareTo(nd.getPath());
         }
-
-        throw new ClassCastException("Attempt to compare NodeImpl with "+o.getClass().getName());
+        catch( RepositoryException e )
+        {
+            return 0;
+        } // FIXME: This should never occur
     }
 
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
@@ -1079,7 +1073,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             try
             {
                 @SuppressWarnings("unused")
-                PropertyImpl primarytype = (PropertyImpl) getProperty( "jcr:primaryType" );
+                PropertyImpl primarytype = getProperty( "jcr:primaryType" );
             }
             catch( Exception e )
             {
@@ -1158,7 +1152,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     @Override
     protected void preSave() throws RepositoryException
     {
-        WorkspaceImpl ws = (WorkspaceImpl) m_session.getWorkspace();
+        WorkspaceImpl ws = m_session.getWorkspace();
         
         //
         //  Check that parent still exists

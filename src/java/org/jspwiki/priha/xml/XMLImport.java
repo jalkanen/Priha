@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
-import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;

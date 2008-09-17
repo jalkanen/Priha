@@ -200,7 +200,7 @@ public class SessionImpl implements Session
         return ii;
     }
     
-    public Item getItem(String absPath) throws PathNotFoundException, RepositoryException
+    public ItemImpl getItem(String absPath) throws PathNotFoundException, RepositoryException
     {
         return getItem( PathFactory.getPath(absPath) );
     }
@@ -225,19 +225,19 @@ public class SessionImpl implements Session
         return m_workspace.getNamespaceRegistry().getURI(prefix);
     }
 
-    public Node getNodeByUUID(String uuid) throws ItemNotFoundException, RepositoryException
+    public NodeImpl getNodeByUUID(String uuid) throws ItemNotFoundException, RepositoryException
     {
         return m_provider.findByUUID(uuid);
     }
 
-    public Repository getRepository()
+    public RepositoryImpl getRepository()
     {
         return m_repository;
     }
 
-    public Node getRootNode() throws RepositoryException
+    public NodeImpl getRootNode() throws RepositoryException
     {
-        return (Node) getItem(Path.ROOT);
+        return (NodeImpl) getItem(Path.ROOT);
     }
 
     public String getUserID()
@@ -250,7 +250,7 @@ public class SessionImpl implements Session
         return ValueFactoryImpl.getInstance();
     }
 
-    public Workspace getWorkspace()
+    public WorkspaceImpl getWorkspace()
     {
         return m_workspace;
     }
@@ -290,7 +290,7 @@ public class SessionImpl implements Session
     {
         if( hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
         
-        NodeImpl srcnode = (NodeImpl)getRootNode().getNode(srcAbsPath);
+        NodeImpl srcnode = getRootNode().getNode(srcAbsPath);
         
         //System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
         

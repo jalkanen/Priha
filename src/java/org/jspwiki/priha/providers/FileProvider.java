@@ -18,20 +18,20 @@
 package org.jspwiki.priha.providers;
 
 import java.io.*;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
 
-import org.jspwiki.priha.core.NodeImpl;
 import org.jspwiki.priha.core.PropertyImpl;
 import org.jspwiki.priha.core.RepositoryImpl;
 import org.jspwiki.priha.core.WorkspaceImpl;
 import org.jspwiki.priha.core.binary.FileBinarySource;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.core.values.ValueImpl;
-import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
 import org.jspwiki.priha.util.PathFactory;
 
@@ -644,7 +644,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
         // No need to do anything
     }
-
+/*
     private Path findUUIDFromPath( WorkspaceImpl ws, String uuid, Path path ) throws RepositoryException
     {
         List<Path> list = listNodes( ws, path );
@@ -677,7 +677,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         return null;
     }
-    
+*/    
     /**
      *  To make directory entries last longer, we first distribute the files in
      *  4096 buckets, each one of which gets distributed in 4096 buckets again.

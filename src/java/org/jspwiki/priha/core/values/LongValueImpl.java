@@ -72,7 +72,7 @@ public class LongValueImpl extends ValueImpl implements Value, Serializable
     @Override
     public double getDouble()
     {
-        return (double)m_value;
+        return m_value;
     }
     
     @Override

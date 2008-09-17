@@ -103,7 +103,7 @@ public class StringValueImpl extends ValueImpl implements Value, Serializable
         try
         {
             return new ByteArrayInputStream( m_value != null ?
-                ((String)m_value).getBytes("UTF-8") :
+                m_value.getBytes("UTF-8") :
                     new byte[0] );
         }
         catch (UnsupportedEncodingException e)

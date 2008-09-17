@@ -41,7 +41,7 @@ public class SessionProvider
     {
         //m_session = session;
         m_source  = source;
-        m_workspace = (WorkspaceImpl)session.getWorkspace();
+        m_workspace = session.getWorkspace();
         
         //
         //  The nodes are sorted according to their length to make

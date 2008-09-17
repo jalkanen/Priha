@@ -181,7 +181,7 @@ public class NodeTypeManagerImpl implements NodeTypeManager
             pdlist.add( p );
         }
 
-        gnt.m_declaredPropertyDefinitions = (PropertyDefinition[]) pdlist.toArray(new PropertyDefinition[0]);
+        gnt.m_declaredPropertyDefinitions = pdlist.toArray(new PropertyDefinition[0]);
 
         //  Add parent definitions
 
@@ -196,7 +196,7 @@ public class NodeTypeManagerImpl implements NodeTypeManager
             }
         }
 
-        gnt.m_propertyDefinitions = (PropertyDefinition[]) pdlist.toArray(new PropertyDefinition[0]);
+        gnt.m_propertyDefinitions = pdlist.toArray(new PropertyDefinition[0]);
 
         //
         //  Child node definitions
@@ -209,7 +209,7 @@ public class NodeTypeManagerImpl implements NodeTypeManager
             ndlist.add( p );
         }
 
-        gnt.m_childNodeDefinitions = (NodeDefinition[]) ndlist.toArray(new NodeDefinition[0]);
+        gnt.m_childNodeDefinitions = ndlist.toArray(new NodeDefinition[0]);
 
         //
         //  Add it to the proper place

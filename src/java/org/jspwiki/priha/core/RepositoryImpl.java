@@ -37,7 +37,7 @@ public class RepositoryImpl implements Repository
 
     public static final String   DEFAULT_WORKSPACE = "default";
 
-    private NamespaceRegistry    m_namespaceRegistry;
+    private NamespaceRegistryImpl    m_namespaceRegistry;
 
     private static String[] DESCRIPTORS = {
         Repository.SPEC_NAME_DESC,                "Content Repository for Java Technology API",
@@ -124,9 +124,10 @@ public class RepositoryImpl implements Repository
         m_properties.setProperty(key,property);
     }
 
-    public Enumeration getPropertyNames()
+    @SuppressWarnings("unchecked")
+    public Enumeration<String> getPropertyNames()
     {
-        return m_properties.propertyNames();
+        return (Enumeration<String>)m_properties.propertyNames();
     }
 
     public String getDescriptor(String key)
@@ -209,7 +210,7 @@ public class RepositoryImpl implements Repository
         return s;
     }
     
-    public NamespaceRegistry getGlobalNamespaceRegistry()
+    public NamespaceRegistryImpl getGlobalNamespaceRegistry()
     {
         if( m_namespaceRegistry == null )
         {

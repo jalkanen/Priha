@@ -115,7 +115,7 @@ public class WorkspaceImpl
     // FIXME: SuperUserSession leaks.
     public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior) throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, AccessDeniedException, RepositoryException
     {
-        Session suSession = ((RepositoryImpl)m_session.getRepository()).superUserLogin( m_name );
+        Session suSession = m_session.getRepository().superUserLogin( m_name );
         
         XMLImport importer = new XMLImport( suSession,true, PathFactory.getPath(parentAbsPath), uuidBehavior );
         
@@ -127,9 +127,9 @@ public class WorkspaceImpl
         return m_name;
     }
 
-    public NamespaceRegistry getNamespaceRegistry() throws RepositoryException
+    public NamespaceRegistryImpl getNamespaceRegistry() throws RepositoryException
     {
-        return ((RepositoryImpl)m_session.getRepository()).getGlobalNamespaceRegistry();
+        return m_session.getRepository().getGlobalNamespaceRegistry();
     }
 
     public NodeTypeManager getNodeTypeManager() throws RepositoryException
@@ -151,14 +151,14 @@ public class WorkspaceImpl
         return new PrihaQueryManager();
     }
 
-    public Session getSession()
+    public SessionImpl getSession()
     {
         return m_session;
     }
 
     public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, InvalidSerializedDataException, LockException, AccessDeniedException, RepositoryException
     {
-        Session suSession = ((RepositoryImpl)m_session.getRepository()).superUserLogin( m_name );
+        Session suSession = m_session.getRepository().superUserLogin( m_name );
         
         XMLImport importer = new XMLImport( suSession, true, PathFactory.getPath(parentAbsPath), uuidBehavior );
         
@@ -231,7 +231,7 @@ public class WorkspaceImpl
      */
     public String toQName( String name ) throws NamespaceException, RepositoryException
     {
-        return ((NamespaceRegistryImpl)getNamespaceRegistry()).toQName(name);
+        return getNamespaceRegistry().toQName(name);
     }
     
     /**
@@ -244,6 +244,6 @@ public class WorkspaceImpl
      */
     public String fromQName( String qname ) throws NamespaceException, RepositoryException
     {
-        return ((NamespaceRegistryImpl)getNamespaceRegistry()).fromQName(qname);        
+        return getNamespaceRegistry().fromQName(qname);        
     }
 }

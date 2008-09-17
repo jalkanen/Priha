@@ -991,6 +991,7 @@ public class Base64
      * @return the decoded data
      * @since 1.4
      */
+    @SuppressWarnings("cast")
     public static byte[] decode( String s, int options )
     {   
         byte[] bytes;

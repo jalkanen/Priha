@@ -105,7 +105,7 @@ public abstract class ItemImpl implements Item
      */
     public String getQName() throws NamespaceException, RepositoryException
     {
-        String qname = ((NamespaceRegistryImpl)m_session.getWorkspace().getNamespaceRegistry()).toQName(m_name);
+        String qname = m_session.getWorkspace().getNamespaceRegistry().toQName(m_name);
         
         return qname;
     }
