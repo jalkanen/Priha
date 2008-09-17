@@ -30,12 +30,13 @@ import javax.jcr.version.VersionHistory;
 import org.jspwiki.priha.core.NodeImpl;
 import org.jspwiki.priha.core.SessionImpl;
 import org.jspwiki.priha.nodetype.GenericNodeType;
+import org.jspwiki.priha.util.Path;
 
 public class VersionImpl
     extends NodeImpl
     implements Version
 {
-    public VersionImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef )
+    public VersionImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef )
         throws ValueFormatException,
                VersionException,
                LockException,

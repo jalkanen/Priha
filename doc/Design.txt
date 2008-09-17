@@ -17,11 +17,12 @@ Versions are stored under /jcr:system/jcr:versionStorage/
 
 Each VersionHistory object is stored as
 
-/jcr:system/jcr:versionStorage/<hash1>/<hash2>/<uuid>
-
-where <hash1> is the four first characters of the uuid, and <hash2> the next four.
+/jcr:system/jcr:versionStorage/<uuid>
 
 Each Version object is stored under as a child of the VersionHistory object, as follows:
 
-/jcr:system/jcr:versionStorage/<hash1>/<hash2>/<uuid>/<versionName>
+/jcr:system/jcr:versionStorage/<uuid>/<versionName>
+
+Individual providers can then use whatever mechanism they want to store the pages. A
+subdirectory structure is recommended, since this can grow rather wildly.
 

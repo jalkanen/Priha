@@ -60,7 +60,7 @@ public class EhCachingProvider implements RepositoryProvider
     
     private Logger log = Logger.getLogger(EhCachingProvider.class.getName());
     private CacheManager m_cacheManager;
-    private Ehcache m_valueCache;
+    private Ehcache      m_valueCache;
     private RepositoryProvider m_realProvider;
     
     public EhCachingProvider()

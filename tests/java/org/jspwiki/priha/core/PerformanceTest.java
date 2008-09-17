@@ -16,10 +16,10 @@ public class PerformanceTest extends TestCase
 {
     /** The size of a million can be configured here. ;-) */
     
-    private static final int DEFAULT_ITERATIONS = 1000;
+    private static final int DEFAULT_ITERATIONS = 100;
     private int m_iterations = DEFAULT_ITERATIONS;
     
-    private static int BLOB_SIZE = 1024*1024*10;
+    private static int BLOB_SIZE = 1024*1024;
     
     private Credentials m_creds = new SimpleCredentials("username","password".toCharArray());
    
@@ -464,6 +464,10 @@ public class PerformanceTest extends TestCase
         return new TestSuite( PerformanceTest.class );
     }
     
+    /**
+     *  This class stores all results to a local hashmap, which can then be pretty-printed.
+     *
+     */
     private static class Perf
     {
         private static HashMap<String, HashMap<String, Double>> results = new HashMap<String,HashMap<String,Double>>();

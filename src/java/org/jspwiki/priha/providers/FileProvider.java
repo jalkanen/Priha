@@ -18,10 +18,8 @@
 package org.jspwiki.priha.providers;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
@@ -33,7 +31,9 @@ import org.jspwiki.priha.core.WorkspaceImpl;
 import org.jspwiki.priha.core.binary.FileBinarySource;
 import org.jspwiki.priha.core.values.ValueFactoryImpl;
 import org.jspwiki.priha.core.values.ValueImpl;
+import org.jspwiki.priha.util.InvalidPathException;
 import org.jspwiki.priha.util.Path;
+import org.jspwiki.priha.util.PathFactory;
 
 /**
  *  A simple file system -based provider.  This is not particularly optimized,
@@ -366,6 +366,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         m_hitCount[Count.PutPropertyValue.ordinal()]++;
 
         File nodeDir = getNodeDir( ws, property.getInternalPath().getParentPath().toString() );
+
+        saveUuidShortcut(property);
         
         String qname = ws.toQName(property.getName());
         
@@ -424,6 +426,39 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                     // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
+            }
+        }
+    }
+
+    /**
+     *  Saves a shortcut to an UUID.  The contents of the file are the path of the Node.
+     *  
+     */
+    private void saveUuidShortcut(PropertyImpl property) throws RepositoryException
+    {
+        if( property.getName().equals("jcr:uuid") )
+        {
+            File f = new File( getHashPath(property.getString()) );
+            
+            f.getParentFile().mkdirs(); // Make sure the paths exist.
+            BufferedWriter out = null;
+            try
+            {
+                System.out.println("Writing uuid "+f.getAbsolutePath()+" => "+property.getInternalPath().getParentPath().toString());
+                out = new BufferedWriter( new FileWriter(f) );
+                
+                out.write( property.getInternalPath().getParentPath().toString() );
+                
+                out.close();
+            }
+            catch (IOException e)
+            {
+                log.warning("Cannot create a UUID cache file: "+e.getMessage());
+                throw new RepositoryException("Cannot create UUID cache file",e);
+            }
+            finally
+            {
+                if( out == null ) try { out.close(); } catch( Exception e ) {}
             }
         }
     }
@@ -566,6 +601,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
     }
 
+    // FIXME: Does not remove UUID maps.
     public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         m_hitCount[Count.Remove.ordinal()]++;
@@ -642,15 +678,41 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return null;
     }
     
+    /**
+     *  To make directory entries last longer, we first distribute the files in
+     *  4096 buckets, each one of which gets distributed in 4096 buckets again.
+     *  
+     *  @param uuid
+     *  @return
+     */
+    private String getHashPath( String uuid )
+    {
+        String hashpath = m_root + "/uuidmap/" + uuid.substring(0,3) + "/" + uuid.substring(3,6) + "/" + uuid;
+        
+        return hashpath;
+    }
+    
     public Path findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
         m_hitCount[Count.FindByUUID.ordinal()]++;
 
-        Path p = findUUIDFromPath( ws, uuid, Path.ROOT );
+        String cachedPath = null;
+        try
+        {
+            cachedPath = readContentsAsString( new File(getHashPath(uuid)) );
+        }
+        catch (IOException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         
-        if( p == null ) throw new ItemNotFoundException( "There is no item with UUID "+uuid+" in the repository.");
+        if( cachedPath == null )
+        {
+            throw new ItemNotFoundException( "There is no item with UUID "+uuid+" in the repository.");
+        }
         
-        return p;
+        return PathFactory.getPath(cachedPath);
     }
     
     private static class PropertyTypeFilter implements FilenameFilter 

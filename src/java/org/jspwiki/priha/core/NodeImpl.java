@@ -38,6 +38,8 @@ import org.jspwiki.priha.nodetype.GenericNodeType;
 import org.jspwiki.priha.nodetype.NodeDefinitionImpl;
 import org.jspwiki.priha.util.*;
 import org.jspwiki.priha.version.VersionHistoryImpl;
+import org.jspwiki.priha.version.VersionImpl;
+import org.jspwiki.priha.version.VersionManager;
 
 public class NodeImpl extends ItemImpl implements Node, Comparable
 {
@@ -109,8 +111,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return nt;
     }
 
-
-    public Node addNode(String relPath)
+    public NodeImpl addNode(String relPath)
         throws ItemExistsException,
                PathNotFoundException,
                NoSuchNodeTypeException,
@@ -119,12 +120,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
                ConstraintViolationException,
                RepositoryException
     {
-        Node nd = addNode(relPath, null);
+        NodeImpl nd = addNode(relPath, null);
 
         return nd;
     }
 
-    public Node addNode(String relPath, String primaryNodeTypeName)
+    public NodeImpl addNode(String relPath, String primaryNodeTypeName)
                                        throws ItemExistsException,
                                            PathNotFoundException,
                                            VersionException,
@@ -217,7 +218,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
             //  Node type and definition are now okay, so we'll create the node
             //  and add it to our session.
             //
-            ni = new NodeImpl( m_session, absPath, assignedType, assignedNodeDef, true );
+            ni = createNode(absPath, assignedType, assignedNodeDef);
 
             ni.sanitize();
 
@@ -228,6 +229,39 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         {
             throw new PathNotFoundException( e.getMessage(), e );
         }
+        return ni;
+    }
+
+    /**
+     *  This method creates a correct Node subclass based on the NodeType.  It
+     *  can return Version or VersionHistory objects, as well as regular Nodes. 
+     * 
+     *  @param absPath
+     *  @param assignedType
+     *  @param assignedNodeDef
+     *  @return
+     *  @throws RepositoryException
+     */
+    private NodeImpl createNode(Path absPath, 
+                                GenericNodeType assignedType, 
+                                NodeDefinition assignedNodeDef)
+        throws RepositoryException
+    {
+        NodeImpl ni;
+        
+        if( assignedType.isNodeType("nt:version") )
+        {
+            ni = new VersionImpl( m_session, absPath, assignedType, assignedNodeDef );
+        }
+        else if( assignedType.isNodeType("nt:versionHistory") )
+        {
+            ni = new VersionHistoryImpl( m_session, absPath, assignedType, assignedNodeDef );                
+        }
+        else
+        {
+            ni = new NodeImpl( m_session, absPath, assignedType, assignedNodeDef, true );
+        }
+        
         return ni;
     }
 
@@ -313,7 +347,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         throw new PathNotFoundException("Path refers to a property: "+absPath.toString());
     }
     
-    public Node getNode(String relPath) throws PathNotFoundException, RepositoryException
+    public NodeImpl getNode(String relPath) throws PathNotFoundException, RepositoryException
     {
         return getNode( m_path.resolve(relPath) );
     }
@@ -404,17 +438,17 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return new PropertyIteratorImpl(matchedpaths);
     }
 
-    public Property getChildProperty( String name )
+    public PropertyImpl getChildProperty( String name )
         throws RepositoryException
     {
         ItemImpl ii = m_session.m_provider.getItem( m_path.resolve(name) );
         
         if( ii.isNode() ) throw new ItemNotFoundException("Found a Node, not a Property");
         
-        return (Property) ii;
+        return (PropertyImpl) ii;
     }
 
-    public Property getProperty(String relPath) throws PathNotFoundException, RepositoryException
+    public PropertyImpl getProperty(String relPath) throws PathNotFoundException, RepositoryException
     {
         Path abspath = m_path.resolve(relPath);
 
@@ -422,7 +456,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
         if( item != null && !item.isNode() )
         {
-            return (Property) item;
+            return (PropertyImpl) item;
         }
 
         throw new PathNotFoundException( abspath.toString() );
@@ -498,15 +532,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         throw new UnsupportedRepositoryOperationException("No UUID defined for this node");
     }
 
-    public VersionHistory getVersionHistory() throws UnsupportedRepositoryOperationException, RepositoryException
+    public VersionHistoryImpl getVersionHistory() throws UnsupportedRepositoryOperationException, RepositoryException
     {
         if( isNodeType("mix:versionable") )
         {
             // Locate version history
 
-            Path versionPath = new Path( "/jcr:system/jcr:versionStorage", m_path );
+            Path versionPath = VersionManager.getVersionStoragePath( getUUID() );
 
-            VersionHistory vh = VersionHistoryImpl.getInstance( m_session, versionPath );
+            VersionHistoryImpl vh = (VersionHistoryImpl)getNode( versionPath );
 
             return vh;
         }
@@ -669,7 +703,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         markModified(true);
     }
 
-    public Property setProperty(String name, Value value)
+    public PropertyImpl setProperty(String name, Value value)
                                                          throws ValueFormatException,
                                                              VersionException,
                                                              LockException,
@@ -683,7 +717,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return p;
     }
 
-    public Property setProperty(String name, Value value, int type)
+    public PropertyImpl setProperty(String name, Value value, int type)
                                                                    throws ValueFormatException,
                                                                        VersionException,
                                                                        LockException,
@@ -697,7 +731,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return p;
     }
 
-    public Property setProperty(String name, Value[] values)
+    public PropertyImpl setProperty(String name, Value[] values)
                                                             throws ValueFormatException,
                                                                 VersionException,
                                                                 LockException,
@@ -792,7 +826,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return prop;
     }
 
-    public Property setProperty(String name, String value)
+    public PropertyImpl setProperty(String name, String value)
                                                           throws ValueFormatException,
                                                               VersionException,
                                                               LockException,
@@ -805,7 +839,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return prop;
     }
 
-    public Property setProperty(String name, String value, int type)
+    public PropertyImpl setProperty(String name, String value, int type)
                                                                     throws ValueFormatException,
                                                                         VersionException,
                                                                         LockException,
@@ -814,7 +848,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
     {
         if( value == null )
         {
-            Property p = getProperty(name);
+            PropertyImpl p = getProperty(name);
             p.remove();
             return p;
         }
@@ -831,7 +865,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         }
     }
 
-    public Property setProperty(String name, InputStream value)
+    public PropertyImpl setProperty(String name, InputStream value)
                                                                throws ValueFormatException,
                                                                    VersionException,
                                                                    LockException,
@@ -845,7 +879,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return p;
     }
 
-    public Property setProperty(String name, boolean value)
+    public PropertyImpl setProperty(String name, boolean value)
                                                            throws ValueFormatException,
                                                                VersionException,
                                                                LockException,
@@ -859,7 +893,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return p;
     }
 
-    public Property setProperty(String name, double value)
+    public PropertyImpl setProperty(String name, double value)
                                                           throws ValueFormatException,
                                                               VersionException,
                                                               LockException,
@@ -873,7 +907,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return p;
     }
 
-    public Property setProperty(String name, long value)
+    public PropertyImpl setProperty(String name, long value)
                                                         throws ValueFormatException,
                                                             VersionException,
                                                             LockException,
@@ -887,7 +921,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return p;
     }
 
-    public Property setProperty(String name, Calendar value)
+    public PropertyImpl setProperty(String name, Calendar value)
                                                             throws ValueFormatException,
                                                                 VersionException,
                                                                 LockException,
@@ -901,7 +935,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         return p;
     }
 
-    public Property setProperty(String name, Node value)
+    public PropertyImpl setProperty(String name, Node value)
                                                         throws ValueFormatException,
                                                             VersionException,
                                                             LockException,
@@ -1155,6 +1189,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
         for( NodeType nt : getMixinNodeTypes() )
         {
             checkMandatoryProperties( nt );
+        }
+        
+        //
+        //  If this node is versionable, then make sure there is a VersionHistory as well.
+        //
+        
+        if( hasMixinType("mix:versionable") )
+        {
+            VersionManager.createVersionHistory( this );
         }
     }
 
@@ -1481,15 +1524,68 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     }
 
-    public Version checkin()
+    public VersionImpl checkin()
                             throws VersionException,
                                 UnsupportedRepositoryOperationException,
                                 InvalidItemStateException,
                                 LockException,
                                 RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Node.checkin()");
+        if( !hasMixinType("mix:versionable") )
+        {
+            throw new UnsupportedRepositoryOperationException("Node is not mix:versionable (8.2.5)");            
+        }
+        
+        if( !isCheckedOut() )
+        {
+            return getBaseVersion();
+        }
+        
+        if( isModified() )
+        {
+            throw new InvalidItemStateException("Node has unsaved changes (8.2.5)");
+        }
+        
+        if( hasProperty("jcr:mergeFailed") )
+        {
+            throw new VersionException("Node has failed merges (8.2.5)");
+        }
+        
+        //
+        //  Phew!  Preconditions have been checked.  Now, let's get to real business.
+        //
+        
+        VersionHistoryImpl vh = getVersionHistory();
+        
+        int version = Integer.parseInt( getBaseVersion().getName() );
+        
+        VersionImpl v = (VersionImpl) vh.addNode( Integer.toString( ++version ), "nt:version" );
+        
+        v.setProperty( "nt:versionHistory", vh );
+        
+        v.setProperty( "jcr:predecessors", getProperty("jcr:predecessors").getValues() );
+        setProperty( "jcr:predecessors", new Value[0] );
+        
+        PropertyImpl preds = v.getProperty("jcr:predecessors");
+        for( Value val : preds.getValues() )
+        {
+            String uuid = val.getString();
+            Node pred = m_session.getNodeByUUID(uuid);
+         
+            Value[] s = pred.getProperty("jcr:successors").getValues();
+            
+            List<Value> l = Arrays.asList(s);
+            l.add( ValueFactoryImpl.getInstance().createValue(v) );
+
+            pred.setProperty("jcr:successors",l.toArray(s));
+        }
+        
+        setProperty( "jcr:baseVersion", v );
+        setProperty( "jcr:isCheckedOut", false );
+
+        // FIXME: Here.
+        
+        return v;
     }
 
     public void checkout() throws UnsupportedRepositoryOperationException, LockException, RepositoryException
@@ -1510,7 +1606,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable
 
     }
 
-    public Version getBaseVersion() throws UnsupportedRepositoryOperationException, RepositoryException
+    public VersionImpl getBaseVersion() throws UnsupportedRepositoryOperationException, RepositoryException
     {
         // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException();

@@ -136,7 +136,7 @@ public abstract class ItemImpl implements Item
         return m_path.toString();
     }
 
-    public Session getSession() throws RepositoryException
+    public SessionImpl getSession() throws RepositoryException
     {
         return m_session;
     }

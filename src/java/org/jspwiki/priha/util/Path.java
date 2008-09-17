@@ -128,7 +128,7 @@ public class Path implements Comparable, Serializable
      * @param idx Which component to get.  The top-most component is at index zero.
      * @return The component.
      */
-    public String getComponent( int idx )
+    public final String getComponent( int idx )
     {
         return m_components[idx];
     }
@@ -137,7 +137,7 @@ public class Path implements Comparable, Serializable
      *  Returns the name of the last component of the path (i.e. the name)
      * @return The name.  If this is the root, returns "" (empty string).
      */
-    public String getLastComponent()
+    public final String getLastComponent()
     {
         if( isRoot() )
         {
@@ -169,7 +169,7 @@ public class Path implements Comparable, Serializable
      *  @return String describing the name of the parent.
      *  @throws InvalidPathException If you try to get the parent of the root node.
      */
-    public String getParentName()
+    public final String getParentName()
         throws InvalidPathException
     {
         if( isRoot() ) throw new InvalidPathException("Root has no parent");
@@ -182,7 +182,7 @@ public class Path implements Comparable, Serializable
      *  @return A new Path object.
      *  @throws InvalidPathException If this Path is the root node.
      */
-    public Path getParentPath()
+    public final Path getParentPath()
         throws InvalidPathException
     {
         if( m_cachedParentPath != null )
@@ -205,7 +205,7 @@ public class Path implements Comparable, Serializable
      * @return A valid Path.
      * @throws InvalidPathException If startidx < 0 or startidx > path depth.
      */
-    public Path getSubpath( int startidx )
+    public final Path getSubpath( int startidx )
         throws InvalidPathException
     {
         return getSubpath( startidx, depth() );
@@ -218,7 +218,7 @@ public class Path implements Comparable, Serializable
      * @return A valid Path
      * @throws InvalidPathException If the index values are invalid.
      */
-    public Path getSubpath( int startidx, int endidx )
+    public final Path getSubpath( int startidx, int endidx )
         throws InvalidPathException
     {
         if( startidx > depth() || endidx > depth() )
@@ -271,7 +271,7 @@ public class Path implements Comparable, Serializable
      *  Returns the Path in String format.
      *
      */
-    public String toString()
+    public final String toString()
     {
         if( m_cachedString == null )
         {
@@ -287,7 +287,7 @@ public class Path implements Comparable, Serializable
      *  @param relPath String describing relative path.
      *  @return A valid Path.
      */
-    public Path resolve(String relPath)
+    public final Path resolve(String relPath)
     {
         ArrayList<String> p    = new ArrayList<String>();
         ArrayList<String> list = new ArrayList<String>();
@@ -329,7 +329,7 @@ public class Path implements Comparable, Serializable
      *  @return
      *  @throws InvalidPathException
      */
-    public Path getAncestorPath(int depth) throws InvalidPathException
+    public final Path getAncestorPath(int depth) throws InvalidPathException
     {
         return getSubpath(0,depth);
     }
@@ -341,7 +341,7 @@ public class Path implements Comparable, Serializable
      *  @param path
      *  @return
      */
-    public boolean isParentOf( Path p )
+    public final boolean isParentOf( Path p )
     {
         if( p.depth() >= depth() )
         {
@@ -361,7 +361,7 @@ public class Path implements Comparable, Serializable
      *  Two paths are equal if their string representations are equal.
      */
     @Override
-    public boolean equals(Object obj)
+    public final boolean equals(Object obj)
     {
         if( obj == this ) return true;
         if( obj instanceof Path )
@@ -372,12 +372,12 @@ public class Path implements Comparable, Serializable
     }
 
     @Override
-    public int hashCode()
+    public final int hashCode()
     {
         return toString().hashCode() + 13;
     }
 
-    public int compareTo(Object o)
+    public final int compareTo(Object o)
     {
         return toString().compareTo( ((Path)o).toString() );
     }

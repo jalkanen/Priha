@@ -48,7 +48,7 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
         return new VersionHistoryImpl( session, path, versionType, nDef );
     }
 
-    private VersionHistoryImpl(SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef)
+    public VersionHistoryImpl(SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef)
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         super(session, path, primaryType, nDef, true);
