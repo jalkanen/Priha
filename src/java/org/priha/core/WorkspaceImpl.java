@@ -33,6 +33,7 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.priha.core.namespace.NamespaceRegistryImpl;
 import org.priha.nodetype.NodeTypeManagerImpl;
 import org.priha.query.PrihaQueryManager;
 import org.priha.util.InvalidPathException;
@@ -52,6 +53,8 @@ public class WorkspaceImpl
     
     private Logger log = Logger.getLogger(WorkspaceImpl.class.getName());
     
+    private NamespaceRegistryImpl m_sessionNamespaces = new NamespaceRegistryImpl();
+ 
     public WorkspaceImpl( SessionImpl session, String name, ProviderManager mgr )
         throws RepositoryException
     {
@@ -117,7 +120,7 @@ public class WorkspaceImpl
     {
         Session suSession = m_session.getRepository().superUserLogin( m_name );
         
-        XMLImport importer = new XMLImport( suSession,true, PathFactory.getPath(parentAbsPath), uuidBehavior );
+        XMLImport importer = new XMLImport( suSession,true, PathFactory.getPath(m_session,parentAbsPath), uuidBehavior );
         
         return importer;
     }
@@ -127,9 +130,9 @@ public class WorkspaceImpl
         return m_name;
     }
 
-    public GlobalNamespaceRegistryImpl getNamespaceRegistry() throws RepositoryException
+    public NamespaceRegistryImpl getNamespaceRegistry() throws RepositoryException
     {
-        return m_session.getRepository().getGlobalNamespaceRegistry();
+        return m_sessionNamespaces;
     }
 
     public NodeTypeManager getNodeTypeManager() throws RepositoryException
@@ -160,7 +163,7 @@ public class WorkspaceImpl
     {
         Session suSession = m_session.getRepository().superUserLogin( m_name );
         
-        XMLImport importer = new XMLImport( suSession, true, PathFactory.getPath(parentAbsPath), uuidBehavior );
+        XMLImport importer = new XMLImport( suSession, true, PathFactory.getPath(m_session,parentAbsPath), uuidBehavior );
         
         try
         {
@@ -221,29 +224,4 @@ public class WorkspaceImpl
         return m_providerManager.nodeExists(this, path);
     }
 
-    /**
-     *  Simple access to the name space registry.
-     *  
-     *  @param name
-     *  @return
-     *  @throws NamespaceException
-     *  @throws RepositoryException
-     */
-    public String toQName( String name ) throws NamespaceException, RepositoryException
-    {
-        return getNamespaceRegistry().toQName(name);
-    }
-    
-    /**
-     *  Simple access to the name space registry.
-     *  
-     *  @param qname the QName
-     *  @return
-     *  @throws NamespaceException
-     *  @throws RepositoryException
-     */
-    public String fromQName( String qname ) throws NamespaceException, RepositoryException
-    {
-        return getNamespaceRegistry().fromQName(qname);        
-    }
 }

@@ -29,6 +29,7 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.*;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
+import javax.xml.namespace.QName;
 
 import org.priha.core.locks.LockImpl;
 import org.priha.core.locks.LockManager;
@@ -39,11 +40,10 @@ import org.priha.util.*;
 import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
 import org.priha.version.VersionManager;
+import static org.priha.core.JCRConstants.*;
 
 public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 {
-    private static final String JCR_MIXIN_TYPES = "jcr:mixinTypes";
-    public static final String JCR_UUID = "jcr:uuid";
     private NodeDefinition      m_definition;
     
     private GenericNodeType     m_primaryType;
@@ -85,7 +85,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     protected NodeImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        this( session, PathFactory.getPath(path), primaryType, nDef, populateDefaults );
+        this( session, PathFactory.getPath(session,path), primaryType, nDef, populateDefaults );
     }
         
 
@@ -96,7 +96,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      *  @return A NodeType for the path
      *  @throws RepositoryException If something goes wrong.
      */
-    private GenericNodeType assignChildType(String relpath) throws RepositoryException
+    private GenericNodeType assignChildType(QName relpath) throws RepositoryException
     {
         NodeDefinition nd = m_primaryType.findNodeDefinition(relpath);
 
@@ -137,7 +137,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             throw new RepositoryException("Cannot add an indexed entry");
         }
         
-        Path absPath = m_path.resolve(relPath);
+        Path absPath = m_path.resolve(m_session,relPath);
 
         NodeImpl ni = null;
         try
@@ -304,7 +304,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             {
                 NodeImpl nodeInOtherWS = (NodeImpl)internalSession.getNodeByUUID(uuid);
             
-                return nodeInOtherWS.getInternalPath().resolve(correspondingPath.toString()).toString();
+                return nodeInOtherWS.getInternalPath().resolve(m_session,correspondingPath.toString()).toString();
             }
             else
             {
@@ -348,7 +348,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     
     public NodeImpl getNode(String relPath) throws PathNotFoundException, RepositoryException
     {
-        return getNode( m_path.resolve(relPath) );
+        return getNode( m_path.resolve(m_session,relPath) );
     }
 
     public NodeIterator getNodes() throws RepositoryException
@@ -378,7 +378,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         for( Path path : children )
         {
-            Matcher match = p.matcher( path.getLastComponent() );
+            Matcher match = p.matcher( path.getLastComponent().toString() );
 
             if( match.matches() )
             {
@@ -440,7 +440,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     public PropertyImpl getChildProperty( String name )
         throws RepositoryException
     {
-        ItemImpl ii = m_session.m_provider.getItem( m_path.resolve(name) );
+        ItemImpl ii = m_session.m_provider.getItem( m_path.resolve(m_session,name) );
         
         if( ii.isNode() ) throw new ItemNotFoundException("Found a Node, not a Property");
         
@@ -449,7 +449,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public PropertyImpl getProperty(String relPath) throws PathNotFoundException, RepositoryException
     {
-        Path abspath = m_path.resolve(relPath);
+        Path abspath = m_path.resolve(m_session,relPath);
 
         Item item = m_session.getItem(abspath.toString());
 
@@ -493,11 +493,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 log.finest("Autocreating property "+pd.getName());
 
                 String path = m_path + "/" + pd.getName();
-                PropertyImpl pi = new PropertyImpl(m_session,PathFactory.getPath(path),pd);
+                PropertyImpl pi = new PropertyImpl(m_session,PathFactory.getPath(m_session,path),pd);
 
                 // FIXME: Add default value generation
 
-                if( JCR_UUID.equals(pi.getName()) )
+                if( JCR_UUID.equals(pi.getQName()) )
                 {
                     pi.loadValue( vfi.createValue( UUID.randomUUID().toString() ) );
                 }
@@ -549,7 +549,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public boolean hasNode(String relPath) throws RepositoryException
     {
-        Path absPath = m_path.resolve(relPath);
+        Path absPath = m_path.resolve(m_session,relPath);
         return m_session.hasNode(absPath);
     }
 
@@ -566,7 +566,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public boolean hasProperty(String relPath) throws RepositoryException
     {
-        Path abspath = m_path.resolve(relPath);
+        Path abspath = m_path.resolve(m_session,relPath);
         
         return m_session.hasProperty( abspath );
     }
@@ -643,7 +643,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             PropertyDefinition primaryDef = gnt.findPropertyDefinition("jcr:primaryType",false);
 
             prop = new PropertyImpl( m_session,
-                                     m_path.resolve(name),
+                                     m_path.resolve(m_session,name),
                                      primaryDef );
 
             addChildProperty( prop );
@@ -660,7 +660,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         if( prop == null )
         {
-            Path propertypath = m_path.resolve(name);
+            Path propertypath = m_path.resolve(m_session,name);
 
             Path p = propertypath.getParentPath();
 

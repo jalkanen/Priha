@@ -1,7 +1,9 @@
 package org.priha.core;
 
-import org.priha.core.GlobalNamespaceRegistryImpl;
-import org.priha.core.NamespaceRegistryImpl;
+import javax.xml.namespace.QName;
+
+import org.priha.core.namespace.GlobalNamespaceRegistryImpl;
+import org.priha.core.namespace.NamespaceRegistryImpl;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -14,25 +16,25 @@ public class NamespaceRegistryImplTest extends TestCase
     public void testToQName()
         throws Exception
     {
-        assertEquals( "{http://www.jcp.org/jcr/nt/1.0}unstructured", m_reg.toQName("nt:unstructured") );
+        assertEquals( "{http://www.jcp.org/jcr/nt/1.0}unstructured", m_reg.toQName("nt:unstructured").toString() );
     }
     
     public void testToQName2()
         throws Exception
     {
-        assertEquals( "test", m_reg.toQName("test"));
+        assertEquals( "test", m_reg.toQName("test").toString());
     }
     
     public void testFromQName()
         throws Exception
     {
-        assertEquals( "nt:unstructured", m_reg.fromQName("{http://www.jcp.org/jcr/nt/1.0}unstructured") );
+        assertEquals( "nt:unstructured", m_reg.fromQName( QName.valueOf("{http://www.jcp.org/jcr/nt/1.0}unstructured")) );
     }
 
     public void testFromQName2()
         throws Exception
     {
-        assertEquals( "test", m_reg.fromQName("test") );
+        assertEquals( "test", m_reg.fromQName( QName.valueOf("test")) );
     }
 
     public static Test suite()

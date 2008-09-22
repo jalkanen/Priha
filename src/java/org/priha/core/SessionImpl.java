@@ -31,9 +31,11 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.version.VersionException;
+import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.priha.core.locks.LockManager;
+import org.priha.core.namespace.NamespaceAware;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.nodetype.GenericNodeType;
 import org.priha.util.InvalidPathException;
@@ -49,7 +51,7 @@ import org.xml.sax.SAXException;
  *  The SessionImpl class implements a JCR Session.  It is non thread safe,
  *  so each Thread must have its own Session.
  */
-public class SessionImpl implements Session
+public class SessionImpl implements Session, NamespaceAware
 {
     private static final String JCR_SYSTEM = "jcr:system";
     private RepositoryImpl m_repository;
@@ -62,9 +64,7 @@ public class SessionImpl implements Session
     private boolean        m_isSuperSession = false;
     
     protected SessionProvider m_provider;
-
-    private NamespaceRegistryImpl m_sessionNamespaces = new NamespaceRegistryImpl();
-    
+   
     public SessionImpl( RepositoryImpl rep, Credentials creds, String name )
         throws RepositoryException
     {
@@ -137,7 +137,7 @@ public class SessionImpl implements Session
 
     boolean hasNode( String absPath ) throws RepositoryException
     {
-        return hasNode( PathFactory.getPath(absPath) );
+        return hasNode( PathFactory.getPath(this,absPath) );
     }
     
     boolean hasNode( Path absPath ) throws RepositoryException
@@ -197,14 +197,14 @@ public class SessionImpl implements Session
 
     public ItemImpl getItem( Path absPath ) throws PathNotFoundException, RepositoryException
     {
-        ItemImpl ii = m_provider.getItem( toCanonPath(absPath) );
+        ItemImpl ii = m_provider.getItem( absPath );
         
         return ii;
     }
     
     public ItemImpl getItem(String absPath) throws PathNotFoundException, RepositoryException
     {
-        return getItem( PathFactory.getPath(absPath) );
+        return getItem( PathFactory.getPath(this,absPath) );
     }
 
     public String[] getLockTokens()
@@ -261,7 +261,7 @@ public class SessionImpl implements Session
 
     public boolean itemExists(String absPath) throws RepositoryException
     {
-        return itemExists( PathFactory.getPath(absPath) );
+        return itemExists( PathFactory.getPath(this,absPath) );
     }
 
     public void logout()
@@ -346,7 +346,7 @@ public class SessionImpl implements Session
 
             GenericNodeType rootType = (GenericNodeType)getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
             
-            NodeDefinition nd = rootType.findNodeDefinition("*");
+            NodeDefinition nd = rootType.findNodeDefinition( new QName("*") );
             
             ni = new NodeImpl( this, "/", rootType, nd, true );
 
@@ -393,7 +393,6 @@ public class SessionImpl implements Session
     public boolean itemExists( Path absPath )
         throws RepositoryException
     {
-        absPath = toCanonPath(absPath);
         return hasNode(absPath) || hasProperty(absPath);
     }
 
@@ -412,7 +411,7 @@ public class SessionImpl implements Session
     
     public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException, InvalidSerializedDataException, LockException, RepositoryException
     {
-        XMLImport importer = new XMLImport( this, false, PathFactory.getPath(parentAbsPath), uuidBehavior );
+        XMLImport importer = new XMLImport( this, false, PathFactory.getPath(this,parentAbsPath), uuidBehavior );
         
         try
         {
@@ -436,7 +435,7 @@ public class SessionImpl implements Session
 
     public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior) throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, RepositoryException
     {
-        XMLImport importer = new XMLImport( this, false, PathFactory.getPath(parentAbsPath), uuidBehavior );
+        XMLImport importer = new XMLImport( this, false, PathFactory.getPath(this,parentAbsPath), uuidBehavior );
 
         return importer;
     }
@@ -501,14 +500,14 @@ public class SessionImpl implements Session
             throw new NamespaceException("Existing prefix cannot be remapped (6.3.3)");
         }
         
-        m_sessionNamespaces.registerNamespace(newPrefix, existingUri );
+        m_workspace.getNamespaceRegistry().registerNamespace(newPrefix, existingUri );
     }
 
     public String getNamespacePrefix(String uri) throws NamespaceException, RepositoryException
     {
         try
         {
-            return m_sessionNamespaces.getPrefix(uri);
+            return m_workspace.getNamespaceRegistry().getPrefix(uri);
         }
         catch( NamespaceException e )
         {
@@ -520,8 +519,8 @@ public class SessionImpl implements Session
     {
         TreeSet<String> result = new TreeSet<String>();
         
-        String[] uris = m_workspace.getNamespaceRegistry().getURIs();
-        String[] uris2 = m_sessionNamespaces.getURIs();
+        String[] uris = m_repository.getGlobalNamespaceRegistry().getURIs();
+        String[] uris2 = m_workspace.getNamespaceRegistry().getURIs();
         
         TreeSet<String> uriCol = new TreeSet<String>();
         uriCol.addAll( Arrays.asList(uris) );
@@ -539,42 +538,51 @@ public class SessionImpl implements Session
     {
         try
         {
-            return m_sessionNamespaces.getURI(prefix);
+            return m_workspace.getNamespaceRegistry().getURI(prefix);
         }
         catch( NamespaceException e )
         {
-            return m_workspace.getNamespaceRegistry().getURI(prefix);
+            return m_repository.getGlobalNamespaceRegistry().getURI(prefix);
         }
     }
 
-    /**
-     *  Remaps the path using the local mapping into global
-     *  namespace.
-     *  
-     *  @param path Original path
-     *  @return A path with the original mappings.
-     */
-    Path toCanonPath( Path path )
+    public String fromQName(QName c)
     {
-        String[] newcomponents = new String[path.depth()];
-        
-        for( int i = 0; i < path.depth(); i++ )
+        try
         {
-            String c = path.getComponent(i);
-            
+            return m_workspace.getNamespaceRegistry().fromQName(c);
+        }
+        catch( Exception e )
+        {
             try
             {
-                c = m_sessionNamespaces.toQName(c);
-                
-                c = m_workspace.fromQName(c);
+                return m_repository.getGlobalNamespaceRegistry().fromQName(c);
             }
-            catch( Exception e )
+            catch (Exception e1)
             {
             }
-            
-            newcomponents[i] = c;
         }
         
-        return new Path(newcomponents,path.isAbsolute());
+        return c.getLocalPart();
+    }
+
+    public QName toQName(String c)
+    {
+        try
+        {
+            return m_workspace.getNamespaceRegistry().toQName(c);
+        }
+        catch( Exception e )
+        {
+            try
+            {
+                return m_repository.getGlobalNamespaceRegistry().toQName(c);
+            }
+            catch (Exception e1)
+            {
+            }
+        }
+        
+        return new QName(c);
     }
 }

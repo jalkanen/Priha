@@ -27,6 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
+import javax.xml.namespace.QName;
 
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
@@ -218,7 +219,7 @@ public class JdbcProvider implements RepositoryProvider
             
             if( rs.next() )
             {
-                return PathFactory.getPath( rs.getString( "path" ) );
+                return PathFactory.getPath( ws.getSession(), rs.getString( "path" ) );
             }
             
             throw new ItemNotFoundException("No UUID by this name found "+uuid);
@@ -242,7 +243,7 @@ public class JdbcProvider implements RepositoryProvider
             PreparedStatement ps = m_conn.prepareStatement("SELECT type,propval,multi FROM propertyvalues WHERE parent = ? AND name = ?");
             
             ps.setLong(1, getNodeId(ws, path.getParentPath()));
-            ps.setString(2, ws.toQName( path.getLastComponent() ) );
+            ps.setString(2, path.getLastComponent().toString() );
             
             ResultSet rs = ps.executeQuery();
             
@@ -313,7 +314,7 @@ public class JdbcProvider implements RepositoryProvider
             ArrayList<Path> result = new ArrayList<Path>();
             while( rs.next() )
             {
-                result.add( PathFactory.getPath(rs.getString("path")) );
+                result.add( PathFactory.getPath(ws.getSession(),rs.getString("path")) );
             }
         
             return result;
@@ -324,7 +325,7 @@ public class JdbcProvider implements RepositoryProvider
         }
     }
 
-    public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
+    public List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         try
         {
@@ -340,12 +341,11 @@ public class JdbcProvider implements RepositoryProvider
         
             ResultSet rs = ps.executeQuery();
         
-            ArrayList<String> result = new ArrayList<String>();
+            ArrayList<QName> result = new ArrayList<QName>();
             while( rs.next() )
             {
                 String qname = rs.getString("name");
-                String n = ws.fromQName(qname);
-                result.add( n );
+                result.add( QName.valueOf(qname) );
             }
         
             return result;
@@ -524,7 +524,7 @@ public class JdbcProvider implements RepositoryProvider
                                          "name = ?");
 
             ps.setLong( 1, getNodeId(ws, path.getParentPath()));
-            ps.setString(2, ws.toQName( path.getLastComponent() ) );
+            ps.setString(2, path.getLastComponent().toString() );
             int numRows = ps.executeUpdate();
             
             if( numRows == 0 )

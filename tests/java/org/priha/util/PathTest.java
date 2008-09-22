@@ -1,38 +1,41 @@
 package org.priha.util;
 
-import org.priha.TestUtil;
-import org.priha.util.Path;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.priha.TestUtil;
+import org.priha.core.namespace.GlobalNamespaceRegistryImpl;
+import org.priha.core.namespace.NamespaceAware;
+
 public class PathTest extends TestCase
 {
+    private NamespaceAware m_nsa = new GlobalNamespaceRegistryImpl();
+    
     public void testPath1()
         throws Exception
     {
-        Path p = new Path("/");
+        Path p = new Path(m_nsa,"/");
         
         assertEquals( "/",p.toString() );
     }
 
     public void testPath2() throws Exception
     {
-        Path p = new Path("/foo/bar/gobble/bloo");
+        Path p = new Path(m_nsa,"/foo/bar/gobble/bloo");
         
         assertEquals( "/foo/bar/gobble/bloo",p.toString() );
     }
     public void testPath3() throws Exception
     {
-        Path p = new Path("/foo[2]/bar[3]/jcr:node");
+        Path p = new Path(m_nsa,"/foo[2]/bar[3]/jcr:node");
     
-        assertEquals( "/foo[2]/bar[3]/jcr:node",p.toString() );
+        assertEquals( "/foo[2]/bar[3]/{http://www.jcp.org/jcr/1.0}node",p.toString() );
     }
     
     public void testIsRoot1() throws Exception
     {
-        Path p = new Path("/");
+        Path p = new Path(m_nsa,"/");
         
         assertTrue(p.isRoot());
     }
@@ -40,15 +43,15 @@ public class PathTest extends TestCase
 
     public void testIsRoot2() throws Exception
     {
-        Path p = new Path("/test/root");
+        Path p = new Path(m_nsa,"/test/root");
         
         assertFalse(p.isRoot());
     }
 
     public void testIsParentOf1() throws Exception
     {
-        Path p1 = new Path("/test/root");
-        Path p2 = new Path("/test/root/foo/bar");
+        Path p1 = new Path(m_nsa,"/test/root");
+        Path p2 = new Path(m_nsa,"/test/root/foo/bar");
         
         assertTrue( "p1->p2", p1.isParentOf(p2) );
         assertFalse( "p2->p1", p2.isParentOf(p1) );
@@ -58,8 +61,8 @@ public class PathTest extends TestCase
 
     public void testIsParentOf2() throws Exception
     {
-        Path p1 = new Path("/");
-        Path p2 = new Path("/test/root/foo/bar");
+        Path p1 = new Path(m_nsa,"/");
+        Path p2 = new Path(m_nsa,"/test/root/foo/bar");
         
         assertTrue( "p1->p2", p1.isParentOf(p2) );
         assertFalse( "p2->p1", p2.isParentOf(p1) );
@@ -73,7 +76,7 @@ public class PathTest extends TestCase
         long start = System.currentTimeMillis();
         for( int i = 0; i < SPEED_ITERS; i++ )
         {
-            Path p = new Path( "/foo/bar/test/gobble" );
+            Path p = new Path(m_nsa, "/foo/bar/test/gobble" );
             paths[i] = p;
         }
         
@@ -84,7 +87,7 @@ public class PathTest extends TestCase
         start = System.currentTimeMillis();
         for( int i = 0; i < SPEED_ITERS; i++ )
         {
-            Path p = paths[i].resolve("test");
+            Path p = paths[i].resolve(m_nsa,"test");
             
             paths[i] = p;
         }

@@ -14,6 +14,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.priha.core.JCRConstants;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.nodetype.GenericNodeType;
 import org.priha.util.Base64;
@@ -89,7 +90,7 @@ public class XMLImport extends DefaultHandler
      */
     private void deserializeStore( NodeStore ns ) throws ValueFormatException, IllegalStateException, RepositoryException
     {
-        String primaryType = getProp(ns,"jcr:primaryType").m_values.get(0).getString();
+        String primaryType = getProp(ns,JCRConstants.JCR_PRIMARY_TYPE).m_values.get(0).getString();
         
         String path = m_currentPath.toString();
                 
@@ -108,9 +109,9 @@ public class XMLImport extends DefaultHandler
             //
             // Known property names which need to be handled separately.
             //
-            if( ps.m_propertyName.equals("jcr:primaryType") ) continue;
+            if( ps.m_propertyName.equals(JCRConstants.JCR_PRIMARY_TYPE) ) continue;
             
-            if( ps.m_propertyName.equals("jcr:mixinTypes") )
+            if( ps.m_propertyName.equals(JCRConstants.JCR_MIXIN_TYPES) )
             {
                 for( Value v : ps.m_values )
                 {

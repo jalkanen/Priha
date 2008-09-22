@@ -23,6 +23,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import javax.jcr.NamespaceException;
+import javax.jcr.RepositoryException;
+import javax.xml.namespace.QName;
+
+import org.priha.core.namespace.NamespaceAware;
+
 /**
  *  Manages paths, which are a key ingredient in JCR.  A Path is an immutable
  *  object, so you can't change it once you create it. 
@@ -41,7 +47,7 @@ public class Path implements Comparable, Serializable
      */
     public static final Path ROOT = new Path("/");
 
-    private final String[] m_components;
+    private final QName[] m_components;
 
     private boolean m_isAbsolute = false;
 
@@ -52,10 +58,23 @@ public class Path implements Comparable, Serializable
     /** This constructor is useful only to subclasses or serialization. */
     protected Path()
     {
-        m_components = new String[0];
+        m_components = new QName[0];
     }
     
-    public Path( String[] components, boolean absolute )
+    /** Use only internally when you know you don't have namespaces. */
+    private Path(String s)
+    {
+        QName[] c = null;
+        try
+        {
+            c = parsePath(null,s);
+        }
+        catch(Exception e) {}
+        
+        m_components = c;
+    }
+    
+    public Path( QName[] components, boolean absolute )
     {
         m_components = components;
         m_isAbsolute = absolute;
@@ -72,20 +91,22 @@ public class Path implements Comparable, Serializable
      *  Path p = new Path("/foo/bar/glob");
      *  </code>
      * @param abspath A path.
+     * @throws RepositoryException 
+     * @throws NamespaceException 
      */
-    public Path( String abspath )
+    public Path( NamespaceAware ns, String abspath ) throws NamespaceException, RepositoryException
     {
         if( abspath.length() > 0 && abspath.charAt(0) == '/' ) m_isAbsolute = true;
 
-        m_components = parsePath( abspath );
+        m_components = parsePath( ns, abspath );
     }
 
-    public Path( String pathStart, Path pathEnd )
+    public Path( NamespaceAware ns, String pathStart, Path pathEnd ) throws NamespaceException, RepositoryException
     {
         if( pathStart.length() > 0 && pathStart.charAt(0) == '/' ) m_isAbsolute = true;
-        String[] start = parsePath( pathStart );
+        QName[] start = parsePath( ns, pathStart );
         
-        m_components = new String[start.length+pathEnd.depth()];
+        m_components = new QName[start.length+pathEnd.depth()];
         
         for( int i = 0; i < start.length; i++ )
         {
@@ -104,36 +125,46 @@ public class Path implements Comparable, Serializable
      *  
      *  @param s Component name to clean
      *  @return A new String.
+     * @throws RepositoryException 
+     * @throws NamespaceException 
      */
-    private String cleanComponent(String s)
+    private QName cleanComponent(NamespaceAware ns, String s) throws NamespaceException, RepositoryException
     {
         if( s.endsWith("[1]") ) s = s.substring(0,s.length()-3);
-        return s;
+        
+        QName q = ns.toQName( s );
+        
+        return q;
     }
     
-    private String[] parsePath( String path )
+    private QName[] parsePath( NamespaceAware ns, String path ) throws NamespaceException, RepositoryException
     {
-        ArrayList<String> ls = new ArrayList<String>();
+        ArrayList<QName> ls = new ArrayList<QName>();
 
         int start = 0, end = 0;
         while( (end = path.indexOf('/',start)) != -1 )
         {
             String component = path.substring( start, end );
             start = end+1;
-            if( component.length() > 0 ) ls.add(cleanComponent(component));
+            if( component.length() > 0 ) 
+            {
+                ls.add(cleanComponent(ns, component));
+            }
         }
 
         if( start < path.length() )
-            ls.add(path.substring(start)); // Add the final component
-
-        return ls.toArray( new String[ls.size()] );
+        {
+            ls.add(cleanComponent(ns, path.substring(start))); // Add the final component
+        }
+        
+        return ls.toArray( new QName[ls.size()] );
     }
     /**
      *  Gets one path component.
      * @param idx Which component to get.  The top-most component is at index zero.
      * @return The component.
      */
-    public final String getComponent( int idx )
+    public final QName getComponent( int idx )
     {
         return m_components[idx];
     }
@@ -142,11 +173,11 @@ public class Path implements Comparable, Serializable
      *  Returns the name of the last component of the path (i.e. the name)
      * @return The name.  If this is the root, returns "" (empty string).
      */
-    public final String getLastComponent()
+    public final QName getLastComponent()
     {
         if( isRoot() )
         {
-            return "";
+            return new QName( "" );
         }
         return m_components[depth()-1];
     }
@@ -174,7 +205,7 @@ public class Path implements Comparable, Serializable
      *  @return String describing the name of the parent.
      *  @throws InvalidPathException If you try to get the parent of the root node.
      */
-    public final String getParentName()
+    public final QName getParentName()
         throws InvalidPathException
     {
         if( isRoot() ) throw new InvalidPathException("Root has no parent");
@@ -232,7 +263,7 @@ public class Path implements Comparable, Serializable
         }
         if( startidx < 0 || endidx < 0 ) throw new InvalidPathException("Negative index");
 
-        String[] components = new String[endidx-startidx];
+        QName[] components = new QName[endidx-startidx];
         
         for( int i = startidx; i < endidx; i++ )
         {
@@ -253,7 +284,7 @@ public class Path implements Comparable, Serializable
         StringBuilder sb = new StringBuilder( m_components.length * 16 );
         if( m_isAbsolute ) sb.append("/");
 
-        for( String c : m_components )
+        for( QName c : m_components )
         {
             sb.append( c );
             sb.append("/");
@@ -291,22 +322,24 @@ public class Path implements Comparable, Serializable
      *
      *  @param relPath String describing relative path.
      *  @return A valid Path.
+     * @throws RepositoryException 
+     * @throws NamespaceException 
      */
-    public final Path resolve(String relPath)
+    public final Path resolve(NamespaceAware ns, String relPath) throws NamespaceException, RepositoryException
     {
-        ArrayList<String> p    = new ArrayList<String>();
-        ArrayList<String> list = new ArrayList<String>();
+        ArrayList<QName> p    = new ArrayList<QName>();
+        ArrayList<QName> list = new ArrayList<QName>();
 
         if( !relPath.startsWith("/") )
         {
             p.addAll( Arrays.asList(m_components) );
         }
         
-        p.addAll( Arrays.asList(parsePath(relPath)) );
+        p.addAll( Arrays.asList(parsePath(ns, relPath)) );
 
         for( int i = 0; i < p.size(); i++ )
         {
-            if( p.get(i).equals("..") )
+            if( p.get(i).getLocalPart().equals("..") )
             {
                 if( list.size() == 0 )
                 {
@@ -314,17 +347,17 @@ public class Path implements Comparable, Serializable
                 }
                 list.remove(list.size()-1);
             }
-            else if( p.get(i).equals(".") )
+            else if( p.get(i).getLocalPart().equals(".") )
             {
                 // Do nothing
             }
-            else if( p.get(i).length() > 0 )
+            else if( p.get(i).getLocalPart().length() > 0 )
             {
-                list.add( cleanComponent(p.get(i)) );
+                list.add( p.get(i) );
             }
         }
 
-        return new Path( list.toArray(new String[list.size()]), m_isAbsolute );
+        return new Path( list.toArray(new QName[list.size()]), m_isAbsolute );
     }
 
     /**

@@ -26,9 +26,10 @@ import java.util.logging.Logger;
 
 import javax.jcr.*;
 
-import org.priha.core.GlobalNamespaceRegistryImpl;
+import org.priha.core.JCRConstants;
 import org.priha.core.PropertyImpl;
 import org.priha.core.SessionImpl;
+import org.priha.core.namespace.GlobalNamespaceRegistryImpl;
 import org.priha.util.Base64;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -200,15 +201,15 @@ public class XMLExport
     {
         public int compare(PropertyImpl o1, PropertyImpl o2)
         {
-            String n1 = o1.getInternalPath().getLastComponent();
-            String n2 = o2.getInternalPath().getLastComponent();
+            String n1 = o1.getInternalPath().getLastComponent().toString();
+            String n2 = o2.getInternalPath().getLastComponent().toString();
             
-            if( n1.equals("jcr:primaryType") && !n2.equals("jcr:primaryType")) return -1;
-            if( n2.equals("jcr:primaryType") && !n1.equals("jcr:primaryType")) return 1;
-            if( n1.equals("jcr:mixinTypes") && !n2.equals("jcr:mixinTypes")) return -1;
-            if( n2.equals("jcr:mixinTypes") && !n1.equals("jcr:mixinTypes")) return 1;
-            if( n1.equals("jcr:uuid") && !n1.equals("jcr:uuid")) return -1;
-            if( n2.equals("jcr:uuid") && !n2.equals("jcr:uuid")) return 1;
+            if( n1.equals(JCRConstants.JCR_PRIMARY_TYPE) && !n2.equals(JCRConstants.JCR_PRIMARY_TYPE)) return -1;
+            if( n2.equals(JCRConstants.JCR_PRIMARY_TYPE) && !n1.equals(JCRConstants.JCR_PRIMARY_TYPE)) return 1;
+            if( n1.equals(JCRConstants.JCR_MIXIN_TYPES) && !n2.equals(JCRConstants.JCR_MIXIN_TYPES)) return -1;
+            if( n2.equals(JCRConstants.JCR_MIXIN_TYPES) && !n1.equals(JCRConstants.JCR_MIXIN_TYPES)) return 1;
+            if( n1.equals(JCRConstants.JCR_UUID) && !n1.equals(JCRConstants.JCR_UUID)) return -1;
+            if( n2.equals(JCRConstants.JCR_UUID) && !n2.equals(JCRConstants.JCR_UUID)) return 1;
             
             return n1.compareTo(n2);
         }

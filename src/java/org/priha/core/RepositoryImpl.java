@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import javax.jcr.*;
 
 import org.priha.Release;
+import org.priha.core.namespace.GlobalNamespaceRegistryImpl;
 import org.priha.util.ConfigurationException;
 import org.priha.util.FileUtil;
 

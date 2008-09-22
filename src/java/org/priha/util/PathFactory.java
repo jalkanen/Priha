@@ -20,6 +20,11 @@ package org.priha.util;
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
 
+import javax.jcr.NamespaceException;
+import javax.jcr.RepositoryException;
+
+import org.priha.core.namespace.NamespaceAware;
+
 /**
  *  Gets Paths from a local storage.
  *  <p>
@@ -31,18 +36,20 @@ import java.util.WeakHashMap;
  */
 public class PathFactory
 {
-    private static WeakHashMap<String,WeakReference<Path>> c_map = new WeakHashMap<String,WeakReference<Path>>();
+    //private static WeakHashMap<String,WeakReference<Path>> c_map = new WeakHashMap<String,WeakReference<Path>>();
     
     /**
      *  Turns a String to a Path.
      *  
      *  @param path A String representing the Path
      *  @return A valid Path object.
+     * @throws RepositoryException 
+     * @throws NamespaceException 
      */
-    public static Path getPath(String path)
+    public static Path getPath(NamespaceAware ns, String path) throws NamespaceException, RepositoryException
     {
         Path result = null;
-        
+/*        
         WeakReference<Path> ref = c_map.get(path);
         
         if( ref != null )
@@ -52,11 +59,12 @@ public class PathFactory
         
         if( result == null )
         {
-            result = new Path(path);
-            
+        */
+            result = new Path(ns,path);
+        /*    
             c_map.put( path, new WeakReference<Path>(result) );
         }
-        
+        */
         return result;
     }
 }

@@ -1,15 +1,14 @@
-package org.priha.core;
+package org.priha.core.namespace;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
-import javax.jcr.AccessDeniedException;
-import javax.jcr.NamespaceException;
-import javax.jcr.RepositoryException;
-import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.*;
+import javax.xml.namespace.QName;
 
-public class NamespaceRegistryImpl
+import org.priha.util.Path;
+
+public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceAware
 {
     /** Maps prefixes to URIs.  Prefixes are always unique, therefore they are the keys */
     protected HashMap<String,String> m_nsmap = new HashMap<String,String>();
@@ -61,12 +60,12 @@ public class NamespaceRegistryImpl
     /**
      *  Turns a string of the form "prefix:name" to "{url}name"
      *  
-     * @param val
-     * @return
-     * @throws RepositoryException 
-     * @throws NamespaceException 
+     *  @param val
+     *  @return
+     *  @throws RepositoryException 
+     *  @throws NamespaceException If the mapping cannot be accomplished. 
      */
-    public String toQName(String val) throws NamespaceException, RepositoryException
+    public QName toQName(String val) throws NamespaceException, RepositoryException
     {
         int idx = val.indexOf(':');
         if( idx != -1 )
@@ -76,10 +75,10 @@ public class NamespaceRegistryImpl
             
             String uri = getURI(prefix);
     
-            return "{"+uri+"}"+name;
+            return new QName( uri, name, prefix );
         }
         
-        return val;
+        return new QName( val );
     }
 
     /**
@@ -90,19 +89,43 @@ public class NamespaceRegistryImpl
      * @throws NamespaceException
      * @throws RepositoryException
      */
-    public String fromQName(String val) throws NamespaceException, RepositoryException
+    public String fromQName(QName val) throws NamespaceException, RepositoryException
     {
-        int idx = val.indexOf('}');
-        if( idx != -1 )
+        try
         {
-            String uri = val.substring(1,idx);
-            String name = val.substring(idx+1);
+            String uri = val.getNamespaceURI();
             
-            String prefix = getPrefix(uri);
+            if( uri.length() == 0 ) return val.getLocalPart();
             
-            return prefix+":"+name;
+            String prefix = getPrefix( val.getNamespaceURI() );
+            
+            return prefix+":"+val.getLocalPart();
         }
-        return val;
+        catch( NamespaceException e )
+        {
+            return val.getLocalPart();
+        }
     }
 
+    /**
+     *  Return true, if this NamespaceRegistryImpl has any mappings.
+     *  
+     *  @return True, if there are any mappings to care about.
+     */
+    public boolean hasMappings()
+    {
+        return m_nsmap.size() != 0;
+    }
+
+    public Path fromQPath(Path path)
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Path toQPath(Path path)
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

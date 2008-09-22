@@ -20,6 +20,7 @@ package org.priha.providers;
 import java.util.*;
 
 import javax.jcr.*;
+import javax.xml.namespace.QName;
 
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
@@ -102,9 +103,9 @@ public class MemoryProvider implements RepositoryProvider
         return res;
     }
 
-    public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
+    public List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        ArrayList<String> res = new ArrayList<String>();
+        ArrayList<QName> res = new ArrayList<QName>();
         
         for( Path p : m_values.keySet() )
         {

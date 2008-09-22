@@ -484,7 +484,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
 
     public String toString()
     {
-        return "Property("+m_multi+")["+m_path+","+m_name+"="+((m_multi == Multi.SINGLE ) ? m_value[0].toString() : m_value)+"]";
+        return "Property("+m_multi+")["+m_path+","+m_path.getLastComponent()+"="+((m_multi == Multi.SINGLE ) ? m_value[0].toString() : m_value)+"]";
     }
 
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException

@@ -21,12 +21,10 @@ import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.xml.namespace.QName;
 
 /**
  *  Stores the Node Types.
- *
- *  @author jalkanen
- *
  */
 public class GenericNodeType
      implements NodeType
@@ -168,7 +166,7 @@ public class GenericNodeType
     }
 
 
-    public NodeDefinition findNodeDefinition( String name )
+    public NodeDefinition findNodeDefinition( QName name )
     {
         for( NodeDefinition nd : m_childNodeDefinitions )
         {

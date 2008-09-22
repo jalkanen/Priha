@@ -25,6 +25,7 @@ import javax.jcr.Credentials;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
+import javax.xml.namespace.QName;
 
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
@@ -109,7 +110,7 @@ public interface RepositoryProvider
      *  @return A List of the names of the properties under this Node.
      *  @throws RepositoryException If something goes wrong.
      */
-    public abstract List<String> listProperties( WorkspaceImpl ws, Path path ) throws RepositoryException;
+    public abstract List<QName> listProperties( WorkspaceImpl ws, Path path ) throws RepositoryException;
     
     /**
      *  Returns the value of a property.

@@ -27,6 +27,7 @@ import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 import javax.management.MBeanServer;
+import javax.xml.namespace.QName;
 
 import net.sf.ehcache.*;
 import net.sf.ehcache.constructs.blocking.LockTimeoutException;
@@ -266,7 +267,7 @@ public class EhCachingProvider implements RepositoryProvider
     }
 
     @SuppressWarnings("unchecked")
-    public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
+    public List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
 //        System.out.print ("listProperties: "+Thread.currentThread());
 //        long start = System.currentTimeMillis();
@@ -275,9 +276,9 @@ public class EhCachingProvider implements RepositoryProvider
         {
             Element e = m_valueCache.get( getPid(ws,path) );
         
-            if( e != null ) return (List<String>)e.getValue();
+            if( e != null ) return (List<QName>)e.getValue();
         
-            List<String> list = m_realProvider.listProperties(ws, path);
+            List<QName> list = m_realProvider.listProperties(ws, path);
         
             e = new Element( getPid(ws,path), list );
             m_valueCache.put( e );

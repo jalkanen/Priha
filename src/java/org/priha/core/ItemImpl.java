@@ -31,21 +31,19 @@ public abstract class ItemImpl implements Item
 {
 
     protected Path        m_path;
-    protected String      m_name;
     protected SessionImpl m_session;
     protected boolean     m_modified = false;
     protected ItemState   m_state    = ItemState.NEW;
     
-    public ItemImpl( SessionImpl session, String path )
+    public ItemImpl( SessionImpl session, String path ) throws NamespaceException, RepositoryException
     {
-        this( session, PathFactory.getPath(path) );
+        this( session, PathFactory.getPath(session,path) );
     }
     
     public ItemImpl(SessionImpl session, Path path)
     {
         m_session = session;
-        m_path = session.toCanonPath( path );
-        m_name = m_path.getLastComponent();
+        m_path = path;
     }
 
     public ItemImpl(ItemImpl original, SessionImpl session)
@@ -93,7 +91,7 @@ public abstract class ItemImpl implements Item
 
     public String getName() throws RepositoryException
     {
-        return m_name;
+        return m_session.fromQName( m_path.getLastComponent() );
     }
 
     /**
@@ -105,7 +103,7 @@ public abstract class ItemImpl implements Item
      */
     public String getQName() throws NamespaceException, RepositoryException
     {
-        String qname = m_session.getWorkspace().getNamespaceRegistry().toQName(m_name);
+        String qname = m_path.getLastComponent().toString();
         
         return qname;
     }
