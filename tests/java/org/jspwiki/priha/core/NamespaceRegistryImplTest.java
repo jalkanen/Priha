@@ -6,7 +6,7 @@ import junit.framework.TestSuite;
 
 public class NamespaceRegistryImplTest extends TestCase
 {
-    NamespaceRegistryImpl m_reg = new NamespaceRegistryImpl();
+    NamespaceRegistryImpl m_reg = new GlobalNamespaceRegistryImpl();
     
     public void testToQName()
         throws Exception

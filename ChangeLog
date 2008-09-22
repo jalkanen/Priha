@@ -1,5 +1,15 @@
 2008-08-17  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.0.30
+        
+        * Turned on versioning support; still doesn't work but
+        at least some of the classes are there.
+        
+        * Initial implementation of namespace remapping; something
+        is still missing though.
+
+2008-08-17  Janne Jalkanen <jalkanen@ecyrd.com>
+
         * 0.0.29
         
         * XML Import now works for System View.  All SerializationTest

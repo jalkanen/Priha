@@ -32,31 +32,9 @@ import org.jspwiki.priha.util.FileUtil;
 
 public class RepositoryImpl implements Repository
 {
-    private static final String  STR_TRUE  = "true";
-    private static final String  STR_FALSE = "false";
-
     public static final String   DEFAULT_WORKSPACE = "default";
 
-    private NamespaceRegistryImpl    m_namespaceRegistry;
-
-    private static String[] DESCRIPTORS = {
-        Repository.SPEC_NAME_DESC,                "Content Repository for Java Technology API",
-        Repository.SPEC_VERSION_DESC,             "1.0",
-        Repository.REP_NAME_DESC,                 Release.APPNAME,
-        Repository.REP_VENDOR_DESC,               "Janne Jalkanen",
-        Repository.REP_VENDOR_URL_DESC,           "http://www.ecyrd.com/",
-        Repository.REP_VERSION_DESC,              Release.VERSTR,
-        Repository.LEVEL_1_SUPPORTED,             STR_TRUE,
-        Repository.LEVEL_2_SUPPORTED,             STR_TRUE,
-        Repository.OPTION_TRANSACTIONS_SUPPORTED, STR_FALSE,
-        Repository.OPTION_VERSIONING_SUPPORTED,   STR_FALSE,
-        Repository.OPTION_LOCKING_SUPPORTED,      STR_TRUE,
-        Repository.OPTION_OBSERVATION_SUPPORTED,  STR_FALSE,
-        Repository.OPTION_QUERY_SQL_SUPPORTED,    STR_FALSE,
-        Repository.QUERY_XPATH_POS_INDEX,         STR_FALSE,
-        Repository.QUERY_XPATH_DOC_ORDER,         STR_FALSE
-    };
-
+    private GlobalNamespaceRegistryImpl    m_namespaceRegistry;
 
     /**
      *  Defines which paths are attempted to locate the default property file.
@@ -132,11 +110,11 @@ public class RepositoryImpl implements Repository
 
     public String getDescriptor(String key)
     {
-        for( int i = 0; i < DESCRIPTORS.length; i += 2 )
+        for( int i = 0; i < Release.DESCRIPTORS.length; i += 2 )
         {
-            if( DESCRIPTORS[i].equals(key) )
+            if( Release.DESCRIPTORS[i].equals(key) )
             {
-                return DESCRIPTORS[i+1];
+                return Release.DESCRIPTORS[i+1];
             }
         }
 
@@ -145,11 +123,11 @@ public class RepositoryImpl implements Repository
 
     public String[] getDescriptorKeys()
     {
-        String[] keys = new String[DESCRIPTORS.length/2];
+        String[] keys = new String[Release.DESCRIPTORS.length/2];
 
-        for( int i = 0; i < DESCRIPTORS.length; i += 2 )
+        for( int i = 0; i < Release.DESCRIPTORS.length; i += 2 )
         {
-            keys[i/2] = DESCRIPTORS[i];
+            keys[i/2] = Release.DESCRIPTORS[i];
         }
 
         return keys;
@@ -210,11 +188,11 @@ public class RepositoryImpl implements Repository
         return s;
     }
     
-    public NamespaceRegistryImpl getGlobalNamespaceRegistry()
+    public GlobalNamespaceRegistryImpl getGlobalNamespaceRegistry()
     {
         if( m_namespaceRegistry == null )
         {
-            m_namespaceRegistry = new NamespaceRegistryImpl();
+            m_namespaceRegistry = new GlobalNamespaceRegistryImpl();
         }
 
         return m_namespaceRegistry;

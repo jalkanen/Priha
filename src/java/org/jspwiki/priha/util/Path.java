@@ -55,12 +55,17 @@ public class Path implements Comparable, Serializable
         m_components = new String[0];
     }
     
-    protected Path( String[] components, boolean absolute )
+    public Path( String[] components, boolean absolute )
     {
         m_components = components;
         m_isAbsolute = absolute;
     }
 
+    public boolean isAbsolute()
+    {
+        return m_isAbsolute;
+    }
+    
     /**
      *  Create a new path from a String.  E.g.
      *  <code>

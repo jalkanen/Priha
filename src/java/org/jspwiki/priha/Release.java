@@ -17,6 +17,8 @@
  */
 package org.jspwiki.priha;
 
+import javax.jcr.Repository;
+
 /**
  *  Details the release information.  This class is executable, i.e.
  *  you can run
@@ -63,13 +65,39 @@ public class Release
     /**
      *  The current minor revision.
      */
-    public static final int    MINORREVISION = 29;
+    public static final int    MINORREVISION = 30;
 
     /**
      *  The version string of the form version.revision.minorrevision.  At
      *  the time of the generation of this documentation, it was {@value}.
      */
     public static final String VERSTR        = VERSION+"."+REVISION+"."+MINORREVISION;
+
+
+    private static final String  STR_TRUE  = "true";
+    private static final String  STR_FALSE = "false";
+
+    /**
+     *  Contains the JCR Descriptors.  Essentially lists the different
+     *  features that the repository supports.  Use {@link Repository#getDescriptor(String)}
+     */
+    public static String[] DESCRIPTORS = {
+        Repository.SPEC_NAME_DESC,                "Content Repository for Java Technology API",
+        Repository.SPEC_VERSION_DESC,             "1.0",
+        Repository.REP_NAME_DESC,                 APPNAME,
+        Repository.REP_VENDOR_DESC,               "Janne Jalkanen",
+        Repository.REP_VENDOR_URL_DESC,           "http://www.ecyrd.com/",
+        Repository.REP_VERSION_DESC,              VERSTR,
+        Repository.LEVEL_1_SUPPORTED,             STR_TRUE,
+        Repository.LEVEL_2_SUPPORTED,             STR_TRUE,
+        Repository.OPTION_TRANSACTIONS_SUPPORTED, STR_FALSE,
+        Repository.OPTION_VERSIONING_SUPPORTED,   STR_TRUE,
+        Repository.OPTION_LOCKING_SUPPORTED,      STR_TRUE,
+        Repository.OPTION_OBSERVATION_SUPPORTED,  STR_FALSE,
+        Repository.OPTION_QUERY_SQL_SUPPORTED,    STR_FALSE,
+        Repository.QUERY_XPATH_POS_INDEX,         STR_FALSE,
+        Repository.QUERY_XPATH_DOC_ORDER,         STR_FALSE
+    };
 
     /**
      *  A static method which can be run to print the version information.

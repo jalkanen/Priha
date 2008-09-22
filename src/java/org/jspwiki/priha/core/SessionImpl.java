@@ -63,6 +63,8 @@ public class SessionImpl implements Session
     
     protected SessionProvider m_provider;
 
+    private NamespaceRegistryImpl m_sessionNamespaces = new NamespaceRegistryImpl();
+    
     public SessionImpl( RepositoryImpl rep, Credentials creds, String name )
         throws RepositoryException
     {
@@ -195,7 +197,7 @@ public class SessionImpl implements Session
 
     public ItemImpl getItem( Path absPath ) throws PathNotFoundException, RepositoryException
     {
-        ItemImpl ii = m_provider.getItem( absPath );
+        ItemImpl ii = m_provider.getItem( toCanonPath(absPath) );
         
         return ii;
     }
@@ -210,20 +212,6 @@ public class SessionImpl implements Session
         return m_lockTokens.toArray( new String[m_lockTokens.size()] );
     }
 
-    public String getNamespacePrefix(String uri) throws NamespaceException, RepositoryException
-    {
-        return m_workspace.getNamespaceRegistry().getPrefix(uri);
-    }
-
-    public String[] getNamespacePrefixes() throws RepositoryException
-    {
-        return m_workspace.getNamespaceRegistry().getPrefixes();
-    }
-
-    public String getNamespaceURI(String prefix) throws NamespaceException, RepositoryException
-    {
-        return m_workspace.getNamespaceRegistry().getURI(prefix);
-    }
 
     public NodeImpl getNodeByUUID(String uuid) throws ItemNotFoundException, RepositoryException
     {
@@ -389,12 +377,6 @@ public class SessionImpl implements Session
         saveNodes( Path.ROOT );
     }
 
-    public void setNamespacePrefix(String newPrefix, String existingUri) throws NamespaceException, RepositoryException
-    {
-        // TODO Auto-generated method stub
-
-        throw new UnsupportedRepositoryOperationException("Session.setNamespacePrefix()");
-    }
 
     /**
      *  Saves all modified nodes that start with the given path prefix. This
@@ -411,6 +393,7 @@ public class SessionImpl implements Session
     public boolean itemExists( Path absPath )
         throws RepositoryException
     {
+        absPath = toCanonPath(absPath);
         return hasNode(absPath) || hasProperty(absPath);
     }
 
@@ -496,4 +479,102 @@ public class SessionImpl implements Session
         }
     }
 
+    /*  ========================================================================= */
+    /*  Namespaces */
+
+    public void setNamespacePrefix(String newPrefix, String existingUri) throws NamespaceException, RepositoryException
+    {
+        String oldPrefix = m_workspace.getNamespaceRegistry().getPrefix(existingUri);
+        
+        if( newPrefix.toLowerCase().startsWith("xml") )
+            throw new NamespaceException("No namespace starting with 'xml' may be remapped (6.3.3)");
+        
+        String currentUri = null;
+        try
+        {
+            currentUri = m_workspace.getNamespaceRegistry().getURI( newPrefix );
+        }
+        catch( NamespaceException e ) {}
+        
+        if( currentUri != null && currentUri.equals(existingUri) )
+        {
+            throw new NamespaceException("Existing prefix cannot be remapped (6.3.3)");
+        }
+        
+        m_sessionNamespaces.registerNamespace(newPrefix, existingUri );
+    }
+
+    public String getNamespacePrefix(String uri) throws NamespaceException, RepositoryException
+    {
+        try
+        {
+            return m_sessionNamespaces.getPrefix(uri);
+        }
+        catch( NamespaceException e )
+        {
+            return m_workspace.getNamespaceRegistry().getPrefix(uri);
+        }
+    }
+
+    public String[] getNamespacePrefixes() throws RepositoryException
+    {
+        TreeSet<String> result = new TreeSet<String>();
+        
+        String[] uris = m_workspace.getNamespaceRegistry().getURIs();
+        String[] uris2 = m_sessionNamespaces.getURIs();
+        
+        TreeSet<String> uriCol = new TreeSet<String>();
+        uriCol.addAll( Arrays.asList(uris) );
+        uriCol.addAll( Arrays.asList(uris2) );
+
+        for( String s : uriCol )
+        {
+            result.add( getNamespacePrefix(s) );
+        }
+
+        return result.toArray(new String[0]);
+    }
+
+    public String getNamespaceURI(String prefix) throws NamespaceException, RepositoryException
+    {
+        try
+        {
+            return m_sessionNamespaces.getURI(prefix);
+        }
+        catch( NamespaceException e )
+        {
+            return m_workspace.getNamespaceRegistry().getURI(prefix);
+        }
+    }
+
+    /**
+     *  Remaps the path using the local mapping into global
+     *  namespace.
+     *  
+     *  @param path Original path
+     *  @return A path with the original mappings.
+     */
+    Path toCanonPath( Path path )
+    {
+        String[] newcomponents = new String[path.depth()];
+        
+        for( int i = 0; i < path.depth(); i++ )
+        {
+            String c = path.getComponent(i);
+            
+            try
+            {
+                c = m_sessionNamespaces.toQName(c);
+                
+                c = m_workspace.fromQName(c);
+            }
+            catch( Exception e )
+            {
+            }
+            
+            newcomponents[i] = c;
+        }
+        
+        return new Path(newcomponents,path.isAbsolute());
+    }
 }

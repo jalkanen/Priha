@@ -127,7 +127,7 @@ public class WorkspaceImpl
         return m_name;
     }
 
-    public NamespaceRegistryImpl getNamespaceRegistry() throws RepositoryException
+    public GlobalNamespaceRegistryImpl getNamespaceRegistry() throws RepositoryException
     {
         return m_session.getRepository().getGlobalNamespaceRegistry();
     }

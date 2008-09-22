@@ -44,7 +44,7 @@ public abstract class ItemImpl implements Item
     public ItemImpl(SessionImpl session, Path path)
     {
         m_session = session;
-        m_path = path;
+        m_path = session.toCanonPath( path );
         m_name = m_path.getLastComponent();
     }
 

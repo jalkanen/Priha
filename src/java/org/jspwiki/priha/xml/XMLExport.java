@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 import javax.jcr.*;
 
-import org.jspwiki.priha.core.NamespaceRegistryImpl;
+import org.jspwiki.priha.core.GlobalNamespaceRegistryImpl;
 import org.jspwiki.priha.core.PropertyImpl;
 import org.jspwiki.priha.core.SessionImpl;
 import org.jspwiki.priha.util.Base64;
@@ -65,11 +65,11 @@ public class XMLExport
     {
         contentHandler.startDocument();
         
-        contentHandler.startPrefixMapping(m_session.getNamespacePrefix( NamespaceRegistryImpl.NS_JCP_SV ), 
-                                          NamespaceRegistryImpl.NS_JCP_SV);
-        contentHandler.startPrefixMapping("jcr", NamespaceRegistryImpl.NS_JCP);
-        contentHandler.startPrefixMapping("mix", NamespaceRegistryImpl.NS_JCP_MIX);
-        contentHandler.startPrefixMapping("nt",  NamespaceRegistryImpl.NS_JCP_NT);
+        contentHandler.startPrefixMapping(m_session.getNamespacePrefix( GlobalNamespaceRegistryImpl.NS_JCP_SV ), 
+                                          GlobalNamespaceRegistryImpl.NS_JCP_SV);
+        contentHandler.startPrefixMapping("jcr", GlobalNamespaceRegistryImpl.NS_JCP);
+        contentHandler.startPrefixMapping("mix", GlobalNamespaceRegistryImpl.NS_JCP_MIX);
+        contentHandler.startPrefixMapping("nt",  GlobalNamespaceRegistryImpl.NS_JCP_NT);
         
         exportElement(absPath, contentHandler, skipBinary, noRecurse);
 

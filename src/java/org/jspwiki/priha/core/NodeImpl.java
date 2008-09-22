@@ -723,6 +723,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                                                        ConstraintViolationException,
                                                                        RepositoryException
     {
+        if( value.getType() != type )
+        {
+            throw new ConstraintViolationException("Type of the Value and the type parameter must match.");
+        }
+        
         PropertyImpl p = prepareProperty( name, value );
 
         p.setValue(value);

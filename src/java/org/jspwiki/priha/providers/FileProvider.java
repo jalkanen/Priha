@@ -444,7 +444,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             BufferedWriter out = null;
             try
             {
-                System.out.println("Writing uuid "+f.getAbsolutePath()+" => "+property.getInternalPath().getParentPath().toString());
+                // System.out.println("Writing uuid "+f.getAbsolutePath()+" => "+property.getInternalPath().getParentPath().toString());
                 out = new BufferedWriter( new FileWriter(f) );
                 
                 out.write( property.getInternalPath().getParentPath().toString() );
