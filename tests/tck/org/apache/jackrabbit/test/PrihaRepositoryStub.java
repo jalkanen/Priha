@@ -4,8 +4,8 @@ import java.util.Properties;
 
 import javax.jcr.*;
 
-import org.jspwiki.priha.RepositoryManager;
-import org.jspwiki.priha.core.RepositoryImpl;
+import org.priha.RepositoryManager;
+import org.priha.core.RepositoryImpl;
 
 public class PrihaRepositoryStub extends RepositoryStub
 {

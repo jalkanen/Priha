@@ -76,7 +76,7 @@ a FileProvider to store your large files (stored in the attachments workspace).
    priha.provider.myProvider.class = org.mycompany.priha.MyProvider
    priha.provider.myProvider.workspaces = default
    
-   priha.provider.myOtherProvider.class = org.jspwiki.priha.providers.FileProvider
+   priha.provider.myOtherProvider.class = org.priha.providers.FileProvider
    priha.provider.myOtherProvider.workspaces = attachments
    
 Then we'll set up the provider list:
@@ -96,7 +96,7 @@ be more efficient.
 The cache is set up per provider.  Here's how you configure Ehcache using
 the built-in EhCachingProvider and the built-in default provider:
 
-   priha.provider.ehcache.class = org.jspwiki.priha.providers.EhCachingProvider
+   priha.provider.ehcache.class = org.priha.providers.EhCachingProvider
    priha.provider.ehcache.realProvider = defaultProvider
    priha.provider.ehcache.size = 5000
 
@@ -108,10 +108,10 @@ all calls to a FileProvider uncached.
 
    priha.provider.myProvider.class = org.mycompany.priha.MyProvider
    
-   priha.provider.myOtherProvider.class = org.jspwiki.priha.providers.FileProvider
+   priha.provider.myOtherProvider.class = org.priha.providers.FileProvider
    priha.provider.myOtherProvider.workspaces = largefiles
 
-   priha.provider.ehcache.class = org.jspwiki.priha.providers.EhCachingProvider
+   priha.provider.ehcache.class = org.priha.providers.EhCachingProvider
    priha.provider.ehcache.realProvider = myProvider
    priha.provider.ehcache.size = 1000
    priha.provider.ehcache.workspaces = default

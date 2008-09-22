@@ -38,7 +38,7 @@
          ================================= -->
     <target name="jar" depends="compile" description="Builds the main JAR file">
      
-        <java classpath="build" outputproperty="version" classname="org.jspwiki.priha.Release" 
+        <java classpath="build" outputproperty="version" classname="org.priha.Release" 
               args="-versiononly">
         </java>   
      
@@ -46,7 +46,7 @@
         
         <jar destfile="build/priha-${version}.jar">
            <fileset dir="build">
-              <include name="org/jspwiki/**"/>
+              <include name="org/priha/**"/>
               <exclude name="**/*Test.class"/>
            </fileset>
            <fileset dir="src/java">
@@ -62,7 +62,7 @@
              <attribute name="Implementation-Version" value="${version}"/>
              <attribute name="Implementation-URL" value="http://www.ecyrd.com/"/>
              <attribute name="Specification-Title" value="JSR-170 Java Content Repository"/>
-             <attribute name="Main-Class" value="org/jspwiki/priha/Release"/>
+             <attribute name="Main-Class" value="org/priha/Release"/>
            </manifest>   
         </jar>   
     </target>
@@ -94,7 +94,7 @@
        <mkdir dir="doc/javadoc"/>
        <javadoc destdir="doc/javadoc">
           <packageset dir="src/java">
-            <include name="org/jspwiki/**" />
+            <include name="org/priha/**" />
           </packageset>
           <classpath>
              <fileset dir="lib">
