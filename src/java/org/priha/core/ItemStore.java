@@ -23,6 +23,7 @@ import java.util.List;
 import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
+import javax.xml.namespace.QName;
 
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
@@ -66,5 +67,5 @@ public interface ItemStore
      */
     Collection<? extends PropertyImpl> getReferences(WorkspaceImpl w, String uuid) throws RepositoryException;
 
-    List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException;
+    List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException;
 }

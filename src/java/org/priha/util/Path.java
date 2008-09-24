@@ -22,6 +22,7 @@ package org.priha.util;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
@@ -317,6 +318,22 @@ public class Path implements Comparable, Serializable
         return m_cachedString;
     }
 
+    /**
+     *  Adds a component to the path (since QNames are not paths),
+     *  and returns a new Path.
+     *  
+     *  @param component Component to add at the end of the Path.
+     *  @return A new Path with the component added.
+     */
+    public final Path resolve( QName component )
+    {
+        List<QName> list = Arrays.asList( m_components );
+        
+        list.add(  component );
+        
+        return new Path( list.toArray(new QName[list.size()]), m_isAbsolute );
+    }
+    
     /**
      *  Resolves a relative Path against this Path.
      *

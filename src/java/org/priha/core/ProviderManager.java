@@ -26,6 +26,7 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.VersionException;
+import javax.xml.namespace.QName;
 
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.GenericNodeType;
@@ -308,7 +309,7 @@ public class ProviderManager implements ItemStore
         return ni;
     }
 
-    private PropertyImpl loadProperty(WorkspaceImpl ws, NodeImpl ni, Path ptPath, String name)
+    private PropertyImpl loadProperty(WorkspaceImpl ws, NodeImpl ni, Path ptPath, QName name)
         throws RepositoryException,
         ValueFormatException,
         VersionException,
@@ -322,7 +323,7 @@ public class ProviderManager implements ItemStore
         
         boolean multiple = values instanceof ValueImpl[];
    
-        PropertyDefinition pd = ((GenericNodeType)ni.getPrimaryNodeType()).findPropertyDefinition(name,multiple);
+        PropertyDefinition pd = ni.getPrimaryNodeType().findPropertyDefinition(RepositoryImpl.getGlobalNamespaceRegistry().fromQName(name),multiple);
         p.setDefinition( pd );
         
         if( multiple )
@@ -420,13 +421,13 @@ public class ProviderManager implements ItemStore
         {
             NodeImpl nd = loadNode( ws, path.getParentPath() );
             
-            result.add( nd.getProperty(path.getLastComponent()) );
+            result.add( nd.getProperty(ws.getSession().fromQName(path.getLastComponent())) );
         }
         
         return result;
     }
 
-    public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
+    public List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         return getProvider(ws,path).listProperties(ws, path);
     }

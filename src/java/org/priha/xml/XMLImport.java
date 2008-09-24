@@ -15,6 +15,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.priha.core.JCRConstants;
+import org.priha.core.SessionImpl;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.nodetype.GenericNodeType;
 import org.priha.util.Base64;
@@ -30,7 +31,7 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class XMLImport extends DefaultHandler
 {
-    private Session m_session;
+    private SessionImpl m_session;
     private boolean m_immediateCommit;
     private Path    m_currentPath;
     private int     m_uuidBehavior;
@@ -43,7 +44,7 @@ public class XMLImport extends DefaultHandler
     
     private static Logger log = Logger.getLogger(XMLImport.class.getName());
     
-    public XMLImport( Session session, boolean immediateCommit, Path startPath, int uuidBehavior ) throws RepositoryException
+    public XMLImport( SessionImpl session, boolean immediateCommit, Path startPath, int uuidBehavior ) throws RepositoryException
     {
         if( !session.getRootNode().hasNode(startPath.toString()) )
             throw new PathNotFoundException("The parent path does not exist, so cannot import to it!");
@@ -184,7 +185,7 @@ public class XMLImport extends DefaultHandler
             }
             
             m_currentStore.m_nodeName = nodeName;
-            m_currentPath = m_currentPath.resolve(nodeName);
+            m_currentPath = m_currentPath.resolve(m_session.toQName( nodeName ) );
             
             return;
         }
@@ -228,7 +229,7 @@ public class XMLImport extends DefaultHandler
                 if( m_currentStore != null ) deserializeStore( m_currentStore );
 
                 m_currentNode = m_currentNode.getParent();
-                m_currentPath = m_currentPath.resolve("..");
+                m_currentPath = m_currentPath.getParentPath();
                 m_currentStore = null;
             }
             catch (RepositoryException e)

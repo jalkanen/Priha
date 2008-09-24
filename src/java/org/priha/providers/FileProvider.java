@@ -25,6 +25,7 @@ import java.util.Properties;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
+import javax.xml.namespace.QName;
 
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
@@ -165,7 +166,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         for( File f : files )
         {
-            Path newPath = startPath.resolve( f.getName() );
+            Path newPath = startPath.resolve( new QName(f.getName()) ); // FIXME: WRONG!
 
             if( f.isDirectory() )
             {
@@ -268,12 +269,12 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return list;
     }
 
-    public List<String> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
+    public List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         m_hitCount[Count.ListProperties.ordinal()]++;
 
         File nodeDir = getNodeDir( ws, path.toString() );
-        List<String> proplist = new ArrayList<String>();
+        List<QName> proplist = new ArrayList<QName>();
         
         try
         {
@@ -294,8 +295,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
                         String qname =  props.getProperty("qname");
                 
-                        qname = ws.fromQName(qname);
-                        proplist.add( qname );
+                        proplist.add( QName.valueOf(qname) );
                     }
                     finally
                     {
@@ -369,13 +369,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
         saveUuidShortcut(property);
         
-        String qname = ws.toQName(property.getName());
+        QName qname = property.getQName();
         
         File inf = new File( nodeDir, property.getName()+".info" );
         
         Properties props = new Properties();
         
-        props.setProperty( "qname", qname );
+        props.setProperty( "qname", qname.toString() );
         props.setProperty( "type",  PropertyType.nameFromValue( property.getType() ) );
         props.setProperty( "multiple", property.getDefinition().isMultiple() ? "true" : "false" );
 
@@ -511,9 +511,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
         else if( propType.equals(PropertyType.TYPENAME_NAME) )
         {
-            String val = readContentsAsString(propFile);
-            val = ws.fromQName( val );
-            value = vf.createValue( val, PropertyType.NAME );
+            String qnameStr = readContentsAsString(propFile);
+            QName qn = QName.valueOf( qnameStr );
+            value = vf.createValue( qn, PropertyType.NAME );
         }
         else if( propType.equals(PropertyType.TYPENAME_PATH ))
         {

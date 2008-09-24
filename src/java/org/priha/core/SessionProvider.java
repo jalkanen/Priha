@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import javax.jcr.*;
+import javax.xml.namespace.QName;
 
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
@@ -351,7 +352,7 @@ public class SessionProvider
 
     public Collection<? extends PropertyImpl> getProperties(Path path) throws RepositoryException
     {
-        HashMap<String,PropertyImpl> result = new HashMap<String,PropertyImpl>();
+        HashMap<QName,PropertyImpl> result = new HashMap<QName,PropertyImpl>();
         
         //
         //  Find the node first
@@ -362,9 +363,9 @@ public class SessionProvider
         {
             ni = (NodeImpl) m_source.getItem( m_workspace, path );
             
-            List<String> propertyNames = m_source.listProperties( m_workspace, path );
+            List<QName> propertyNames = m_source.listProperties( m_workspace, path );
             
-            for( String pName : propertyNames )
+            for( QName pName : propertyNames )
             {
                 result.put( pName, (PropertyImpl)m_source.getItem( m_workspace, path.resolve(pName) ) );
             }

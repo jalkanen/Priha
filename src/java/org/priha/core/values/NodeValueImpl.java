@@ -25,6 +25,7 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 
 import org.priha.core.NodeImpl;
+import org.priha.util.Path;
 
 /**
  *  Superclass of all classes which reference a Node
@@ -33,20 +34,11 @@ import org.priha.core.NodeImpl;
 public abstract class NodeValueImpl extends ValueImpl implements Value, Serializable
 {
     protected int m_type;
-    protected String m_value;
+    protected Path m_value;
     
     protected NodeValueImpl( NodeImpl value, int type )
     {
-        try
-        {
-            m_value = value.getPath();
-        }
-        catch (RepositoryException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        
+        m_value = value.getInternalPath();
         m_type  = type;
     }
 

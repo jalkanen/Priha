@@ -2,17 +2,32 @@ package org.priha.version;
 
 import java.util.UUID;
 
+import javax.jcr.NamespaceException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 
 import org.priha.core.NodeImpl;
+import org.priha.core.RepositoryImpl;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
 
 public class VersionManager
 {
-    private static final Path VERSIONPATH = PathFactory.getPath("/jcr:system/jcr:versionStorage");
+    private static Path c_versionPath;
+
+    public VersionManager()
+    {
+        try
+        {
+            c_versionPath = PathFactory.getPath(RepositoryImpl.getGlobalNamespaceRegistry(),
+                                                "/jcr:system/jcr:versionStorage");
+        }
+        catch( RepositoryException e )
+        {
+            c_versionPath = null;
+        }
+    }
     
     /**
      *  Returns true, if the path refers to a versioned object.
@@ -21,7 +36,7 @@ public class VersionManager
      */
     public static boolean isVersionHistoryPath( Path p )
     {
-        return VERSIONPATH.isParentOf( p );
+        return c_versionPath.isParentOf( p );
     }
     
     /**
@@ -29,12 +44,15 @@ public class VersionManager
      *  
      *  @param uuid
      *  @return
+     * @throws RepositoryException 
+     * @throws NamespaceException 
      */
-    public static Path getVersionStoragePath( String uuid )
+    public static Path getVersionStoragePath( String uuid ) throws NamespaceException, RepositoryException
     {
         //String hashpath = uuid.substring(0,3) + "/" + uuid.substring(4,7) + "/" + uuid;
         String hashpath = uuid;
-        Path p = PathFactory.getPath("/jcr:system/jcr:versionStorage/"+hashpath);
+        Path p = PathFactory.getPath(RepositoryImpl.getGlobalNamespaceRegistry(),
+                                     "/jcr:system/jcr:versionStorage/"+hashpath);
         
         return p;
     }

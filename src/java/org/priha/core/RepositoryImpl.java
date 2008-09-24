@@ -35,7 +35,7 @@ public class RepositoryImpl implements Repository
 {
     public static final String   DEFAULT_WORKSPACE = "default";
 
-    private GlobalNamespaceRegistryImpl    m_namespaceRegistry;
+    private static GlobalNamespaceRegistryImpl c_namespaceRegistry = new GlobalNamespaceRegistryImpl();
 
     /**
      *  Defines which paths are attempted to locate the default property file.
@@ -189,14 +189,9 @@ public class RepositoryImpl implements Repository
         return s;
     }
     
-    public GlobalNamespaceRegistryImpl getGlobalNamespaceRegistry()
+    public static GlobalNamespaceRegistryImpl getGlobalNamespaceRegistry()
     {
-        if( m_namespaceRegistry == null )
-        {
-            m_namespaceRegistry = new GlobalNamespaceRegistryImpl();
-        }
-
-        return m_namespaceRegistry;
+        return c_namespaceRegistry;
     }
 
     /**

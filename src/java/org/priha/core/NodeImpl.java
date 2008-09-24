@@ -177,7 +177,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             if( primaryNodeTypeName == null )
             {
-                assignedType = parent.assignChildType(relPath);
+                assignedType = parent.assignChildType(absPath.getLastComponent());
             }
             else
             {
@@ -208,7 +208,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //
             //  Check if parent allows adding this.
             //
-            if( !parent.getDefinition().getDeclaringNodeType().canAddChildNode(absPath.getLastComponent()) )
+            if( !parent.getDefinition().getDeclaringNodeType().canAddChildNode(getSession().fromQName(absPath.getLastComponent())) )
             {
                 throw new ConstraintViolationException("Parent node does not allow adding nodes of name "+absPath.getLastComponent());
             }
@@ -403,7 +403,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         throw new ItemNotFoundException( getPath()+" does not declare a primary item" );
     }
 
-    public NodeType getPrimaryNodeType() throws RepositoryException
+    public GenericNodeType getPrimaryNodeType() throws RepositoryException
     {
         return m_primaryType;
     }
@@ -1098,7 +1098,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             {
                 GenericNodeType mytype = (GenericNodeType)getPrimaryNodeType();
 
-                m_definition = ((GenericNodeType)getParent().getPrimaryNodeType()).findNodeDefinition( mytype.getName() );
+                m_definition = ((GenericNodeType)getParent().getPrimaryNodeType()).findNodeDefinition( getSession().toQName( mytype.getName() ) );
             }
             else
             {

@@ -22,6 +22,7 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
+import javax.xml.namespace.QName;
 
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
@@ -101,9 +102,9 @@ public abstract class ItemImpl implements Item
      *  @throws NamespaceException If the namespace cannot be parsed.
      *  @throws RepositoryException If something else goes wrong.
      */
-    public String getQName() throws NamespaceException, RepositoryException
+    public QName getQName() throws NamespaceException, RepositoryException
     {
-        String qname = m_path.getLastComponent().toString();
+        QName qname = m_path.getLastComponent();
         
         return qname;
     }

@@ -17,11 +17,15 @@
  */
 package org.priha.nodetype;
 
+import javax.jcr.NamespaceException;
+import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.namespace.QName;
+
+import org.priha.core.RepositoryImpl;
 
 /**
  *  Stores the Node Types.
@@ -49,7 +53,14 @@ public class GenericNodeType
 
     public boolean canAddChildNode(String childNodeName)
     {
-        NodeDefinition nd = findNodeDefinition(childNodeName);
+        NodeDefinition nd = null;
+        try
+        {
+            nd = findNodeDefinition(RepositoryImpl.getGlobalNamespaceRegistry().toQName( childNodeName ));
+        }
+        catch( RepositoryException e )
+        {
+        }
         
         if( nd == null ) return false;
         
@@ -64,7 +75,15 @@ public class GenericNodeType
 
     public boolean canRemoveItem(String itemName)
     {
-        NodeDefinition nd = findNodeDefinition(itemName);
+        NodeDefinition nd;
+        try
+        {
+            nd = findNodeDefinition(RepositoryImpl.getGlobalNamespaceRegistry().toQName(itemName));
+        }
+        catch( RepositoryException e )
+        {
+            return false;
+        }
         
         if( nd != null )
         {

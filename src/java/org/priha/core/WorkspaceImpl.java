@@ -118,7 +118,7 @@ public class WorkspaceImpl
     // FIXME: SuperUserSession leaks.
     public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior) throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, AccessDeniedException, RepositoryException
     {
-        Session suSession = m_session.getRepository().superUserLogin( m_name );
+        SessionImpl suSession = m_session.getRepository().superUserLogin( m_name );
         
         XMLImport importer = new XMLImport( suSession,true, PathFactory.getPath(m_session,parentAbsPath), uuidBehavior );
         
@@ -161,7 +161,7 @@ public class WorkspaceImpl
 
     public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, InvalidSerializedDataException, LockException, AccessDeniedException, RepositoryException
     {
-        Session suSession = m_session.getRepository().superUserLogin( m_name );
+        SessionImpl suSession = m_session.getRepository().superUserLogin( m_name );
         
         XMLImport importer = new XMLImport( suSession, true, PathFactory.getPath(m_session,parentAbsPath), uuidBehavior );
         

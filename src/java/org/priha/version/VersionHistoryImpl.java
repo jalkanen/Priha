@@ -72,7 +72,7 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
 
     public Version getVersion(String versionName) throws VersionException, RepositoryException
     {
-        Path p = VersionManager.getVersionStoragePath( getVersionableUUID() ).resolve(versionName);
+        Path p = VersionManager.getVersionStoragePath( getVersionableUUID() ).resolve(getSession(),versionName);
         
         if( m_session.itemExists(p) )
         {
