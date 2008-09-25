@@ -484,7 +484,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      */
     private void autoCreateProperties(NodeType nt) throws RepositoryException, ValueFormatException, VersionException, LockException, ConstraintViolationException
     {
-        ValueFactoryImpl vfi = ValueFactoryImpl.getInstance();
+        ValueFactoryImpl vfi = m_session.getValueFactory();
         
         for( PropertyDefinition pd : nt.getPropertyDefinitions() )
         {
@@ -825,7 +825,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         PropertyImpl prop = prepareProperty(name,value);
         
-        prop.loadValue( ValueFactoryImpl.getInstance().createValue(value,type) );
+        prop.loadValue( m_session.getValueFactory().createValue(value,type) );
         
         return prop;
     }
@@ -859,7 +859,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         try
         {
-            Value val = ValueFactoryImpl.getInstance().createValue( value, type );
+            Value val = m_session.getValueFactory().createValue( value, type );
             return setProperty( name, val );
         }
         catch( ValueFormatException e )
@@ -1232,7 +1232,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                               LockException,
                                               RepositoryException
     {
-        ValueFactory vf = ValueFactoryImpl.getInstance();
+        ValueFactory vf = m_session.getValueFactory();
 
         NodeType mixin = getNodeTypeManager().getNodeType(mixinName);
 
@@ -1574,7 +1574,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             Value[] s = pred.getProperty("jcr:successors").getValues();
             
             List<Value> l = Arrays.asList(s);
-            l.add( ValueFactoryImpl.getInstance().createValue(v) );
+            l.add( m_session.getValueFactory().createValue(v) );
 
             pred.setProperty("jcr:successors",l.toArray(s));
         }

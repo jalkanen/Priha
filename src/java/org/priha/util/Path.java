@@ -63,12 +63,14 @@ public class Path implements Comparable, Serializable
     }
     
     /** Use only internally when you know you don't have namespaces. */
-    private Path(String s)
+    private Path(String abspath)
     {
+        if( abspath.length() > 0 && abspath.charAt(0) == '/' ) m_isAbsolute = true;
+
         QName[] c = null;
         try
         {
-            c = parsePath(null,s);
+            c = parsePath( null, abspath );
         }
         catch(Exception e) {}
         
@@ -142,6 +144,12 @@ public class Path implements Comparable, Serializable
     {
         ArrayList<QName> ls = new ArrayList<QName>();
 
+        //
+        //  Root is a special case which cannot be parsed by below
+        //  code.
+        //
+        //if( path.equals("/") ) return new QName[] { new QName("/") };
+        
         int start = 0, end = 0;
         while( (end = path.indexOf('/',start)) != -1 )
         {

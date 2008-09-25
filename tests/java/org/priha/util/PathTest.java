@@ -12,6 +12,11 @@ public class PathTest extends TestCase
 {
     private NamespaceAware m_nsa = new GlobalNamespaceRegistryImpl();
     
+    public void testRoot()
+    {
+        assertEquals("/", Path.ROOT.toString());
+    }
+    
     public void testPath1()
         throws Exception
     {

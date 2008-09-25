@@ -42,7 +42,6 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     private Multi              m_multi = Multi.UNDEFINED;
     PropertyDefinition         m_definition;
     int                        m_type = PropertyType.UNDEFINED;
-    ValueFactoryImpl           m_valueFactory = ValueFactoryImpl.getInstance();
     
     public PropertyImpl( SessionImpl session, Path path, PropertyDefinition propDef )
     {
@@ -64,7 +63,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     {
         super( pi, session );
         
-        m_value = ValueFactoryImpl.getInstance().cloneValues( pi.m_value );
+        m_value = session.getValueFactory().cloneValues( pi.m_value );
         m_multi = pi.m_multi;
         m_definition = pi.m_definition;
         m_type = pi.m_type;
@@ -195,7 +194,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         //
         //  Clones the value as per the Javadoc
         //
-        return ValueFactoryImpl.getInstance().createValue( m_value[0] );
+        return getSession().getValueFactory().createValue( m_value[0] );
     }
 
     public Value[] getValues() throws ValueFormatException, RepositoryException
@@ -203,7 +202,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( m_multi != Multi.MULTI )
             throw new ValueFormatException("Attempted to get a MULTI Value object from a SINGLE property "+m_path);
 
-        return ValueFactoryImpl.getInstance().cloneValues(m_value);
+        return m_session.getValueFactory().cloneValues(m_value);
     }
 
     /**
@@ -339,7 +338,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             remove();
             return;
         }
-        setValue( m_valueFactory.createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.STRING : m_type ) );
+        setValue( m_session.getValueFactory().createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.STRING : m_type ) );
     }
 
     public void setValue(String[] values)
@@ -364,7 +363,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         for( int i = 0; i < values.length; i++ )
         {
             if( values[i] != null )
-                ls.add(ValueFactoryImpl.getInstance().createValue( values[i] ));
+                ls.add( m_session.getValueFactory().createValue( values[i] ));
         }
         m_type = PropertyType.STRING;
         setValue( ls.toArray( new Value[ls.size()] ) );
@@ -383,7 +382,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             return;
         }
 
-        setValue( m_valueFactory.createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.BINARY : m_type ) );
+        setValue( m_session.getValueFactory().createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.BINARY : m_type ) );
     }
 
     public void setValue(long value)
@@ -393,7 +392,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                         ConstraintViolationException,
                                         RepositoryException
     {
-        setValue( m_valueFactory.createValue(value) );
+        setValue( m_session.getValueFactory().createValue(value) );
     }
 
     public void setValue(double value)
@@ -403,7 +402,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                           ConstraintViolationException,
                                           RepositoryException
     {
-        setValue( m_valueFactory.createValue(value) );
+        setValue( m_session.getValueFactory().createValue(value) );
     }
 
     public void setValue(Calendar value)
@@ -417,7 +416,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         {
             remove();
         }
-        setValue( m_valueFactory.createValue(value) );
+        setValue( m_session.getValueFactory().createValue(value) );
     }
 
     public void setValue(boolean value)
@@ -427,7 +426,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                            ConstraintViolationException,
                                            RepositoryException
     {
-        setValue( m_valueFactory.createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.BOOLEAN : m_type ) );
+        setValue( m_session.getValueFactory().createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.BOOLEAN : m_type ) );
     }
 
     public void setValue(Node value)
@@ -445,7 +444,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         {
             try
             {
-                setValue( m_valueFactory.createValue(value.getUUID(), PropertyType.REFERENCE) );
+                setValue( m_session.getValueFactory().createValue(value.getUUID(), PropertyType.REFERENCE) );
             }
             catch( UnsupportedRepositoryOperationException e )
             {
@@ -463,7 +462,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         }
         else
         {
-            setValue( m_valueFactory.createValue(value,type) );
+            setValue( m_session.getValueFactory().createValue(value,type) );
         }
     }
 

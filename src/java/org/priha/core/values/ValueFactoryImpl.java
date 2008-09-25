@@ -24,22 +24,18 @@ import java.util.Calendar;
 import javax.jcr.*;
 
 import org.priha.core.NodeImpl;
+import org.priha.core.SessionImpl;
 import org.priha.core.binary.BinarySource;
 import org.priha.util.FileUtil;
 
 
 public class ValueFactoryImpl implements ValueFactory
 {
-    private static ValueFactoryImpl c_factory = null;
+    private SessionImpl m_session;
     
-    public static ValueFactoryImpl getInstance()
+    public ValueFactoryImpl( SessionImpl session )
     {
-        if( c_factory == null )
-        {
-            c_factory = new ValueFactoryImpl();
-        }
-        
-        return c_factory;
+        m_session = session;
     }
     
     public ValueImpl createValue(Value value) throws ValueFormatException, IllegalStateException, RepositoryException
@@ -56,10 +52,10 @@ public class ValueFactoryImpl implements ValueFactory
                 return new LongValueImpl( value.getLong() );
                 
             case PropertyType.NAME:
-                return new NameValueImpl( value.getString() );
+                return new NameValueImpl( m_session, value.getString() );
                 
             case PropertyType.PATH:
-                return new PathValueImpl( value.getString() );
+                return new PathValueImpl( m_session, value.getString() );
                 
             case PropertyType.REFERENCE:
                 return new ReferenceValueImpl( value.getString() );
@@ -170,10 +166,10 @@ public class ValueFactoryImpl implements ValueFactory
                     return new CalendarValueImpl(FileUtil.readContents(value, "UTF-8"));
 
                 case PropertyType.NAME:
-                    return new NameValueImpl(FileUtil.readContents(value, "UTF-8"));
+                    return new NameValueImpl(m_session,FileUtil.readContents(value, "UTF-8"));
 
                 case PropertyType.PATH:
-                    return new PathValueImpl(FileUtil.readContents(value, "UTF-8"));
+                    return new PathValueImpl(m_session,FileUtil.readContents(value, "UTF-8"));
 
                 case PropertyType.REFERENCE:
                     return new ReferenceValueImpl(FileUtil.readContents(value, "UTF-8"));
@@ -188,6 +184,10 @@ public class ValueFactoryImpl implements ValueFactory
         catch (IOException e)
         {
             throw new ValueFormatException("Unable to read data from binary stream");
+        }
+        catch( RepositoryException e )
+        {
+            throw new ValueFormatException("Unable to create value "+e.getMessage());
         }
         
         throw new ValueFormatException("Illegal type "+PropertyType.nameFromValue(type));
@@ -210,10 +210,17 @@ public class ValueFactoryImpl implements ValueFactory
                 return new CalendarValueImpl(value);
                 
             case PropertyType.NAME:
-                return new NameValueImpl(value);
+                try
+                {
+                    return new NameValueImpl(m_session,value);
+                }
+                catch( RepositoryException e1 )
+                {
+                    throw new ValueFormatException("Cannot create Name "+e1.getMessage());
+                }
                 
             case PropertyType.PATH:
-                return new PathValueImpl(value);
+                return new PathValueImpl(m_session,value);
                 
             case PropertyType.REFERENCE:
                 return new ReferenceValueImpl(value);

@@ -12,9 +12,6 @@ import junit.framework.TestSuite;
 
 import org.priha.RepositoryManager;
 import org.priha.TestUtil;
-import org.priha.core.RepositoryImpl;
-import org.priha.core.SessionImpl;
-import org.priha.core.values.ValueFactoryImpl;
 
 public class SessionImplTest extends TestCase
 {
@@ -44,8 +41,8 @@ public class SessionImplTest extends TestCase
 
         nd.setProperty("binaryprop", new ByteArrayInputStream("Barbabinary".getBytes()));
         
-        nd.setProperty("multiprop", new Value[] { ValueFactoryImpl.getInstance().createValue("pimpim&"),
-                                                  ValueFactoryImpl.getInstance().createValue("poppop\"")} );
+        nd.setProperty("multiprop", new Value[] { m_session.getValueFactory().createValue("pimpim&"),
+                                                  m_session.getValueFactory().createValue("poppop\"")} );
         m_session.save();
         
         ByteArrayOutputStream out = new ByteArrayOutputStream();

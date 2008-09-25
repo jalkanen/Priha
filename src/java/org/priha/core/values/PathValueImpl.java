@@ -19,29 +19,38 @@ package org.priha.core.values;
 
 import java.io.Serializable;
 
-import javax.jcr.PropertyType;
-import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
+import javax.jcr.*;
+import javax.jcr.nodetype.NodeType;
 
+import org.priha.core.namespace.NamespaceAware;
 import org.priha.util.InvalidPathException;
+import org.priha.util.Path;
+import org.priha.util.PathFactory;
 import org.priha.util.PathUtil;
 
-public class PathValueImpl extends NodeValueImpl implements Value, Serializable
+public class PathValueImpl extends ValueImpl implements Value, Serializable
 {
     private static final long serialVersionUID = -980121404025627369L;
 
-    public PathValueImpl(String value) throws ValueFormatException
+    private Path m_value;
+    
+    public PathValueImpl(NamespaceAware na, String value) throws ValueFormatException
     {
-        super( value, PropertyType.PATH );
-        
         try
         {
             PathUtil.validatePath(value);
+            m_value = PathFactory.getPath( na, value );
         }
-        catch (InvalidPathException e)
+        catch( RepositoryException e )
         {
             throw new ValueFormatException("Invalid path "+e.getMessage());
         }
+        
+    }
+
+    public int getType()
+    {
+        return PropertyType.PATH;
     }
 
 }

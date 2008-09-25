@@ -274,12 +274,12 @@ public class XMLImport extends DefaultHandler
                 if( m_currentProperty.m_propertyType == PropertyType.BINARY )
                 {
                     InputStream in = new Base64.InputStream( new ByteArrayInputStream(valueString.getBytes("UTF-8")) );
-                    v = ValueFactoryImpl.getInstance().createValue( in );
+                    v = m_session.getValueFactory().createValue( in );
                 }
                 else
                 {
-                    v = ValueFactoryImpl.getInstance().createValue( valueString, 
-                                                                    m_currentProperty.m_propertyType );
+                    v = m_session.getValueFactory().createValue( valueString, 
+                                                                 m_currentProperty.m_propertyType );
                 }
                 m_currentProperty.m_values.add( v );
             }
@@ -290,6 +290,10 @@ public class XMLImport extends DefaultHandler
             catch (UnsupportedEncodingException e)
             {
                 throw new SAXException("You can't be serious that your platform does not support UTF-8!?!");
+            }
+            catch( RepositoryException e )
+            {
+                throw new SAXException("Something horrible happened",e);
             }
         }
     }

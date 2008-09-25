@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 
 import javax.jcr.RepositoryException;
+import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 
 import org.priha.core.NodeImpl;
@@ -33,12 +34,14 @@ import org.priha.util.Path;
  */
 public abstract class NodeValueImpl extends ValueImpl implements Value, Serializable
 {
-    protected int m_type;
-    protected Path m_value;
+    protected int    m_type;
+    protected String m_value;
     
-    protected NodeValueImpl( NodeImpl value, int type )
+    protected NodeValueImpl( NodeImpl value, int type ) 
+        throws UnsupportedRepositoryOperationException, 
+               RepositoryException
     {
-        m_value = value.getInternalPath();
+        m_value = value.getUUID();
         m_type  = type;
     }
 

@@ -268,14 +268,14 @@ public class JdbcProvider implements RepositoryProvider
                         
                         in.read(ba);
                         
-                        v[i] = ValueFactoryImpl.getInstance().createValue( new MemoryBinarySource(ba).getStream(), type );
+                        v[i] = ws.getSession().getValueFactory().createValue( new MemoryBinarySource(ba).getStream(), type );
                     }
                     
                     return v;
                 }
                 else
                 {
-                    ValueImpl v = ValueFactoryImpl.getInstance().createValue( value.getBinaryStream(), type );
+                    ValueImpl v = ws.getSession().getValueFactory().createValue( value.getBinaryStream(), type );
             
                     return v;
                 }
@@ -468,7 +468,7 @@ public class JdbcProvider implements RepositoryProvider
                                              "VALUES (?,?,?,?,?,?)");
             
                 ps.setLong(1, id);
-                ps.setString(2, property.getQName());
+                ps.setString(2, property.getQName().toString());
                 ps.setInt(3, property.getType());
                 ps.setInt(4, bytes.length);
                 ps.setBytes(5, bytes);
@@ -481,7 +481,7 @@ public class JdbcProvider implements RepositoryProvider
                 ps.setInt(1, bytes.length);
                 ps.setBytes(2, bytes);
                 ps.setLong(3, id);
-                ps.setString(4, property.getQName());
+                ps.setString(4, property.getQName().toString());
             }
             
             int result = ps.executeUpdate();

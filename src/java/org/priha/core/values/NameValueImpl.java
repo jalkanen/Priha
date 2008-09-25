@@ -18,38 +18,32 @@
 package org.priha.core.values;
 
 import java.io.Serializable;
-import java.net.URI;
-import java.net.URISyntaxException;
 
-import javax.jcr.PropertyType;
-import javax.jcr.Value;
-import javax.jcr.ValueFormatException;
+import javax.jcr.*;
+import javax.xml.namespace.QName;
+
+import org.priha.core.namespace.NamespaceAware;
 
 public class NameValueImpl extends ValueImpl implements Value, Serializable
 {
     private static final long serialVersionUID = -5040292769406453341L;
 
+    private QName m_value; 
     
-    
-    public NameValueImpl(String value) throws ValueFormatException
+    public NameValueImpl(NamespaceAware na, String value) throws RepositoryException
     {
-        super( value, PropertyType.NAME );
-
-        try
-        {
-            @SuppressWarnings("unused")
-            URI uri = new URI( value );
-        }
-        catch (URISyntaxException e)
-        {
-            throw new ValueFormatException("Not in URI format");
-        } 
+        m_value = na.toQName( value );
     }
     
     @Override
     public String getString()
     {
-        return m_value;
+        return m_value.toString(); // FIXME: Not correct
+    }
+
+    public int getType()
+    {
+        return PropertyType.NAME;
     }
     
 }

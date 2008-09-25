@@ -29,7 +29,6 @@ import javax.jcr.*;
 import org.priha.core.JCRConstants;
 import org.priha.core.PropertyImpl;
 import org.priha.core.SessionImpl;
-import org.priha.core.namespace.GlobalNamespaceRegistryImpl;
 import org.priha.util.Base64;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -66,11 +65,11 @@ public class XMLExport
     {
         contentHandler.startDocument();
         
-        contentHandler.startPrefixMapping(m_session.getNamespacePrefix( GlobalNamespaceRegistryImpl.NS_JCP_SV ), 
-                                          GlobalNamespaceRegistryImpl.NS_JCP_SV);
-        contentHandler.startPrefixMapping("jcr", GlobalNamespaceRegistryImpl.NS_JCP);
-        contentHandler.startPrefixMapping("mix", GlobalNamespaceRegistryImpl.NS_JCP_MIX);
-        contentHandler.startPrefixMapping("nt",  GlobalNamespaceRegistryImpl.NS_JCP_NT);
+        contentHandler.startPrefixMapping(m_session.getNamespacePrefix( JCRConstants.NS_JCP_SV ), 
+                                          JCRConstants.NS_JCP_SV);
+        contentHandler.startPrefixMapping("jcr", JCRConstants.NS_JCP);
+        contentHandler.startPrefixMapping("mix", JCRConstants.NS_JCP_MIX);
+        contentHandler.startPrefixMapping("nt",  JCRConstants.NS_JCP_NT);
         
         exportElement(absPath, contentHandler, skipBinary, noRecurse);
 

@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import javax.jcr.*;
 import javax.xml.namespace.QName;
 
+import org.priha.core.JCRConstants;
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
@@ -81,6 +82,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     // FIXME: Should escape the path properly
     private String getPathFilename( String path )
     {
+        
         return path;
     }
 
@@ -106,7 +108,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      */
     private File getNodeDir( Workspace ws, String path )
     {
-        if( path.equals("/jcr:system") || path.startsWith("/jcr:system/" ) ) 
+        if( path.equals("/"+JCRConstants.NS_JCP+":system") || 
+            path.startsWith("/"+JCRConstants.NS_JCP+":system/" ) ) 
         {
             return new File( m_root, getPathFilename(path) );
         }
@@ -484,7 +487,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private ValueImpl prepareValue( WorkspaceImpl ws, File propFile, String propType )
         throws IOException, RepositoryException
     {
-        ValueFactoryImpl vf = ValueFactoryImpl.getInstance();
+        ValueFactoryImpl vf = ws.getSession().getValueFactory();
         ValueImpl value;
         
         if( propType.equals(PropertyType.TYPENAME_STRING) )
@@ -512,13 +515,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         else if( propType.equals(PropertyType.TYPENAME_NAME) )
         {
             String qnameStr = readContentsAsString(propFile);
-            QName qn = QName.valueOf( qnameStr );
-            value = vf.createValue( qn, PropertyType.NAME );
+            //QName qn = QName.valueOf( qnameStr );
+            value = vf.createValue( qnameStr, PropertyType.NAME );
         }
         else if( propType.equals(PropertyType.TYPENAME_PATH ))
         {
             String val = readContentsAsString(propFile);
-            val = ws.fromQName( val );
+            //val = ws.fromQName( val );
             value = vf.createValue( val, PropertyType.PATH );
         }
         else if( propType.equals(PropertyType.TYPENAME_REFERENCE ) )
@@ -712,7 +715,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             throw new ItemNotFoundException( "There is no item with UUID "+uuid+" in the repository.");
         }
         
-        return PathFactory.getPath(cachedPath);
+        return PathFactory.getPath(ws.getSession(),cachedPath);
     }
     
     private static class PropertyTypeFilter implements FilenameFilter 
@@ -741,9 +744,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             //
             //  List the properties
             //
-            List<String> propList = listProperties( ws, p );
+            List<QName> propList = listProperties( ws, p );
             
-            for( String property : propList )
+            for( QName property : propList )
             {
                 Path propertyPath = p.resolve(property);
                 

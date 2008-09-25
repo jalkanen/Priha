@@ -19,6 +19,7 @@ package org.priha.core.namespace;
 
 import javax.jcr.*;
 
+import org.priha.core.JCRConstants;
 import org.xml.sax.helpers.NamespaceSupport;
 
 /**
@@ -26,19 +27,14 @@ import org.xml.sax.helpers.NamespaceSupport;
  */
 public class GlobalNamespaceRegistryImpl extends NamespaceRegistryImpl implements NamespaceRegistry
 {
-    public static final String NS_JCP_SV  = "http://www.jcp.org/jcr/sv/1.0";
-    public static final String NS_JCP_MIX = "http://www.jcp.org/jcr/mix/1.0";
-    public static final String NS_JCP_NT  = "http://www.jcp.org/jcr/nt/1.0";
-    public static final String NS_JCP     = "http://www.jcp.org/jcr/1.0";
-    
     public GlobalNamespaceRegistryImpl()
     {
         super();
-        m_nsmap.put("jcr", NS_JCP);
-        m_nsmap.put("nt",  NS_JCP_NT);
-        m_nsmap.put("mix", NS_JCP_MIX);
+        m_nsmap.put("jcr", JCRConstants.NS_JCP);
+        m_nsmap.put("nt",  JCRConstants.NS_JCP_NT);
+        m_nsmap.put("mix", JCRConstants.NS_JCP_MIX);
         m_nsmap.put("xml", NamespaceSupport.XMLNS);
-        m_nsmap.put("sv",  NS_JCP_SV);
+        m_nsmap.put("sv",  JCRConstants.NS_JCP_SV);
         m_nsmap.put("", "");
     }
 

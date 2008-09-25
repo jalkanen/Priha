@@ -63,6 +63,8 @@ public class SessionImpl implements Session, NamespaceAware
     private Logger         log = Logger.getLogger( getClass().getName() );
     private boolean        m_isSuperSession = false;
     
+    private ValueFactoryImpl m_valueFactory = new ValueFactoryImpl(this);
+    
     protected SessionProvider m_provider;
    
     public SessionImpl( RepositoryImpl rep, Credentials creds, String name )
@@ -233,9 +235,9 @@ public class SessionImpl implements Session, NamespaceAware
         return "anonymous";
     }
 
-    public ValueFactory getValueFactory() throws UnsupportedRepositoryOperationException, RepositoryException
+    public ValueFactoryImpl getValueFactory() throws UnsupportedRepositoryOperationException, RepositoryException
     {
-        return ValueFactoryImpl.getInstance();
+        return m_valueFactory;
     }
 
     public WorkspaceImpl getWorkspace()
