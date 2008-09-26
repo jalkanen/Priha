@@ -23,7 +23,7 @@ import java.util.WeakHashMap;
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 
-import org.priha.core.namespace.NamespaceAware;
+import org.priha.core.namespace.NamespaceMapper;
 
 /**
  *  Gets Paths from a local storage.
@@ -46,7 +46,7 @@ public class PathFactory
      * @throws RepositoryException 
      * @throws NamespaceException 
      */
-    public static Path getPath(NamespaceAware ns, String path) throws NamespaceException, RepositoryException
+    public static Path getPath(NamespaceMapper ns, String path) throws NamespaceException, RepositoryException
     {
         Path result = null;
 /*        

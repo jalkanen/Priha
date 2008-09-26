@@ -35,7 +35,7 @@ import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.priha.core.locks.LockManager;
-import org.priha.core.namespace.NamespaceAware;
+import org.priha.core.namespace.NamespaceMapper;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.nodetype.GenericNodeType;
 import org.priha.util.InvalidPathException;
@@ -51,7 +51,7 @@ import org.xml.sax.SAXException;
  *  The SessionImpl class implements a JCR Session.  It is non thread safe,
  *  so each Thread must have its own Session.
  */
-public class SessionImpl implements Session, NamespaceAware
+public class SessionImpl implements Session, NamespaceMapper
 {
     private static final String JCR_SYSTEM = "jcr:system";
     private RepositoryImpl m_repository;

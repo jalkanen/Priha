@@ -28,7 +28,7 @@ import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 import javax.xml.namespace.QName;
 
-import org.priha.core.namespace.NamespaceAware;
+import org.priha.core.namespace.NamespaceMapper;
 
 /**
  *  Manages paths, which are a key ingredient in JCR.  A Path is an immutable
@@ -97,14 +97,14 @@ public class Path implements Comparable, Serializable
      * @throws RepositoryException 
      * @throws NamespaceException 
      */
-    public Path( NamespaceAware ns, String abspath ) throws NamespaceException, RepositoryException
+    public Path( NamespaceMapper ns, String abspath ) throws NamespaceException, RepositoryException
     {
         if( abspath.length() > 0 && abspath.charAt(0) == '/' ) m_isAbsolute = true;
 
         m_components = parsePath( ns, abspath );
     }
 
-    public Path( NamespaceAware ns, String pathStart, Path pathEnd ) throws NamespaceException, RepositoryException
+    public Path( NamespaceMapper ns, String pathStart, Path pathEnd ) throws NamespaceException, RepositoryException
     {
         if( pathStart.length() > 0 && pathStart.charAt(0) == '/' ) m_isAbsolute = true;
         QName[] start = parsePath( ns, pathStart );
@@ -131,7 +131,7 @@ public class Path implements Comparable, Serializable
      * @throws RepositoryException 
      * @throws NamespaceException 
      */
-    private QName cleanComponent(NamespaceAware ns, String s) throws NamespaceException, RepositoryException
+    private QName cleanComponent(NamespaceMapper ns, String s) throws NamespaceException, RepositoryException
     {
         if( s.endsWith("[1]") ) s = s.substring(0,s.length()-3);
         
@@ -140,7 +140,7 @@ public class Path implements Comparable, Serializable
         return q;
     }
     
-    private QName[] parsePath( NamespaceAware ns, String path ) throws NamespaceException, RepositoryException
+    private QName[] parsePath( NamespaceMapper ns, String path ) throws NamespaceException, RepositoryException
     {
         ArrayList<QName> ls = new ArrayList<QName>();
 
@@ -325,6 +325,24 @@ public class Path implements Comparable, Serializable
 
         return m_cachedString;
     }
+    
+    public final String toString( NamespaceMapper ns ) throws NamespaceException, RepositoryException
+    {
+        StringBuffer sb = new StringBuffer();
+        
+        if( isAbsolute() ) sb.append("/");
+        
+        for( QName q : m_components )
+        {
+            sb.append( ns.fromQName( q ) );
+            sb.append( '/' );
+        }
+        
+        if( depth() > 0 )
+            sb.deleteCharAt( sb.length() - 1 );
+        
+        return sb.toString();
+    }
 
     /**
      *  Adds a component to the path (since QNames are not paths),
@@ -350,7 +368,7 @@ public class Path implements Comparable, Serializable
      * @throws RepositoryException 
      * @throws NamespaceException 
      */
-    public final Path resolve(NamespaceAware ns, String relPath) throws NamespaceException, RepositoryException
+    public final Path resolve(NamespaceMapper ns, String relPath) throws NamespaceException, RepositoryException
     {
         ArrayList<QName> p    = new ArrayList<QName>();
         ArrayList<QName> list = new ArrayList<QName>();

@@ -8,7 +8,7 @@ import javax.xml.namespace.QName;
 
 import org.priha.util.Path;
 
-public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceAware
+public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
 {
     /** Maps prefixes to URIs.  Prefixes are always unique, therefore they are the keys */
     protected HashMap<String,String> m_nsmap = new HashMap<String,String>();

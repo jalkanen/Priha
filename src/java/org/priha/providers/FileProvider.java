@@ -18,6 +18,7 @@
 package org.priha.providers;
 
 import java.io.*;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
+import org.priha.util.TextUtil;
 
 /**
  *  A simple file system -based provider.  This is not particularly optimized,
@@ -49,7 +51,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     
     private long[] m_hitCount;
     
-    public FileProvider()
+    private Path m_systemPath;
+    
+    public FileProvider() throws RepositoryException
     {
         resetCounts();
     }
@@ -78,12 +82,15 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  Figures out the what the filename for a given path is. 
      *  @param path
      *  @return
+     * @throws RepositoryException 
+     * @throws NamespaceException 
      */
     // FIXME: Should escape the path properly
-    private String getPathFilename( String path )
+    private String getPathFilename( Path path ) throws NamespaceException, RepositoryException
     {
+        String p = path.toString( RepositoryImpl.getGlobalNamespaceRegistry() );
         
-        return path;
+        return mangleName(p);
     }
 
     /**
@@ -105,11 +112,12 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  @param ws
      *  @param path
      *  @return
+     * @throws RepositoryException 
+     * @throws NamespaceException 
      */
-    private File getNodeDir( Workspace ws, String path )
+    private File getNodeDir( Workspace ws, Path path ) throws NamespaceException, RepositoryException
     {
-        if( path.equals("/"+JCRConstants.NS_JCP+":system") || 
-            path.startsWith("/"+JCRConstants.NS_JCP+":system/" ) ) 
+        if( m_systemPath.isParentOf( path ) ) 
         {
             return new File( m_root, getPathFilename(path) );
         }
@@ -156,7 +164,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.AddNode.ordinal()]++;
 
-        File nodeDir = getNodeDir( ws, path.toString() );
+        File nodeDir = getNodeDir( ws, path );
 
         nodeDir.mkdirs();
     }
@@ -276,7 +284,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.ListProperties.ordinal()]++;
 
-        File nodeDir = getNodeDir( ws, path.toString() );
+        File nodeDir = getNodeDir( ws, path );
         List<QName> proplist = new ArrayList<QName>();
         
         try
@@ -329,11 +337,26 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.NodeExists.ordinal()]++;
 
-        File nodeDir = getNodeDir( ws, path.toString() );
+        File nodeDir;
+        try
+        {
+            nodeDir = getNodeDir( ws, path );
+            File propFile = new File( nodeDir, "jcr:primaryType.info" );
+            
+            return propFile.exists();
+        }
+        catch( NamespaceException e )
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch( RepositoryException e )
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
 
-        File propFile = new File( nodeDir, "jcr:primaryType.info" );
-        
-        return propFile.exists();
+        return false;
     }
 
     public void open(RepositoryImpl rep, Credentials credentials, String workspaceName) throws RepositoryException, NoSuchWorkspaceException
@@ -345,6 +368,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         if( wsnames.indexOf(workspaceName) == -1 )
             throw new NoSuchWorkspaceException(workspaceName);
         
+        m_systemPath = PathFactory.getPath( RepositoryImpl.getGlobalNamespaceRegistry(), "/jcr:system" );
+
         log.fine("Repository has been opened.");
     }
 
@@ -368,7 +393,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.PutPropertyValue.ordinal()]++;
 
-        File nodeDir = getNodeDir( ws, property.getInternalPath().getParentPath().toString() );
+        File nodeDir = getNodeDir( ws, property.getInternalPath().getParentPath() );
 
         saveUuidShortcut(property);
         
@@ -542,7 +567,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.GetPropertyValue.ordinal()]++;
 
-        File nodeDir = getNodeDir( ws, path.getParentPath().toString() );
+        File nodeDir = getNodeDir( ws, path.getParentPath() );
        
         File inf = new File( nodeDir, path.getLastComponent()+".info" );
         
@@ -609,7 +634,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.Remove.ordinal()]++;
 
-        File nodeFile = getNodeDir( ws, path.toString() );
+        File nodeFile = getNodeDir( ws, path );
 
         log.fine("Deleting path and all subdirectories: "+path);
         
@@ -796,4 +821,54 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         m_hitCount = new long[Count.values().length];
     }
     
+
+    private static final String[] WINDOWS_DEVICE_NAMES =
+    {
+        "con", "prn", "nul", "aux", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
+        "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9"
+    };
+    
+    /**
+     *  This makes sure that the queried page name
+     *  is still readable by the file system.  For example, all XML entities
+     *  and slashes are encoded with the percent notation.
+     *  
+     *  @param pagename The name to mangle
+     *  @return The mangled name.
+     */
+    protected static String mangleName( String pagename )
+    {
+        try
+        {
+            pagename = URLEncoder.encode( pagename, "UTF-8" );
+        }
+        catch( UnsupportedEncodingException e )
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        pagename = TextUtil.replaceString( pagename, "/", "%2F" );
+
+        //
+        //  Names which start with a dot must be escaped to prevent problems.
+        //  Since we use URL encoding, this is invisible in our unescaping.
+        //
+        if( pagename.startsWith( "." ) )
+        {
+            pagename = "%2E" + pagename.substring( 1 );
+        }
+        
+        String pn = pagename.toLowerCase();
+        for( int i = 0; i < WINDOWS_DEVICE_NAMES.length; i++ )
+        {
+            if( WINDOWS_DEVICE_NAMES[i].equals(pn) )
+            {
+                pagename = "$$$" + pagename;
+            }
+        }
+        
+        return pagename;
+    }
+
 }

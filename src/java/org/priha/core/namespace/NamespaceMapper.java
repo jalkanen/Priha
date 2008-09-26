@@ -4,7 +4,7 @@ import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 import javax.xml.namespace.QName;
 
-public interface NamespaceAware
+public interface NamespaceMapper
 {
     public QName toQName( String prefixedName ) throws NamespaceException, RepositoryException;
     

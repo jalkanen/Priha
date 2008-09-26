@@ -22,7 +22,7 @@ import java.io.Serializable;
 import javax.jcr.*;
 import javax.xml.namespace.QName;
 
-import org.priha.core.namespace.NamespaceAware;
+import org.priha.core.namespace.NamespaceMapper;
 
 public class NameValueImpl extends ValueImpl implements Value, Serializable
 {
@@ -30,7 +30,7 @@ public class NameValueImpl extends ValueImpl implements Value, Serializable
 
     private QName m_value; 
     
-    public NameValueImpl(NamespaceAware na, String value) throws RepositoryException
+    public NameValueImpl(NamespaceMapper na, String value) throws RepositoryException
     {
         m_value = na.toQName( value );
     }

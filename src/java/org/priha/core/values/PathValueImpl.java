@@ -22,7 +22,7 @@ import java.io.Serializable;
 import javax.jcr.*;
 import javax.jcr.nodetype.NodeType;
 
-import org.priha.core.namespace.NamespaceAware;
+import org.priha.core.namespace.NamespaceMapper;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
@@ -34,7 +34,7 @@ public class PathValueImpl extends ValueImpl implements Value, Serializable
 
     private Path m_value;
     
-    public PathValueImpl(NamespaceAware na, String value) throws ValueFormatException
+    public PathValueImpl(NamespaceMapper na, String value) throws ValueFormatException
     {
         try
         {
