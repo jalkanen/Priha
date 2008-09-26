@@ -6,7 +6,7 @@ import javax.xml.namespace.QName;
 
 public interface NamespaceMapper
 {
-    public QName toQName( String prefixedName ) throws NamespaceException, RepositoryException;
+    public QName toQName( String prefixedName ) throws NamespaceException;
     
-    public String fromQName( QName name ) throws NamespaceException, RepositoryException;
+    public String fromQName( QName name ) throws NamespaceException;
 }

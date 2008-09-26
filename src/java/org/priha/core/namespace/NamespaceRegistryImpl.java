@@ -18,7 +18,7 @@ public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
         super();
     }
 
-    public String getPrefix(String uri) throws NamespaceException, RepositoryException
+    public String getPrefix(String uri) throws NamespaceException
     {
         for( Map.Entry<String,String> entry : m_nsmap.entrySet() )
         {
@@ -33,7 +33,7 @@ public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
         return m_nsmap.keySet().toArray(new String[0]);
     }
     
-    public String getURI(String prefix) throws NamespaceException, RepositoryException
+    public String getURI(String prefix) throws NamespaceException
     {
         String u = m_nsmap.get(prefix);
         
@@ -65,7 +65,7 @@ public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
      *  @throws RepositoryException 
      *  @throws NamespaceException If the mapping cannot be accomplished. 
      */
-    public QName toQName(String val) throws NamespaceException, RepositoryException
+    public QName toQName(String val) throws NamespaceException
     {
         int idx = val.indexOf(':');
         if( idx != -1 )
@@ -89,7 +89,7 @@ public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
      * @throws NamespaceException
      * @throws RepositoryException
      */
-    public String fromQName(QName val) throws NamespaceException, RepositoryException
+    public String fromQName(QName val) throws NamespaceException
     {
         try
         {
@@ -115,17 +115,5 @@ public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
     public boolean hasMappings()
     {
         return m_nsmap.size() != 0;
-    }
-
-    public Path fromQPath(Path path)
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public Path toQPath(Path path)
-    {
-        // TODO Auto-generated method stub
-        return null;
     }
 }
