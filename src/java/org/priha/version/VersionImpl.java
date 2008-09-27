@@ -30,13 +30,14 @@ import javax.jcr.version.VersionHistory;
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
 import org.priha.nodetype.GenericNodeType;
+import org.priha.nodetype.QNodeType;
 import org.priha.util.Path;
 
 public class VersionImpl
     extends NodeImpl
     implements Version
 {
-    public VersionImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef )
+    public VersionImpl( SessionImpl session, Path path, QNodeType.Impl primaryType, NodeDefinition nDef )
         throws ValueFormatException,
                VersionException,
                LockException,

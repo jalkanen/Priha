@@ -22,11 +22,13 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
 
+import javax.jcr.NamespaceException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Workspace;
 import javax.jcr.nodetype.*;
 import javax.jcr.version.OnParentVersionAction;
+import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -35,6 +37,9 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.priha.core.RepositoryImpl;
+import org.priha.core.WorkspaceImpl;
+import org.priha.core.namespace.NamespaceMapper;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -46,18 +51,18 @@ import org.xml.sax.SAXException;
  *  @author jalkanen
  *
  */
-public class NodeTypeManagerImpl implements NodeTypeManager
+public class QNodeTypeManager
 {
-    private SortedMap<String,NodeType> m_primaryTypes = new TreeMap<String,NodeType>();
-    private SortedMap<String,NodeType> m_mixinTypes   = new TreeMap<String,NodeType>();
+    private SortedMap<String,QNodeType> m_primaryTypes = new TreeMap<String,QNodeType>();
+    private SortedMap<String,QNodeType> m_mixinTypes   = new TreeMap<String,QNodeType>();
 
     private Logger log = Logger.getLogger( getClass().getName() );
 
-    private static NodeTypeManagerImpl c_instance;
+    private static QNodeTypeManager c_instance;
 
     // TODO: When created, there is no Session object available.
 
-    private NodeTypeManagerImpl()
+    private QNodeTypeManager()
         throws RepositoryException
     {
         try
@@ -71,15 +76,21 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         }
     }
 
-    public static synchronized NodeTypeManagerImpl getInstance(Workspace ws)
-        throws RepositoryException
+    public static synchronized QNodeTypeManager getInstance() throws RepositoryException
     {
         if( c_instance == null )
         {
-            c_instance = new NodeTypeManagerImpl();
+            c_instance = new QNodeTypeManager();
         }
 
         return c_instance;
+    }
+    
+    
+    public static synchronized Impl getManager(WorkspaceImpl ws)
+        throws RepositoryException
+    {
+        return getInstance().new Impl(ws.getSession());
     }
 
     private void initializeNodeTypeList() throws ParserConfigurationException, IOException
@@ -138,11 +149,12 @@ public class NodeTypeManagerImpl implements NodeTypeManager
     private void parseSingleNodeType(Node node) throws XPathExpressionException, NoSuchNodeTypeException, RepositoryException
     {
         XPath xpath = XPathFactory.newInstance().newXPath();
-
+        NamespaceMapper nsm = RepositoryImpl.getGlobalNamespaceRegistry();
+        
         String name = xpath.evaluate( "name", node );
         log.finest( "Loading nodetype "+name );
 
-        GenericNodeType gnt = new GenericNodeType(name);
+        QNodeType gnt = new QNodeType( nsm.toQName( name ) );
 
         //
         //  Basic Node Type properties
@@ -154,7 +166,7 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         String primaryItemName = xpath.evaluate( "primaryItemName", node );
 
         if( primaryItemName != null && primaryItemName.length() > 0 )
-            gnt.m_primaryItemName = primaryItemName;
+            gnt.m_primaryItemName = nsm.toQName( primaryItemName );
 
         String superNode = xpath.evaluate( "supertypes", node );
 
@@ -162,10 +174,10 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         {
             String[] nodes = parseList( superNode );
 
-            gnt.m_parents = new GenericNodeType[nodes.length];
+            gnt.m_parents = new QNodeType[nodes.length];
             for( int i = 0; i < nodes.length; i++ )
             {
-                gnt.m_parents[i] = getNodeType( nodes[i] );
+                gnt.m_parents[i] = getNodeType( nsm.toQName( nodes[i] ) );
             }
         }
 
@@ -174,48 +186,48 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         //
         NodeList propertyDefinitions = (NodeList) xpath.evaluate( "propertyDefinition", node, XPathConstants.NODESET );
 
-        ArrayList<PropertyDefinition> pdlist = new ArrayList<PropertyDefinition>();
+        ArrayList<QPropertyDefinition> pdlist = new ArrayList<QPropertyDefinition>();
         for( int i = 0; i < propertyDefinitions.getLength(); i++ )
         {
-            PropertyDefinition p = parsePropertyDefinition( gnt, propertyDefinitions.item(i) );
+            QPropertyDefinition p = parsePropertyDefinition( gnt, propertyDefinitions.item(i) );
             pdlist.add( p );
         }
 
-        gnt.m_declaredPropertyDefinitions = pdlist.toArray(new PropertyDefinition[0]);
+        gnt.m_declaredPropertyDefinitions = pdlist.toArray(new QPropertyDefinition[0]);
 
         //  Add parent definitions
 
         if( gnt.m_parents != null )
         {
-            for( NodeType nt : gnt.m_parents )
+            for( QNodeType nt : gnt.m_parents )
             {
-                for( PropertyDefinition p : nt.getPropertyDefinitions() )
+                for( QPropertyDefinition p : nt.m_propertyDefinitions )
                 {
                     pdlist.add( p );
                 }
             }
         }
 
-        gnt.m_propertyDefinitions = pdlist.toArray(new PropertyDefinition[0]);
+        gnt.m_propertyDefinitions = pdlist.toArray(new QPropertyDefinition[0]);
 
         //
         //  Child node definitions
         NodeList nodeDefinitions = (NodeList) xpath.evaluate( "childNodeDefinition", node, XPathConstants.NODESET );
 
-        ArrayList<NodeDefinition> ndlist = new ArrayList<NodeDefinition>();
+        ArrayList<QNodeDefinition> ndlist = new ArrayList<QNodeDefinition>();
         for( int i = 0; i < nodeDefinitions.getLength(); i++ )
         {
-            NodeDefinition p = parseChildNodeDefinition( gnt, nodeDefinitions.item(i) );
+            QNodeDefinition p = parseChildNodeDefinition( gnt, nodeDefinitions.item(i) );
             ndlist.add( p );
         }
 
-        gnt.m_childNodeDefinitions = ndlist.toArray(new NodeDefinition[0]);
+        gnt.m_childNodeDefinitions = ndlist.toArray(new QNodeDefinition[0]);
 
         //
         //  Add it to the proper place
         //
 
-        if( gnt.isMixin() )
+        if( gnt.m_ismixin )
             m_mixinTypes.put( name, gnt );
         else
             m_primaryTypes.put( name, gnt );
@@ -229,14 +241,15 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         return "true".equals(res);
     }
 
-    private PropertyDefinition parsePropertyDefinition( GenericNodeType parent, Node node ) throws XPathExpressionException
+    private QPropertyDefinition parsePropertyDefinition( QNodeType parent, Node node ) throws XPathExpressionException, NamespaceException
     {
         XPath xpath = XPathFactory.newInstance().newXPath();
 
         String name = xpath.evaluate( "name", node );
         log.finest( "Loading propertyDefinition "+name );
 
-        PropertyDefinitionImpl pdi = new PropertyDefinitionImpl(parent,name);
+        QPropertyDefinition pdi = new QPropertyDefinition(parent,
+                                                          RepositoryImpl.getGlobalNamespaceRegistry().toQName( name ) );
 
         pdi.m_isAutoCreated = getBooleanProperty(xpath, "autoCreated", node);
         pdi.m_isMandatory   = getBooleanProperty(xpath, "mandatory",   node);
@@ -252,25 +265,27 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         return pdi;
     }
 
-    private NodeDefinition parseChildNodeDefinition( GenericNodeType parent, Node node) throws XPathExpressionException, NoSuchNodeTypeException, RepositoryException
+    private QNodeDefinition parseChildNodeDefinition( QNodeType parent, Node node) throws XPathExpressionException, NoSuchNodeTypeException, RepositoryException
     {
+        NamespaceMapper nsm = RepositoryImpl.getGlobalNamespaceRegistry();
         XPath xpath = XPathFactory.newInstance().newXPath();
 
         String name = xpath.evaluate( "name", node );
         log.finest("Loading node definition "+name);
 
-        NodeDefinitionImpl nd = new NodeDefinitionImpl( parent, name );
+        QNodeDefinition nd = new QNodeDefinition( parent, nsm.toQName( name ) );
 
         String requiredType = xpath.evaluate( "requiredType", node );
 
         if( requiredType != null && requiredType.length() > 0 )
         {
-            GenericNodeType[] reqd = new GenericNodeType[1];
+            QName requiredQType = nsm.toQName( requiredType );
+            QNodeType[] reqd = new QNodeType[1];
 
-            if( requiredType.equals(parent.getName()) )
+            if( requiredQType.equals( parent.getQName() ) )
                 reqd[0] = parent;
             else
-                reqd[0] = (GenericNodeType) getNodeType( requiredType );
+                reqd[0] = getNodeType( requiredQType );
 
             nd.m_requiredPrimaryTypes = reqd;
         }
@@ -279,10 +294,11 @@ public class NodeTypeManagerImpl implements NodeTypeManager
 
         if( defaultType != null && defaultType.length() > 0 )
         {
-            if( defaultType.equals(parent.getName()) )
+            QName defaultQType = nsm.toQName( defaultType );
+            if( defaultQType.equals(parent.getQName()) )
                 nd.m_defaultPrimaryType = parent;
             else
-                nd.m_defaultPrimaryType = (GenericNodeType) getNodeType( defaultType );
+                nd.m_defaultPrimaryType = getNodeType( defaultQType );
         }
 
         nd.m_isAutoCreated = getBooleanProperty(xpath, "autoCreated", node);
@@ -302,22 +318,22 @@ public class NodeTypeManagerImpl implements NodeTypeManager
      *  @param type
      *  @return
      */
-    public NodeDefinition findNodeDefinition(String type)
+    public QNodeDefinition findNodeDefinition(QName type)
     {
-        for( NodeType nt : m_primaryTypes.values() )
+        for( QNodeType nt : m_primaryTypes.values() )
         {
-            for( NodeDefinition nd : nt.getChildNodeDefinitions() )
+            for( QNodeDefinition nd : nt.m_childNodeDefinitions )
             {
-                if( nd.getName().equals( type ) )
+                if( nd.getQName().equals( type ) )
                     return nd;
             }
         }
 
-        for( NodeType nt : m_mixinTypes.values() )
+        for( QNodeType nt : m_mixinTypes.values() )
         {
-            for( NodeDefinition nd : nt.getChildNodeDefinitions() )
+            for( QNodeDefinition nd : nt.m_childNodeDefinitions )
             {
-                if( nd.getName().equals( type ) )
+                if( nd.getQName().equals( type ) )
                     return nd;
             }
         }
@@ -325,11 +341,11 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         //
         //  Find the default
         //
-        for( NodeType nt : m_primaryTypes.values() )
+        for( QNodeType nt : m_primaryTypes.values() )
         {
-            for( NodeDefinition nd : nt.getChildNodeDefinitions() )
+            for( QNodeDefinition nd : nt.m_childNodeDefinitions )
             {
-                if( nd.getName().equals( "*" ) )
+                if( nd.getQName().toString().equals( "*" ) )
                     return nd;
             }
         }
@@ -337,51 +353,6 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         return null;
     }
 
-    public void addPrimaryNodeType( NodeType nt )
-    {
-        m_primaryTypes.put( nt.getName(), nt );
-    }
-
-    public NodeTypeIterator getAllNodeTypes() throws RepositoryException
-    {
-        List<NodeType> ls = new ArrayList<NodeType>();
-
-        ls.addAll( m_primaryTypes.values() );
-        ls.addAll( m_mixinTypes.values() );
-
-        return new NodeTypeIteratorImpl(ls);
-    }
-
-    public NodeTypeIterator getMixinNodeTypes() throws RepositoryException
-    {
-        List<NodeType> ls = new ArrayList<NodeType>();
-
-        ls.addAll( m_mixinTypes.values() );
-
-        return new NodeTypeIteratorImpl(ls);
-    }
-
-    public NodeType getNodeType(String nodeTypeName) throws NoSuchNodeTypeException, RepositoryException
-    {
-        NodeType n = m_primaryTypes.get(nodeTypeName);
-        if( n == null )
-        {
-            n = m_mixinTypes.get(nodeTypeName);
-        }
-
-        if( n == null ) throw new NoSuchNodeTypeException("No such node type: "+nodeTypeName);
-
-        return n;
-    }
-
-    public NodeTypeIterator getPrimaryNodeTypes() throws RepositoryException
-    {
-        List<NodeType> ls = new ArrayList<NodeType>();
-
-        ls.addAll( m_primaryTypes.values() );
-
-        return new NodeTypeIteratorImpl(ls);
-    }
 
     private String[] parseList( String list )
     {
@@ -395,5 +366,91 @@ public class NodeTypeManagerImpl implements NodeTypeManager
         }
 
         return result;
+    }
+    
+    /**
+     *  Find a QNodeType by this QName.
+     *  
+     *  @param qn QName to look for
+     *  @return A QNodeType corresponding to this QName
+     *  @throws NoSuchNodeTypeException If it could not be located.
+     */
+    public QNodeType getNodeType( QName qn ) throws NoSuchNodeTypeException
+    {
+        QNodeType n = m_primaryTypes.get(qn);
+        if( n == null )
+        {
+            n = m_mixinTypes.get(qn);
+        }
+
+        if( n == null ) throw new NoSuchNodeTypeException("No such node type: "+qn);
+
+        return n;
+    }
+
+    /**
+     *  Implements the actual NodeTypeManager class, which, again, is
+     *  Session-specific.
+     */
+    public class Impl implements NodeTypeManager
+    {
+        private NamespaceMapper m_mapper;
+        
+        public Impl( NamespaceMapper nsm )
+        {
+            m_mapper = nsm;
+        }
+        
+        public NodeTypeIterator getAllNodeTypes() throws RepositoryException
+        {
+            List<NodeType> ls = new ArrayList<NodeType>();
+
+            for( NodeTypeIterator ni = getPrimaryNodeTypes(); ni.hasNext(); )
+            {
+                ls.add( ni.nextNodeType() );
+            }
+            for( NodeTypeIterator ni = getMixinNodeTypes(); ni.hasNext(); )
+            {
+                ls.add( ni.nextNodeType() );
+            }
+
+
+            return new NodeTypeIteratorImpl(ls);
+        }
+
+        public NodeTypeIterator getMixinNodeTypes() throws RepositoryException
+        {
+            List<NodeType> ls = new ArrayList<NodeType>();
+
+            for( QNodeType qnt : m_mixinTypes.values() )
+            {
+                ls.add( qnt.new Impl(m_mapper) );
+            }
+            
+            return new NodeTypeIteratorImpl(ls);
+        }
+
+        public QNodeType.Impl getNodeType(String nodeTypeName) throws NoSuchNodeTypeException, RepositoryException
+        {
+            QName qn = m_mapper.toQName( nodeTypeName );
+            
+            QNodeType qnt = QNodeTypeManager.this.getNodeType(qn);
+            
+            return qnt.new Impl(m_mapper);
+            
+        }
+
+        public NodeTypeIterator getPrimaryNodeTypes() throws RepositoryException
+        {
+            List<NodeType> ls = new ArrayList<NodeType>();
+
+            for( QNodeType qnt : m_primaryTypes.values() )
+            {
+                ls.add( qnt.new Impl(m_mapper) );
+            }
+
+            return new NodeTypeIteratorImpl(ls);
+        }
+
     }
 }

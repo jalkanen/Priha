@@ -46,7 +46,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 {
     private NodeDefinition      m_definition;
     
-    private GenericNodeType     m_primaryType;
+    private NodeType            m_primaryType;
 
     static Logger log = Logger.getLogger( NodeImpl.class.getName() );
 
@@ -67,7 +67,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         m_definition  = original.m_definition;
     }
     
-    protected NodeImpl( SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
+    protected NodeImpl( SessionImpl session, Path path, NodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         super( session, path );
@@ -82,7 +82,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     }
 
 
-    protected NodeImpl( SessionImpl session, String path, GenericNodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
+    protected NodeImpl( SessionImpl session, String path, NodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         this( session, PathFactory.getPath(session,path), primaryType, nDef, populateDefaults );
@@ -96,7 +96,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      *  @return A NodeType for the path
      *  @throws RepositoryException If something goes wrong.
      */
-    private GenericNodeType assignChildType(QName relpath) throws RepositoryException
+    private NodeType assignChildType(QName relpath) throws RepositoryException
     {
         NodeDefinition nd = m_primaryType.findNodeDefinition(relpath);
 
@@ -105,7 +105,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             throw new ConstraintViolationException("Cannot assign a child type to this node, since there is no default type.");
         }
         
-        GenericNodeType nt = (GenericNodeType) nd.getDefaultPrimaryType();
+        NodeType nt = nd.getDefaultPrimaryType();
 
         return nt;
     }

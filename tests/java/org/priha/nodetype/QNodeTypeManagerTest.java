@@ -6,10 +6,7 @@ import java.util.logging.LogManager;
 import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
-import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NoSuchNodeTypeException;
-import javax.jcr.nodetype.NodeType;
-import javax.jcr.nodetype.PropertyDefinition;
+import javax.jcr.nodetype.*;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -18,13 +15,13 @@ import junit.framework.TestSuite;
 import org.priha.RepositoryManager;
 import org.priha.TestUtil;
 import org.priha.core.RepositoryImpl;
-import org.priha.nodetype.NodeTypeManagerImpl;
+import org.priha.core.SessionImpl;
 
-public class NodeTypeManagerImplTest extends TestCase
+public class QNodeTypeManagerTest extends TestCase
 {
     private RepositoryImpl m_repository;
-    private Session m_session;
-    private NodeTypeManagerImpl m_mgr;
+    private SessionImpl m_session;
+    private NodeTypeManager m_mgr;
 
     @Override
     protected void setUp() throws Exception
@@ -42,7 +39,7 @@ public class NodeTypeManagerImplTest extends TestCase
 
         m_session = m_repository.login();
 
-        m_mgr = (NodeTypeManagerImpl)m_session.getWorkspace().getNodeTypeManager();
+        m_mgr = m_session.getWorkspace().getNodeTypeManager();
     }
 
     private PropertyDefinition findDef( PropertyDefinition[] pd, String name )
@@ -120,6 +117,6 @@ public class NodeTypeManagerImplTest extends TestCase
 
     public static Test suite()
     {
-        return new TestSuite( NodeTypeManagerImplTest.class );
+        return new TestSuite( QNodeTypeManagerTest.class );
     }
 }

@@ -10,7 +10,7 @@ public class AllTests extends TestCase
     {
         TestSuite suite = new TestSuite("NodeType package tests");
 
-        suite.addTest( NodeTypeManagerImplTest.suite() );
+        suite.addTest( QNodeTypeManagerTest.suite() );
 
         return suite;
     }

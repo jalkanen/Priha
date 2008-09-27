@@ -21,34 +21,20 @@ import javax.jcr.PropertyType;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
+import javax.xml.namespace.QName;
 
-public class PropertyDefinitionImpl extends ItemDefinitionImpl implements PropertyDefinition
+import org.priha.core.namespace.NamespaceMapper;
+
+public class QPropertyDefinition extends QItemDefinition
 {
     protected Value[] m_defaults   = new Value[0];
     protected boolean m_isMultiple = false;
     
     protected int     m_requiredType = PropertyType.UNDEFINED;
     
-    public PropertyDefinitionImpl(NodeType type, String name)
+    public QPropertyDefinition(QNodeType type, QName name)
     {
         super(type,name);
-        // TODO Auto-generated constructor stub
-    }
-
-    public Value[] getDefaultValues()
-    {
-        return m_defaults;
-    }
-
-    public int getRequiredType()
-    {
-        return m_requiredType;
-    }
-
-    public String[] getValueConstraints()
-    {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     public boolean isMultiple()
@@ -57,11 +43,45 @@ public class PropertyDefinitionImpl extends ItemDefinitionImpl implements Proper
     }
     
     /**
-     *  Returns a human-readable description string.  Useful only for debugging
-     *  purposes.
+     *  Implements the PropertyDefinition with its Session-specific
+     *  thingies.
      */
-    public String toString()
+    
+    public class Impl extends QItemDefinition.Impl implements PropertyDefinition
     {
-        return "PropertyDefinition: "+m_name;
+        public Impl( NamespaceMapper ns )
+        {
+            super( ns );
+        }
+
+        public Value[] getDefaultValues()
+        {
+            return m_defaults;
+        }
+
+        public int getRequiredType()
+        {
+            return m_requiredType;
+        }
+
+        public String[] getValueConstraints()
+        {
+            // TODO Auto-generated method stub
+            return null;
+        }
+
+        public boolean isMultiple()
+        {
+            return m_isMultiple;
+        }
+    
+        /**
+         * Returns a human-readable description string. Useful only for debugging
+         * purposes.
+         */
+        public String toString()
+        {
+            return "PropertyDefinition: "+m_name;
+        }
     }
 }

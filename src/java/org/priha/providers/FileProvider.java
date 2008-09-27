@@ -28,7 +28,7 @@ import java.util.logging.Logger;
 import javax.jcr.*;
 import javax.xml.namespace.QName;
 
-import org.priha.core.JCRConstants;
+import static org.priha.core.JCRConstants.*;
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
@@ -93,6 +93,21 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return mangleName(p);
     }
 
+    private String makeFilename( QName name, String suffix )
+    {
+        StringBuffer sb = new StringBuffer(24);
+        
+        if( name.getPrefix() != null )
+        {
+            sb.append( name.getPrefix() );
+            sb.append( ":" );
+        }
+        sb.append( name.getLocalPart() );
+        if( suffix != null ) sb.append( suffix );
+        
+        return mangleName(sb.toString());
+    }
+    
     /**
      *  Returns the directory for a particular Workspace.
      *  
@@ -177,16 +192,31 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         for( File f : files )
         {
-            Path newPath = startPath.resolve( new QName(f.getName()) ); // FIXME: WRONG!
-
             if( f.isDirectory() )
             {
-                list.add( newPath );
-                
-                if( recurse )
+                try
                 {
-                    acquirePaths( newPath, f, list, recurse );
+                    Properties props = getPropertyInfo( f, QName.valueOf( "{"+NS_JCP+"}primaryType" ) );
+                    
+                    String qn = props.getProperty( "qname" );
+                    Path newPath = startPath.resolve( QName.valueOf( qn ) ); // FIXME: WRONG!
+
+                    list.add( newPath );
+                
+                    if( recurse )
+                    {
+                        acquirePaths( newPath, f, list, recurse );
+                    }
                 }
+                catch( PathNotFoundException e )
+                {
+                    // Skip, don't include.
+                }
+                catch( IOException e )
+                {
+                    // Skip, don't include.
+                }
+                
             }
         }
     }
@@ -257,7 +287,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     public void close(WorkspaceImpl ws)
     {
         m_hitCount[Count.Close.ordinal()]++;
-        // Does nothing
+        // Does nothing, which is fine.
     }
 
     public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
@@ -275,7 +305,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
         File wsDir = new File( getWorkspaceRoot(), getWorkspaceFilename(ws) );
         
-        acquirePaths( parentpath, new File(wsDir,parentpath.toString()), list, false);
+        acquirePaths( parentpath, new File(wsDir,parentpath.toString()), list, false );
         
         return list;
     }
@@ -368,7 +398,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         if( wsnames.indexOf(workspaceName) == -1 )
             throw new NoSuchWorkspaceException(workspaceName);
         
-        m_systemPath = PathFactory.getPath( RepositoryImpl.getGlobalNamespaceRegistry(), "/jcr:system" );
+        m_systemPath = PathFactory.getPath( RepositoryImpl.getGlobalNamespaceRegistry(), 
+                                            "/jcr:system" );
 
         log.fine("Repository has been opened.");
     }
@@ -399,7 +430,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         QName qname = property.getQName();
         
-        File inf = new File( nodeDir, property.getName()+".info" );
+        File inf = new File( nodeDir, makeFilename( qname, ".info" ) );
         
         Properties props = new Properties();
         
@@ -418,13 +449,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 
                 for( int i = 0; i < values.length; i++ )
                 {
-                    File df = new File( nodeDir, property.getName()+"."+i+".data" );
+                    File df = new File( nodeDir, makeFilename( qname, "."+i+".data" ) );
                     writeValue( df, (ValueImpl)values[i] );
                 }
             }
             else
             {
-                File df = new File( nodeDir, property.getName()+".data" );
+                File df = new File( nodeDir, makeFilename( qname, ".data" ) );
                 writeValue( df, (ValueImpl)property.getValue() );
             }
             out = new FileOutputStream(inf);
@@ -464,7 +495,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      */
     private void saveUuidShortcut(PropertyImpl property) throws RepositoryException
     {
-        if( property.getName().equals("jcr:uuid") )
+        if( property.getQName().equals(NS_JCP+"uuid") )
         {
             File f = new File( getHashPath(property.getString()) );
             
@@ -563,13 +594,17 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return value;
     }
     
-    public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
+    /**
+     *  Returns the contents of the .info -file.
+     *  
+     *  @param nodeDir
+     *  @return
+     *  @throws PathNotFoundException 
+     *  @throws IOException 
+     */
+    private Properties getPropertyInfo( File nodeDir, QName name ) throws PathNotFoundException, IOException
     {
-        m_hitCount[Count.GetPropertyValue.ordinal()]++;
-
-        File nodeDir = getNodeDir( ws, path.getParentPath() );
-       
-        File inf = new File( nodeDir, path.getLastComponent()+".info" );
+        File inf = new File( nodeDir, makeFilename( name, ".info" ) );
         
         if( !inf.exists() )
         {
@@ -582,6 +617,24 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         {
             in = new FileInputStream( inf );
             props.load(in);
+        }
+        finally
+        {
+            if( in != null ) in.close();
+        }
+        
+        return props;
+    }
+    
+    public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
+    {
+        m_hitCount[Count.GetPropertyValue.ordinal()]++;
+
+        File nodeDir = getNodeDir( ws, path.getParentPath() );
+       
+        try
+        {
+            Properties props = getPropertyInfo( nodeDir, path.getLastComponent() );
             
             String propType = props.getProperty("type");
             Boolean isMultiple = new Boolean(props.getProperty("multiple"));
@@ -593,7 +646,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 ValueImpl[] result = new ValueImpl[items];
                 for( int i = 0; i < items; i++ )
                 {
-                    File df = new File( nodeDir, path.getLastComponent()+"."+i+".data");
+                    File df = new File( nodeDir, makeFilename(path.getLastComponent(),"."+i+".data") );
                     ValueImpl v = prepareValue( ws, df, propType );
                     result[i] = v;
                 }
@@ -602,7 +655,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
             else
             {
-                File df = new File( nodeDir, path.getLastComponent()+".data" );
+                File df = new File( nodeDir, makeFilename( path.getLastComponent(), ".data" ) );
                 ValueImpl v = prepareValue(ws, df, propType);
 
                 return v;
@@ -611,21 +664,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         catch( IOException e )
         {            
             throw new RepositoryException("Unable to read property file",e);
-        }
-        finally
-        {
-            if( in != null )
-            {
-                try
-                {
-                    in.close();
-                }
-                catch (IOException e)
-                {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
         }
     }
 
@@ -657,9 +695,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             else
             {
                 // Must be a property
-                nodeFile = new File( nodeFile.getParentFile(), path.getLastComponent()+".info" );
+                nodeFile = new File( nodeFile.getParentFile(), makeFilename(path.getLastComponent(),".info") );
                 nodeFile.delete();
-                nodeFile = new File( nodeFile.getParentFile(), path.getLastComponent()+".data" );
+                nodeFile = new File( nodeFile.getParentFile(), makeFilename(path.getLastComponent(),".data") );
                 nodeFile.delete();
             }
         }
@@ -848,8 +886,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             e.printStackTrace();
         }
         
-        pagename = TextUtil.replaceString( pagename, "/", "%2F" );
-
+        pagename = TextUtil.replaceString( pagename, "%2F", "/" );
+        pagename = TextUtil.replaceString( pagename, "%3A", ":" );
+        
         //
         //  Names which start with a dot must be escaped to prevent problems.
         //  Since we use URL encoding, this is invisible in our unescaping.

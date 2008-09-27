@@ -134,7 +134,7 @@ public class RepositoryImpl implements Repository
         return keys;
     }
 
-    public Session login(Credentials credentials, String workspaceName)
+    public SessionImpl login(Credentials credentials, String workspaceName)
         throws LoginException,
                NoSuchWorkspaceException,
                RepositoryException
@@ -150,17 +150,17 @@ public class RepositoryImpl implements Repository
         return session;
     }
 
-    public Session login(Credentials credentials) throws LoginException, RepositoryException
+    public SessionImpl login(Credentials credentials) throws LoginException, RepositoryException
     {
         return login( credentials, null );
     }
 
-    public Session login(String workspaceName) throws LoginException, NoSuchWorkspaceException, RepositoryException
+    public SessionImpl login(String workspaceName) throws LoginException, NoSuchWorkspaceException, RepositoryException
     {
         return login( null, workspaceName );
     }
 
-    public Session login() throws LoginException, RepositoryException
+    public SessionImpl login() throws LoginException, RepositoryException
     {
         return login( null, null );
     }

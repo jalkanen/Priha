@@ -37,7 +37,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.priha.core.locks.LockManager;
 import org.priha.core.namespace.NamespaceMapper;
 import org.priha.core.values.ValueFactoryImpl;
-import org.priha.nodetype.GenericNodeType;
+import org.priha.nodetype.QNodeType;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
@@ -346,9 +346,9 @@ public class SessionImpl implements Session, NamespaceMapper
             
             log.info("Repository empty; setting up root node...");
 
-            GenericNodeType rootType = (GenericNodeType)getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
+            QNodeType.Impl rootType = getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
             
-            NodeDefinition nd = rootType.findNodeDefinition( new QName("*") );
+            NodeDefinition nd = rootType.findNodeDefinition( "*" );
             
             ni = new NodeImpl( this, "/", rootType, nd, true );
 

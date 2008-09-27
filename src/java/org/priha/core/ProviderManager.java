@@ -280,7 +280,7 @@ public class ProviderManager implements ItemStore
     {
         NodeImpl ni = null;
         
-        Path ptPath = path.resolve(m_repository.getGlobalNamespaceRegistry(), "jcr:primaryType");
+        Path ptPath = path.resolve(RepositoryImpl.getGlobalNamespaceRegistry(), "jcr:primaryType");
         PropertyImpl primaryType = ws.createPropertyImpl( ptPath );
     
         ValueImpl v = (ValueImpl)getPropertyValue( ws, ptPath );
@@ -290,7 +290,7 @@ public class ProviderManager implements ItemStore
     
         primaryType.loadValue( v );
         
-        NodeTypeManagerImpl ntm = (NodeTypeManagerImpl)ws.getNodeTypeManager();
+        NodeTypeManagerImpl ntm = ws.getNodeTypeManager();
         GenericNodeType type = (GenericNodeType) ntm.getNodeType( primaryType.getString() );
     
         NodeDefinition nd = ntm.findNodeDefinition( primaryType.getString() );
@@ -377,6 +377,8 @@ public class ProviderManager implements ItemStore
         }
         catch( RepositoryException e )
         {
+            if( path.isRoot() ) throw e; // Otherwise we just get a relatively unclear "root has no parent"
+            
             NodeImpl ni = loadNode( ws, path.getParentPath() );
             
             return loadProperty( ws, ni, path, path.getLastComponent() );

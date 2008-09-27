@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -16,8 +17,6 @@ import javax.xml.parsers.SAXParserFactory;
 
 import org.priha.core.JCRConstants;
 import org.priha.core.SessionImpl;
-import org.priha.core.values.ValueFactoryImpl;
-import org.priha.nodetype.GenericNodeType;
 import org.priha.util.Base64;
 import org.priha.util.Path;
 import org.xml.sax.Attributes;
@@ -126,7 +125,7 @@ public class XMLImport extends DefaultHandler
             //
             log.finest("   Property: "+ps.m_propertyName);
                         
-            GenericNodeType parentType = (GenericNodeType)nd.getPrimaryNodeType();
+            NodeType parentType = nd.getPrimaryNodeType();
             
             //
             //  Now we try to figure out whether this should be a multi or a single property.

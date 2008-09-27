@@ -32,6 +32,7 @@ import javax.jcr.version.VersionIterator;
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
 import org.priha.nodetype.GenericNodeType;
+import org.priha.nodetype.QNodeType;
 import org.priha.util.Path;
 
 public class VersionHistoryImpl extends NodeImpl implements VersionHistory
@@ -41,7 +42,7 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
     {
         NodeTypeManager nt = session.getWorkspace().getNodeTypeManager();
 
-        GenericNodeType versionType = (GenericNodeType)nt.getNodeType("jcr:versionHistory");
+        QNodeType.Impl versionType = nt.getNodeType("jcr:versionHistory");
 
         NodeDefinition nDef = versionType.findNodeDefinition( path.getLastComponent() );
 

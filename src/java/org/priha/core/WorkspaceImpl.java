@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.observation.ObservationManager;
 import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
@@ -34,7 +33,7 @@ import javax.jcr.version.VersionException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.priha.core.namespace.NamespaceRegistryImpl;
-import org.priha.nodetype.NodeTypeManagerImpl;
+import org.priha.nodetype.QNodeTypeManager;
 import org.priha.query.PrihaQueryManager;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
@@ -46,10 +45,10 @@ import org.xml.sax.SAXException;
 public class WorkspaceImpl
     implements Workspace
 {
-    private SessionImpl         m_session;
-    private String              m_name;
-    private ProviderManager     m_providerManager;
-    private NodeTypeManagerImpl m_nodeTypeManager;
+    private SessionImpl           m_session;
+    private String                m_name;
+    private ProviderManager       m_providerManager;
+    private QNodeTypeManager.Impl m_nodeTypeManager;
     
     private Logger log = Logger.getLogger(WorkspaceImpl.class.getName());
     
@@ -61,7 +60,7 @@ public class WorkspaceImpl
         m_session  = session;
         m_name     = name;
         m_providerManager = mgr;
-        m_nodeTypeManager = NodeTypeManagerImpl.getInstance(this);
+        m_nodeTypeManager = QNodeTypeManager.getManager(this);
     }
 
     /**
@@ -135,11 +134,8 @@ public class WorkspaceImpl
         return m_sessionNamespaces;
     }
 
-    public NodeTypeManager getNodeTypeManager() throws RepositoryException
+    public QNodeTypeManager.Impl getNodeTypeManager() throws RepositoryException
     {
-        if( m_nodeTypeManager == null )
-            m_nodeTypeManager = NodeTypeManagerImpl.getInstance(this);
-
         return m_nodeTypeManager;
     }
 
