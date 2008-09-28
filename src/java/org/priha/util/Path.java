@@ -135,7 +135,16 @@ public class Path implements Comparable, Serializable
     {
         if( s.endsWith("[1]") ) s = s.substring(0,s.length()-3);
         
-        QName q = ns.toQName( s );
+        QName q;
+        
+        if( ns != null )
+        {
+            q = ns.toQName( s );
+        }
+        else
+        {
+            q = QName.valueOf( s );
+        }
         
         return q;
     }

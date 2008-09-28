@@ -16,7 +16,7 @@ public class VersionManager
 {
     private static Path c_versionPath;
 
-    public VersionManager()
+    static
     {
         try
         {

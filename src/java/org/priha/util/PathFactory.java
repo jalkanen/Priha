@@ -67,4 +67,20 @@ public class PathFactory
         */
         return result;
     }
+
+    /**
+     *  Turns a FQN-representation of a Path into a real Path.
+     *  
+     *  @param property
+     *  @return
+     * @throws NamespaceException, RepositoryException 
+     * @throws  
+     * @throws NamespaceException 
+     */
+    public static Path getPath(String property) throws NamespaceException, RepositoryException
+    {
+        Path p = new Path(null,property);
+        
+        return p;
+    }
 }

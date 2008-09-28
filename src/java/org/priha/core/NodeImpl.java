@@ -80,7 +80,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         if( populateDefaults )
         {
-            internalSetProperty( Q_JCR_PRIMARYTYPE, m_primaryType.getQName().toString(), PropertyType.NAME );
+            internalSetProperty( Q_JCR_PRIMARYTYPE, 
+                                 m_primaryType.getQName().toString(), 
+                                 PropertyType.NAME );
         }
     }
 
@@ -485,11 +487,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     void autoCreateProperties() throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        autoCreateProperties( getPrimaryNodeType() );
+        autoCreateProperties( getPrimaryQNodeType() );
 
         for( NodeType nt : getMixinNodeTypes() )
         {
-            autoCreateProperties( nt );
+            autoCreateProperties( ((QNodeType.Impl)nt).getQNodeType() ); //FIXME: Unnecessary
         }
     }
 
@@ -504,19 +506,21 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      *  @throws LockException
      *  @throws ConstraintViolationException
      */
-    private void autoCreateProperties(NodeType nt) throws RepositoryException, ValueFormatException, VersionException, LockException, ConstraintViolationException
+    private void autoCreateProperties(QNodeType nt) throws RepositoryException, ValueFormatException, VersionException, LockException, ConstraintViolationException
     {
         ValueFactoryImpl vfi = m_session.getValueFactory();
         
-        for( PropertyDefinition pd : nt.getPropertyDefinitions() )
+        for( QPropertyDefinition pd : nt.getQPropertyDefinitions() )
         {
-            if( pd.isAutoCreated() && !hasProperty(pd.getName()) )
+            if( pd.isAutoCreated() && !hasProperty(pd.getQName()) )
             {
-                log.finest("Autocreating property "+pd.getName());
+                log.finest("Autocreating property "+pd.getQName());
 
-                String path = m_path + "/" + pd.getName();
-                PropertyImpl pi = new PropertyImpl(m_session,PathFactory.getPath(m_session,path),
-                                                   ((QPropertyDefinition.Impl)pd).getQPropertyDefinition());
+                Path p = m_path.resolve(pd.getQName());
+
+                PropertyImpl pi = new PropertyImpl(m_session,
+                                                   p,
+                                                   pd);
 
                 // FIXME: Add default value generation
 
@@ -1217,11 +1221,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //
         //  Check mandatory properties
         //
-        checkMandatoryProperties( getPrimaryNodeType() );
+        checkMandatoryProperties( getPrimaryQNodeType() );
 
         for( NodeType nt : getMixinNodeTypes() )
         {
-            checkMandatoryProperties( nt );
+            checkMandatoryProperties( ((QNodeType.Impl)nt).getQNodeType() );
         }
         
         //
@@ -1241,13 +1245,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      * @param nt
      * @throws RepositoryException 
      */
-    private void checkMandatoryProperties(NodeType nt) throws RepositoryException
+    private void checkMandatoryProperties(QNodeType nt) throws RepositoryException
     {
-        for( PropertyDefinition pd : nt.getPropertyDefinitions() )
+        for( QPropertyDefinition pd : nt.getQPropertyDefinitions() )
         {
-            if( pd.isMandatory() && !hasProperty(pd.getName()) )
+            if( pd.isMandatory() && !hasProperty(pd.getQName()) )
             {
-                throw new ConstraintViolationException("Node is missing property "+pd.getName());
+                throw new ConstraintViolationException("Node is missing property "+pd.getQName());
             }
         }
     }
@@ -1350,7 +1354,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //
         try
         {
-            Property p = getProperty( JCR_MIXIN_TYPES );
+            Property p = getProperty( Q_JCR_MIXINTYPES );
         
             for( Value v : p.getValues() )
             {

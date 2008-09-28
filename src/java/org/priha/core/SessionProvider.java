@@ -25,6 +25,7 @@ import javax.xml.namespace.QName;
 
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
+import static org.priha.core.JCRConstants.*;
 
 /**
  *  This is a special provider which stores the state of the Session.
@@ -60,8 +61,8 @@ public class SessionProvider
                     //  we make sure it's the first property to be saved.
                     //
                     
-                    if( o1.getLastComponent().equals("jcr:primaryType") && !o2.getLastComponent().equals("jcr:primaryType") ) return -1;
-                    if( o2.getLastComponent().equals("jcr:primaryType") && !o1.getLastComponent().equals("jcr:primaryType") ) return 1;
+                    if( o1.getLastComponent().equals(Q_JCR_PRIMARYTYPE) && !o2.getLastComponent().equals(Q_JCR_PRIMARYTYPE) ) return -1;
+                    if( o2.getLastComponent().equals(Q_JCR_PRIMARYTYPE) && !o1.getLastComponent().equals(Q_JCR_PRIMARYTYPE) ) return 1;
                     
                     res = o1.toString().compareTo( o2.toString() );
                 }

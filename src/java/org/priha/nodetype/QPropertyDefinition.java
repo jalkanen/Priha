@@ -19,7 +19,6 @@ package org.priha.nodetype;
 
 import javax.jcr.PropertyType;
 import javax.jcr.Value;
-import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.namespace.QName;
 
@@ -81,7 +80,7 @@ public class QPropertyDefinition extends QItemDefinition
          */
         public String toString()
         {
-            return "PropertyDefinition: "+m_name;
+            return "PropertyDefinition: "+m_qname;
         }
         
         public QPropertyDefinition getQPropertyDefinition()

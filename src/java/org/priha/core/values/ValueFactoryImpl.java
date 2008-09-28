@@ -28,7 +28,9 @@ import org.priha.core.SessionImpl;
 import org.priha.core.binary.BinarySource;
 import org.priha.util.FileUtil;
 
-
+/**
+ *  This is a session-specific holder of things.
+ */
 public class ValueFactoryImpl implements ValueFactory
 {
     private SessionImpl m_session;
@@ -52,10 +54,10 @@ public class ValueFactoryImpl implements ValueFactory
                 return new LongValueImpl( value.getLong() );
                 
             case PropertyType.NAME:
-                return new NameValueImpl( m_session, value.getString() );
+                return new QNameValue( m_session, value.getString() ).new Impl(m_session);
                 
             case PropertyType.PATH:
-                return new PathValueImpl( m_session, value.getString() );
+                return new QPathValue( m_session, value.getString() ).new Impl(m_session);
                 
             case PropertyType.REFERENCE:
                 return new ReferenceValueImpl( value.getString() );
@@ -166,10 +168,10 @@ public class ValueFactoryImpl implements ValueFactory
                     return new CalendarValueImpl(FileUtil.readContents(value, "UTF-8"));
 
                 case PropertyType.NAME:
-                    return new NameValueImpl(m_session,FileUtil.readContents(value, "UTF-8"));
+                    return new QNameValue(m_session,FileUtil.readContents(value, "UTF-8")).new Impl(m_session);
 
                 case PropertyType.PATH:
-                    return new PathValueImpl(m_session,FileUtil.readContents(value, "UTF-8"));
+                    return new QPathValue(m_session,FileUtil.readContents(value, "UTF-8")).new Impl(m_session);
 
                 case PropertyType.REFERENCE:
                     return new ReferenceValueImpl(FileUtil.readContents(value, "UTF-8"));
@@ -212,7 +214,7 @@ public class ValueFactoryImpl implements ValueFactory
             case PropertyType.NAME:
                 try
                 {
-                    return new NameValueImpl(m_session,value);
+                    return new QNameValue(m_session,value).new Impl(m_session);
                 }
                 catch( RepositoryException e1 )
                 {
@@ -220,7 +222,7 @@ public class ValueFactoryImpl implements ValueFactory
                 }
                 
             case PropertyType.PATH:
-                return new PathValueImpl(m_session,value);
+                return new QPathValue(m_session,value).new Impl(m_session);
                 
             case PropertyType.REFERENCE:
                 return new ReferenceValueImpl(value);

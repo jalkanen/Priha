@@ -177,6 +177,12 @@ public class QNodeType
         return false;
     }
   
+
+    public QPropertyDefinition[] getQPropertyDefinitions()
+    {
+        return m_propertyDefinitions;
+    }
+    
     /**
      *  The session-specific parts of the node type.
      *  
@@ -394,5 +400,4 @@ public class QNodeType
             return QNodeType.this;
         }
     }
-
 }

@@ -19,31 +19,56 @@ package org.priha.core.values;
 
 import java.io.Serializable;
 
-import javax.jcr.*;
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
 import javax.xml.namespace.QName;
 
 import org.priha.core.namespace.NamespaceMapper;
 
-public class NameValueImpl extends ValueImpl implements Value, Serializable
+public class QNameValue extends QValue implements Serializable
 {
     private static final long serialVersionUID = -5040292769406453341L;
 
     private QName m_value; 
     
-    public NameValueImpl(NamespaceMapper na, String value) throws RepositoryException
+    public QNameValue(NamespaceMapper na, String value) throws RepositoryException
     {
         m_value = na.toQName( value );
     }
-    
-    @Override
-    public String getString()
-    {
-        return m_value.toString(); // FIXME: Not correct
-    }
 
-    public int getType()
+    @Override
+    public ValueImpl getValue(NamespaceMapper nsm)
     {
-        return PropertyType.NAME;
+        return new Impl(nsm);
     }
     
+    public class Impl extends ValueImpl implements Value, Serializable, QValue.QValueInner
+    {
+        private static final long serialVersionUID = 1L;
+        
+        public NamespaceMapper m_mapper;
+        
+        public Impl(NamespaceMapper nsm)
+        {
+            m_mapper = nsm;
+        }
+        
+        public String getString() throws ValueFormatException, IllegalStateException, RepositoryException
+        {
+            return m_mapper.fromQName( m_value );
+        }
+
+        public int getType()
+        {
+            return PropertyType.NAME;
+        }
+        
+        public QNameValue getQValue()
+        {
+            return QNameValue.this;
+        }
+    }
 }
+

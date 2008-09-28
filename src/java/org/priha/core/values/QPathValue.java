@@ -20,21 +20,19 @@ package org.priha.core.values;
 import java.io.Serializable;
 
 import javax.jcr.*;
-import javax.jcr.nodetype.NodeType;
 
 import org.priha.core.namespace.NamespaceMapper;
-import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
 import org.priha.util.PathUtil;
 
-public class PathValueImpl extends ValueImpl implements Value, Serializable
+public class QPathValue extends QValue
 {
     private static final long serialVersionUID = -980121404025627369L;
 
     private Path m_value;
     
-    public PathValueImpl(NamespaceMapper na, String value) throws ValueFormatException
+    public QPathValue(NamespaceMapper na, String value) throws ValueFormatException
     {
         try
         {
@@ -48,9 +46,35 @@ public class PathValueImpl extends ValueImpl implements Value, Serializable
         
     }
 
-    public int getType()
+    @Override
+    public ValueImpl getValue(NamespaceMapper nsm)
     {
-        return PropertyType.PATH;
+        return new Impl(nsm);
     }
-
+    
+    public class Impl extends ValueImpl implements Value, Serializable, QValue.QValueInner
+    {
+        private static final long serialVersionUID = 1L;
+        private NamespaceMapper m_mapper;
+        
+        public Impl(NamespaceMapper nsm)
+        {
+            m_mapper = nsm;
+        }
+        
+        public String getString() throws NamespaceException, RepositoryException
+        {
+            return m_value.toString(m_mapper);
+        }
+        
+        public int getType()
+        {
+            return PropertyType.PATH;
+        }
+        
+        public QPathValue getQValue()
+        {
+            return QPathValue.this;
+        }
+    }
 }

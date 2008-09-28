@@ -86,25 +86,17 @@ public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
      * 
      * @param val
      * @return
-     * @throws NamespaceException
-     * @throws RepositoryException
+     * @throws NamespaceException If the mapping is unknown.
      */
     public String fromQName(QName val) throws NamespaceException
     {
-        try
-        {
-            String uri = val.getNamespaceURI();
+        String uri = val.getNamespaceURI();
             
-            if( uri.length() == 0 ) return val.getLocalPart();
+        if( uri.length() == 0 ) return val.getLocalPart();
             
-            String prefix = getPrefix( val.getNamespaceURI() );
+        String prefix = getPrefix( val.getNamespaceURI() );
             
-            return prefix+":"+val.getLocalPart();
-        }
-        catch( NamespaceException e )
-        {
-            return val.getLocalPart();
-        }
+        return prefix+":"+val.getLocalPart();
     }
 
     /**

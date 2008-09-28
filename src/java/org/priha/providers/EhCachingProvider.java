@@ -37,6 +37,7 @@ import org.priha.core.PropertyImpl;
 import org.priha.core.ProviderManager;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
+import org.priha.core.values.QValue;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
 
@@ -195,23 +196,34 @@ public class EhCachingProvider implements RepositoryProvider
     {
         return m_realProvider.findReferences(ws, uuid);
     }
-
+    
     public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-//        System.out.print("Property: "+Thread.currentThread());
-//        System.out.flush();
-//        long start = System.currentTimeMillis();
+        String key = getVid(ws,path);
+        
         try
         {
-            Element e = m_valueCache.get( getVid(ws,path) );
+            Element e = m_valueCache.get( key );
             if( e != null )
             {
+                Object o = e.getObjectValue();
+                
+                //
+                //  If this is a mapped instance, then we'll actually return
+                //  a new copy of it for this particular Session.
+                //
+                //  FIXME: Optimize by checking the Session, if this comes from the same one, no need to clone.
+                //
+                if( o instanceof QValue.QValueInner )
+                {
+                    return ((QValue.QValueInner)o).getQValue().getValue(ws.getSession());
+                }
                 return e.getObjectValue();
             }
         
             Object o = m_realProvider.getPropertyValue(ws, path);
         
-            e = new Element( getVid(ws,path), o );
+            e = new Element( key, o );
         
             m_valueCache.put( e );
             return o;
@@ -223,11 +235,8 @@ public class EhCachingProvider implements RepositoryProvider
         catch( RuntimeException e )
         {
             // Release lock
-            m_valueCache.put( new Element(getVid(ws,path),null) );
+            m_valueCache.put( new Element(key,null) );
             throw new RepositoryException("Error getting propery value");
-        }
-        finally {
-//            System.out.println(" --- released: "+(System.currentTimeMillis() - start));
         }
     }
 
@@ -258,7 +267,7 @@ public class EhCachingProvider implements RepositoryProvider
         {
             // Release lock
             m_valueCache.put( new Element(getNid(ws,parentpath),null) );
-            throw new RepositoryException("Error getting propery value");
+            throw new RepositoryException("Error getting propery value", e);
         }
         finally {
 //            System.out.println(" --- released: "+(System.currentTimeMillis() - start));

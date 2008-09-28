@@ -28,7 +28,6 @@ import org.priha.core.namespace.NamespaceMapper;
 public class QItemDefinition
 {
     protected QNodeType m_nodeType;
-    protected String    m_name;
     protected QName     m_qname;
     protected boolean   m_isAutoCreated = false;
     protected boolean   m_isMandatory   = false;

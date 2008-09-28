@@ -35,6 +35,7 @@ import org.priha.core.WorkspaceImpl;
 import org.priha.core.binary.FileBinarySource;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
+import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
 import org.priha.util.TextUtil;
@@ -95,17 +96,20 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
     private String makeFilename( QName name, String suffix )
     {
-        StringBuffer sb = new StringBuffer(24);
+        String filename;
         
-        if( name.getPrefix() != null )
+        try
         {
-            sb.append( name.getPrefix() );
-            sb.append( ":" );
+            filename = RepositoryImpl.getGlobalNamespaceRegistry().fromQName(name);
         }
-        sb.append( name.getLocalPart() );
-        if( suffix != null ) sb.append( suffix );
+        catch( NamespaceException e )
+        {
+            filename = name.getLocalPart();
+        }
+
+        if( suffix != null ) filename = filename + suffix;
         
-        return mangleName(sb.toString());
+        return mangleName(filename);
     }
     
     /**
@@ -196,16 +200,15 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             {
                 try
                 {
-                    Properties props = getPropertyInfo( f, QName.valueOf( "{"+NS_JCP+"}primaryType" ) );
+                    Properties props = getPropertyInfo( f, Q_JCR_PRIMARYTYPE );
                     
-                    String qn = props.getProperty( "qname" );
-                    Path newPath = startPath.resolve( QName.valueOf( qn ) ); // FIXME: WRONG!
-
-                    list.add( newPath );
+                    Path p = PathFactory.getPath( props.getProperty( "path" ) );
+                   
+                    list.add( p.getParentPath() );
                 
                     if( recurse )
                     {
-                        acquirePaths( newPath, f, list, recurse );
+                        acquirePaths( p.getParentPath(), f, list, recurse );
                     }
                 }
                 catch( PathNotFoundException e )
@@ -216,7 +219,25 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 {
                     // Skip, don't include.
                 }
-                
+                catch (NamespaceException e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                catch (InvalidPathException e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                catch (RepositoryException e)
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+                catch( NullPointerException e )
+                {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -434,7 +455,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         Properties props = new Properties();
         
-        props.setProperty( "qname", qname.toString() );
+        props.setProperty( "path", property.getInternalPath().toString() );
         props.setProperty( "type",  PropertyType.nameFromValue( property.getType() ) );
         props.setProperty( "multiple", property.getDefinition().isMultiple() ? "true" : "false" );
 

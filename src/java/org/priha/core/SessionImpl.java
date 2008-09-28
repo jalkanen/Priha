@@ -550,6 +550,8 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public String fromQName(QName c)
     {
+        if( c == null ) return null;
+        
         try
         {
             return m_workspace.getNamespaceRegistry().fromQName(c);
@@ -570,6 +572,8 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public QName toQName(String c)
     {
+        if( c == null ) return null;
+        
         try
         {
             return m_workspace.getNamespaceRegistry().toQName(c);
