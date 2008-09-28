@@ -27,7 +27,7 @@ import java.util.logging.Logger;
 import javax.jcr.*;
 
 import org.priha.Release;
-import org.priha.core.namespace.GlobalNamespaceRegistryImpl;
+import org.priha.core.namespace.NamespaceRegistryImpl;
 import org.priha.util.ConfigurationException;
 import org.priha.util.FileUtil;
 
@@ -35,7 +35,7 @@ public class RepositoryImpl implements Repository
 {
     public static final String   DEFAULT_WORKSPACE = "default";
 
-    private static GlobalNamespaceRegistryImpl c_namespaceRegistry = new GlobalNamespaceRegistryImpl();
+    private static NamespaceRegistryImpl c_namespaceRegistry = new NamespaceRegistryImpl();
 
     /**
      *  Defines which paths are attempted to locate the default property file.
@@ -189,7 +189,7 @@ public class RepositoryImpl implements Repository
         return s;
     }
     
-    public static GlobalNamespaceRegistryImpl getGlobalNamespaceRegistry()
+    public static NamespaceRegistryImpl getGlobalNamespaceRegistry()
     {
         return c_namespaceRegistry;
     }

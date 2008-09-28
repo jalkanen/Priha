@@ -52,8 +52,6 @@ public class WorkspaceImpl
     
     private Logger log = Logger.getLogger(WorkspaceImpl.class.getName());
     
-    private NamespaceRegistryImpl m_sessionNamespaces = new NamespaceRegistryImpl();
- 
     public WorkspaceImpl( SessionImpl session, String name, ProviderManager mgr )
         throws RepositoryException
     {
@@ -131,7 +129,7 @@ public class WorkspaceImpl
 
     public NamespaceRegistryImpl getNamespaceRegistry() throws RepositoryException
     {
-        return m_sessionNamespaces;
+        return RepositoryImpl.getGlobalNamespaceRegistry();
     }
 
     public QNodeTypeManager.Impl getNodeTypeManager() throws RepositoryException

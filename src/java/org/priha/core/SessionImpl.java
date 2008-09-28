@@ -482,6 +482,8 @@ public class SessionImpl implements Session, NamespaceMapper
 
     /*  ========================================================================= */
     /*  Namespaces */
+    /** Maps prefixes to URIs.  Prefixes are always unique, therefore they are the keys */
+    private HashMap<String,String> m_nsmap = new HashMap<String,String>();
 
     public void setNamespacePrefix(String newPrefix, String existingUri) throws NamespaceException, RepositoryException
     {
@@ -502,50 +504,45 @@ public class SessionImpl implements Session, NamespaceMapper
             throw new NamespaceException("Existing prefix cannot be remapped (6.3.3)");
         }
         
-        m_workspace.getNamespaceRegistry().registerNamespace(newPrefix, existingUri );
+        m_nsmap.put(newPrefix, existingUri );
     }
 
     public String getNamespacePrefix(String uri) throws NamespaceException, RepositoryException
     {
-        try
+        for( Map.Entry<String, String> e : m_nsmap.entrySet() )
         {
-            return m_workspace.getNamespaceRegistry().getPrefix(uri);
+            if( e.getValue().equals( uri ) ) return e.getKey();
         }
-        catch( NamespaceException e )
-        {
-            return RepositoryImpl.getGlobalNamespaceRegistry().getPrefix( uri );
-        }
+        
+        return m_workspace.getNamespaceRegistry().getPrefix(uri);
     }
 
     public String[] getNamespacePrefixes() throws RepositoryException
     {
-        TreeSet<String> result = new TreeSet<String>();
+        Set<String> prefixes = new TreeSet<String>();
         
-        String[] uris = RepositoryImpl.getGlobalNamespaceRegistry().getURIs();
-        String[] uris2 = m_workspace.getNamespaceRegistry().getURIs();
+        Set<String> uris = new TreeSet<String>();
+        uris.addAll( m_nsmap.values() );
+        uris.addAll( Arrays.asList( m_workspace.getNamespaceRegistry().getURIs() ) );
         
-        TreeSet<String> uriCol = new TreeSet<String>();
-        uriCol.addAll( Arrays.asList(uris) );
-        uriCol.addAll( Arrays.asList(uris2) );
-
-        for( String s : uriCol )
+        for( String u : uris )
         {
-            result.add( getNamespacePrefix(s) );
+            prefixes.add( getNamespacePrefix( u ) );
         }
-
-        return result.toArray(new String[0]);
+        
+        return prefixes.toArray( new String[prefixes.size()] );
     }
 
     public String getNamespaceURI(String prefix) throws NamespaceException, RepositoryException
     {
-        try
+        String uri = m_nsmap.get(prefix);
+        
+        if( uri == null )
         {
             return m_workspace.getNamespaceRegistry().getURI(prefix);
         }
-        catch( NamespaceException e )
-        {
-            return RepositoryImpl.getGlobalNamespaceRegistry().getURI(prefix);
-        }
+        
+        return uri;
     }
 
     public String fromQName(QName c)
@@ -554,17 +551,17 @@ public class SessionImpl implements Session, NamespaceMapper
         
         try
         {
-            return m_workspace.getNamespaceRegistry().fromQName(c);
+            String uri = c.getNamespaceURI();
+            
+            if( uri.length() > 0 ) 
+            {   
+                String prefix = getNamespacePrefix( uri );
+            
+                return prefix+":"+c.getLocalPart();
+            }
         }
         catch( Exception e )
         {
-            try
-            {
-                return RepositoryImpl.getGlobalNamespaceRegistry().fromQName(c);
-            }
-            catch (Exception e1)
-            {
-            }
         }
         
         return c.getLocalPart();
@@ -576,17 +573,19 @@ public class SessionImpl implements Session, NamespaceMapper
         
         try
         {
-            return m_workspace.getNamespaceRegistry().toQName(c);
+            int idx = c.indexOf(':');
+            if( idx != -1 )
+            {
+                String prefix = c.substring(0,idx);
+                String name   = c.substring(idx+1);
+                
+                String uri = getNamespaceURI( prefix );
+        
+                return new QName( uri, name, prefix );
+            }
         }
         catch( Exception e )
         {
-            try
-            {
-                return RepositoryImpl.getGlobalNamespaceRegistry().toQName(c);
-            }
-            catch (Exception e1)
-            {
-            }
         }
         
         return new QName(c);

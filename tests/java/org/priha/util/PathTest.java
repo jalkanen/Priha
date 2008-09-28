@@ -5,12 +5,12 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.priha.TestUtil;
-import org.priha.core.namespace.GlobalNamespaceRegistryImpl;
 import org.priha.core.namespace.NamespaceMapper;
+import org.priha.core.namespace.NamespaceRegistryImpl;
 
 public class PathTest extends TestCase
 {
-    private NamespaceMapper m_nsa = new GlobalNamespaceRegistryImpl();
+    private NamespaceMapper m_nsa = new NamespaceRegistryImpl();
     
     public void testRoot()
     {

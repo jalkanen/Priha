@@ -2,16 +2,15 @@ package org.priha.core;
 
 import javax.xml.namespace.QName;
 
-import org.priha.core.namespace.GlobalNamespaceRegistryImpl;
-import org.priha.core.namespace.NamespaceRegistryImpl;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.priha.core.namespace.NamespaceRegistryImpl;
+
 public class NamespaceRegistryImplTest extends TestCase
 {
-    NamespaceRegistryImpl m_reg = new GlobalNamespaceRegistryImpl();
+    NamespaceRegistryImpl m_reg = new NamespaceRegistryImpl();
     
     public void testToQName()
         throws Exception
