@@ -83,5 +83,10 @@ public class QPropertyDefinition extends QItemDefinition
         {
             return "PropertyDefinition: "+m_name;
         }
+        
+        public QPropertyDefinition getQPropertyDefinition()
+        {
+            return QPropertyDefinition.this;
+        }
     }
 }

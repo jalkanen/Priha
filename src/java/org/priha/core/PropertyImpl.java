@@ -30,8 +30,9 @@ import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.VersionException;
 
 import org.priha.core.values.StreamValueImpl;
-import org.priha.core.values.ValueFactoryImpl;
-import org.priha.nodetype.GenericNodeType;
+import org.priha.core.values.ValueImpl;
+import org.priha.nodetype.QNodeType;
+import org.priha.nodetype.QPropertyDefinition;
 import org.priha.util.Path;
 
 public class PropertyImpl extends ItemImpl implements Property, Comparable<PropertyImpl>
@@ -43,11 +44,11 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     PropertyDefinition         m_definition;
     int                        m_type = PropertyType.UNDEFINED;
     
-    public PropertyImpl( SessionImpl session, Path path, PropertyDefinition propDef )
+    public PropertyImpl( SessionImpl session, Path path, QPropertyDefinition propDef )
     {
         super( session, path );
 
-        setDefinition( propDef );
+        if( propDef != null ) setDefinition( propDef.new Impl(session) );
     }
 
     /**
@@ -186,7 +187,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         return m_type;
     }
 
-    public Value getValue() throws ValueFormatException, RepositoryException
+    public ValueImpl getValue() throws ValueFormatException, RepositoryException
     {
         if( m_multi != Multi.SINGLE )
             throw new ValueFormatException("Attempted to get a SINGLE Value object from a MULTI property "+m_path);
@@ -239,9 +240,9 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                          ConstraintViolationException,
                                          RepositoryException
     {
-        GenericNodeType parentType = (GenericNodeType) getParent().getPrimaryNodeType();
+        QNodeType parentType = getParent().getPrimaryQNodeType();
         
-        if( !parentType.canSetProperty( getName(), value ) )
+        if( !parentType.canSetProperty( getQName(), value ) )
             throw new ConstraintViolationException("Setting of this property is forbidden");
 
         if( m_type != PropertyType.UNDEFINED && value != null && m_type != value.getType() )
@@ -260,9 +261,9 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                             ConstraintViolationException,
                                             RepositoryException
     {
-        GenericNodeType parentType = (GenericNodeType) getParent().getPrimaryNodeType();
+        QNodeType parentType = getParent().getPrimaryQNodeType();
         
-        if( !parentType.canSetProperty( getName(), values ) )
+        if( !parentType.canSetProperty( getQName(), values ) )
             throw new ConstraintViolationException("Setting of this property is forbidden:");
 
         if( m_type != PropertyType.UNDEFINED && values != null && values.length >= 1 && values[0] != null && m_type != values[0].getType() )
@@ -493,10 +494,10 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         // node itself is also deleted.
         //
         if( getName().equals("jcr:primaryType") && 
-            ((NodeImpl)getParent()).getState() != ItemState.REMOVED &&
+            getParent().getState() != ItemState.REMOVED &&
             m_path.getParentPath().isRoot() ) return;
         		
-        NodeImpl nd = (NodeImpl)getParent();
+        NodeImpl nd = getParent();
 
         nd.removeProperty(this);
         

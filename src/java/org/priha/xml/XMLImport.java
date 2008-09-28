@@ -16,7 +16,10 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.priha.core.JCRConstants;
+import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
+import org.priha.nodetype.QNodeType;
+import org.priha.nodetype.QPropertyDefinition;
 import org.priha.util.Base64;
 import org.priha.util.Path;
 import org.xml.sax.Attributes;
@@ -36,7 +39,7 @@ public class XMLImport extends DefaultHandler
     private int     m_uuidBehavior;
     private ParserStyle m_style = ParserStyle.UNKNOWN;
     
-    private Node    m_currentNode;
+    private NodeImpl  m_currentNode;
     private NodeStore m_currentStore;
     private PropertyStore m_currentProperty;
     private boolean m_readingValue = false;
@@ -100,7 +103,7 @@ public class XMLImport extends DefaultHandler
             throw new ItemExistsException("There already exists a node at "+path);
         }
         
-        Node nd = m_currentNode.addNode( path, primaryType );
+        NodeImpl nd = m_currentNode.addNode( path, primaryType );
         
         m_currentNode = nd;
         
@@ -125,16 +128,16 @@ public class XMLImport extends DefaultHandler
             //
             log.finest("   Property: "+ps.m_propertyName);
                         
-            NodeType parentType = nd.getPrimaryNodeType();
+            QNodeType parentType = nd.getPrimaryQNodeType();
             
             //
             //  Now we try to figure out whether this should be a multi or a single property.
             //  The problem is when it is a multi property, but it was written as a single value.
             //
-            PropertyDefinition pdmulti = parentType.findPropertyDefinition( ps.m_propertyName, true );
+            QPropertyDefinition pdmulti = parentType.findPropertyDefinition( m_session.toQName(ps.m_propertyName), true );
             //PropertyDefinition pdsingle = parentType.findPropertyDefinition( ps.m_propertyName, false );
             
-            boolean ismultiproperty = (pdmulti != null && !pdmulti.getName().equals("*"));
+            boolean ismultiproperty = (pdmulti != null && !pdmulti.getQName().toString().equals("*"));
             
             if( ps.m_values.size() == 1 && !ismultiproperty )
             {

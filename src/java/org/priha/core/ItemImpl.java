@@ -109,7 +109,7 @@ public abstract class ItemImpl implements Item
         return qname;
     }
     
-    public Node getParent() throws ItemNotFoundException, AccessDeniedException, RepositoryException
+    public NodeImpl getParent() throws ItemNotFoundException, AccessDeniedException, RepositoryException
     {
         try
         {

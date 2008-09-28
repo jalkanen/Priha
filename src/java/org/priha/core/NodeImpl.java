@@ -17,6 +17,8 @@
  */
 package org.priha.core;
 
+import static org.priha.core.JCRConstants.*;
+
 import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
@@ -34,19 +36,20 @@ import javax.xml.namespace.QName;
 import org.priha.core.locks.LockImpl;
 import org.priha.core.locks.LockManager;
 import org.priha.core.values.ValueFactoryImpl;
-import org.priha.nodetype.GenericNodeType;
-import org.priha.nodetype.NodeDefinitionImpl;
+import org.priha.nodetype.QNodeDefinition;
+import org.priha.nodetype.QNodeType;
+import org.priha.nodetype.QNodeTypeManager;
+import org.priha.nodetype.QPropertyDefinition;
 import org.priha.util.*;
 import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
 import org.priha.version.VersionManager;
-import static org.priha.core.JCRConstants.*;
 
 public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 {
-    private NodeDefinition      m_definition;
+    private QNodeDefinition      m_definition;
     
-    private NodeType            m_primaryType;
+    private QNodeType            m_primaryType;
 
     static Logger log = Logger.getLogger( NodeImpl.class.getName() );
 
@@ -67,7 +70,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         m_definition  = original.m_definition;
     }
     
-    protected NodeImpl( SessionImpl session, Path path, NodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
+    protected NodeImpl( SessionImpl session, Path path, QNodeType primaryType, QNodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         super( session, path );
@@ -77,12 +80,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         if( populateDefaults )
         {
-            internalSetProperty( "jcr:primaryType", m_primaryType.getName(), PropertyType.NAME );
+            internalSetProperty( Q_JCR_PRIMARYTYPE, m_primaryType.getQName().toString(), PropertyType.NAME );
         }
     }
 
 
-    protected NodeImpl( SessionImpl session, String path, NodeType primaryType, NodeDefinition nDef, boolean populateDefaults )
+    protected NodeImpl( SessionImpl session, String path, QNodeType primaryType, QNodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         this( session, PathFactory.getPath(session,path), primaryType, nDef, populateDefaults );
@@ -96,16 +99,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      *  @return A NodeType for the path
      *  @throws RepositoryException If something goes wrong.
      */
-    private NodeType assignChildType(QName relpath) throws RepositoryException
+    private QNodeType assignChildType(QName relpath) throws RepositoryException
     {
-        NodeDefinition nd = m_primaryType.findNodeDefinition(relpath);
+        QNodeDefinition nd = m_primaryType.findNodeDefinition(relpath);
 
         if( nd == null )
         {
             throw new ConstraintViolationException("Cannot assign a child type to this node, since there is no default type.");
         }
         
-        NodeType nt = nd.getDefaultPrimaryType();
+        QNodeType nt = nd.getDefaultPrimaryType();
 
         return nt;
     }
@@ -172,8 +175,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //  Parent is okay with this addition, so we'll continue with
             //  figuring out what the node type of this node should be.
             //
-            GenericNodeType assignedType;
-            NodeDefinition  assignedNodeDef;
+            QNodeType        assignedType;
+            QNodeDefinition  assignedNodeDef;
 
             if( primaryNodeTypeName == null )
             {
@@ -181,7 +184,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             }
             else
             {
-                assignedType = (GenericNodeType) getNodeTypeManager().getNodeType( primaryNodeTypeName );
+                assignedType = getNodeTypeManager().getNodeType( primaryNodeTypeName ).getQNodeType();
             }
 
             assignedNodeDef = m_primaryType.findNodeDefinition( absPath.getLastComponent() );
@@ -241,18 +244,18 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      *  @return
      *  @throws RepositoryException
      */
-    private NodeImpl createNode(Path absPath, 
-                                GenericNodeType assignedType, 
-                                NodeDefinition assignedNodeDef)
+    private NodeImpl createNode(Path            absPath, 
+                                QNodeType       assignedType, 
+                                QNodeDefinition assignedNodeDef)
         throws RepositoryException
     {
         NodeImpl ni;
         
-        if( assignedType.isNodeType("nt:version") )
+        if( assignedType.isNodeType(JCRConstants.Q_NT_VERSION) )
         {
             ni = new VersionImpl( m_session, absPath, assignedType, assignedNodeDef );
         }
-        else if( assignedType.isNodeType("nt:versionHistory") )
+        else if( assignedType.isNodeType(JCRConstants.Q_NT_VERSIONHISTORY) )
         {
             ni = new VersionHistoryImpl( m_session, absPath, assignedType, assignedNodeDef );                
         }
@@ -264,7 +267,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return ni;
     }
 
-    private NodeTypeManager getNodeTypeManager() throws RepositoryException
+    private QNodeTypeManager.Impl getNodeTypeManager() throws RepositoryException
     {
         return m_session.getWorkspace().getNodeTypeManager();
     }
@@ -325,7 +328,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         if( m_definition == null ) sanitize();
 
-        return m_definition;
+        return m_definition.new Impl(m_session);
     }
 
     public int getIndex() throws RepositoryException
@@ -403,9 +406,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         throw new ItemNotFoundException( getPath()+" does not declare a primary item" );
     }
 
-    public GenericNodeType getPrimaryNodeType() throws RepositoryException
+    public QNodeType getPrimaryQNodeType()
     {
         return m_primaryType;
+    }
+    
+    public QNodeType.Impl getPrimaryNodeType() throws RepositoryException
+    {
+        return m_primaryType.new Impl(m_session);
     }
 
     public PropertyIterator getProperties() throws RepositoryException
@@ -447,11 +455,25 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return (PropertyImpl) ii;
     }
 
+    public PropertyImpl getProperty( QName propName ) throws PathNotFoundException, RepositoryException
+    {
+        Path abspath = m_path.resolve(propName);
+        
+        Item item = m_session.getItem(abspath);
+
+        if( item != null && !item.isNode() )
+        {
+            return (PropertyImpl) item;
+        }
+
+        throw new PathNotFoundException( abspath.toString() );        
+    }
+    
     public PropertyImpl getProperty(String relPath) throws PathNotFoundException, RepositoryException
     {
         Path abspath = m_path.resolve(m_session,relPath);
 
-        Item item = m_session.getItem(abspath.toString());
+        Item item = m_session.getItem(abspath);
 
         if( item != null && !item.isNode() )
         {
@@ -493,16 +515,17 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 log.finest("Autocreating property "+pd.getName());
 
                 String path = m_path + "/" + pd.getName();
-                PropertyImpl pi = new PropertyImpl(m_session,PathFactory.getPath(m_session,path),pd);
+                PropertyImpl pi = new PropertyImpl(m_session,PathFactory.getPath(m_session,path),
+                                                   ((QPropertyDefinition.Impl)pd).getQPropertyDefinition());
 
                 // FIXME: Add default value generation
 
-                if( JCR_UUID.equals(pi.getQName()) )
+                if( Q_JCR_UUID.equals(pi.getQName()) )
                 {
                     pi.loadValue( vfi.createValue( UUID.randomUUID().toString() ) );
                 }
                 
-                if( "jcr:created".equals(pi.getName() ))
+                if( Q_JCR_CREATED.equals(pi.getQName() ))
                 {
                     pi.loadValue( vfi.createValue( Calendar.getInstance() ) );
                 }
@@ -564,6 +587,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return getProperties().getSize() > 0;
     }
 
+    public boolean hasProperty( QName propName ) throws RepositoryException
+    {
+        Path abspath = m_path.resolve(propName);
+        return m_session.hasProperty(abspath);
+    }
+    
     public boolean hasProperty(String relPath) throws RepositoryException
     {
         Path abspath = m_path.resolve(m_session,relPath);
@@ -608,7 +637,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     }
 
 
-
+    private PropertyImpl prepareProperty( String name, Object value ) throws PathNotFoundException, RepositoryException
+    {
+        return prepareProperty( m_session.toQName(name), value );
+    }
+    
     /**
      *  Finds a property and checks if we're supposed to remove it or not.  It also creates
      *  the property if it does not exist.
@@ -619,7 +652,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      *  @throws PathNotFoundException
      *  @throws RepositoryException
      */
-    private PropertyImpl prepareProperty( String name, Object value ) throws PathNotFoundException, RepositoryException
+    private PropertyImpl prepareProperty( QName name, Object value ) throws PathNotFoundException, RepositoryException
     {
         PropertyImpl prop = null;
 
@@ -630,20 +663,21 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //  Because we rely quite a lot on the primary property, we need to go and
         //  handle it separately.
         //
-        if( name.equals("jcr:primaryType") )
+        if( name.equals( Q_JCR_PRIMARYTYPE ) )
         {
-            if( hasProperty("jcr:primaryType") )
+            if( hasProperty( Q_JCR_PRIMARYTYPE ) )
             {
                 throw new ConstraintViolationException("The object has already been assigned a primary type!");
             }
 
             //  We know where this belongs to.
-            GenericNodeType gnt = (GenericNodeType)getNodeTypeManager().getNodeType("nt:base");
+            QNodeType gnt = QNodeTypeManager.getInstance().getNodeType( Q_NT_BASE );
 
-            PropertyDefinition primaryDef = gnt.findPropertyDefinition("jcr:primaryType",false);
+            QPropertyDefinition primaryDef = gnt.findPropertyDefinition( JCRConstants.Q_JCR_PRIMARYTYPE,
+                                                                         false);
 
             prop = new PropertyImpl( m_session,
-                                     m_path.resolve(m_session,name),
+                                     m_path.resolve(name),
                                      primaryDef );
 
             addChildProperty( prop );
@@ -660,7 +694,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         if( prop == null )
         {
-            Path propertypath = m_path.resolve(m_session,name);
+            Path propertypath = m_path.resolve(name);
 
             Path p = propertypath.getParentPath();
 
@@ -668,9 +702,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             boolean ismultiple = value instanceof Object[];
 
-            GenericNodeType parentType = (GenericNodeType)parentNode.getPrimaryNodeType();
+            QNodeType parentType = parentNode.getPrimaryQNodeType();
             
-            PropertyDefinition pd = parentType.findPropertyDefinition(name,ismultiple);
+            QPropertyDefinition pd = parentType.findPropertyDefinition(name,ismultiple);
             
             prop = new PropertyImpl( m_session, propertypath, pd );
             prop.markModified(false);
@@ -749,7 +783,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return p;
     }
 
-    private PropertyImpl internalSetProperty(String name, Value[] values, int type) throws PathNotFoundException, RepositoryException
+    private PropertyImpl internalSetProperty(QName name, Value[] values, int type) throws PathNotFoundException, RepositoryException
     {
         PropertyImpl p = prepareProperty( name, values );
 
@@ -821,7 +855,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return p;
     }
 
-    private PropertyImpl internalSetProperty(String name, String value, int type) throws PathNotFoundException, RepositoryException
+    private PropertyImpl internalSetProperty(QName name, String value, int type) throws PathNotFoundException, RepositoryException
     {
         PropertyImpl prop = prepareProperty(name,value);
         
@@ -1078,32 +1112,32 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             try
             {
                 @SuppressWarnings("unused")
-                PropertyImpl primarytype = getProperty( "jcr:primaryType" );
+                PropertyImpl primarytype = getProperty( Q_JCR_PRIMARYTYPE );
             }
             catch( Exception e )
             {
                 if( m_path.isRoot() )
                 {
-                    setProperty( "jcr:primaryType", "nt:unstructured", PropertyType.NAME );
+                    internalSetProperty( Q_JCR_PRIMARYTYPE, "nt:unstructured", PropertyType.NAME );
                 }
                 else
                 {
-                    setProperty( "jcr:primaryType",
-                                 assignChildType( m_path.getLastComponent() ).toString(),
-                                 PropertyType.NAME );
+                    internalSetProperty( Q_JCR_PRIMARYTYPE,
+                                         assignChildType( m_path.getLastComponent() ).toString(),
+                                         PropertyType.NAME );
                 }
             }
 
             if( getParent() != null )
             {
-                GenericNodeType mytype = (GenericNodeType)getPrimaryNodeType();
+                QNodeType mytype = getPrimaryQNodeType();
 
-                m_definition = ((GenericNodeType)getParent().getPrimaryNodeType()).findNodeDefinition( getSession().toQName( mytype.getName() ) );
+                m_definition = getParent().getPrimaryQNodeType().findNodeDefinition( mytype.getQName() );
             }
             else
             {
                 // FIXME: Not correct
-                m_definition = new NodeDefinitionImpl( getPrimaryNodeType(), "nt:unstructured" );
+                m_definition = QNodeTypeManager.getInstance().findNodeDefinition( Q_NT_UNSTRUCTURED );
             }
 
             if( m_definition == null )
@@ -1115,16 +1149,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         autoCreateProperties();
 
-        GenericNodeType mytype = (GenericNodeType)getPrimaryNodeType();
+        QNodeType mytype = getPrimaryQNodeType();
 
         for( PropertyIterator i = getProperties(); i.hasNext(); )
         {
             PropertyImpl pi = (PropertyImpl)i.next();
             if( pi.getDefinition() == null )
             {
-                PropertyDefinition pd = mytype.findPropertyDefinition( pi.getName(), false ); // FIXME: Really?
+                QPropertyDefinition pd = mytype.findPropertyDefinition( pi.getQName(), false ); // FIXME: Really?
 
-                pi.m_definition = pd;
+                pi.m_definition = pd.new Impl(m_session); // FIXME: Inoptimal
             }
         }
     }
@@ -1258,7 +1292,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         catch( PathNotFoundException e )
         {
             Value[] values = new Value[] { vf.createValue(mixinName,PropertyType.NAME) };
-            internalSetProperty( JCR_MIXIN_TYPES, values, PropertyType.NAME );
+            internalSetProperty( Q_JCR_MIXINTYPES, values, PropertyType.NAME );
         }
 
         autoCreateProperties();

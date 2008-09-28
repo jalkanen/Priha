@@ -25,6 +25,10 @@ public class QNodeType
     private QName                   m_name;
     QName                   m_primaryItemName = null;
 
+    private QNodeType()
+    {
+    }
+    
     public QNodeType( QName name )
     {
         m_name = name;
@@ -72,6 +76,17 @@ public class QNodeType
     
 
     public boolean canSetProperty(QName propertyName, Value value)
+    {
+        QPropertyDefinition p = findPropertyDefinition(propertyName, false);
+        
+        if( p == null ) return false;
+        
+        if( p.isProtected() ) return false;
+        
+        return true;
+    }
+
+    public boolean canSetProperty(QName propertyName, Value[] values)
     {
         QPropertyDefinition p = findPropertyDefinition(propertyName, false);
         
@@ -161,7 +176,11 @@ public class QNodeType
 
         return false;
     }
-
+  
+    /**
+     *  The session-specific parts of the node type.
+     *  
+     */
     public class Impl implements NodeType
     {
         private   NamespaceMapper      m_mapper;
@@ -216,13 +235,8 @@ public class QNodeType
             {
                 return false; // FIXME: LOG
             }
-            QPropertyDefinition p = QNodeType.this.findPropertyDefinition(qn, false);
-        
-            if( p == null ) return false;
-        
-            if( p.isProtected() ) return false;
-        
-            return true;
+            
+            return QNodeType.this.canSetProperty(qn, value);
         }
 
         public boolean canSetProperty(String propertyName, Value[] values)
@@ -236,14 +250,7 @@ public class QNodeType
             {
                 return false; // FIXME: LOG
             }
-
-            QPropertyDefinition p = QNodeType.this.findPropertyDefinition(qn, true);
-        
-            if( p == null ) return false;
-
-            if( p.isProtected() ) return false;
-
-            return true;
+            return QNodeType.this.canSetProperty(qn, values);
         }
 
         public NodeDefinition[] getChildNodeDefinitions()
@@ -338,16 +345,6 @@ public class QNodeType
             return nts;
         }
 
-        public boolean hasOrderableChildNodes()
-        {
-            return m_hasOrderableChildNodes;
-        }
-
-        public boolean isMixin()
-        {
-            return m_ismixin;
-        }
-
         public boolean isNodeType(String nodeTypeName)
         {
             QName qn;
@@ -371,6 +368,31 @@ public class QNodeType
             return "NodeType: "+m_name;
         }
 
+        public boolean hasOrderableChildNodes()
+        {
+            return m_hasOrderableChildNodes;
+        }
+
+        public boolean isMixin()
+        {
+            return m_ismixin;
+        }
+      
+        public NodeDefinition findNodeDefinition(String string) throws NamespaceException
+        {
+            QNodeDefinition qnd = QNodeType.this.findNodeDefinition( m_mapper.toQName(string) );
+            
+            return qnd.new Impl(m_mapper);
+        }
+
+        /**
+         *  Returns a reference to the parent QNodeType.
+         *  @return
+         */
+        public QNodeType getQNodeType()
+        {
+            return QNodeType.this;
+        }
     }
 
 }

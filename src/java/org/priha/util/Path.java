@@ -353,8 +353,9 @@ public class Path implements Comparable, Serializable
      */
     public final Path resolve( QName component )
     {
-        List<QName> list = Arrays.asList( m_components );
+        ArrayList<QName> list = new ArrayList<QName>();
         
+        list.addAll( Arrays.asList( m_components ) );
         list.add(  component );
         
         return new Path( list.toArray(new QName[list.size()]), m_isAbsolute );

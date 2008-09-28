@@ -29,8 +29,7 @@ import javax.jcr.version.VersionException;
 import javax.xml.namespace.QName;
 
 import org.priha.core.values.ValueImpl;
-import org.priha.nodetype.GenericNodeType;
-import org.priha.nodetype.NodeTypeManagerImpl;
+import org.priha.nodetype.*;
 import org.priha.providers.RepositoryProvider;
 import org.priha.util.ConfigurationException;
 import org.priha.util.InvalidPathException;
@@ -290,10 +289,11 @@ public class ProviderManager implements ItemStore
     
         primaryType.loadValue( v );
         
-        NodeTypeManagerImpl ntm = ws.getNodeTypeManager();
-        GenericNodeType type = (GenericNodeType) ntm.getNodeType( primaryType.getString() );
+        QName pt = ws.getSession().toQName(primaryType.getString()); // FIXME: Inoptimal
+        QNodeTypeManager ntm = QNodeTypeManager.getInstance();
+        QNodeType type = ntm.getNodeType( pt );
     
-        NodeDefinition nd = ntm.findNodeDefinition( primaryType.getString() );
+        QNodeDefinition nd = ntm.findNodeDefinition( pt );
     
         if( VersionManager.isVersionHistoryPath(path) )
         {
@@ -323,8 +323,8 @@ public class ProviderManager implements ItemStore
         
         boolean multiple = values instanceof ValueImpl[];
    
-        PropertyDefinition pd = ni.getPrimaryNodeType().findPropertyDefinition(RepositoryImpl.getGlobalNamespaceRegistry().fromQName(name),multiple);
-        p.setDefinition( pd );
+        QPropertyDefinition pd = ni.getPrimaryQNodeType().findPropertyDefinition(name,multiple);
+        p.setDefinition( pd.new Impl(ws.getSession()) ); // FIXME: Inoptimal
         
         if( multiple )
             p.loadValue( (ValueImpl[]) values );

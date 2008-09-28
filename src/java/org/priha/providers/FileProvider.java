@@ -456,7 +456,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             else
             {
                 File df = new File( nodeDir, makeFilename( qname, ".data" ) );
-                writeValue( df, (ValueImpl)property.getValue() );
+                writeValue( df, property.getValue() );
             }
             out = new FileOutputStream(inf);
             

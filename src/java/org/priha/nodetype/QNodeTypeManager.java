@@ -228,9 +228,9 @@ public class QNodeTypeManager
         //
 
         if( gnt.m_ismixin )
-            m_mixinTypes.put( name, gnt );
+            m_mixinTypes.put( nsm.toQName( name ).toString(), gnt );
         else
-            m_primaryTypes.put( name, gnt );
+            m_primaryTypes.put( nsm.toQName( name ).toString(), gnt );
     }
 
     private boolean getBooleanProperty( XPath xpath, String expression, Node node )
@@ -377,10 +377,10 @@ public class QNodeTypeManager
      */
     public QNodeType getNodeType( QName qn ) throws NoSuchNodeTypeException
     {
-        QNodeType n = m_primaryTypes.get(qn);
+        QNodeType n = m_primaryTypes.get(qn.toString());
         if( n == null )
         {
-            n = m_mixinTypes.get(qn);
+            n = m_mixinTypes.get(qn.toString());
         }
 
         if( n == null ) throw new NoSuchNodeTypeException("No such node type: "+qn);

@@ -22,14 +22,13 @@ import java.util.Calendar;
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
-import org.priha.nodetype.GenericNodeType;
+import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
 import org.priha.util.Path;
 
@@ -37,7 +36,7 @@ public class VersionImpl
     extends NodeImpl
     implements Version
 {
-    public VersionImpl( SessionImpl session, Path path, QNodeType.Impl primaryType, NodeDefinition nDef )
+    public VersionImpl( SessionImpl session, Path path, QNodeType primaryType, QNodeDefinition nDef )
         throws ValueFormatException,
                VersionException,
                LockException,

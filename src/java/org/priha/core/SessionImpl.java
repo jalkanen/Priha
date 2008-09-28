@@ -29,7 +29,6 @@ import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
-import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.version.VersionException;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
@@ -37,6 +36,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.priha.core.locks.LockManager;
 import org.priha.core.namespace.NamespaceMapper;
 import org.priha.core.values.ValueFactoryImpl;
+import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
@@ -114,7 +114,7 @@ public class SessionImpl implements Session, NamespaceMapper
         if( ii instanceof NodeImpl )
             m_provider.addNode( (NodeImpl) ii );
         else
-            m_provider.putProperty( (NodeImpl) ii.getParent(), (PropertyImpl)ii );
+            m_provider.putProperty( ii.getParent(), (PropertyImpl)ii );
     }
     
     
@@ -346,9 +346,9 @@ public class SessionImpl implements Session, NamespaceMapper
             
             log.info("Repository empty; setting up root node...");
 
-            QNodeType.Impl rootType = getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured");
-            
-            NodeDefinition nd = rootType.findNodeDefinition( "*" );
+            QNodeType rootType = getWorkspace().getNodeTypeManager().getNodeType("nt:unstructured").getQNodeType();
+                     
+            QNodeDefinition nd = rootType.findNodeDefinition( QName.valueOf("*") );
             
             ni = new NodeImpl( this, "/", rootType, nd, true );
 
@@ -521,7 +521,7 @@ public class SessionImpl implements Session, NamespaceMapper
     {
         TreeSet<String> result = new TreeSet<String>();
         
-        String[] uris = m_repository.getGlobalNamespaceRegistry().getURIs();
+        String[] uris = RepositoryImpl.getGlobalNamespaceRegistry().getURIs();
         String[] uris2 = m_workspace.getNamespaceRegistry().getURIs();
         
         TreeSet<String> uriCol = new TreeSet<String>();
@@ -544,7 +544,7 @@ public class SessionImpl implements Session, NamespaceMapper
         }
         catch( NamespaceException e )
         {
-            return m_repository.getGlobalNamespaceRegistry().getURI(prefix);
+            return RepositoryImpl.getGlobalNamespaceRegistry().getURI(prefix);
         }
     }
 
@@ -558,7 +558,7 @@ public class SessionImpl implements Session, NamespaceMapper
         {
             try
             {
-                return m_repository.getGlobalNamespaceRegistry().fromQName(c);
+                return RepositoryImpl.getGlobalNamespaceRegistry().fromQName(c);
             }
             catch (Exception e1)
             {
@@ -578,7 +578,7 @@ public class SessionImpl implements Session, NamespaceMapper
         {
             try
             {
-                return m_repository.getGlobalNamespaceRegistry().toQName(c);
+                return RepositoryImpl.getGlobalNamespaceRegistry().toQName(c);
             }
             catch (Exception e1)
             {

@@ -22,17 +22,17 @@ import java.util.ArrayList;
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NodeDefinition;
-import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 
+import org.priha.core.JCRConstants;
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
-import org.priha.nodetype.GenericNodeType;
+import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
+import org.priha.nodetype.QNodeTypeManager;
 import org.priha.util.Path;
 
 public class VersionHistoryImpl extends NodeImpl implements VersionHistory
@@ -40,20 +40,19 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
     public static VersionHistoryImpl getInstance( SessionImpl session, Path path )
         throws RepositoryException
     {
-        NodeTypeManager nt = session.getWorkspace().getNodeTypeManager();
+        QNodeTypeManager nt = QNodeTypeManager.getInstance();
 
-        QNodeType.Impl versionType = nt.getNodeType("jcr:versionHistory");
+        QNodeType versionType = nt.getNodeType(JCRConstants.Q_NT_VERSIONHISTORY);
 
-        NodeDefinition nDef = versionType.findNodeDefinition( path.getLastComponent() );
+        QNodeDefinition nDef = versionType.findNodeDefinition( path.getLastComponent() );
 
         return new VersionHistoryImpl( session, path, versionType, nDef );
     }
 
-    public VersionHistoryImpl(SessionImpl session, Path path, GenericNodeType primaryType, NodeDefinition nDef)
+    public VersionHistoryImpl(SessionImpl session, Path path, QNodeType primaryType, QNodeDefinition nDef)
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         super(session, path, primaryType, nDef, true);
-        // TODO Auto-generated constructor stub
     }
 
     public void addVersionLabel(String arg0, String arg1, boolean arg2) throws VersionException, RepositoryException

@@ -62,6 +62,8 @@ public class RepositoryManager
         "/priha.properties",
         "/WEB-INF/priha.properties"
     };
+
+    public static final String NS_PRIHA = "http://www.priha.org/ns/1.0";
     
     /**
      *  Returns a default repository object for no-pain setup.  The Repository

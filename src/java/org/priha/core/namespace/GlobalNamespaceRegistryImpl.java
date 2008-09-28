@@ -19,6 +19,7 @@ package org.priha.core.namespace;
 
 import javax.jcr.*;
 
+import org.priha.RepositoryManager;
 import org.priha.core.JCRConstants;
 import org.xml.sax.helpers.NamespaceSupport;
 
@@ -35,6 +36,8 @@ public class GlobalNamespaceRegistryImpl extends NamespaceRegistryImpl implement
         m_nsmap.put("mix", JCRConstants.NS_JCP_MIX);
         m_nsmap.put("xml", NamespaceSupport.XMLNS);
         m_nsmap.put("sv",  JCRConstants.NS_JCP_SV);
+        m_nsmap.put("priha",RepositoryManager.NS_PRIHA);
+        m_nsmap.put("test", "http://www.priha.org/test/1.0");
         m_nsmap.put("", "");
     }
 
