@@ -38,6 +38,20 @@ public class PathTest extends TestCase
         assertEquals( "/foo[2]/bar[3]/{http://www.jcp.org/jcr/1.0}node",p.toString() );
     }
     
+    public void testQPath() throws Exception
+    {
+        Path p = PathFactory.getPath( "/{http://www.jcp.org/jcr/1.0}foo[2]/{http://www.jcp.org/jcr/1.0}bar/node");
+    
+        assertEquals( "/{http://www.jcp.org/jcr/1.0}foo[2]/{http://www.jcp.org/jcr/1.0}bar/node",p.toString() );
+    }
+
+    public void testQPath2() throws Exception
+    {
+        Path p = new Path(m_nsa,"/{http://www.jcp.org/jcr/1.0}foo[2]/{http://www.jcp.org/jcr/1.0}bar/jcr:node");
+    
+        assertEquals( "/{http://www.jcp.org/jcr/1.0}foo[2]/{http://www.jcp.org/jcr/1.0}bar/{http://www.jcp.org/jcr/1.0}node",p.toString() );
+    }
+    
     public void testIsRoot1() throws Exception
     {
         Path p = new Path(m_nsa,"/");

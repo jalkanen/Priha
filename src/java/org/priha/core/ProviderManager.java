@@ -279,7 +279,7 @@ public class ProviderManager implements ItemStore
     {
         NodeImpl ni = null;
         
-        Path ptPath = path.resolve(RepositoryImpl.getGlobalNamespaceRegistry(), "jcr:primaryType");
+        Path ptPath = path.resolve( JCRConstants.Q_JCR_PRIMARYTYPE );
         PropertyImpl primaryType = ws.createPropertyImpl( ptPath );
     
         ValueImpl v = (ValueImpl)getPropertyValue( ws, ptPath );

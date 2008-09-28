@@ -46,6 +46,11 @@ import org.priha.util.TextUtil;
  */
 public class FileProvider implements RepositoryProvider, PerformanceReporter
 {
+    private static final String PROP_NUM_PROPERTIES = "numProperties";
+    private static final String PROP_MULTIPLE       = "multiple";
+    private static final String PROP_TYPE           = "type";
+    private static final String PROP_PATH           = "path";
+
     private File m_root;
     
     private Logger log = Logger.getLogger( getClass().getName() );
@@ -202,7 +207,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 {
                     Properties props = getPropertyInfo( f, Q_JCR_PRIMARYTYPE );
                     
-                    Path p = PathFactory.getPath( props.getProperty( "path" ) );
+                    Path p = PathFactory.getPath( props.getProperty( PROP_PATH ) );
                    
                     list.add( p.getParentPath() );
                 
@@ -355,9 +360,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 
                         props.load(in);
         
-                        String qname =  props.getProperty("qname");
+                        String qname = props.getProperty(PROP_PATH);
                 
-                        proplist.add( QName.valueOf(qname) );
+                        proplist.add( PathFactory.getPath( qname ).getLastComponent() );
                     }
                     finally
                     {
@@ -455,9 +460,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         Properties props = new Properties();
         
-        props.setProperty( "path", property.getInternalPath().toString() );
-        props.setProperty( "type",  PropertyType.nameFromValue( property.getType() ) );
-        props.setProperty( "multiple", property.getDefinition().isMultiple() ? "true" : "false" );
+        props.setProperty( PROP_PATH, property.getInternalPath().toString() );
+        props.setProperty( PROP_TYPE,  PropertyType.nameFromValue( property.getType() ) );
+        props.setProperty( PROP_MULTIPLE, property.getDefinition().isMultiple() ? "true" : "false" );
 
         OutputStream out = null;
         
@@ -465,7 +470,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         {
             if( property.getDefinition().isMultiple() )
             {
-                props.setProperty( "numProperties", Integer.toString(property.getValues().length) );
+                props.setProperty( PROP_NUM_PROPERTIES, Integer.toString(property.getValues().length) );
                 Value[] values = property.getValues();
                 
                 for( int i = 0; i < values.length; i++ )
@@ -516,7 +521,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      */
     private void saveUuidShortcut(PropertyImpl property) throws RepositoryException
     {
-        if( property.getQName().equals(NS_JCP+"uuid") )
+        if( property.getQName().equals(Q_JCR_UUID) )
         {
             File f = new File( getHashPath(property.getString()) );
             
@@ -592,8 +597,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         else if( propType.equals(PropertyType.TYPENAME_NAME) )
         {
             String qnameStr = readContentsAsString(propFile);
-            //QName qn = QName.valueOf( qnameStr );
-            value = vf.createValue( qnameStr, PropertyType.NAME );
+            QName qn = QName.valueOf( qnameStr );
+            value = vf.createValue( qn, PropertyType.NAME );
         }
         else if( propType.equals(PropertyType.TYPENAME_PATH ))
         {
@@ -657,12 +662,12 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         {
             Properties props = getPropertyInfo( nodeDir, path.getLastComponent() );
             
-            String propType = props.getProperty("type");
-            Boolean isMultiple = new Boolean(props.getProperty("multiple"));
+            String propType = props.getProperty(PROP_TYPE);
+            Boolean isMultiple = new Boolean(props.getProperty(PROP_MULTIPLE));
             
             if( isMultiple )
             {
-                int items = Integer.parseInt( props.getProperty( "numProperties" ) );
+                int items = Integer.parseInt( props.getProperty( PROP_NUM_PROPERTIES ) );
                 
                 ValueImpl[] result = new ValueImpl[items];
                 for( int i = 0; i < items; i++ )

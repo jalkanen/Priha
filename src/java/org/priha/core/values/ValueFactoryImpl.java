@@ -22,6 +22,7 @@ import java.io.InputStream;
 import java.util.Calendar;
 
 import javax.jcr.*;
+import javax.xml.namespace.QName;
 
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
@@ -265,6 +266,13 @@ public class ValueFactoryImpl implements ValueFactory
         }
         
         return v;
+    }
+
+    public ValueImpl createValue( QName qn, int type ) throws ValueFormatException
+    {
+        if( type != PropertyType.NAME ) throw new ValueFormatException("Can only create NAME types from QNames");
+        
+        return new QNameValue(qn).new Impl(m_session);
     }
 
 }

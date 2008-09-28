@@ -33,6 +33,11 @@ public class QNameValue extends QValue implements Serializable
 
     private QName m_value; 
     
+    public QNameValue(QName value)
+    {
+        m_value = value;
+    }
+    
     public QNameValue(NamespaceMapper na, String value) throws RepositoryException
     {
         m_value = na.toQName( value );

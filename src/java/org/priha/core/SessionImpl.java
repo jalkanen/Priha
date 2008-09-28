@@ -513,7 +513,7 @@ public class SessionImpl implements Session, NamespaceMapper
         }
         catch( NamespaceException e )
         {
-            return m_workspace.getNamespaceRegistry().getPrefix(uri);
+            return RepositoryImpl.getGlobalNamespaceRegistry().getPrefix( uri );
         }
     }
 

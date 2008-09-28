@@ -137,7 +137,7 @@ public class Path implements Comparable, Serializable
         
         QName q;
         
-        if( ns != null )
+        if( ns != null && s.indexOf( '{' ) == -1 )
         {
             q = ns.toQName( s );
         }
@@ -152,28 +152,34 @@ public class Path implements Comparable, Serializable
     private QName[] parsePath( NamespaceMapper ns, String path ) throws NamespaceException, RepositoryException
     {
         ArrayList<QName> ls = new ArrayList<QName>();
-
-        //
-        //  Root is a special case which cannot be parsed by below
-        //  code.
-        //
-        //if( path.equals("/") ) return new QName[] { new QName("/") };
+        StringBuilder sb = new StringBuilder(32); // Just a guess
         
-        int start = 0, end = 0;
-        while( (end = path.indexOf('/',start)) != -1 )
+        for( int i = 0; i < path.length(); i++ )
         {
-            String component = path.substring( start, end );
-            start = end+1;
-            if( component.length() > 0 ) 
+            char ch = path.charAt( i );
+            
+            if( ch == '{' )
             {
-                ls.add(cleanComponent(ns, component));
+                int end = path.indexOf( '}', i+1 );
+                sb.append( path.substring( i, end+1 ) );
+                i = end;
+            }
+            else if( ch == '/' )
+            {
+                if( sb.length() > 0 )
+                {
+                    ls.add( cleanComponent(ns,sb.toString()) );
+                    sb.delete( 0, sb.length() );
+                }
+            }
+            else
+            {
+                sb.append( ch );
             }
         }
-
-        if( start < path.length() )
-        {
-            ls.add(cleanComponent(ns, path.substring(start))); // Add the final component
-        }
+        
+        if( sb.length() > 0 )
+            ls.add( cleanComponent(ns, sb.toString()) );
         
         return ls.toArray( new QName[ls.size()] );
     }
