@@ -187,7 +187,14 @@ public class XMLImport extends DefaultHandler
             }
             
             m_currentStore.m_nodeName = nodeName;
-            m_currentPath = m_currentPath.resolve(m_session.toQName( nodeName ) );
+            try
+            {
+                m_currentPath = m_currentPath.resolve(m_session.toQName( nodeName ) );
+            }
+            catch( RepositoryException e )
+            {
+                throw new SAXException(e);
+            }
             
             return;
         }

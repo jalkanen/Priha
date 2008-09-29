@@ -82,15 +82,12 @@ public class FileUtil
 
     /**
      *  Reads in file contents.
-     *  <P>
-     *  This method is smart and falls back to ISO-8859-1 if the input stream does not
-     *  seem to be in the specified encoding.
      *
      *  @param input The InputStream to read from.
      *  @param encoding The encoding to assume at first.
      *  @return A String, interpreted in the "encoding", or, if it fails, in Latin1.
      *  @throws IOException If the stream cannot be read or the stream cannot be
-     *          decoded (even) in Latin1
+     *          decoded.
      */
     public static String readContents( InputStream input, String encoding )
         throws IOException
@@ -103,8 +100,8 @@ public class FileUtil
         Charset        cset        = Charset.forName( encoding );
         CharsetDecoder csetdecoder = cset.newDecoder();
 
-        csetdecoder.onMalformedInput( CodingErrorAction.REPORT );
-        csetdecoder.onUnmappableCharacter( CodingErrorAction.REPORT );
+        csetdecoder.onMalformedInput( CodingErrorAction.REPLACE );
+        csetdecoder.onUnmappableCharacter( CodingErrorAction.REPLACE );
 
         try
         {
@@ -114,25 +111,9 @@ public class FileUtil
         }
         catch( CharacterCodingException e )
         {
-            Charset        latin1    = Charset.forName("ISO-8859-1");
-            CharsetDecoder l1decoder = latin1.newDecoder();
-
-            l1decoder.onMalformedInput( CodingErrorAction.REPORT );
-            l1decoder.onUnmappableCharacter( CodingErrorAction.REPORT );
-
-            try
-            {
-                bbuf = ByteBuffer.wrap( out.toByteArray() );
-
-                CharBuffer cbuf = l1decoder.decode( bbuf );
-
-                return cbuf.toString();
-            }
-            catch( CharacterCodingException ex )
-            {
-                throw (CharacterCodingException) ex.fillInStackTrace();
-            }
+            log.fine( "Failed to map a character to UTF-8" );
         }
+        return null;
     }
 
     /**

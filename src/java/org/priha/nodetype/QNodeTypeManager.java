@@ -22,11 +22,12 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.logging.Logger;
 
-import javax.jcr.NamespaceException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
-import javax.jcr.Workspace;
-import javax.jcr.nodetype.*;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.NodeTypeIterator;
+import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.version.OnParentVersionAction;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
@@ -241,7 +242,7 @@ public class QNodeTypeManager
         return "true".equals(res);
     }
 
-    private QPropertyDefinition parsePropertyDefinition( QNodeType parent, Node node ) throws XPathExpressionException, NamespaceException
+    private QPropertyDefinition parsePropertyDefinition( QNodeType parent, Node node ) throws XPathExpressionException, RepositoryException
     {
         XPath xpath = XPathFactory.newInstance().newXPath();
 

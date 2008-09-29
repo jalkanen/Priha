@@ -25,8 +25,9 @@ import java.util.Comparator;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
+import javax.xml.namespace.QName;
 
-import org.priha.core.JCRConstants;
+import static org.priha.core.JCRConstants.*;
 import org.priha.core.PropertyImpl;
 import org.priha.core.SessionImpl;
 import org.priha.util.Base64;
@@ -65,11 +66,11 @@ public class XMLExport
     {
         contentHandler.startDocument();
         
-        contentHandler.startPrefixMapping(m_session.getNamespacePrefix( JCRConstants.NS_JCP_SV ), 
-                                          JCRConstants.NS_JCP_SV);
-        contentHandler.startPrefixMapping("jcr", JCRConstants.NS_JCP);
-        contentHandler.startPrefixMapping("mix", JCRConstants.NS_JCP_MIX);
-        contentHandler.startPrefixMapping("nt",  JCRConstants.NS_JCP_NT);
+        contentHandler.startPrefixMapping(m_session.getNamespacePrefix( NS_JCP_SV ), 
+                                          NS_JCP_SV);
+        contentHandler.startPrefixMapping("jcr", NS_JCP);
+        contentHandler.startPrefixMapping("mix", NS_JCP_MIX);
+        contentHandler.startPrefixMapping("nt",  NS_JCP_NT);
         
         exportElement(absPath, contentHandler, skipBinary, noRecurse);
 
@@ -200,17 +201,17 @@ public class XMLExport
     {
         public int compare(PropertyImpl o1, PropertyImpl o2)
         {
-            String n1 = o1.getInternalPath().getLastComponent().toString();
-            String n2 = o2.getInternalPath().getLastComponent().toString();
+            QName n1 = o1.getInternalPath().getLastComponent();
+            QName n2 = o2.getInternalPath().getLastComponent();
             
-            if( n1.equals(JCRConstants.JCR_PRIMARY_TYPE) && !n2.equals(JCRConstants.JCR_PRIMARY_TYPE)) return -1;
-            if( n2.equals(JCRConstants.JCR_PRIMARY_TYPE) && !n1.equals(JCRConstants.JCR_PRIMARY_TYPE)) return 1;
-            if( n1.equals(JCRConstants.JCR_MIXIN_TYPES) && !n2.equals(JCRConstants.JCR_MIXIN_TYPES)) return -1;
-            if( n2.equals(JCRConstants.JCR_MIXIN_TYPES) && !n1.equals(JCRConstants.JCR_MIXIN_TYPES)) return 1;
-            if( n1.equals(JCRConstants.JCR_UUID) && !n1.equals(JCRConstants.JCR_UUID)) return -1;
-            if( n2.equals(JCRConstants.JCR_UUID) && !n2.equals(JCRConstants.JCR_UUID)) return 1;
+            if( n1.equals(Q_JCR_PRIMARYTYPE) && !n2.equals(Q_JCR_PRIMARYTYPE)) return -1;
+            if( n2.equals(Q_JCR_PRIMARYTYPE) && !n1.equals(Q_JCR_PRIMARYTYPE)) return 1;
+            if( n1.equals(Q_JCR_MIXINTYPES) && !n2.equals(Q_JCR_MIXINTYPES)) return -1;
+            if( n2.equals(Q_JCR_MIXINTYPES) && !n1.equals(Q_JCR_MIXINTYPES)) return 1;
+            if( n1.equals(Q_JCR_UUID) && !n1.equals(Q_JCR_UUID)) return -1;
+            if( n2.equals(Q_JCR_UUID) && !n2.equals(Q_JCR_UUID)) return 1;
             
-            return n1.compareTo(n2);
+            return n1.toString().compareTo(n2.toString());
         }
         
     }

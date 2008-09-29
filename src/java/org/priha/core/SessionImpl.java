@@ -567,25 +567,21 @@ public class SessionImpl implements Session, NamespaceMapper
         return c.getLocalPart();
     }
 
-    public QName toQName(String c)
+    public QName toQName(String c) throws NamespaceException, RepositoryException
     {
         if( c == null ) return null;
         
-        try
+        if( c.indexOf( '{' ) != -1 ) throw new RepositoryException("Already in QName format: "+c);
+
+        int idx = c.indexOf(':');
+        if( idx != -1 )
         {
-            int idx = c.indexOf(':');
-            if( idx != -1 )
-            {
-                String prefix = c.substring(0,idx);
-                String name   = c.substring(idx+1);
+            String prefix = c.substring(0,idx);
+            String name   = c.substring(idx+1);
                 
-                String uri = getNamespaceURI( prefix );
+            String uri = getNamespaceURI( prefix );
         
-                return new QName( uri, name, prefix );
-            }
-        }
-        catch( Exception e )
-        {
+            return new QName( uri, name, prefix );
         }
         
         return new QName(c);

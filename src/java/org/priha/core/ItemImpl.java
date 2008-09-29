@@ -132,7 +132,7 @@ public abstract class ItemImpl implements Item
     
     public String getPath() throws RepositoryException
     {
-        return m_path.toString();
+        return m_path.toString(m_session);
     }
 
     public SessionImpl getSession() throws RepositoryException

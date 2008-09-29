@@ -81,7 +81,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         if( populateDefaults )
         {
             internalSetProperty( Q_JCR_PRIMARYTYPE, 
-                                 m_primaryType.getQName().toString(), 
+                                 session.fromQName( m_primaryType.getQName() ), // FIXME: Not very efficient 
                                  PropertyType.NAME );
         }
     }
@@ -299,7 +299,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 }
                 catch( UnsupportedRepositoryOperationException e ) 
                 {
-                    nd = (NodeImpl)nd.getParent();
+                    nd = nd.getParent();
                 }
             }
             
@@ -761,6 +761,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                                                        ConstraintViolationException,
                                                                        RepositoryException
     {
+        //
+        //  Again, setting a value to null is the same as removing the property.
+        //
+        if( value == null )
+        {
+            PropertyImpl p = getProperty(name);
+            p.remove();
+            return p;
+        }
+        
         if( value.getType() != type )
         {
             throw new ConstraintViolationException("Type of the Value and the type parameter must match.");
@@ -1051,12 +1061,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //throw new ConstraintViolationException(getPath()+" has already been removed");
             return; // Die nicely
             
+        if( isLockedWithoutToken() )
+            throw new LockException("This item is locked, so you cannot remove it.");
+        
         if( getPath().equals("/") || getPath().equals("/jcr:system") ) return; // Refuse to remove
 
         NodeType parentType = getParent().getPrimaryNodeType();
         
         if( !parentType.canRemoveItem(getName()) &&
-            ((NodeImpl)getParent()).getState() != ItemState.REMOVED )
+            getParent().getState() != ItemState.REMOVED )
         {
             throw new ConstraintViolationException("Attempted to delete a mandatory child node:"+getInternalPath());
         }

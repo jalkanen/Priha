@@ -119,8 +119,10 @@ public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
      *  @throws RepositoryException 
      *  @throws NamespaceException If the mapping cannot be accomplished. 
      */
-    public QName toQName(String val) throws NamespaceException
+    public QName toQName(String val) throws NamespaceException, RepositoryException
     {
+        if( val.indexOf( '{' ) != -1 ) throw new RepositoryException("Already in QName format: "+val);
+        
         int idx = val.indexOf(':');
         if( idx != -1 )
         {
@@ -134,7 +136,7 @@ public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
         
         return new QName( val );
     }
-
+    
     /**
      * Turns a string of the form "{uri}name" to "prefix:name".
      * 

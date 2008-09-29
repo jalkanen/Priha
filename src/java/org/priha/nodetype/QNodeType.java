@@ -1,6 +1,7 @@
 package org.priha.nodetype;
 
 import javax.jcr.NamespaceException;
+import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
@@ -202,7 +203,7 @@ public class QNodeType
             {
                 return QNodeType.this.canAddChildNode( m_mapper.toQName( childNodeName ) );
             }
-            catch( NamespaceException e )
+            catch( RepositoryException e )
             {
                 // FIXME: log
             }
@@ -222,9 +223,10 @@ public class QNodeType
             {
                 return QNodeType.this.canRemoveItem( m_mapper.toQName( itemName ) );
             }
-            catch( NamespaceException e )
+            catch( RepositoryException e )
             {
-                // FIXME: log
+                // TODO Auto-generated catch block
+                e.printStackTrace();
             }
 
             return false;
@@ -237,7 +239,7 @@ public class QNodeType
             {
                 qn = m_mapper.toQName( propertyName );
             }
-            catch( NamespaceException e )
+            catch( RepositoryException e )
             {
                 return false; // FIXME: LOG
             }
@@ -252,7 +254,7 @@ public class QNodeType
             {
                 qn = m_mapper.toQName( propertyName );
             }
-            catch( NamespaceException e )
+            catch( RepositoryException e )
             {
                 return false; // FIXME: LOG
             }
@@ -358,7 +360,7 @@ public class QNodeType
             {
                 qn = m_mapper.toQName( nodeTypeName );
             }
-            catch( NamespaceException e )
+            catch( RepositoryException e )
             {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
@@ -384,7 +386,7 @@ public class QNodeType
             return m_ismixin;
         }
       
-        public NodeDefinition findNodeDefinition(String string) throws NamespaceException
+        public NodeDefinition findNodeDefinition(String string) throws RepositoryException
         {
             QNodeDefinition qnd = QNodeType.this.findNodeDefinition( m_mapper.toQName(string) );
             
