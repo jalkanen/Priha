@@ -1,3 +1,12 @@
+2008-09-29  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.1.1
+        
+        * Massive changes to the internal workings; Priha now
+        correctly stores QNames internally as much as it can,
+        converting to the correct namespace mapping at the last
+        instance.  Total fail rate for tests: 130/584.
+
 2008-08-22  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.1.0
