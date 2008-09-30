@@ -220,8 +220,13 @@ public abstract class ItemImpl implements Item
             
         if( !getInternalPath().isRoot() && parentToo )
         {
+            //
+            //  Regardless of the state of the current Item, the parent
+            //  shall always be marked as modified (since the state of this
+            //  child has changed.)
+            //
             NodeImpl parent = getParent();
-            parent.markModified(isModified, false);
+            parent.markModified(true, false);
         }
     }
 

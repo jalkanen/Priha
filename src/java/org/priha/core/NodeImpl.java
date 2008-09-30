@@ -226,7 +226,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             ni.sanitize();
 
-            ni.markModified(true);
+            ni.markModified(false);
             //m_session.addNode( ni ); // Already taken care of by markModified
         }
         catch( InvalidPathException e)
@@ -553,9 +553,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         if( isNodeType("mix:referenceable") )
         {
-            Property uuid = getProperty(JCR_UUID);
+            try
+            {
+                Property uuid = getProperty(JCR_UUID);
 
-            return uuid.getValue().getString();
+                return uuid.getValue().getString();
+            }
+            catch( PathNotFoundException e )
+            {
+                // Fine, let's just fall through, and end up throwing an exception
+            }
         }
 
         throw new UnsupportedRepositoryOperationException("No UUID defined for this node");
@@ -714,9 +721,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             QPropertyDefinition pd = parentType.findPropertyDefinition(name,ismultiple);
             
             prop = new PropertyImpl( m_session, propertypath, pd );
+            prop.markModified(false); // New properties are not considered modified
         }
-
-        prop.markModified(true);
+        else
+        {
+            prop.markModified( true ); // But old properties are.
+        }
         
         if( value == null )
         {

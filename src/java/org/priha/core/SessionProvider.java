@@ -37,7 +37,9 @@ public class SessionProvider
     private ItemStore          m_source;
     private WorkspaceImpl      m_workspace;
     
-    private SortedMap<Path,ItemImpl> m_items;
+    private SortedMap<Path,ItemImpl> m_changedItems;
+    
+    private Map<Path,ItemImpl> m_fetchedItems = new HashMap<Path,ItemImpl>();
     
     public SessionProvider( SessionImpl session, ItemStore source )
     {
@@ -49,27 +51,7 @@ public class SessionProvider
         //  The nodes are sorted according to their length to make
         //  sure when they are saved, we save the parent path first.
         //
-        m_items = new TreeMap<Path,ItemImpl>( new Comparator<Path>() {
-            public int compare(Path o1, Path o2)
-            {
-                int res = o1.depth() - o2.depth();
-                
-                if( res == 0 )
-                {
-                    //
-                    //  OK, this is a bit kludgy.  We put the primaryType first so that
-                    //  we make sure it's the first property to be saved.
-                    //
-                    
-                    if( o1.getLastComponent().equals(Q_JCR_PRIMARYTYPE) && !o2.getLastComponent().equals(Q_JCR_PRIMARYTYPE) ) return -1;
-                    if( o2.getLastComponent().equals(Q_JCR_PRIMARYTYPE) && !o1.getLastComponent().equals(Q_JCR_PRIMARYTYPE) ) return 1;
-                    
-                    res = o1.toString().compareTo( o2.toString() );
-                }
-                
-                return res;
-            };
-        });
+        m_changedItems = new TreeMap<Path,ItemImpl>( new PrimaryTypePreferringComparator() );
     }
     
     public void save() throws RepositoryException
@@ -79,17 +61,26 @@ public class SessionProvider
     
     public void addNode( NodeImpl ni ) throws RepositoryException
     {
-        m_items.put( ni.getInternalPath(), ni );
+        m_changedItems.put( ni.getInternalPath(), ni );
     }
 
     public ItemImpl getItem( Path path ) throws InvalidPathException, RepositoryException
     {
-        ItemImpl ii = m_items.get(path);
+        ItemImpl ii = m_changedItems.get(path);
 
         if( ii != null ) 
             return ii;
         
-        return m_source.getItem(m_workspace, path);
+        ii = m_fetchedItems.get(path);
+        
+        if( ii != null )
+            return ii;
+        
+        ii = m_source.getItem(m_workspace, path);
+        
+        if( ii != null ) m_fetchedItems.put( path, ii );
+        
+        return ii;
     }
     
     public void close()
@@ -104,7 +95,7 @@ public class SessionProvider
 
     public NodeImpl findByUUID(String uuid) throws RepositoryException
     {
-        for( ItemImpl ni : m_items.values() )
+        for( ItemImpl ni : m_changedItems.values() )
         {
             try
             {
@@ -116,8 +107,25 @@ public class SessionProvider
             }
             catch(RepositoryException e) {}
         }
+
+        for( ItemImpl ni : m_fetchedItems.values() )
+        {
+            try
+            {
+                if( ni.isNode() )
+                {
+                    String pid = ((NodeImpl)ni).getUUID();
+                    if( uuid.equals(pid) ) return (NodeImpl)ni;
+                }
+            }
+            catch(RepositoryException e) {}
+        }
+
+        NodeImpl ii = m_source.findByUUID( m_workspace, uuid );
         
-        return m_source.findByUUID( m_workspace, uuid );
+        if( ii != null ) m_fetchedItems.put( ii.getInternalPath(), ii );
+        
+        return ii;
     }
 
     /**
@@ -131,7 +139,7 @@ public class SessionProvider
     {
         TreeSet<PropertyImpl> response = new TreeSet<PropertyImpl>();
         
-        for (ItemImpl ii : m_items.values())
+        for (ItemImpl ii : m_changedItems.values())
         {
             if (!ii.isNode())
             {
@@ -171,7 +179,7 @@ public class SessionProvider
     {
         TreeSet<Path> res = new TreeSet<Path>();
         
-        for( ItemImpl ni : m_items.values() )
+        for( ItemImpl ni : m_changedItems.values() )
         {
             if( parentpath.isParentOf(ni.getInternalPath()) && ni.isNode() )
             {
@@ -196,7 +204,7 @@ public class SessionProvider
 
     public boolean nodeExists(Path path) throws RepositoryException
     {
-        ItemImpl ni = m_items.get( path );
+        ItemImpl ni = m_changedItems.get( path );
 
         if( ni != null && ni.isNode() ) 
         {
@@ -216,7 +224,7 @@ public class SessionProvider
 */
     public void remove(ItemImpl item) throws RepositoryException
     {
-        m_items.put( item.getInternalPath(), item );
+        m_changedItems.put( item.getInternalPath(), item );
     }
 
     public void stop()
@@ -226,12 +234,12 @@ public class SessionProvider
 
     public boolean hasPendingChanges()
     {
-        return !m_items.isEmpty();
+        return !m_changedItems.isEmpty();
     }
 
     public void clear()
     {
-        m_items.clear();
+        m_changedItems.clear();
     }
 
     public void save(Path path) throws RepositoryException
@@ -239,7 +247,7 @@ public class SessionProvider
         //
         //  Test referential integrity.
         //
-        for( Iterator<Entry<Path, ItemImpl>> i = m_items.entrySet().iterator(); i.hasNext(); )
+        for( Iterator<Entry<Path, ItemImpl>> i = m_changedItems.entrySet().iterator(); i.hasNext(); )
         {
             Entry<Path, ItemImpl> entry = i.next();
             
@@ -272,7 +280,7 @@ public class SessionProvider
         //
         //  Do the actual save.
         //
-        for( Iterator<Entry<Path, ItemImpl>> i = m_items.entrySet().iterator(); i.hasNext(); )
+        for( Iterator<Entry<Path, ItemImpl>> i = m_changedItems.entrySet().iterator(); i.hasNext(); )
         {
             Entry<Path, ItemImpl> entry = i.next();
             
@@ -296,11 +304,13 @@ public class SessionProvider
                             ni.preSave();
                             m_source.addNode( m_workspace, ni );
                             ni.postSave();
+                            m_fetchedItems.put( ni.getInternalPath(), ni );
                             break;
                         
                         case REMOVED:
                             //m_source.remove( m_workspace, ni.getInternalPath() );
                             toberemoved.add(ni.getInternalPath());
+                            m_fetchedItems.remove( ni.getInternalPath() );
                             break;
                     }
                 }
@@ -315,11 +325,13 @@ public class SessionProvider
                             pi.preSave();
                             m_source.putProperty( m_workspace, pi );
                             pi.postSave();
+                            m_fetchedItems.put( pi.getInternalPath(), pi );
                             break;
                                 
                         case REMOVED:
                             // m_source.remove( m_workspace, pi.getInternalPath() );
                             toberemoved.add(pi.getInternalPath());
+                            m_fetchedItems.remove( pi.getInternalPath() );
                             break;                     
                     }
                 }
@@ -373,7 +385,7 @@ public class SessionProvider
         }
         catch( RepositoryException e )
         {
-            ItemImpl ii = m_items.get( path );
+            ItemImpl ii = m_changedItems.get( path );
             
             if( ii != null && ii.isNode() ) ni = (NodeImpl)ii;
         }
@@ -389,7 +401,7 @@ public class SessionProvider
         //  same hashmap and rely on the fact that there can't be two items with 
         //  the same key.
         //
-        for( ItemImpl ii : m_items.values() )
+        for( ItemImpl ii : m_changedItems.values() )
         {
             if( ii.isNode() == false && ii.getInternalPath().getParentPath().equals(path) )
             {
@@ -403,7 +415,7 @@ public class SessionProvider
     public void putProperty(NodeImpl impl, PropertyImpl property) throws RepositoryException
     {
         addNode( impl );
-        m_items.put( property.getInternalPath(), property );
+        m_changedItems.put( property.getInternalPath(), property );
     }
 
     /**
@@ -423,11 +435,11 @@ public class SessionProvider
         
         if( path.isRoot() ) 
         {
-            m_items.clear(); // Shortcut
+            m_changedItems.clear(); // Shortcut
             return;
         }
         
-        for( Iterator<Entry<Path, ItemImpl>> i = m_items.entrySet().iterator(); i.hasNext(); )
+        for( Iterator<Entry<Path, ItemImpl>> i = m_changedItems.entrySet().iterator(); i.hasNext(); )
         {
             Entry<Path, ItemImpl> entry = i.next();
             
@@ -440,5 +452,32 @@ public class SessionProvider
         }
  
     }
+
+    /**
+     *  A comparator which puts primarytypes first.
+     */
+    private static final class PrimaryTypePreferringComparator implements Comparator<Path>
+    {
+        public int compare(Path o1, Path o2)
+        {
+            int res = o1.depth() - o2.depth();
+            
+            if( res == 0 )
+            {
+                //
+                //  OK, this is a bit kludgy.  We put the primaryType first so that
+                //  we make sure it's the first property to be saved.
+                //
+                
+                if( o1.getLastComponent().equals(Q_JCR_PRIMARYTYPE) && !o2.getLastComponent().equals(Q_JCR_PRIMARYTYPE) ) return -1;
+                if( o2.getLastComponent().equals(Q_JCR_PRIMARYTYPE) && !o1.getLastComponent().equals(Q_JCR_PRIMARYTYPE) ) return 1;
+                
+                res = o1.toString().compareTo( o2.toString() );
+            }
+            
+            return res;
+        }
+    }
+
 
 }

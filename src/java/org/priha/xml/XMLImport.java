@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
+import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -16,6 +17,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.priha.core.JCRConstants;
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
+import org.priha.core.namespace.NamespaceRegistryImpl;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QPropertyDefinition;
 import org.priha.util.Base64;
@@ -59,9 +61,10 @@ public class XMLImport extends DefaultHandler
     public void doImport( InputStream xmlDoc ) throws ParserConfigurationException, SAXException, IOException
     {
         SAXParserFactory spf = SAXParserFactory.newInstance();
+        spf.setNamespaceAware( true );
         
         SAXParser parser = spf.newSAXParser();
-        
+
         parser.parse( xmlDoc, this );
     }
     
@@ -71,7 +74,7 @@ public class XMLImport extends DefaultHandler
         m_style = ParserStyle.SYSTEM;        
     }
     
-    private PropertyStore getProp(NodeStore ns, String name)
+    private PropertyStore getProp(NodeStore ns, QName name)
     {
         for( PropertyStore ps : ns.m_properties )
         {
@@ -91,7 +94,7 @@ public class XMLImport extends DefaultHandler
      */
     private void deserializeStore( NodeStore ns ) throws ValueFormatException, IllegalStateException, RepositoryException
     {
-        String primaryType = getProp(ns,JCRConstants.JCR_PRIMARY_TYPE).m_values.get(0).getString();
+        String primaryType = getProp(ns,JCRConstants.Q_JCR_PRIMARYTYPE).m_values.get(0).getString();
         
         String path = m_currentPath.toString();
                 
@@ -110,9 +113,9 @@ public class XMLImport extends DefaultHandler
             //
             // Known property names which need to be handled separately.
             //
-            if( ps.m_propertyName.equals(JCRConstants.JCR_PRIMARY_TYPE) ) continue;
+            if( ps.m_propertyName.equals(JCRConstants.Q_JCR_PRIMARYTYPE) ) continue;
             
-            if( ps.m_propertyName.equals(JCRConstants.JCR_MIXIN_TYPES) )
+            if( ps.m_propertyName.equals(JCRConstants.Q_JCR_MIXINTYPES) )
             {
                 for( Value v : ps.m_values )
                 {
@@ -132,18 +135,19 @@ public class XMLImport extends DefaultHandler
             //  Now we try to figure out whether this should be a multi or a single property.
             //  The problem is when it is a multi property, but it was written as a single value.
             //
-            QPropertyDefinition pdmulti = parentType.findPropertyDefinition( m_session.toQName(ps.m_propertyName), true );
+            QPropertyDefinition pdmulti = parentType.findPropertyDefinition( ps.m_propertyName, true );
             //PropertyDefinition pdsingle = parentType.findPropertyDefinition( ps.m_propertyName, false );
             
             boolean ismultiproperty = (pdmulti != null && !pdmulti.getQName().toString().equals("*"));
             
             if( ps.m_values.size() == 1 && !ismultiproperty )
             {
-                nd.setProperty( ps.m_propertyName, ps.m_values.get(0) );
+                nd.setProperty( m_session.fromQName( ps.m_propertyName ), ps.m_values.get(0) );
             }
             else
             {
-                nd.setProperty( ps.m_propertyName, ps.m_values.toArray( new Value[ps.m_values.size()] ) );
+                nd.setProperty( m_session.fromQName( ps.m_propertyName ), 
+                                ps.m_values.toArray( new Value[ps.m_values.size()] ) );
             }
         }
         
@@ -200,13 +204,20 @@ public class XMLImport extends DefaultHandler
         {
             checkSystem();
             
-            String propName = attrs.getValue("sv:name");
-            String propType = attrs.getValue("sv:type");
+            try
+            {
+                NamespaceRegistryImpl nr = m_session.getWorkspace().getNamespaceRegistry();
+                String propName = attrs.getValue("sv:name");
+                String propType = attrs.getValue("sv:type");
             
-            m_currentProperty = new PropertyStore();
-            m_currentProperty.m_propertyName = propName;
-            m_currentProperty.m_propertyType = PropertyType.valueFromName( propType );
-            
+                m_currentProperty = new PropertyStore();
+                m_currentProperty.m_propertyName = nr.toQName( propName );
+                m_currentProperty.m_propertyType = PropertyType.valueFromName( propType );
+            }
+            catch( Exception e )
+            {
+                throw new SAXException("Unable to parse property name",e);
+            }
             return;
         }
         else if( name.equals("sv:value") )
@@ -321,7 +332,7 @@ public class XMLImport extends DefaultHandler
     
     private static class PropertyStore
     {
-        public String       m_propertyName;
+        public QName        m_propertyName;
         public int          m_propertyType;
         public List<Value>  m_values = new ArrayList<Value>();
     }
