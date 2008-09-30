@@ -104,7 +104,7 @@ public class SessionImpl implements Session, NamespaceMapper
         return m_isSuperSession;
     }
     
-    public List<Path> listNodes( Path parentpath ) throws RepositoryException
+    public Set<Path> listNodes( Path parentpath ) throws RepositoryException
     {
         return m_provider.listNodes(parentpath);
     }
@@ -352,11 +352,11 @@ public class SessionImpl implements Session, NamespaceMapper
             
             ni = new NodeImpl( this, "/", rootType, nd, true );
 
+            //m_provider.addNode( ni );
+            ni.markModified(true);
+            
             ni.sanitize();
-                
-            m_provider.addNode( ni );
-            ni.markModified(false);
-                
+                            
             save();
         }
         

@@ -54,7 +54,7 @@ public class NodeImplTest extends TestCase
         while( ni.hasNext() )
         {
             Node nd = ni.nextNode();
-            removeAll( nd.getNodes () );
+            removeAll( nd.getNodes() );
         
             nd.remove();
         }        
@@ -133,5 +133,20 @@ public class NodeImplTest extends TestCase
         assertTrue("mix:referenceable not found",found);
         
         assertNotNull( n2.getUUID() );
+    }
+    
+    public void testModified() throws Exception
+    {
+        Node root = m_session.getRootNode();
+        
+        Node n = root.addNode("foo");
+        
+        m_session.save();
+        
+        assertFalse( "Not modified", n.isModified() );
+        
+        n.setProperty("gii","blaa");
+        
+        assertTrue( "Property add didn't reflect up to the changed node", n.isModified() );
     }
 }

@@ -21,4 +21,9 @@ package org.priha.core;
  *  The ItemState enumeration tracks the state of a Node.
  *
  */
-enum ItemState { NEW, EXISTS, REMOVED }
+enum ItemState 
+{ 
+    NEW, 
+    EXISTS, 
+    REMOVED 
+}

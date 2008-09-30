@@ -192,6 +192,9 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( m_multi != Multi.SINGLE )
             throw new ValueFormatException("Attempted to get a SINGLE Value object from a MULTI property "+m_path);
 
+        if( m_value == null ) 
+            throw new RepositoryException("Internal error: Value is null for "+m_path);
+
         //
         //  Clones the value as per the Javadoc
         //
@@ -250,7 +253,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             throw new ValueFormatException("Attempt to set a different type value to this property");
         }
         
-        markModified( m_value != null );
+        markModified( true );
         loadValue( value );
     }
 
@@ -484,7 +487,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
 
     public String toString()
     {
-        return "Property("+m_multi+")["+m_path+","+m_path.getLastComponent()+"="+((m_multi == Multi.SINGLE ) ? m_value[0].toString() : m_value)+"]";
+        return "Property("+m_multi+")["+m_path+"="+((m_multi == Multi.SINGLE && m_value != null) ? m_value[0].toString() : m_value)+"]";
     }
 
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException

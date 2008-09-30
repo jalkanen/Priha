@@ -206,16 +206,23 @@ public abstract class ItemImpl implements Item
         return "Node["+m_path.toString()+"]";
     }
 
-    protected void markModified(boolean isModified)
+    /** Marks this Node + its parent modified. 
+     * @throws RepositoryException */
+    protected void markModified(boolean isModified) throws RepositoryException
     {
-        try
-        {
-            m_modified = isModified;
-            m_session.markDirty(this);
+        markModified( isModified, true );
+    }
+    
+    protected void markModified(boolean isModified, boolean parentToo) throws RepositoryException
+    {
+        m_modified = isModified;
+        m_session.markDirty(this);
             
-            if( !getInternalPath().isRoot() ) getParent().markModified(true);
+        if( !getInternalPath().isRoot() && parentToo )
+        {
+            NodeImpl parent = getParent();
+            parent.markModified(isModified, false);
         }
-        catch( Exception e ) {} // This is fine.  I guess.
     }
 
     @Override

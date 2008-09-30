@@ -141,7 +141,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      */
     private File getNodeDir( Workspace ws, Path path ) throws NamespaceException, RepositoryException
     {
-        if( m_systemPath.isParentOf( path ) ) 
+        if( m_systemPath.isParentOf( path ) || m_systemPath.equals( path ) ) 
         {
             return new File( m_root, getPathFilename(path) );
         }

@@ -226,8 +226,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             ni.sanitize();
 
-            ni.markModified(false);
-            m_session.addNode( ni );
+            ni.markModified(true);
+            //m_session.addNode( ni ); // Already taken care of by markModified
         }
         catch( InvalidPathException e)
         {
@@ -360,7 +360,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         List<Node> ls = new ArrayList<Node>();
 
-        List<Path> children = m_session.listNodes( m_path );
+        Set<Path> children = m_session.listNodes( m_path );
         
         for( Path p : children )
         {
@@ -379,7 +379,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         ArrayList<Node> matchedpaths = new ArrayList<Node>();
 
-        List<Path> children = m_session.listNodes( m_path );
+        Set<Path> children = m_session.listNodes( m_path );
         
         for( Path path : children )
         {
@@ -528,13 +528,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 {
                     pi.loadValue( vfi.createValue( UUID.randomUUID().toString() ) );
                 }
-                
-                if( Q_JCR_CREATED.equals(pi.getQName() ))
+                else if( Q_JCR_CREATED.equals(pi.getQName() ))
                 {
                     pi.loadValue( vfi.createValue( Calendar.getInstance() ) );
                 }
-
-                addChildProperty( pi );
+                else
+                {
+                    throw new UnsupportedRepositoryOperationException("Automatic setting of property "+pi.getQName()+ " is not supported.");
+                }
+                pi.markModified( true );
+                //addChildProperty( pi );
             }
         }
     }
@@ -684,8 +687,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                      m_path.resolve(name),
                                      primaryDef );
 
-            addChildProperty( prop );
-            markModified(false);
+            addChildProperty( prop ); //  Again, a special case.  First add the property to the lists.
+            markModified(true,false); //  Then, mark this node modified, but don't mark the parent.
             return prop;
         }
 
@@ -711,12 +714,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             QPropertyDefinition pd = parentType.findPropertyDefinition(name,ismultiple);
             
             prop = new PropertyImpl( m_session, propertypath, pd );
-            prop.markModified(false);
         }
-        else
-        {
-            markModified(true);
-        }
+
+        prop.markModified(true);
         
         if( value == null )
         {
@@ -724,7 +724,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         }
         else
         {
-            addChildProperty( prop );
+            //addChildProperty( prop );
         }
         return prop;
     }
@@ -734,7 +734,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      *  Removes a given property from the node.
      *  @param prop
      */
-    protected void removeProperty(PropertyImpl prop)
+    protected void removeProperty(PropertyImpl prop) throws RepositoryException
     {
         prop.m_state = ItemState.REMOVED;
         markModified(true);

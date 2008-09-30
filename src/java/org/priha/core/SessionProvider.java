@@ -167,9 +167,9 @@ public class SessionProvider
         return response;
     }
 
-    public List<Path> listNodes(Path parentpath) throws RepositoryException
+    public Set<Path> listNodes(Path parentpath) throws RepositoryException
     {
-        ArrayList<Path> res = new ArrayList<Path>();
+        TreeSet<Path> res = new TreeSet<Path>();
         
         for( ItemImpl ni : m_items.values() )
         {
@@ -245,7 +245,7 @@ public class SessionProvider
             
             ItemImpl ii = entry.getValue();
             
-            if( path.isParentOf(ii.getInternalPath()) )
+            if( path.isParentOf(ii.getInternalPath()) || path.equals( ii.getInternalPath() ))
             {
                 if( ii.isNode() && ii.getState() == ItemState.REMOVED )
                 {
@@ -278,7 +278,7 @@ public class SessionProvider
             
             ItemImpl ii = entry.getValue();
             
-            if( path.isParentOf(ii.getInternalPath()) )
+            if( path.isParentOf(ii.getInternalPath()) || path.equals( ii.getInternalPath() ))
             {
                 if( ii.isNode() )
                 {
@@ -380,7 +380,7 @@ public class SessionProvider
         
         if( ni == null )
         {
-            throw new ItemNotFoundException("There is no such Node");
+            throw new ItemNotFoundException("There is no such Node: "+path);
         }
         
         //
