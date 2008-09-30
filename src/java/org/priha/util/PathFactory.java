@@ -17,9 +17,6 @@
  */
 package org.priha.util;
 
-import java.lang.ref.WeakReference;
-import java.util.WeakHashMap;
-
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 

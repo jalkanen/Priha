@@ -182,7 +182,7 @@ public class RepositoryImpl implements Repository
      */
     public SessionImpl superUserLogin(String workspaceName) throws LoginException, NoSuchWorkspaceException, RepositoryException
     {
-        SessionImpl s = (SessionImpl)login( null, workspaceName );
+        SessionImpl s = login( null, workspaceName );
         
         s.setSuper(true);
         

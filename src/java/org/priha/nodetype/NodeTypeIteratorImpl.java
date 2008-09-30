@@ -27,7 +27,7 @@ import org.priha.util.GenericIterator;
 public class NodeTypeIteratorImpl extends GenericIterator 
     implements NodeTypeIterator
 {
-    public NodeTypeIteratorImpl(List list)
+    public NodeTypeIteratorImpl(List<NodeType> list)
     {
         super(list);
     }

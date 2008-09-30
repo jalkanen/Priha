@@ -26,7 +26,7 @@ import org.priha.util.GenericIterator;
 
 public class VersionIteratorImpl extends GenericIterator implements VersionIterator
 {
-    public VersionIteratorImpl(List list)
+    public VersionIteratorImpl(List<Version> list)
     {
         super(list);
     }

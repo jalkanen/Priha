@@ -22,7 +22,6 @@ package org.priha.util;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
@@ -36,7 +35,7 @@ import org.priha.core.namespace.NamespaceMapper;
  *
  *  @author jalkanen
  */
-public class Path implements Comparable, Serializable
+public class Path implements Comparable<Path>, Serializable
 {
     private static final long serialVersionUID = 1L;
 
@@ -474,8 +473,8 @@ public class Path implements Comparable, Serializable
         return toString().hashCode() + 13;
     }
 
-    public final int compareTo(Object o)
+    public final int compareTo(Path o)
     {
-        return toString().compareTo( ((Path)o).toString() );
+        return toString().compareTo( o.toString() );
     }
 }

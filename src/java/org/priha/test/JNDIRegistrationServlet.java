@@ -78,7 +78,7 @@ public class JNDIRegistrationServlet extends HttpServlet
             e.printStackTrace();
         }
         
-        Enumeration names = getServletConfig().getInitParameterNames();
+        Enumeration<?> names = getServletConfig().getInitParameterNames();
         while (names.hasMoreElements()) 
         {
             String name = (String) names.nextElement();

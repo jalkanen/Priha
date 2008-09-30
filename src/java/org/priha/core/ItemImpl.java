@@ -213,7 +213,7 @@ public abstract class ItemImpl implements Item
             m_modified = isModified;
             m_session.markDirty(this);
             
-            if( !getInternalPath().isRoot() ) ((NodeImpl)getParent()).markModified(true);
+            if( !getInternalPath().isRoot() ) getParent().markModified(true);
         }
         catch( Exception e ) {} // This is fine.  I guess.
     }

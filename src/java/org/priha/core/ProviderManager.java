@@ -23,13 +23,14 @@ import java.util.logging.Logger;
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NodeDefinition;
-import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.VersionException;
 import javax.xml.namespace.QName;
 
 import org.priha.core.values.ValueImpl;
-import org.priha.nodetype.*;
+import org.priha.nodetype.QNodeDefinition;
+import org.priha.nodetype.QNodeType;
+import org.priha.nodetype.QNodeTypeManager;
+import org.priha.nodetype.QPropertyDefinition;
 import org.priha.providers.RepositoryProvider;
 import org.priha.util.ConfigurationException;
 import org.priha.util.InvalidPathException;
@@ -182,7 +183,7 @@ public class ProviderManager implements ItemStore
      */
     public static RepositoryProvider instantiateProvider(RepositoryImpl rep, String className, Properties props) throws ConfigurationException
     {
-        Class cl;
+        Class<?> cl;
         RepositoryProvider provider;
         try
         {

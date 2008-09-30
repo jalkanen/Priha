@@ -38,12 +38,12 @@ public class LockManager
     private static HashMap<String,LockManager> m_lockManagers = new HashMap<String,LockManager>();
     
     private HashMap<Path,LockImpl> m_locks = new HashMap<Path,LockImpl>();
-    private String m_workspace;
+    //private String m_workspace;
     private Logger log = Logger.getLogger( LockManager.class.getName() );
     
     private LockManager(Workspace ws)
     {
-        m_workspace = ws.getName();
+        //m_workspace = ws.getName();
     }
     
     public synchronized void addLock( LockImpl lock )

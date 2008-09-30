@@ -22,11 +22,11 @@ import java.util.Iterator;
 
 public abstract class GenericIterator implements Iterator
 {
-    protected Iterator m_iterator;
+    protected Iterator<?> m_iterator;
     protected int m_position;
     protected int m_size;
 
-    public GenericIterator( Collection list )
+    public GenericIterator( Collection<?> list )
     {
         m_iterator = list.iterator();
         m_position = 0;

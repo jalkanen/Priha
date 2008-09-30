@@ -26,7 +26,6 @@ import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Value;
 
 import org.priha.core.NodeImpl;
-import org.priha.util.Path;
 
 /**
  *  Superclass of all classes which reference a Node
