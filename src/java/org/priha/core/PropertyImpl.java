@@ -253,7 +253,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             throw new ValueFormatException("Attempt to set a different type value to this property");
         }
         
-        markModified( true );
+        if( m_state != ItemState.NEW ) markModified( true );
         loadValue( value );
     }
 

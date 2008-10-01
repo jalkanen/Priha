@@ -77,6 +77,7 @@ public interface RepositoryProvider
      *  @param repository The Repository which owns this provider.
      *  @param properties A set of filtered properties for this provider.
      *  @throws ConfigurationException If the repository cannot be started due to a faulty configuration.
+     * @throws  
      *  
      *  @see org.priha.core.ProviderManager#filterProperties(RepositoryImpl, String)
      */

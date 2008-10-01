@@ -237,14 +237,7 @@ public class ProviderManager implements ItemStore
 
     public List<Path>listNodes(WorkspaceImpl impl, Path path) throws RepositoryException
     {
-        ArrayList<Path> list = new ArrayList<Path>();
-        
-        for( ProviderInfo pi : m_providers )
-        {
-            list.addAll( pi.provider.listNodes( impl, path ) );
-        }
-        
-        return list;
+        return getProvider(impl,path).listNodes( impl, path );
     }
 
     public void close(WorkspaceImpl impl)

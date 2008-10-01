@@ -21,6 +21,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import javax.jcr.*;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.xml.namespace.QName;
 
 import org.priha.util.InvalidPathException;
@@ -308,6 +309,10 @@ public class SessionProvider
                             break;
                         
                         case REMOVED:
+                            if( !m_source.nodeExists( m_workspace, ii.getInternalPath() ) )
+                            {
+                                throw new InvalidItemStateException("The item has been removed by some other Session "+ii.getInternalPath());
+                            }
                             //m_source.remove( m_workspace, ni.getInternalPath() );
                             toberemoved.add(ni.getInternalPath());
                             m_fetchedItems.remove( ni.getInternalPath() );
@@ -477,6 +482,18 @@ public class SessionProvider
             
             return res;
         }
+    }
+
+    /**
+     *  Goes directly into the repository, to find whether a Node exists currently.
+     *  
+     *  @param path
+     *  @return
+     *  @throws RepositoryException
+     */
+    public boolean nodeExistsInRepository( Path path ) throws RepositoryException
+    {
+        return m_source.nodeExists( m_workspace, path );
     }
 
 

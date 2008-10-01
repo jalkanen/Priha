@@ -35,10 +35,7 @@ import org.priha.core.WorkspaceImpl;
 import org.priha.core.binary.FileBinarySource;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
-import org.priha.util.InvalidPathException;
-import org.priha.util.Path;
-import org.priha.util.PathFactory;
-import org.priha.util.TextUtil;
+import org.priha.util.*;
 
 /**
  *  A simple file system -based provider.  This is not particularly optimized,
@@ -286,10 +283,20 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return true;
     }
 
-    public void start(RepositoryImpl rep, Properties props)
+    public void start(RepositoryImpl rep, Properties props) throws ConfigurationException
     {
         m_hitCount[Count.Start.ordinal()]++;
         
+        try
+        {
+            m_systemPath = PathFactory.getPath( RepositoryImpl.getGlobalNamespaceRegistry(), 
+                                                "/jcr:system" );
+        }
+        catch( RepositoryException e )
+        {
+            throw new ConfigurationException("Unable to create a /jcr:system instance: "+e.getMessage());
+        }
+
         String wsList = props.getProperty("workspaces", "default");
         m_root = new File(props.getProperty("directory"));
         
@@ -323,15 +330,17 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         throw new UnsupportedRepositoryOperationException("copy()");
     }
 
-    public List<Path> listNodes(WorkspaceImpl ws, Path parentpath)
+    public List<Path> listNodes(WorkspaceImpl ws, Path parentpath) throws NamespaceException, RepositoryException
     {
         m_hitCount[Count.ListNodes.ordinal()]++;
 
         ArrayList<Path> list = new ArrayList<Path>();
 
-        File wsDir = new File( getWorkspaceRoot(), getWorkspaceFilename(ws) );
+        File startPath = getNodeDir( ws, parentpath );
         
-        acquirePaths( parentpath, new File(wsDir,parentpath.toString()), list, false );
+        if( !startPath.exists() ) throw new PathNotFoundException("No such path found: "+parentpath);
+        
+        acquirePaths( parentpath, startPath, list, false );
         
         return list;
     }
@@ -424,9 +433,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         if( wsnames.indexOf(workspaceName) == -1 )
             throw new NoSuchWorkspaceException(workspaceName);
         
-        m_systemPath = PathFactory.getPath( RepositoryImpl.getGlobalNamespaceRegistry(), 
-                                            "/jcr:system" );
-
         log.fine("Repository has been opened.");
     }
 

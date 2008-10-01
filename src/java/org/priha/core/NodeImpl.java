@@ -1071,6 +1071,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //throw new ConstraintViolationException(getPath()+" has already been removed");
             return; // Die nicely
             
+        if( !m_session.m_provider.nodeExistsInRepository( m_path ) )
+        {
+            throw new InvalidItemStateException("Item has already been removed by another Session "+getPath());
+        }
+        
         if( isLockedWithoutToken() )
             throw new LockException("This item is locked, so you cannot remove it.");
         
