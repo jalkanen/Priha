@@ -281,12 +281,12 @@ public class JdbcProvider implements RepositoryProvider
             }
             else
             {
-                throw new ItemNotFoundException("No such property "+path);
+                throw new PathNotFoundException("No such property "+path);
             }
         }
         catch( SQLException e )
         {
-            throw new ItemNotFoundException("No such item "+path);
+            throw new PathNotFoundException("No such item "+path);
         }
         catch (IOException e)
         {

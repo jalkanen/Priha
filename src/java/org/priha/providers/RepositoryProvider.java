@@ -21,10 +21,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
-import javax.jcr.Credentials;
-import javax.jcr.ItemNotFoundException;
-import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.RepositoryException;
+import javax.jcr.*;
 import javax.xml.namespace.QName;
 
 import org.priha.core.PropertyImpl;
@@ -119,8 +116,9 @@ public interface RepositoryProvider
      *  @param path The path to the Property
      *  @return Either a ValueImpl or ValueImpl[], depending on whether this is a multi-valued thing
      *  @throws RepositoryException If something goes wrong.
+     *  @throws PathNotFoundException If there is nothing at the end of this Path, i.e. the object could not be found.
      */
-    public abstract Object getPropertyValue( WorkspaceImpl ws, Path path ) throws RepositoryException;
+    public abstract Object getPropertyValue( WorkspaceImpl ws, Path path ) throws PathNotFoundException, RepositoryException;
     
     /**
      *  Returns true, if the Node exists.

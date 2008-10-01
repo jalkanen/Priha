@@ -107,7 +107,7 @@ public class SessionProvider
             }
             catch(RepositoryException e) {}
         }
-
+/*
         for( ItemImpl ni : m_fetchedItems.values() )
         {
             try
@@ -120,7 +120,7 @@ public class SessionProvider
             }
             catch(RepositoryException e) {}
         }
-
+*/
         NodeImpl ii = m_source.findByUUID( m_workspace, uuid );
         
         if( ii != null ) m_fetchedItems.put( ii.getInternalPath(), ii );

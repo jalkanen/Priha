@@ -22,6 +22,7 @@ import java.util.*;
 import javax.jcr.*;
 import javax.xml.namespace.QName;
 
+import org.priha.core.JCRConstants;
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
@@ -43,6 +44,7 @@ public class MemoryProvider implements RepositoryProvider
     
     public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
     {
+        System.out.println("Node++ "+path);
         m_nodePaths.add( path );
     }
 
@@ -67,7 +69,7 @@ public class MemoryProvider implements RepositoryProvider
         for( Map.Entry<Path,Object> e : m_values.entrySet() )
         {
             if( e.getValue() instanceof Value && 
-                e.getKey().getLastComponent().equals("jcr:uuid") )
+                e.getKey().getLastComponent().equals(JCRConstants.Q_JCR_UUID) )
             {
                 if( ((Value)e.getValue()).getString().equals(uuid) )
                 {
@@ -94,7 +96,7 @@ public class MemoryProvider implements RepositoryProvider
         
         for( Path p : m_nodePaths )
         {
-            if( parentpath.isParentOf(p) && !parentpath.equals(p) )
+            if( parentpath.isParentOf(p) )
             {
                 res.add(p);
             }
@@ -109,7 +111,7 @@ public class MemoryProvider implements RepositoryProvider
         
         for( Path p : m_values.keySet() )
         {
-            if( path.isParentOf(p) && !path.equals(p) )
+            if( path.isParentOf(p) )
             {
                 res.add(p.getLastComponent());
             }
@@ -134,8 +136,7 @@ public class MemoryProvider implements RepositoryProvider
     }
 
     public void open(RepositoryImpl rep, Credentials credentials, String workspaceName)
-                                                                                       throws RepositoryException,
-                                                                                           NoSuchWorkspaceException
+        throws RepositoryException,NoSuchWorkspaceException
     {
         if( !workspaceName.equals("default") ) throw new NoSuchWorkspaceException();
     }
@@ -157,7 +158,7 @@ public class MemoryProvider implements RepositoryProvider
         else
         {
             Value value = property.getValue();
-            if( property.getName().equals("jcr:uuid") )
+            if( property.getQName().equals(JCRConstants.Q_JCR_UUID) )
             {
                 m_uuids.put( value.getString(), property.getInternalPath().getParentPath() );
             }
@@ -165,7 +166,7 @@ public class MemoryProvider implements RepositoryProvider
             m_values.put( property.getInternalPath(), value );    
         }
         
-        // System.out.println("Stored "+property.getInternalPath());
+        System.out.println("Stored "+property.getInternalPath());
     }
 
     public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
@@ -174,7 +175,7 @@ public class MemoryProvider implements RepositoryProvider
         {
             Path p = i.next();
             
-            if( path.isParentOf(p) )
+            if( path.isParentOf(p) || path.equals( p ))
                 i.remove();
         }
         
@@ -182,13 +183,13 @@ public class MemoryProvider implements RepositoryProvider
         {
             Map.Entry<Path, Object> e = i.next();
             
-            if( path.isParentOf(e.getKey()) )
+            if( path.isParentOf(e.getKey()) || path.equals(e.getKey()) )
                 i.remove();
         }
         
         for( Map.Entry<String,Path> e : m_uuids.entrySet() )
         {
-            if( path.isParentOf(e.getValue()) )
+            if( path.isParentOf(e.getValue()) || path.equals(e.getValue()))
             {
                 m_uuids.remove(e.getKey());
                 break;

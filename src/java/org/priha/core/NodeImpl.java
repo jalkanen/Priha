@@ -1303,7 +1303,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         Property p;
         try
         {
-            p = getProperty(JCR_MIXIN_TYPES);
+            p = getProperty(Q_JCR_MIXINTYPES);
 
             Value[] v = p.getValues();
 
@@ -1353,7 +1353,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         try
         {
-            Property pi = getProperty( JCR_MIXIN_TYPES );
+            Property pi = getProperty( Q_JCR_MIXINTYPES );
         
             for( Value v : pi.getValues() )
             {

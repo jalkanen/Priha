@@ -199,6 +199,8 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public ItemImpl getItem( Path absPath ) throws PathNotFoundException, RepositoryException
     {
+        checkLive();
+        
         ItemImpl ii = m_provider.getItem( absPath );
         
         return ii;
@@ -217,6 +219,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public NodeImpl getNodeByUUID(String uuid) throws ItemNotFoundException, RepositoryException
     {
+        checkLive();
         return m_provider.findByUUID(uuid);
     }
 
@@ -227,6 +230,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public NodeImpl getRootNode() throws RepositoryException
     {
+        checkLive();
         return (NodeImpl) getItem(Path.ROOT);
     }
 
@@ -237,6 +241,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public ValueFactoryImpl getValueFactory() throws UnsupportedRepositoryOperationException, RepositoryException
     {
+        checkLive();
         return m_valueFactory;
     }
 
@@ -256,13 +261,19 @@ public class SessionImpl implements Session, NamespaceMapper
         // TODO Auto-generated method stub
     }
 
-    public boolean isLive()
+    public final boolean isLive()
     {
         return m_workspace != null;
     }
 
+    private final void checkLive() throws RepositoryException
+    {
+        if( !isLive() ) throw new RepositoryException("This Session is no longer live and cannot be used.");
+    }
+    
     public boolean itemExists(String absPath) throws RepositoryException
     {
+        checkLive();
         return itemExists( PathFactory.getPath(this,absPath) );
     }
 
@@ -278,6 +289,8 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public void move(String srcAbsPath, String destAbsPath) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException
     {
+        checkLive();
+        
         if( hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
         
         NodeImpl srcnode = getRootNode().getNode(srcAbsPath);
@@ -326,6 +339,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     void refresh( boolean keepChanges, Path path ) throws RepositoryException
     {
+        checkLive();
         m_provider.refresh( keepChanges, path );
     }
     
@@ -389,6 +403,7 @@ public class SessionImpl implements Session, NamespaceMapper
      */
     protected void saveNodes( Path pathprefix ) throws RepositoryException
     {
+        checkLive();
         m_provider.save( pathprefix );
     }
 
@@ -400,11 +415,13 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public void remove(ItemImpl itemImpl) throws RepositoryException
     {
+        checkLive();
         m_provider.remove( itemImpl );
     }
 
     public Collection<PropertyImpl> getReferences(String uuid) throws RepositoryException
     {
+        checkLive();
         return m_provider.getReferences( uuid );
     }
 
@@ -413,6 +430,7 @@ public class SessionImpl implements Session, NamespaceMapper
     
     public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException, InvalidSerializedDataException, LockException, RepositoryException
     {
+        checkLive();
         XMLImport importer = new XMLImport( this, false, PathFactory.getPath(this,parentAbsPath), uuidBehavior );
         
         try
@@ -458,6 +476,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public void exportSystemView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException
     {
+        checkLive();
         XMLExport export = new XMLExport( this );
         
         export.export( absPath, contentHandler, skipBinary, noRecurse );
@@ -465,6 +484,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public void exportSystemView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException
     {
+        checkLive();
         XMLExport export = new XMLExport( this );
 
         ContentHandler handler = new StreamContentHandler( out );
@@ -509,6 +529,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public String getNamespacePrefix(String uri) throws NamespaceException, RepositoryException
     {
+        checkLive();
         for( Map.Entry<String, String> e : m_nsmap.entrySet() )
         {
             if( e.getValue().equals( uri ) ) return e.getKey();
