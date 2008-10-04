@@ -510,6 +510,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         ValueFactoryImpl vfi = m_session.getValueFactory();
         
+        //
+        //  Special cases.
+        //
+        
+        if( nt.getQName().equals( Q_MIX_VERSIONABLE ) )
+        {
+            VersionManager.createVersionHistory( this );
+        }
+        
         for( QPropertyDefinition pd : nt.getQPropertyDefinitions() )
         {
             if( pd.isAutoCreated() && !hasProperty(pd.getQName()) )
@@ -1179,7 +1188,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         }
 
-        autoCreateProperties();
+        // autoCreateProperties();
 
         QNodeType mytype = getPrimaryQNodeType();
 
@@ -1224,6 +1233,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     protected void preSave() throws RepositoryException
     {
         WorkspaceImpl ws = m_session.getWorkspace();
+        
+        autoCreateProperties();
         
         //
         //  Check that parent still exists
@@ -1305,6 +1316,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         if( !mixin.isMixin() )
             throw new NoSuchNodeTypeException("Type "+mixinName+" is not a mixin type!");
 
+        if( isLocked() )
+            throw new LockException( "Node is locked, so cannot add new mixin types." );
+        
         Property p;
         try
         {
@@ -1334,6 +1348,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public boolean canAddMixin(String mixinName) throws NoSuchNodeTypeException, RepositoryException
     {
+        if( isLocked() ) return false;
+            
         NodeType nt = getNodeTypeManager().getNodeType( mixinName );
 
         if( !nt.isMixin() )
@@ -1404,6 +1420,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                                  LockException,
                                                  RepositoryException
     {
+        if( isLocked() ) throw new LockException("Cannot remove mixin");
+        
         Property mixinTypes = getProperty("jcr:mixinTypes");
         
         Value[] vals = mixinTypes.getValues();
@@ -1508,7 +1526,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     }
 
 
-    public Lock getLock() throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException
+    public LockImpl getLock() throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException
     {
         LockImpl li = m_lockManager.findLock( getInternalPath() );
         
@@ -1539,7 +1557,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     }
 
     /**
-     *  Returns true, if this Node is locked but the Session which owns
+     *  Returns true, if this Node is locked (that is, the parent is locked) but the Session which owns
      *  this Node does not hold a token to modify it.
      *  
      *  @return True, if you cannot modify this Node due to missing token.
@@ -1548,11 +1566,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         try
         {
-            LockImpl li = (LockImpl) getLock();
-            
-            if( li != null && li.getLockToken() == null )
+            if( !getInternalPath().isRoot() )
             {
-                return true;
+                LockImpl li = getParent().getLock();
+            
+                if( li != null && li.getLockToken() == null )
+                {
+                    return true;
+                }
             }
         
         }
@@ -1619,38 +1640,49 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //
         //  Phew!  Preconditions have been checked.  Now, let's get to real business.
         //
-        
-        VersionHistoryImpl vh = getVersionHistory();
-        
-        int version = Integer.parseInt( getBaseVersion().getName() );
-        
-        VersionImpl v = (VersionImpl) vh.addNode( Integer.toString( ++version ), "nt:version" );
-        
-        v.setProperty( "nt:versionHistory", vh );
-        
-        v.setProperty( "jcr:predecessors", getProperty("jcr:predecessors").getValues() );
-        setProperty( "jcr:predecessors", new Value[0] );
-        
-        PropertyImpl preds = v.getProperty("jcr:predecessors");
-        for( Value val : preds.getValues() )
+     
+        try
         {
-            String uuid = val.getString();
-            Node pred = m_session.getNodeByUUID(uuid);
-         
-            Value[] s = pred.getProperty("jcr:successors").getValues();
+            getSession().setSuper(true);
             
-            List<Value> l = Arrays.asList(s);
-            l.add( m_session.getValueFactory().createValue(v) );
+            VersionHistoryImpl vh = getVersionHistory();
+        
+            int version = 0;
+            if( !getBaseVersion().getName().equals("jcr:rootVersion") )
+                version = Integer.parseInt( getBaseVersion().getName() );
+        
+            VersionImpl v = (VersionImpl) vh.addNode( Integer.toString( ++version ), "nt:version" );
+        
+            v.setProperty( "nt:versionHistory", vh );
+        
+            v.setProperty( "jcr:predecessors", getProperty("jcr:predecessors").getValues() );
+            setProperty( "jcr:predecessors", new Value[0] );
+        
+            PropertyImpl preds = v.getProperty("jcr:predecessors");
+            for( Value val : preds.getValues() )
+            {
+                String uuid = val.getString();
+                Node pred = m_session.getNodeByUUID(uuid);
+         
+                Value[] s = pred.getProperty("jcr:successors").getValues();
+            
+                List<Value> l = Arrays.asList(s);
+                l.add( m_session.getValueFactory().createValue(v) );
 
-            pred.setProperty("jcr:successors",l.toArray(s));
+                pred.setProperty("jcr:successors",l.toArray(s));
+            }
+        
+            setProperty( "jcr:baseVersion", v );
+            setProperty( "jcr:isCheckedOut", false );
+
+            // FIXME: Here.
+        
+            return v;
         }
-        
-        setProperty( "jcr:baseVersion", v );
-        setProperty( "jcr:isCheckedOut", false );
-
-        // FIXME: Here.
-        
-        return v;
+        finally
+        {
+            getSession().setSuper( false );
+        }
     }
 
     public void checkout() throws UnsupportedRepositoryOperationException, LockException, RepositoryException
@@ -1673,8 +1705,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public VersionImpl getBaseVersion() throws UnsupportedRepositoryOperationException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        String bvUuid = getProperty( Q_JCR_BASEVERSION ).getString();
+        
+        return (VersionImpl) getSession().getNodeByUUID( bvUuid );
     }
 
     public void restore(String versionName, boolean removeExisting)

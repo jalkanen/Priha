@@ -245,7 +245,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     {
         QNodeType parentType = getParent().getPrimaryQNodeType();
         
-        if( !parentType.canSetProperty( getQName(), value ) )
+        if( !m_session.isSuper() && !parentType.canSetProperty( getQName(), value ) )
             throw new ConstraintViolationException("Setting of this property is forbidden");
 
         if( m_type != PropertyType.UNDEFINED && value != null && m_type != value.getType() )
@@ -266,7 +266,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     {
         QNodeType parentType = getParent().getPrimaryQNodeType();
         
-        if( !parentType.canSetProperty( getQName(), values ) )
+        if( !m_session.isSuper() && !parentType.canSetProperty( getQName(), values ) )
             throw new ConstraintViolationException("Setting of this property is forbidden:");
 
         if( m_type != PropertyType.UNDEFINED && values != null && values.length >= 1 && values[0] != null && m_type != values[0].getType() )

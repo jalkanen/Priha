@@ -85,7 +85,7 @@ public class SessionImpl implements Session, NamespaceMapper
         }
     }
 
-    protected void setSuper(boolean value)
+    public void setSuper(boolean value)
     {
         m_isSuperSession = true;
     }
@@ -142,7 +142,7 @@ public class SessionImpl implements Session, NamespaceMapper
         return hasNode( PathFactory.getPath(this,absPath) );
     }
     
-    boolean hasNode( Path absPath ) throws RepositoryException
+    public boolean hasNode( Path absPath ) throws RepositoryException
     {
         return m_provider.nodeExists( absPath );
     }
@@ -291,50 +291,61 @@ public class SessionImpl implements Session, NamespaceMapper
     {
         checkLive();
         
-        if( hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
-        
-        NodeImpl srcnode = getRootNode().getNode(srcAbsPath);
-        
-        //System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
-        
-        String newDestPath = destAbsPath;
-
-        LockManager lm = LockManager.getInstance( m_workspace );
-        if( lm.hasChildLock(srcnode.getInternalPath()))
-            throw new LockException("Lock on source path prevents move");
-
-        Node destnode = getRootNode().addNode( newDestPath, srcnode.getPrimaryNodeType().getName() );
-        
-        for( NodeIterator ni = srcnode.getNodes(); ni.hasNext(); )
+        try
         {
-            Node child = ni.nextNode();
-
-            String relPath = srcnode.getName();
-            
-            move( child.getPath(), destAbsPath+"/"+relPath );
-        }
+            m_isSuperSession = true;
         
-        for( PropertyIterator pi = srcnode.getProperties(); pi.hasNext(); )
-        {
-            Property p = pi.nextProperty();
+            if( hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
+        
+            NodeImpl srcnode = getRootNode().getNode(srcAbsPath);
+        
+            // System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
 
-            //newDestPath = destAbsPath + "/" + nd.getName() + "/" + p.getName();
-            //System.out.println("  property "+p.getPath()+" ==> "+newDestPath );
+            String newDestPath = destAbsPath;
+
+            LockManager lm = LockManager.getInstance( m_workspace );
+            if( lm.hasChildLock( srcnode.getInternalPath() ) )
+                throw new LockException( "Lock on source path prevents move" );
+
+            Node destnode = getRootNode().addNode( newDestPath, srcnode.getPrimaryNodeType().getName() );
             
-            if( !p.getName().equals("jcr:primaryType") )
+            for( NodeIterator ni = srcnode.getNodes(); ni.hasNext(); )
             {
-                if( p.getDefinition().isMultiple() )
+                Node child = ni.nextNode();
+
+                String relPath = srcnode.getName();
+
+                move( child.getPath(), destAbsPath + "/" + relPath );
+            }
+        
+            for( PropertyIterator pi = srcnode.getProperties(); pi.hasNext(); )
+            {
+                Property p = pi.nextProperty();
+
+                // newDestPath = destAbsPath + "/" + nd.getName() + "/" +
+                // p.getName();
+                // System.out.println(" property "+p.getPath()+" ==> "+newDestPath
+                // );
+            
+                if( !p.getName().equals( "jcr:primaryType" ) )
                 {
-                    destnode.setProperty( p.getName(), p.getValues() );
-                }
-                else
-                {
-                    destnode.setProperty( p.getName(), p.getValue() );
+                    if( p.getDefinition().isMultiple() )
+                    {
+                        destnode.setProperty( p.getName(), p.getValues() );
+                    }
+                    else
+                    {
+                        destnode.setProperty( p.getName(), p.getValue() );
+                    }
                 }
             }
+
+            srcnode.remove();
         }
-        
-        srcnode.remove();
+        finally
+        {
+            m_isSuperSession = false;
+        }
     }
 
     void refresh( boolean keepChanges, Path path ) throws RepositoryException

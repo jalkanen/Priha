@@ -12,10 +12,15 @@ public final class JCRConstants
     public static final String NS_JCP          = "http://www.jcp.org/jcr/1.0";
 
     /* Strings */
-    public static final String JCR_CREATED      = "{"+NS_JCP+"}created";
-    public static final String JCR_UUID         = "{"+NS_JCP+"}uuid";
-    public static final String JCR_MIXIN_TYPES  = "{"+NS_JCP+"}mixinTypes";
-    public static final String JCR_PRIMARY_TYPE = "{"+NS_JCP+"}primaryType";
+    public static final String JCR_CREATED         = mk( NS_JCP, "created" );
+    public static final String JCR_UUID            = mk( NS_JCP, "uuid" );
+    public static final String JCR_MIXIN_TYPES     = mk( NS_JCP, "mixinTypes" );
+    public static final String JCR_PRIMARY_TYPE    = mk( NS_JCP, "primaryType");
+    public static final String JCR_VERSIONHISTORY  = mk( NS_JCP, "versionHistory" );
+    public static final String JCR_ISCHECKEDOUT    = mk( NS_JCP, "isCheckedOut" );
+    public static final String JCR_BASEVERSION     = mk( NS_JCP, "baseVersion" );
+    public static final String MIX_VERSIONABLE     = mk( NS_JCP_MIX, "versionable" );
+    public static final String MIX_REFERENCEABLE   = mk( NS_JCP_MIX, "referenceable" );
     
     /* QNames */
     public static final QName  Q_NT_VERSION        = QName.valueOf("{"+NS_JCP_NT+"}version");
@@ -26,4 +31,15 @@ public final class JCRConstants
     public static final QName  Q_JCR_UUID          = QName.valueOf(JCR_UUID);
     public static final QName  Q_JCR_CREATED       = QName.valueOf(JCR_CREATED);
     public static final QName  Q_JCR_MIXINTYPES    = QName.valueOf(JCR_MIXIN_TYPES);
+    public static final QName  Q_JCR_VERSIONHISTORY = QName.valueOf(JCR_VERSIONHISTORY);
+    public static final QName  Q_JCR_ISCHECKEDOUT  = QName.valueOf( JCR_ISCHECKEDOUT );
+    
+    public static final QName  Q_MIX_VERSIONABLE   = QName.valueOf( MIX_VERSIONABLE );
+    public static final QName  Q_MIX_REFERENCEABLE = QName.valueOf( MIX_REFERENCEABLE );
+    public static final QName  Q_JCR_BASEVERSION   = QName.valueOf( JCR_BASEVERSION );
+    
+    private static final String mk(String namespace, String name)
+    {
+        return "{"+namespace+"}"+name;
+    }
 }

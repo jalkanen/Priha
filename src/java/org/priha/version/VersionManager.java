@@ -7,6 +7,7 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 
+import org.priha.core.JCRConstants;
 import org.priha.core.NodeImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.util.Path;
@@ -49,11 +50,20 @@ public class VersionManager
      */
     public static Path getVersionStoragePath( String uuid ) throws NamespaceException, RepositoryException
     {
-        //String hashpath = uuid.substring(0,3) + "/" + uuid.substring(4,7) + "/" + uuid;
-        String hashpath = uuid;
-        Path p = PathFactory.getPath(RepositoryImpl.getGlobalNamespaceRegistry(),
-                                     "/jcr:system/jcr:versionStorage/"+hashpath);
-        
+        Path p;
+    
+        if( uuid != null )
+        {
+            //String hashpath = uuid.substring(0,3) + "/" + uuid.substring(4,7) + "/" + uuid;
+            String hashpath = uuid;
+            p = PathFactory.getPath(RepositoryImpl.getGlobalNamespaceRegistry(),
+                                    "/jcr:system/jcr:versionStorage/"+hashpath);
+        }
+        else
+        {
+            p = PathFactory.getPath(RepositoryImpl.getGlobalNamespaceRegistry(),
+                                    "/jcr:system/jcr:versionStorage");
+        }
         return p;
     }
     
@@ -67,45 +77,69 @@ public class VersionManager
      */
     public static void createVersionHistory( NodeImpl nd ) throws UnsupportedRepositoryOperationException, RepositoryException
     {
-        String uuid = nd.getUUID();
+        String uuid;
         
-        Path historyPath = getVersionStoragePath( uuid );
-        
-        if( !nd.getSession().itemExists(historyPath) )
+        try
         {
-            NodeImpl vh = nd.addNode( historyPath.toString(), "nt:versionHistory" );
+            nd.getSession().setSuper(true);
             
-            //
-            //  Oddly enough, we need to create the UUID already here.
-            //
+            if( !nd.getSession().hasNode( getVersionStoragePath( null ) ) )
+            {
+                // FIXME: A bit too complicated
+                nd.addNode( getVersionStoragePath( null ).toString(RepositoryImpl.getGlobalNamespaceRegistry()) );
+            }
+        
+            if( nd.hasProperty( JCRConstants.Q_JCR_UUID ) ) 
+                uuid = nd.getUUID();
+            else
+                uuid = nd.setProperty( "jcr:uuid", UUID.randomUUID().toString() ).getString();
+        
+            Path historyPath = getVersionStoragePath( uuid );
+        
+            if( !nd.getSession().itemExists(historyPath) )
+            {
+                NodeImpl vh = nd.addNode( historyPath.toString(), "nt:versionHistory" );
             
-            vh.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
+                //
+                //  Oddly enough, we need to create the UUID already here.
+                //
             
-            //
-            //  Create the root version.
-            //
-            NodeImpl root = vh.addNode( "jcr:rootVersion" );
+                vh.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
+                vh.setProperty( "jcr:versionableUuid", uuid );
             
-            // Mandatory properties.  FIXME: What are these?
-            root.setProperty( "jcr:frozenPrimaryType", "" );
-            root.setProperty( "jcr:frozenMixinTypes", "" );
-            root.setProperty( "jcr:frozenUuid", "" );
-            root.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
+                //
+                //  Create the root version.
+                //
+                NodeImpl root = vh.addNode( "jcr:rootVersion", "nt:version" );
             
-            //
-            //  Set the reference properties back to the Node
-            //
+                // Mandatory properties.  FIXME: What are these?
+                root.setProperty( "jcr:frozenPrimaryType", "" );
+                root.setProperty( "jcr:frozenMixinTypes", "" );
+                root.setProperty( "jcr:frozenUuid", "" );
+                root.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
+
+                root.setProperty( "jcr:successors", 
+                                  new String[] { }, 
+                                  PropertyType.REFERENCE );
             
-            nd.setProperty( "jcr:versionHistory", vh );
-            nd.setProperty( "jcr:baseVersion", root );
+
+                //
+                //  Set the reference properties back to the Node
+                //
             
-            nd.setProperty( "jcr:predecessors", 
-                            new String[] { root.getUUID() }, 
-                            PropertyType.REFERENCE );
+                nd.setProperty( "jcr:versionHistory", vh );
+                nd.setProperty( "jcr:baseVersion", root );
             
-            nd.setProperty( "jcr:isCheckedOut", true );
-            
-            vh.save(); // FIXME: Is this valid?  Does it cause problems?
+                nd.setProperty( "jcr:predecessors", 
+                                new String[] { root.getUUID() }, 
+                                PropertyType.REFERENCE );
+
+                nd.setProperty( "jcr:isCheckedOut", true );
+            }
+        }
+        finally
+        {
+            nd.getSession().setSuper(false);
         }
     }
 }

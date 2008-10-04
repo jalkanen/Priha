@@ -17,16 +17,16 @@
  */
 package org.priha.core;
 
+import static org.priha.core.JCRConstants.Q_JCR_PRIMARYTYPE;
+
 import java.util.*;
 import java.util.Map.Entry;
 
 import javax.jcr.*;
-import javax.jcr.nodetype.ConstraintViolationException;
 import javax.xml.namespace.QName;
 
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
-import static org.priha.core.JCRConstants.*;
 
 /**
  *  This is a special provider which stores the state of the Session.
@@ -278,15 +278,23 @@ public class SessionProvider
         
         List<Path> toberemoved = new ArrayList<Path>();
         
+        List<ItemImpl> unsaved = new ArrayList<ItemImpl>();
+        
         //
-        //  Do the actual save.
+        //  Do the actual save.  The way we do this is that we simply just take the
+        //  first one from the queue, and and attempt to save it.  This allows
+        //  e.g. preSave() to create some additional properties before saving - 
+        //  a basic Iterator over the Set would cause ConcurrentModificationExceptions.
         //
-        for( Iterator<Entry<Path, ItemImpl>> i = m_changedItems.entrySet().iterator(); i.hasNext(); )
+        //  All unsaved items are stored in a particular list, and then added back
+        //  to the savequeue.
+        //
+        
+        while( !m_changedItems.isEmpty() )
         {
-            Entry<Path, ItemImpl> entry = i.next();
-            
+            Entry<Path,ItemImpl> entry = m_changedItems.entrySet().iterator().next();
             ItemImpl ii = entry.getValue();
-            
+                    
             if( path.isParentOf(ii.getInternalPath()) || path.equals( ii.getInternalPath() ))
             {
                 if( ii.isNode() )
@@ -339,11 +347,19 @@ public class SessionProvider
                             m_fetchedItems.remove( pi.getInternalPath() );
                             break;                     
                     }
-                }
-
-                i.remove();
-                
+                }                
             }
+            else
+            {
+                unsaved.add( ii );
+            }
+            
+            //
+            //  Remove from the queue so that we don't use it again.  This must
+            //  be done here so that there never is an Item missing if any of the
+            //  intermediate calls do e.g. hasProperty();
+            //
+            m_changedItems.remove( entry.getKey() );
         }
         
         //
@@ -364,6 +380,14 @@ public class SessionProvider
         {
             //System.out.println("Removing "+p);
             m_source.remove(m_workspace, p);
+        }
+        
+        //
+        //  Put the unsaved ones back into the queue
+        //
+        for( ItemImpl ii : unsaved )
+        {
+            m_changedItems.put( ii.getInternalPath(), ii );
         }
     }
 

@@ -252,7 +252,8 @@ class TreeComparator extends AbstractJCRTest {
             rootNode.setProperty(sc.binaryTestProperty, new ByteArrayInputStream(byteArray));
             session.save();
         } catch (Exception e) {
-            fail("Could not add property: " + e);
+            e.printStackTrace();
+            fail("Could not add property: "+e);
         }
 
         // multi value properties
