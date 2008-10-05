@@ -223,7 +223,19 @@ public interface RepositoryProvider
      */
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException;
     
+    /**
+     *  This method is called whenever Priha starts a transaction which will save the
+     *  contents of the repository.  You could, for example, use this to start a transaction.
+     *  
+     *  @param ws The workspace
+     */
     public void storeStarted(WorkspaceImpl ws);
     
+    /**
+     *  This method is called when the repository-changing operation is complete.  For example,
+     *  you could close the transaction at this stage.
+     *  
+     *  @param ws Workspace.
+     */
     public void storeFinished(WorkspaceImpl ws);
 }
