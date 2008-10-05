@@ -222,4 +222,8 @@ public interface RepositoryProvider
      *  @throws RepositoryException 
      */
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException;
+    
+    public void storeStarted(WorkspaceImpl ws);
+    
+    public void storeFinished(WorkspaceImpl ws);
 }

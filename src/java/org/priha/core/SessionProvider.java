@@ -290,104 +290,111 @@ public class SessionProvider
         //  to the savequeue.
         //
         
-        while( !m_changedItems.isEmpty() )
+        m_source.storeStarted( m_workspace );
+        
+        try
         {
-            Entry<Path,ItemImpl> entry = m_changedItems.entrySet().iterator().next();
-            ItemImpl ii = entry.getValue();
-                    
-            if( path.isParentOf(ii.getInternalPath()) || path.equals( ii.getInternalPath() ))
+            while( !m_changedItems.isEmpty() )
             {
-                if( ii.isNode() )
-                {
-                    NodeImpl ni = (NodeImpl) ii;
+                Entry<Path,ItemImpl> entry = m_changedItems.entrySet().iterator().next();
+                ItemImpl ii = entry.getValue();
                     
-                    switch( ni.getState() )
+                if( path.isParentOf(ii.getInternalPath()) || path.equals( ii.getInternalPath() ))
+                {
+                    if( ii.isNode() )
                     {
-                        case EXISTS:
-                            ni.preSave();
-                            // Nodes which exist don't need to be added.
-                            ni.postSave();
-                            break;
+                        NodeImpl ni = (NodeImpl) ii;
+                    
+                        switch( ni.getState() )
+                        {
+                            case EXISTS:
+                                ni.preSave();
+                                // Nodes which exist don't need to be added.
+                                ni.postSave();
+                                break;
                             
-                        case NEW:
-                            ni.preSave();
-                            m_source.addNode( m_workspace, ni );
-                            ni.postSave();
-                            m_fetchedItems.put( ni.getInternalPath(), ni );
-                            break;
+                            case NEW:
+                                ni.preSave();
+                                m_source.addNode( m_workspace, ni );
+                                ni.postSave();
+                                m_fetchedItems.put( ni.getInternalPath(), ni );
+                                break;
                         
-                        case REMOVED:
-                            if( !m_source.nodeExists( m_workspace, ii.getInternalPath() ) )
-                            {
-                                throw new InvalidItemStateException("The item has been removed by some other Session "+ii.getInternalPath());
-                            }
-                            //m_source.remove( m_workspace, ni.getInternalPath() );
-                            toberemoved.add(ni.getInternalPath());
-                            m_fetchedItems.remove( ni.getInternalPath() );
-                            break;
+                            case REMOVED:
+                                if( !m_source.nodeExists( m_workspace, ii.getInternalPath() ) )
+                                {
+                                    throw new InvalidItemStateException("The item has been removed by some other Session "+ii.getInternalPath());
+                                }
+                                toberemoved.add(ni.getInternalPath());
+                                m_fetchedItems.remove( ni.getInternalPath() );
+                                break;
+                        }
                     }
+                    else
+                    {
+                        PropertyImpl pi = (PropertyImpl)ii;
+                        
+                        switch( pi.getState() )
+                        {
+                            case NEW:
+                            case EXISTS:
+                                pi.preSave();
+                                m_source.putProperty( m_workspace, pi );
+                                pi.postSave();
+                                m_fetchedItems.put( pi.getInternalPath(), pi );
+                                break;
+                                
+                            case REMOVED:
+                                toberemoved.add(pi.getInternalPath());
+                                m_fetchedItems.remove( pi.getInternalPath() );
+                                break;                     
+                        }
+                    }                
                 }
                 else
                 {
-                    PropertyImpl pi = (PropertyImpl)ii;
-                    
-                    switch( pi.getState() )
-                    {
-                        case NEW:
-                        case EXISTS:
-                            pi.preSave();
-                            m_source.putProperty( m_workspace, pi );
-                            pi.postSave();
-                            m_fetchedItems.put( pi.getInternalPath(), pi );
-                            break;
-                                
-                        case REMOVED:
-                            // m_source.remove( m_workspace, pi.getInternalPath() );
-                            toberemoved.add(pi.getInternalPath());
-                            m_fetchedItems.remove( pi.getInternalPath() );
-                            break;                     
-                    }
-                }                
-            }
-            else
-            {
-                unsaved.add( ii );
-            }
+                    unsaved.add( ii );
+                }
             
-            //
-            //  Remove from the queue so that we don't use it again.  This must
-            //  be done here so that there never is an Item missing if any of the
-            //  intermediate calls do e.g. hasProperty();
-            //
-            m_changedItems.remove( entry.getKey() );
-        }
+                //
+                //  Remove from the queue so that we don't use it again.  This must
+                //  be done here so that there never is an Item missing if any of the
+                //  intermediate calls do e.g. hasProperty();
+                //
+                m_changedItems.remove( entry.getKey() );
+            }
         
-        //
-        //  Finally, do the remove.  First, sort all in a reverse
-        //  depth order (longest first).
-        //
-        
-        Collections.sort( toberemoved, new Comparator<Path>() {
+            //
+            //  Finally, do the remove.  First, sort all in a reverse
+            //  depth order (longest first).
+            //
+            
+            Collections.sort( toberemoved, new Comparator<Path>() {
 
-            public int compare(Path o1, Path o2)
+                public int compare(Path o1, Path o2)
+                {
+                    return o2.depth() - o1.depth();
+                }
+            
+            });
+        
+            for( Path p : toberemoved )
             {
-                return o2.depth() - o1.depth();
+                //System.out.println("Removing "+p);
+                m_source.remove(m_workspace, p);
             }
             
-        });
-        
-        for( Path p : toberemoved )
-        {
-            //System.out.println("Removing "+p);
-            m_source.remove(m_workspace, p);
+            //
+            //  Put the unsaved ones back into the queue
+            //
+            for( ItemImpl ii : unsaved )
+            {
+                m_changedItems.put( ii.getInternalPath(), ii );
+            }
         }
-        
-        //
-        //  Put the unsaved ones back into the queue
-        //
-        for( ItemImpl ii : unsaved )
+        finally
         {
-            m_changedItems.put( ii.getInternalPath(), ii );
+            m_source.storeFinished( m_workspace );
         }
     }
 

@@ -521,6 +521,39 @@ public class ProviderManager implements ItemStore
         }
     }
 
+    public void storeStarted(WorkspaceImpl ws)
+    {
+        ProviderInfo pi = m_workspaceAccess.get( ws.getName() );
+        
+        try
+        {
+            pi.lock.writeLock().lock();
+        
+            pi.provider.storeStarted( ws );
+        }
+        finally
+        {
+            pi.lock.writeLock().unlock();
+        }
+    }
+    
+    public void storeFinished(WorkspaceImpl ws)
+    {
+        ProviderInfo pi = m_workspaceAccess.get( ws.getName() );
+        
+        try
+        {
+            pi.lock.writeLock().lock();
+        
+            pi.provider.storeFinished( ws );
+        }
+        finally
+        {
+            pi.lock.writeLock().unlock();
+        }
+
+    }
+    
     private class ProviderInfo
     {
         public String[]           workspaces;

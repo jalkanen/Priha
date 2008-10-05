@@ -549,4 +549,16 @@ public class JdbcProvider implements RepositoryProvider
         }
     }
 
+    public void storeFinished( WorkspaceImpl ws )
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void storeStarted( WorkspaceImpl ws )
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

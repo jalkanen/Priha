@@ -68,4 +68,8 @@ public interface ItemStore
     Collection<? extends PropertyImpl> getReferences(WorkspaceImpl w, String uuid) throws RepositoryException;
 
     List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException;
+    
+    public void storeStarted(WorkspaceImpl ws);
+    
+    public void storeFinished(WorkspaceImpl ws);
 }

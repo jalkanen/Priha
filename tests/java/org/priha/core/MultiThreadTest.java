@@ -114,13 +114,14 @@ public class MultiThreadTest extends TestCase
             
             String hash = "x-"+name.charAt(0);
         
-            if( !nd.hasNode(hash) )
-            {
-                nd.addNode(hash);
-            }
         
             try
             {
+                if( !nd.hasNode(hash) )
+                {
+                    nd.addNode(hash);
+                }
+
                 Node n = nd.addNode( hash+"/"+name );
                 n.addMixin("mix:referenceable");
                 Property p = n.setProperty( "test", TestUtil.getUniqueID(16) );
@@ -142,7 +143,7 @@ public class MultiThreadTest extends TestCase
         {
             Random rand = new Random();
             
-            for( int i = 0; i < 1000; i++ )
+            for( int i = 0; i < 500; i++ )
             {
                 Thread.sleep( rand.nextInt(20) );
                 
@@ -153,13 +154,30 @@ public class MultiThreadTest extends TestCase
                 assertFalse( ii.getPath(), ii.isNode() );
                 assertEquals( ii.getName(), 16, ((Property)ii).getString().length() );
                 
-                if( rand.nextDouble() > 0.9 )
+                if( rand.nextDouble() > 0.95 )
                 {
                     createRandomNode( m_session.getRootNode() );
                 }
             }
         }
-        
+
+        public void readRandomNodes() throws InterruptedException, PathNotFoundException, RepositoryException
+        {
+            Random rand = new Random();
+            
+            for( int i = 0; i < 5000; i++ )
+            {
+                //Thread.sleep( rand.nextInt(20) );
+                
+                int item = rand.nextInt( propertyPaths.size() );
+                
+                Item ii = m_session.getItem( propertyPaths.get(item) );
+
+                assertFalse( ii.getPath(), ii.isNode() );
+                assertEquals( ii.getName(), 16, ((Property)ii).getString().length() );
+            }
+        }
+
         public void run()
         {
             Random rnd = new Random();
@@ -171,8 +189,14 @@ public class MultiThreadTest extends TestCase
                 m_session = m_repo.login();
                 
                 createRandomNodes();
-                
+
+                Thread.sleep( 500 );
+
                 readWriteRandomNodes();
+
+                //Thread.sleep( rnd.nextInt( 1000 ) );
+
+                readRandomNodes();
             }
             catch( Throwable t )
             {

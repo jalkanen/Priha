@@ -368,4 +368,14 @@ public class EhCachingProvider implements RepositoryProvider
         if( !path.isRoot() )
             m_valueCache.remove( getNid(ws,path.getParentPath()) );
     }
+
+    public void storeFinished( WorkspaceImpl ws )
+    {
+        m_realProvider.storeFinished( ws );
+    }
+
+    public void storeStarted( WorkspaceImpl ws )
+    {
+        m_realProvider.storeStarted( ws );
+    }
 }

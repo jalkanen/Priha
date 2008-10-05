@@ -48,8 +48,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private static final String PROP_TYPE           = "type";
     private static final String PROP_PATH           = "path";
 
-   
-    
     private File m_root;
     
     private Logger log = Logger.getLogger( getClass().getName() );
@@ -57,6 +55,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private long[] m_hitCount;
     
     private Path m_systemPath;
+    
+    private UUIDObjectStore<Path[]> m_references = new UUIDObjectStore<Path[]>("references.ser");
+    private UUIDObjectStore<Path>   m_uuids      = new UUIDObjectStore<Path>("uuid.ser");
     
     public FileProvider() throws RepositoryException
     {
@@ -454,30 +455,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
     }
     
-    private void saveRefShortcut( Path path, ValueImpl v ) throws ValueFormatException, IllegalStateException, RepositoryException, IOException
-    {
-        if( v.getType() == PropertyType.REFERENCE )
-        {
-            String uuid = v.getString();
-            
-            File refFile = new File( getRefHashPath( uuid ) );
-            PrintWriter out = null;
-            
-            try
-            {
-                if( !refFile.exists() ) refFile.getParentFile().mkdirs();
-            
-                out = new PrintWriter( new OutputStreamWriter( new FileOutputStream(refFile,refFile.exists()), "UTF-8" ) );
-
-                out.println(path.toString());
-            }
-            finally
-            {
-                if( out != null ) out.close();
-            }
-        }
-    }
-    
     public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
     {
         m_hitCount[Count.PutPropertyValue.ordinal()]++;
@@ -504,6 +481,25 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             {
                 props.setProperty( PROP_NUM_PROPERTIES, Integer.toString(property.getValues().length) );
                 Value[] values = property.getValues();
+
+                //
+                //  Let's clear previous references, if this is an attempt to save
+                //  a null value.
+                //
+                if( property.getType() == PropertyType.REFERENCE )
+                {
+                    try
+                    {
+                        ValueImpl[] oldval = (ValueImpl[]) getPropertyValue( ws, property.getInternalPath() );
+                    
+                        for( ValueImpl vi : oldval )
+                        {
+                            String uuid = vi.getString();
+                            cleanRefMapping( property.getInternalPath(), uuid );
+                        }
+                    }
+                    catch( PathNotFoundException e ){} // This is okay
+                }
                 
                 for( int i = 0; i < values.length; i++ )
                 {
@@ -511,12 +507,24 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                     saveRefShortcut( property.getInternalPath(), (ValueImpl)values[i] );
                     writeValue( df, (ValueImpl)values[i] );
                 }
+                
             }
             else
             {
+                if( property.getType() == PropertyType.REFERENCE )
+                {
+                    try
+                    {
+                        ValueImpl oldval = (ValueImpl) getPropertyValue( ws, property.getInternalPath() );
+                        cleanRefMapping( property.getInternalPath(), oldval.getString() );
+                    }
+                    catch(PathNotFoundException e) {} // OK
+
+                    saveRefShortcut( property.getInternalPath(), property.getValue() );
+                }
+
                 File df = new File( nodeDir, makeFilename( qname, ".data" ) );
                 writeValue( df, property.getValue() );
-                saveRefShortcut( property.getInternalPath(), property.getValue() );
             }
             out = new FileOutputStream(inf);
             
@@ -557,28 +565,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         if( property.getQName().equals(Q_JCR_UUID) )
         {
-            File f = new File( getUuidHashPath(property.getString()) );
-            
-            f.getParentFile().mkdirs(); // Make sure the paths exist.
-            BufferedWriter out = null;
-            try
-            {
-                // System.out.println("Writing uuid "+f.getAbsolutePath()+" => "+property.getInternalPath().getParentPath().toString());
-                out = new BufferedWriter( new FileWriter(f) );
-                
-                out.write( property.getInternalPath().getParentPath().toString() );
-                
-                out.close();
-            }
-            catch (IOException e)
-            {
-                log.warning("Cannot create a UUID cache file: "+e.getMessage());
-                throw new RepositoryException("Cannot create UUID cache file",e);
-            }
-            finally
-            {
-                if( out == null ) try { out.close(); } catch( Exception e ) {}
-            }
+            m_uuids.setObject( property.getString(), property.getInternalPath().getParentPath() );
         }
     }
 
@@ -759,6 +746,28 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 File dataFile = new File( nodeFile.getParentFile(), makeFilename(path.getLastComponent(),".data") );
 
                 //
+                //  Clean away references, as this one is obviously no longer referencing anyone.
+                //
+                Properties prop = new Properties();
+                try
+                {
+                    prop.load( new FileInputStream(infoFile) );
+                    
+                    int type = PropertyType.valueFromName( prop.getProperty( PROP_TYPE ) );
+                    
+                    if( type == PropertyType.REFERENCE )
+                    {
+                        String uuid = readContentsAsString( dataFile );
+                        cleanRefMapping(path,uuid);
+                    }
+                }
+                catch( IOException e1 )
+                {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+
+                //
                 //  UUID management.
                 //
                 if( path.getLastComponent().equals( Q_JCR_UUID ) )
@@ -788,18 +797,54 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      */
     private void cleanUuidMapping( String uuid )
     {
-        File uuidFile = new File( getUuidHashPath( uuid ) );
-               
-        uuidFile.delete();
-
-        // Delete also possible empty parent directories.
-        uuidFile = uuidFile.getParentFile();
-        if( uuidFile.list().length == 0 ) uuidFile.delete();
-        uuidFile = uuidFile.getParentFile();
-        if( uuidFile.list().length == 0 ) uuidFile.delete();
-        
-        log.finest( "Cleaned UUID mapping for "+uuid );
+        m_uuids.setObject( uuid, null );
     }
+
+
+    private void cleanRefMapping( Path path, String uuid ) throws IOException
+    {
+        Path[] refs = m_references.getObject( uuid );
+            
+        ArrayList<Path> newrefs = new ArrayList<Path>();
+        
+        if(refs == null) 
+        {
+            refs = new Path[1];
+            refs[0] = path;
+        }
+        else
+        {
+            for( Path p : refs )
+            {
+                if( !p.equals(path) ) 
+                {
+                    newrefs.add( p );
+                }
+            }
+        }
+        
+        m_references.setObject( uuid, newrefs.toArray( new Path[newrefs.size()] ) );
+    }
+
+    private void saveRefShortcut( Path path, ValueImpl v ) throws ValueFormatException, IllegalStateException, RepositoryException, IOException
+    {
+        if( v.getType() == PropertyType.REFERENCE )
+        {
+            String uuid = v.getString();
+
+            Path[] refs = m_references.getObject( uuid );
+            if( refs == null ) refs = new Path[0];
+            
+            Path[] newrefs = new Path[refs.length+1];
+            
+            for( int i = 0; i < refs.length; i++ ) newrefs[i] = refs[i];
+            
+            newrefs[newrefs.length-1] = path;
+
+            m_references.setObject( uuid, newrefs );
+        }
+    }
+    
 
     public void stop(RepositoryImpl rep)
     {
@@ -841,48 +886,19 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return null;
     }
 */    
-    /**
-     *  To make directory entries last longer, we first distribute the files in
-     *  4096 buckets, each one of which gets distributed in 4096 buckets again.
-     *  
-     *  @param uuid
-     *  @return
-     */
-    private String getUuidHashPath( String uuid )
-    {
-        String hashpath = m_root + "/uuidmap/" + uuid.substring(0,3) + "/" + uuid.substring(3,6) + "/" + uuid;
-        
-        return hashpath;
-    }
-    
-    private String getRefHashPath( String uuid )
-    {
-        String hashpath = m_root + "/refmap/" + uuid.substring(0,3) + "/" + uuid.substring(3,6) + "/" + uuid;
-        
-        return hashpath;        
-    }
     
     public Path findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
         m_hitCount[Count.FindByUUID.ordinal()]++;
 
-        String cachedPath = null;
-        try
-        {
-            cachedPath = readContentsAsString( new File(getUuidHashPath(uuid)) );
-        }
-        catch (IOException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        Path cachedPath = m_uuids.getObject( uuid );
         
         if( cachedPath == null )
         {
             throw new ItemNotFoundException( "There is no item with UUID "+uuid+" in the repository.");
         }
         
-        return PathFactory.getPath(ws.getSession(),cachedPath);
+        return cachedPath;
     }
     
     private static class PropertyTypeFilter implements FilenameFilter 
@@ -950,31 +966,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.FindReferences.ordinal()]++;
 
-        File refFile = new File( getRefHashPath( uuid ) );
-        ArrayList<Path> res = new ArrayList<Path>();
-
-        try
-        {
-            String s = readContentsAsString( refFile );
-            
-            StringTokenizer st = new StringTokenizer(s, "\r\n\t");
-            while( st.hasMoreTokens() )
-            {
-                String t = st.nextToken();
-                res.add( PathFactory.getPath( t ) );
-            }
-        }
-        catch( FileNotFoundException e )
-        {
-            // FINE, no references.
-        }
-        catch( IOException e )
-        {
-            throw new RepositoryException("Failed to read the references",e);
-        }
+        Path[] refs = m_references.getObject( uuid );
         
-        return res;
-        // return findReferencesFromPath(ws, uuid, Path.ROOT);
+        if( refs != null )
+        {
+            return Arrays.asList( refs );
+        }
+        return new ArrayList<Path>();
     }
 
     public long getCount(Count item)
@@ -1030,42 +1028,127 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         return sb.toString();
     }
-    
-    /*
-    protected static String mangleName( String pagename )
+
+    /**
+     *  Stores something based on UUIDs in an internal map, and
+     *  always serializes the map on disk upon addition of new objects.
+     *  
+     *  @param <T>
+     */
+    // FIXME: Should be faster by storing the map in a separate thread to collect multiple changes.
+    // FIXME: Should create a new file each time and not overwrite a previous one; then remove
+    //        the old one.
+    private class UUIDObjectStore<T extends Serializable>
     {
-        try
-        {
-            pagename = URLEncoder.encode( pagename, "UTF-8" );
-        }
-        catch( UnsupportedEncodingException e )
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        private String           m_name;
+        private Map<String,T>    m_map = new HashMap<String,T>();
         
-        pagename = TextUtil.replaceString( pagename, "%2F", "/" );
-        pagename = TextUtil.replaceString( pagename, "%3A", ":" );
-        
-        //
-        //  Names which start with a dot must be escaped to prevent problems.
-        //  Since we use URL encoding, this is invisible in our unescaping.
-        //
-        if( pagename.startsWith( "." ) )
+        public UUIDObjectStore( String name )
         {
-            pagename = "%2E" + pagename.substring( 1 );
+            m_name = name;
+            unserialize();
         }
         
-        String pn = pagename.toLowerCase();
-        for( int i = 0; i < WINDOWS_DEVICE_NAMES.length; i++ )
+        public T getObject( String uuid )
         {
-            if( WINDOWS_DEVICE_NAMES[i].equals(pn) )
+            return m_map.get( uuid );
+        }
+        
+        public void setObject( String uuid, T object )
+        {
+            if( object != null )
             {
-                pagename = "$$$" + pagename;
+                m_map.put( uuid, object );
+            }
+            else
+            {
+                m_map.remove( uuid );
+            }
+            //serialize();
+        }
+        
+        @SuppressWarnings("unchecked")
+        private void unserialize()
+        {
+            File objFile = new File(m_root, m_name);
+
+            ObjectInputStream in = null;
+            try
+            {
+                in = new ObjectInputStream( new FileInputStream(objFile) );
+                
+                m_map = (Map<String, T>) in.readObject();
+            }
+            catch( FileNotFoundException e )
+            {
+                // OK
+            }
+            catch( IOException e )
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            catch( ClassNotFoundException e )
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            finally
+            {
+                if( in != null ) 
+                {
+                    try
+                    {
+                        in.close();
+                    }
+                    catch( IOException e )
+                    {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
         
-        return pagename;
+        private void serialize()
+        {
+            File objFile = new File(m_root, m_name);
+            
+            ObjectOutputStream out = null ;
+            
+            try
+            {
+                out = new ObjectOutputStream( new FileOutputStream(objFile) );
+            
+                out.writeObject( m_map );
+            }
+            catch( IOException ex )
+            {
+                log.warning( ex.getMessage() );
+            }
+            finally
+            {
+                if( out != null )
+                {
+                    try
+                    {
+                        out.close();
+                    }
+                    catch( IOException e )
+                    {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
     }
-*/
+
+    public void storeFinished( WorkspaceImpl ws )
+    {
+        m_uuids.serialize();
+        m_references.serialize();
+    }
+
+    public void storeStarted( WorkspaceImpl ws )
+    {
+    }
 }

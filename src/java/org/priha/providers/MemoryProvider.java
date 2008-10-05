@@ -211,4 +211,12 @@ public class MemoryProvider implements RepositoryProvider
     {
     }
 
+    public void storeFinished( WorkspaceImpl ws )
+    {
+    }
+
+    public void storeStarted( WorkspaceImpl ws )
+    {
+    }
+
 }
