@@ -20,7 +20,10 @@ public class PerformanceTest extends TestCase
     private static final int DEFAULT_ITERATIONS = 100;
     private int m_iterations = DEFAULT_ITERATIONS;
     
-    private static int BLOB_SIZE = 1024*1024;
+    private static int BLOB_SIZE = 1024*100;
+    
+    private static int NODENAMELEN = 16;
+    private static int PROPERTYLEN = 16;
     
     private Credentials m_creds = new SimpleCredentials("username","password".toCharArray());
    
@@ -97,7 +100,7 @@ public class PerformanceTest extends TestCase
         Perf.print();
     }
     
-    private class TesterClass
+    public static class TesterClass
     {
         private Repository m_repository;
         private Credentials m_creds;
@@ -144,7 +147,7 @@ public class PerformanceTest extends TestCase
 
                 for( int i = 0; i < m_numIters; i++ )
                 {
-                    String name = TestUtil.getUniqueID();
+                    String name = TestUtil.getUniqueID(NODENAMELEN);
                 
                     String hash = "x-"+name.charAt(0);
                 
@@ -155,7 +158,7 @@ public class PerformanceTest extends TestCase
                 
                     Node n = nd.addNode( hash+"/"+name );
                     n.addMixin("mix:referenceable");
-                    Property p = n.setProperty( "test", TestUtil.getUniqueID() );
+                    Property p = n.setProperty( "test", TestUtil.getUniqueID(PROPERTYLEN) );
                     propertyPaths.add( p.getPath() );
                     
                     nd.save();
@@ -190,7 +193,7 @@ public class PerformanceTest extends TestCase
 
                 for( int i = 0; i < m_numIters; i++ )
                 {
-                    String name = TestUtil.getUniqueID();
+                    String name = TestUtil.getUniqueID( NODENAMELEN );
                 
                     String hash = "x-"+name.charAt(0);
                 
@@ -243,7 +246,7 @@ public class PerformanceTest extends TestCase
                             Node n2 = i2.nextNode();
                         
                             Property p = n2.getProperty("test");
-                            assertEquals( p.getName(), 16, p.getString().length() );
+                            assertEquals( p.getName(), PROPERTYLEN, p.getString().length() );
                         }
                     }
                 }
@@ -279,7 +282,7 @@ public class PerformanceTest extends TestCase
                     Item ii = s.getItem( propertyPaths.get(item) );
 
                     assertFalse( ii.getPath(), ii.isNode() );
-                    assertEquals( ii.getName(), 16, ((Property)ii).getString().length() );
+                    assertEquals( ii.getName(), PROPERTYLEN, ((Property)ii).getString().length() );
                 }
                 
                 Perf.stop(m_numIters);
@@ -310,7 +313,7 @@ public class PerformanceTest extends TestCase
                     
                     Node ni = s.getNodeByUUID( uuids.get(item) );
 
-                    assertEquals( ni.getName(), 16, ni.getProperty("test").getString().length() );
+                    assertEquals( ni.getName(), PROPERTYLEN, ni.getProperty("test").getString().length() );
                 }
                 
                 Perf.stop(m_numIters);
@@ -441,6 +444,11 @@ public class PerformanceTest extends TestCase
         
             Perf.stop(numIters);
         }
+        catch( Exception t )
+        {
+            t.printStackTrace();
+            throw t;
+        }
         finally
         {
             TestUtil.emptyRepo(rep);
@@ -469,7 +477,7 @@ public class PerformanceTest extends TestCase
      *  This class stores all results to a local hashmap, which can then be pretty-printed.
      *
      */
-    private static class Perf
+    public static class Perf
     {
         private static HashMap<String, HashMap<String, Double>> results = new HashMap<String,HashMap<String,Double>>();
         

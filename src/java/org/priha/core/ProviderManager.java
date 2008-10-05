@@ -18,6 +18,8 @@
 package org.priha.core;
 
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
@@ -97,6 +99,7 @@ public class ProviderManager implements ItemStore
             m_providers[i] = new ProviderInfo();
             m_providers[i].provider   = p;
             m_providers[i].workspaces = workspaces;
+            m_providers[i].lock       = new ReentrantReadWriteLock();
             
             for( String ws : workspaces )
             {
@@ -121,12 +124,12 @@ public class ProviderManager implements ItemStore
      * @return
      * @throws ConfigurationException
      */
-    private final RepositoryProvider getProvider(WorkspaceImpl wi, Path p) throws ConfigurationException
+    private final ProviderInfo getProviderInfo(WorkspaceImpl wi, Path p) throws ConfigurationException
     {
         ProviderInfo pi = m_workspaceAccess.get(wi.getName());
 
         if( pi != null )
-            return pi.provider;
+            return pi;
         
         throw new ConfigurationException("Nonexistant workspace: "+wi.getName());
     }
@@ -214,15 +217,34 @@ public class ProviderManager implements ItemStore
 
         if( pi == null ) throw new NoSuchWorkspaceException("No such workspace: '"+workspaceName+"'");
         
-        pi.provider.open( m_repository, credentials, workspaceName );
+        try
+        {
+            pi.lock.writeLock().lock();
+            pi.provider.open( m_repository, credentials, workspaceName );
+        }
+        finally
+        {
+            pi.lock.writeLock().unlock();
+        }
     }
 
 
     private Object getPropertyValue(WorkspaceImpl impl, Path ptPath) throws RepositoryException
     {
-        Object stored = getProvider(impl,ptPath).getPropertyValue( impl, ptPath );
+        ProviderInfo pi = getProviderInfo(impl,ptPath);
+        
+        try
+        {
+            pi.lock.readLock().lock();
+        
+            Object stored = pi.provider.getPropertyValue( impl, ptPath );
             
-        return stored;
+            return stored;
+        }
+        finally
+        {
+            pi.lock.readLock().unlock();
+        }
     }
 
     /**
@@ -237,7 +259,18 @@ public class ProviderManager implements ItemStore
 
     public List<Path>listNodes(WorkspaceImpl impl, Path path) throws RepositoryException
     {
-        return getProvider(impl,path).listNodes( impl, path );
+        ProviderInfo pi = getProviderInfo( impl, path );
+        
+        try
+        {
+            pi.lock.readLock().lock();
+        
+            return pi.provider.listNodes( impl, path );
+        }
+        finally
+        {
+            pi.lock.readLock().unlock();
+        }
     }
 
     public void close(WorkspaceImpl impl)
@@ -257,7 +290,18 @@ public class ProviderManager implements ItemStore
      */
     public void remove(WorkspaceImpl impl, Path path) throws RepositoryException
     {
-        getProvider(impl,path).remove( impl, path );
+        ProviderInfo pi = getProviderInfo( impl, path );
+        
+        try
+        {
+            pi.lock.writeLock().lock();
+        
+            pi.provider.remove( impl, path );
+        }
+        finally
+        {
+            pi.lock.writeLock().unlock();
+        }
     }
 
     /**
@@ -335,7 +379,18 @@ public class ProviderManager implements ItemStore
         if( !path.isRoot() && !nodeExists(ws, path.getParentPath()) )
             throw new ConstraintViolationException("Parent path is missing");
         
-        getProvider(ws,path).addNode(ws, path);
+        ProviderInfo pi = getProviderInfo(ws,path);
+        
+        try
+        {
+            pi.lock.writeLock().lock();
+        
+            pi.provider.addNode(ws, path);
+        }
+        finally
+        {
+            pi.lock.writeLock().unlock();
+        }
     }
 
     public void copy(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException
@@ -349,12 +404,17 @@ public class ProviderManager implements ItemStore
         {
             try
             {
+                pi.lock.readLock().lock();
                 Path path = pi.provider.findByUUID(ws, uuid);
         
                 return loadNode(ws, path);
             }
             catch(ItemNotFoundException e)
             {}
+            finally
+            {
+                pi.lock.readLock().unlock();
+            }
         }
         
         throw new ItemNotFoundException("Could not locate a node by this UUID");
@@ -386,12 +446,34 @@ public class ProviderManager implements ItemStore
 
     public boolean nodeExists(WorkspaceImpl ws, Path path) throws ConfigurationException
     {
-        return getProvider(ws,path).nodeExists(ws, path);
+        ProviderInfo pi = getProviderInfo( ws, path );
+        
+        try
+        {
+            pi.lock.readLock().lock();
+        
+            return pi.provider.nodeExists(ws, path);
+        }
+        finally
+        {
+            pi.lock.readLock().unlock();
+        }
     }
 
-    public void putProperty(WorkspaceImpl ws, PropertyImpl pi) throws RepositoryException
+    public void putProperty(WorkspaceImpl ws, PropertyImpl prop ) throws RepositoryException
     {
-        getProvider(ws,pi.getInternalPath()).putPropertyValue( ws, pi );   
+        ProviderInfo pi = getProviderInfo( ws, prop.getInternalPath() );
+        
+        try
+        {
+            pi.lock.writeLock().lock();
+        
+            pi.provider.putPropertyValue( ws, prop );
+        }
+        finally
+        {
+            pi.lock.writeLock().unlock();
+        }
     }
 
     public void stop()
@@ -425,12 +507,24 @@ public class ProviderManager implements ItemStore
 
     public List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        return getProvider(ws,path).listProperties(ws, path);
+        ProviderInfo pi = getProviderInfo( ws, path );
+        
+        try
+        {
+            pi.lock.readLock().lock();
+        
+            return pi.provider.listProperties(ws, path);
+        }
+        finally
+        {
+            pi.lock.readLock().unlock();
+        }
     }
 
     private class ProviderInfo
     {
         public String[]           workspaces;
         public RepositoryProvider provider;
+        public ReadWriteLock      lock;
     }
 }

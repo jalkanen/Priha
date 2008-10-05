@@ -19,16 +19,15 @@ package org.priha.providers;
 
 import java.io.*;
 import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
 import javax.xml.namespace.QName;
 
 import static org.priha.core.JCRConstants.*;
+
+import org.priha.core.JCRConstants;
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
@@ -36,6 +35,7 @@ import org.priha.core.binary.FileBinarySource;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.util.*;
+import org.priha.xml.XMLUtils;
 
 /**
  *  A simple file system -based provider.  This is not particularly optimized,
@@ -48,6 +48,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private static final String PROP_TYPE           = "type";
     private static final String PROP_PATH           = "path";
 
+   
+    
     private File m_root;
     
     private Logger log = Logger.getLogger( getClass().getName() );
@@ -155,7 +157,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private static void copyContents( InputStream in, OutputStream out )
         throws IOException
     {
-        byte[] buf = new byte[4096];
+        byte[] buf = new byte[32768];
         int bytesRead = 0;
 
         while ((bytesRead = in.read(buf)) > 0) 
@@ -169,7 +171,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private static void copyContents(FileReader in, StringWriter out)
         throws IOException
     {
-        char[] buf = new char[4096];
+        char[] buf = new char[32768];
         int bytesRead = 0;
 
         while ((bytesRead = in.read(buf)) > 0) 
@@ -452,6 +454,30 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
     }
     
+    private void saveRefShortcut( Path path, ValueImpl v ) throws ValueFormatException, IllegalStateException, RepositoryException, IOException
+    {
+        if( v.getType() == PropertyType.REFERENCE )
+        {
+            String uuid = v.getString();
+            
+            File refFile = new File( getRefHashPath( uuid ) );
+            PrintWriter out = null;
+            
+            try
+            {
+                if( !refFile.exists() ) refFile.getParentFile().mkdirs();
+            
+                out = new PrintWriter( new OutputStreamWriter( new FileOutputStream(refFile,refFile.exists()), "UTF-8" ) );
+
+                out.println(path.toString());
+            }
+            finally
+            {
+                if( out != null ) out.close();
+            }
+        }
+    }
+    
     public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
     {
         m_hitCount[Count.PutPropertyValue.ordinal()]++;
@@ -482,6 +508,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 for( int i = 0; i < values.length; i++ )
                 {
                     File df = new File( nodeDir, makeFilename( qname, "."+i+".data" ) );
+                    saveRefShortcut( property.getInternalPath(), (ValueImpl)values[i] );
                     writeValue( df, (ValueImpl)values[i] );
                 }
             }
@@ -489,6 +516,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             {
                 File df = new File( nodeDir, makeFilename( qname, ".data" ) );
                 writeValue( df, property.getValue() );
+                saveRefShortcut( property.getInternalPath(), property.getValue() );
             }
             out = new FileOutputStream(inf);
             
@@ -529,7 +557,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         if( property.getQName().equals(Q_JCR_UUID) )
         {
-            File f = new File( getHashPath(property.getString()) );
+            File f = new File( getUuidHashPath(property.getString()) );
             
             f.getParentFile().mkdirs(); // Make sure the paths exist.
             BufferedWriter out = null;
@@ -609,7 +637,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         else if( propType.equals(PropertyType.TYPENAME_PATH ))
         {
             String val = readContentsAsString(propFile);
-            //val = ws.fromQName( val );
             value = vf.createValue( val, PropertyType.PATH );
         }
         else if( propType.equals(PropertyType.TYPENAME_REFERENCE ) )
@@ -727,13 +754,51 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             else
             {
                 // Must be a property
-                nodeFile = new File( nodeFile.getParentFile(), makeFilename(path.getLastComponent(),".info") );
-                nodeFile.delete();
-                nodeFile = new File( nodeFile.getParentFile(), makeFilename(path.getLastComponent(),".data") );
-                nodeFile.delete();
+
+                File infoFile = new File( nodeFile.getParentFile(), makeFilename(path.getLastComponent(),".info") );
+                File dataFile = new File( nodeFile.getParentFile(), makeFilename(path.getLastComponent(),".data") );
+
+                //
+                //  UUID management.
+                //
+                if( path.getLastComponent().equals( Q_JCR_UUID ) )
+                {
+                    try
+                    {
+                        String uuid = readContentsAsString( dataFile );
+                        cleanUuidMapping( uuid );
+                    }
+                    catch( IOException e )
+                    {
+                        // Fail quietly; it might be that the UUID file does not exist for some reason.
+                    }
+                }
+                
+                infoFile.delete();
+                dataFile.delete();
             }
         }
 
+    }
+
+    /**
+     *  The UUID in question is removed, so we'll clear it now.
+     *  
+     *  @param uuid
+     */
+    private void cleanUuidMapping( String uuid )
+    {
+        File uuidFile = new File( getUuidHashPath( uuid ) );
+               
+        uuidFile.delete();
+
+        // Delete also possible empty parent directories.
+        uuidFile = uuidFile.getParentFile();
+        if( uuidFile.list().length == 0 ) uuidFile.delete();
+        uuidFile = uuidFile.getParentFile();
+        if( uuidFile.list().length == 0 ) uuidFile.delete();
+        
+        log.finest( "Cleaned UUID mapping for "+uuid );
     }
 
     public void stop(RepositoryImpl rep)
@@ -783,11 +848,18 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  @param uuid
      *  @return
      */
-    private String getHashPath( String uuid )
+    private String getUuidHashPath( String uuid )
     {
         String hashpath = m_root + "/uuidmap/" + uuid.substring(0,3) + "/" + uuid.substring(3,6) + "/" + uuid;
         
         return hashpath;
+    }
+    
+    private String getRefHashPath( String uuid )
+    {
+        String hashpath = m_root + "/refmap/" + uuid.substring(0,3) + "/" + uuid.substring(3,6) + "/" + uuid;
+        
+        return hashpath;        
     }
     
     public Path findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
@@ -797,7 +869,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         String cachedPath = null;
         try
         {
-            cachedPath = readContentsAsString( new File(getHashPath(uuid)) );
+            cachedPath = readContentsAsString( new File(getUuidHashPath(uuid)) );
         }
         catch (IOException e)
         {
@@ -878,7 +950,31 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.FindReferences.ordinal()]++;
 
-        return findReferencesFromPath(ws, uuid, Path.ROOT);
+        File refFile = new File( getRefHashPath( uuid ) );
+        ArrayList<Path> res = new ArrayList<Path>();
+
+        try
+        {
+            String s = readContentsAsString( refFile );
+            
+            StringTokenizer st = new StringTokenizer(s, "\r\n\t");
+            while( st.hasMoreTokens() )
+            {
+                String t = st.nextToken();
+                res.add( PathFactory.getPath( t ) );
+            }
+        }
+        catch( FileNotFoundException e )
+        {
+            // FINE, no references.
+        }
+        catch( IOException e )
+        {
+            throw new RepositoryException("Failed to read the references",e);
+        }
+        
+        return res;
+        // return findReferencesFromPath(ws, uuid, Path.ROOT);
     }
 
     public long getCount(Count item)
@@ -906,6 +1002,36 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  @param pagename The name to mangle
      *  @return The mangled name.
      */
+    
+    private static final String APPROVED_PUNCTUATION = " ./_,-+:";
+    protected static String mangleName( String name )
+    {
+        StringBuilder sb = new StringBuilder(name.length()+32);
+        
+        for( int i = 0; i < name.length(); i++ )
+        {
+            char ch = name.charAt( i );
+            
+            if( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z' ) || 
+                (APPROVED_PUNCTUATION.indexOf(ch) != -1) ||
+                (ch >= '0' && ch <= '9') )
+            {
+                sb.append( ch );
+            }
+            else
+            {
+                sb.append( '=' );
+                String xa = Integer.toHexString( ch );
+                for( int j = 0; j < 4-xa.length(); j++ ) sb.append("0");
+                sb.append(xa);
+            }
+           
+        }
+        
+        return sb.toString();
+    }
+    
+    /*
     protected static String mangleName( String pagename )
     {
         try
@@ -941,5 +1067,5 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         return pagename;
     }
-
+*/
 }

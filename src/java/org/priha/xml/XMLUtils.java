@@ -44,7 +44,7 @@ public class XMLUtils
     }
 
     private static final String VALID_HEX_CHARS = "0123456789abcdefABCDEF";
-    
+        
     /**
      *  This method encodes a String so that it is a valid XML name, according
      *  to ISO/IEC 9075-14:2003.  Whether a character is considered an XML name

@@ -205,7 +205,7 @@ public class RepositoryTest extends TestCase
         
         nd = nd.addNode("binarytest");
         
-        String content = TestUtil.getUniqueID();
+        String content = TestUtil.getUniqueID(32);
         
         InputStream in = new ByteArrayInputStream( content.getBytes() );
         

@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.management.MBeanServer;
 import javax.xml.namespace.QName;
@@ -38,6 +39,8 @@ import org.priha.core.ProviderManager;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.values.QValue;
+import org.priha.core.values.ValueFactoryImpl;
+import org.priha.core.values.ValueImpl;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
 
@@ -197,6 +200,23 @@ public class EhCachingProvider implements RepositoryProvider
         return m_realProvider.findReferences(ws, uuid);
     }
     
+    //
+    //  Binary objects are not cached.  In the future, it would make sense to cache
+    //  them based on their size.
+    //
+    private boolean isCacheable(Object o)
+    {
+        if( o instanceof ValueImpl )
+        {
+            if( ((ValueImpl) o).getType() == PropertyType.BINARY )
+            {
+                return false;
+            }
+        }
+        
+        return true;
+    }
+    
     public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         String key = getVid(ws,path);
@@ -223,9 +243,13 @@ public class EhCachingProvider implements RepositoryProvider
         
             Object o = m_realProvider.getPropertyValue(ws, path);
         
-            e = new Element( key, o );
+            if( isCacheable(o) )
+            {
+                e = new Element( key, o );
         
-            m_valueCache.put( e );
+                m_valueCache.put( e );
+            }
+            
             return o;
         }
         catch( LockTimeoutException e )

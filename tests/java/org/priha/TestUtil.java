@@ -20,15 +20,6 @@ public class TestUtil
         
             s.refresh(false);
             deleteTree( s.getRootNode() );
-        /*
-            for( PropertyIterator i = s.getRootNode().getProperties(); i.hasNext(); )
-            {
-                Property p = i.nextProperty();
-
-                if( !p.getDefinition().isProtected() )
-                    p.remove();
-            }
-*/
             s.save();
         }
         
@@ -61,12 +52,12 @@ public class TestUtil
      *
      *  @return A random string
      */
-    public static String getUniqueID()
+    public static String getUniqueID(int length)
     {
         StringBuffer sb = new StringBuffer();
         Random rand = new Random();
     
-        for( int i = 0; i < 16; i++ )
+        for( int i = 0; i < length; i++ )
         {
             char x = (char)('A'+rand.nextInt(26));
     

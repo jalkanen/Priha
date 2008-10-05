@@ -26,6 +26,7 @@ import org.priha.core.JCRConstants;
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
+import org.priha.core.values.QValue;
 import org.priha.core.values.ValueImpl;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
@@ -44,7 +45,7 @@ public class MemoryProvider implements RepositoryProvider
     
     public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        System.out.println("Node++ "+path);
+        //System.out.println("Node++ "+path);
         m_nodePaths.add( path );
     }
 
@@ -87,6 +88,11 @@ public class MemoryProvider implements RepositoryProvider
         
         if( o == null ) throw new PathNotFoundException(path.toString());
         
+        if( o instanceof QValue.QValueInner )
+        {
+            return ((QValue.QValueInner)o).getQValue().getValue(ws.getSession());
+        }
+        
         return o;
     }
 
@@ -96,7 +102,7 @@ public class MemoryProvider implements RepositoryProvider
         
         for( Path p : m_nodePaths )
         {
-            if( parentpath.isParentOf(p) )
+            if( parentpath.isParentOf(p) && parentpath.depth() == p.depth()-1 ) // Only direct parents.
             {
                 res.add(p);
             }
@@ -111,7 +117,7 @@ public class MemoryProvider implements RepositoryProvider
         
         for( Path p : m_values.keySet() )
         {
-            if( path.isParentOf(p) )
+            if( path.isParentOf(p) && path.depth() == p.depth()-1 )
             {
                 res.add(p.getLastComponent());
             }
@@ -166,7 +172,7 @@ public class MemoryProvider implements RepositoryProvider
             m_values.put( property.getInternalPath(), value );    
         }
         
-        System.out.println("Stored "+property.getInternalPath());
+        //System.out.println("Stored "+property.getInternalPath());
     }
 
     public void remove(WorkspaceImpl ws, Path path) throws RepositoryException

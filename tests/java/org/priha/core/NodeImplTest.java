@@ -95,6 +95,37 @@ public class NodeImplTest extends TestCase
         assertEquals( "wrong val", gobble2.getUUID(), p.getValue().getString() );
     }
 
+    /** Multiple references */
+    public void testReferences2() throws Exception
+    {
+        Node gobble = (Node)m_session.getItem("/gobble");
+
+        Node nd = m_session.getRootNode().addNode( "zorp" );
+        nd.addMixin("mix:referenceable");
+        nd.setProperty("ownerOf", gobble);
+        
+        nd = m_session.getRootNode().addNode( "burp" );
+        nd.addMixin("mix:referenceable");
+        nd.setProperty("ownerOf", gobble);
+        
+        m_session.save();
+        
+        Node gobble2 = (Node)m_session.getItem("/gobble");
+        
+        PropertyIterator pi = gobble2.getReferences();
+        
+        assertEquals( "wrong # of refs", 2, pi.getSize() );
+        
+        Property p = pi.nextProperty();
+        Property p2 = pi.nextProperty();
+        
+        assertEquals( "wrong ref", "ownerOf", p.getName() );
+        assertEquals( "wrong val", gobble2.getUUID(), p.getValue().getString() );
+
+        assertEquals( "wrong ref 2", "ownerOf", p2.getName() );
+        assertEquals( "wrong val 2", gobble2.getUUID(), p2.getValue().getString() );
+    }
+
     public void testSave() throws Exception
     {
         Node root = m_session.getRootNode();
