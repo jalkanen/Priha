@@ -37,7 +37,14 @@ import org.priha.util.Path;
  *  <li>A RepositoryProvider shall be thread-safe</li>
  *  <li>There shall always be a default workspace called "default"</li>
  *  </ul>
- *
+ *  <p>
+ *  Priha RepositoryManager ensures that methods which modify the repository
+ *  (addNode(), close(), copy(), move(), open(), putPropertyValue(), remove(),
+ *   start(), stop(), storeFinished(), storeStarted()) are single-threaded.
+ *  However, the rest of the methods which are supposed to read from the
+ *  repository, are protected by a read lock, and therefore they can be
+ *  accessed at the same time from multiple threads.  If you do any modifications
+ *  anywhere, make sure these are thread-safe.
  *  <p>
  *  The RepositoryProvider lifecycle is as follows.
  *  <ol>
@@ -77,7 +84,6 @@ public interface RepositoryProvider
      *  @param repository The Repository which owns this provider.
      *  @param properties A set of filtered properties for this provider.
      *  @throws ConfigurationException If the repository cannot be started due to a faulty configuration.
-     * @throws  
      *  
      *  @see org.priha.core.ProviderManager#filterProperties(RepositoryImpl, String)
      */
@@ -86,7 +92,9 @@ public interface RepositoryProvider
     
     /**
      *  Stops a given repository.  This may be called without a preceding call
-     *  to stop().  All allocated resources can now be deallocated.
+     *  to close().  All allocated resources can now be deallocated.
+     *  <p>
+     *  This method will only be called when the Repository shuts down.
      *  
      *  @param rep The Repository object.
      */
@@ -106,9 +114,11 @@ public interface RepositoryProvider
      *  @param ws The Workspace in which the properties should be located.
      *  @param path The path of the Node.
      *  @return A List of the names of the properties under this Node.
+     *  @throws PathNotFoundException If the path given does not exist.
      *  @throws RepositoryException If something goes wrong.
      */
-    public abstract List<QName> listProperties( WorkspaceImpl ws, Path path ) throws RepositoryException;
+    public abstract List<QName> listProperties( WorkspaceImpl ws, Path path ) 
+        throws PathNotFoundException, RepositoryException;
     
     /**
      *  Returns the value of a property.
@@ -119,7 +129,8 @@ public interface RepositoryProvider
      *  @throws RepositoryException If something goes wrong.
      *  @throws PathNotFoundException If there is nothing at the end of this Path, i.e. the object could not be found.
      */
-    public abstract Object getPropertyValue( WorkspaceImpl ws, Path path ) throws PathNotFoundException, RepositoryException;
+    public abstract Object getPropertyValue( WorkspaceImpl ws, Path path ) 
+        throws PathNotFoundException, RepositoryException;
     
     /**
      *  Returns true, if the Node exists.
@@ -183,7 +194,8 @@ public interface RepositoryProvider
     public List<Path> listNodes(WorkspaceImpl ws, Path parentpath) throws RepositoryException;
     
     /**
-     *  Lists all workspaces which are available in this Repository.
+     *  Lists all workspaces which are available in this Repository.  This method is
+     *  called after start() but before open().
      *  
      *  @return The workspace names.
      */
@@ -210,7 +222,7 @@ public interface RepositoryProvider
      * @return
      * @throws ItemNotFoundException If the repository does not contain an UUID by this name.
      */
-    public Path findByUUID( WorkspaceImpl ws, String uuid ) throws RepositoryException;
+    public Path findByUUID( WorkspaceImpl ws, String uuid ) throws ItemNotFoundException, RepositoryException;
 
     /**
      *  Finds all the Property paths which are of type REFERENCE and whose content
@@ -218,7 +230,7 @@ public interface RepositoryProvider
      *  
      *  @param ws
      *  @param uuid
-     *  @return
+     *  @return A list of paths to properties which reference the node by the given UUID.
      *  @throws RepositoryException 
      */
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException;
