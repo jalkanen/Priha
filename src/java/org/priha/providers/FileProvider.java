@@ -761,6 +761,10 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                         cleanRefMapping(path,uuid);
                     }
                 }
+                catch( FileNotFoundException e1 )
+                {
+                    // We're deleting, so it does not matter at all if we can't find this stuff.
+                }
                 catch( IOException e1 )
                 {
                     // TODO Auto-generated catch block

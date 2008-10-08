@@ -10,6 +10,7 @@ import javax.jcr.UnsupportedRepositoryOperationException;
 import org.priha.core.JCRConstants;
 import org.priha.core.NodeImpl;
 import org.priha.core.RepositoryImpl;
+import org.priha.core.values.ValueImpl;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
 
@@ -119,7 +120,7 @@ public class VersionManager
                 root.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
 
                 root.setProperty( "jcr:successors", 
-                                  new String[] { }, 
+                                  new ValueImpl[] { }, 
                                   PropertyType.REFERENCE );
             
 
@@ -131,7 +132,7 @@ public class VersionManager
                 nd.setProperty( "jcr:baseVersion", root );
             
                 nd.setProperty( "jcr:predecessors", 
-                                new String[] { root.getUUID() }, 
+                                new ValueImpl[] { nd.getSession().getValueFactory().createValue( root ) }, 
                                 PropertyType.REFERENCE );
 
                 nd.setProperty( "jcr:isCheckedOut", true );

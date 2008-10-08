@@ -87,7 +87,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public void setSuper(boolean value)
     {
-        m_isSuperSession = true;
+        m_isSuperSession = value;
     }
     
     /**
@@ -293,7 +293,7 @@ public class SessionImpl implements Session, NamespaceMapper
         
         try
         {
-            m_isSuperSession = true;
+            setSuper( true );
         
             if( hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
         
@@ -344,7 +344,7 @@ public class SessionImpl implements Session, NamespaceMapper
         }
         finally
         {
-            m_isSuperSession = false;
+            setSuper( false );
         }
     }
 
@@ -617,5 +617,10 @@ public class SessionImpl implements Session, NamespaceMapper
         }
         
         return new QName(c);
+    }
+    
+    public String toString()
+    {
+        return "Session["+(isSuper()?"SUPER":"")+"]";
     }
 }

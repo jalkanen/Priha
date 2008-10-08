@@ -36,6 +36,7 @@ import javax.xml.namespace.QName;
 import org.priha.core.locks.LockImpl;
 import org.priha.core.locks.LockManager;
 import org.priha.core.values.ValueFactoryImpl;
+import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QNodeTypeManager;
@@ -679,8 +680,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         PropertyImpl prop = null;
 
-        if( isLockedWithoutToken() )
-            throw new LockException("Path is locked");
+        if( !getSession().isSuper() )
+        {
+            if( isLockedWithoutToken() )
+                throw new LockException("Path is locked");
+        
+            if( !isCheckedOut() )
+                throw new VersionException("Node is not checked out.");
+        }
         
         //
         //  Because we rely quite a lot on the primary property, we need to go and
@@ -884,6 +891,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         PropertyImpl p = prepareProperty( name, values );
 
         p.setValue( values );
+
+        p.m_type = type;
 
         return p;
     }
@@ -1319,6 +1328,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         if( isLocked() )
             throw new LockException( "Node is locked, so cannot add new mixin types." );
         
+        if( !isCheckedOut() )
+            throw new VersionException( "Node is not checked out, so cannot add new mixin types.");
+        
         Property p;
         try
         {
@@ -1341,7 +1353,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             internalSetProperty( Q_JCR_MIXINTYPES, values, PropertyType.NAME );
         }
 
-        autoCreateProperties();
+        //autoCreateProperties();
 
         markModified(true);
     }
@@ -1592,9 +1604,23 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      */
     public boolean isCheckedOut() throws RepositoryException
     {
+        try
+        {
+            PropertyImpl p = getProperty(Q_JCR_ISCHECKEDOUT);
+            
+            return p.getBoolean();
+        }
+        catch(PathNotFoundException e)
+        {
+            // Fine; no property exists.
+        }
+        
         //
-        //  This is true as long as versioning is not supported.
+        //  Check if this is a versionable node in the first place.
         //
+        if( isNodeType( "mix:versionable" ) && !isNew() )
+            return false;
+        
         return true;
     }
 
@@ -1656,7 +1682,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             v.setProperty( "nt:versionHistory", vh );
         
             v.setProperty( "jcr:predecessors", getProperty("jcr:predecessors").getValues() );
-            setProperty( "jcr:predecessors", new Value[0] );
+            v.addMixin( "mix:referenceable" );
+            v.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
+            
+            setProperty( "jcr:predecessors", new Value[0], PropertyType.REFERENCE );
         
             PropertyImpl preds = v.getProperty("jcr:predecessors");
             for( Value val : preds.getValues() )
@@ -1666,10 +1695,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
          
                 Value[] s = pred.getProperty("jcr:successors").getValues();
             
-                List<Value> l = Arrays.asList(s);
+                List<Value> l = new ArrayList<Value>();
+                l.addAll( Arrays.asList(s) );
                 l.add( m_session.getValueFactory().createValue(v) );
 
-                pred.setProperty("jcr:successors",l.toArray(s));
+                pred.setProperty( "jcr:successors", l.toArray(s) );
             }
         
             setProperty( "jcr:baseVersion", v );
@@ -1687,9 +1717,32 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public void checkout() throws UnsupportedRepositoryOperationException, LockException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Node.checkout()");
-
+        if( isCheckedOut() ) return; // Nothing happens
+        
+        if( !isNodeType( "mix:versionable" ) )
+            throw new UnsupportedRepositoryOperationException("Not versionable (8.2.6)");
+        
+        try
+        {
+            getSession().setSuper( true );
+        
+            setProperty( "jcr:isCheckedOut", true );
+        
+            //
+            //  We don't support multiple predecessors, so this is okay, I think.
+            //
+            setProperty( "jcr:predecessors",
+                         new ValueImpl[] { getSession().getValueFactory().createValue( getBaseVersion() ) } );
+        
+            //
+            //  Persist immediately.
+            //
+            save();
+        }
+        finally
+        {
+            getSession().setSuper( false );
+        }
     }
 
     public void doneMerge(Version version)

@@ -30,6 +30,7 @@ import javax.jcr.nodetype.PropertyDefinition;
 import javax.jcr.version.VersionException;
 
 import org.priha.core.values.StreamValueImpl;
+import org.priha.core.values.StringValueImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QPropertyDefinition;
@@ -245,8 +246,14 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     {
         QNodeType parentType = getParent().getPrimaryQNodeType();
         
-        if( !m_session.isSuper() && !parentType.canSetProperty( getQName(), value ) )
-            throw new ConstraintViolationException("Setting of this property is forbidden");
+        if( !m_session.isSuper() )
+        {
+            if( !parentType.canSetProperty( getQName(), value ) )
+                throw new ConstraintViolationException("Setting of this property is forbidden");
+            
+            if( !getParent().isCheckedOut() )
+                throw new VersionException("Parent node is not checked out");
+        }
 
         if( m_type != PropertyType.UNDEFINED && value != null && m_type != value.getType() )
         {
@@ -266,8 +273,14 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     {
         QNodeType parentType = getParent().getPrimaryQNodeType();
         
-        if( !m_session.isSuper() && !parentType.canSetProperty( getQName(), values ) )
-            throw new ConstraintViolationException("Setting of this property is forbidden:");
+        if( !m_session.isSuper() )
+        {
+            if( !parentType.canSetProperty( getQName(), values ) )
+                throw new ConstraintViolationException("Setting of this property is forbidden:");
+            
+            if( !getParent().isCheckedOut() )
+                throw new VersionException("Parent node is not checked out");
+        }
 
         if( m_type != PropertyType.UNDEFINED && values != null && values.length >= 1 && values[0] != null && m_type != values[0].getType() )
         {
@@ -352,6 +365,17 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                              ConstraintViolationException,
                                              RepositoryException
     {
+        QNodeType parentType = getParent().getPrimaryQNodeType();
+
+        if( !m_session.isSuper() )
+        {
+            if( !parentType.canSetProperty( getQName(), new StringValueImpl("") ) )
+                throw new ConstraintViolationException("Setting of this property is forbidden:");
+            
+            if( !getParent().isCheckedOut() )
+                throw new VersionException("Parent node is not checked out");
+        }
+
         if( values == null )
         {
             remove();
