@@ -1374,6 +1374,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             return false;
         }
 
+        if( !isCheckedOut() ) return false;
+        
         // FIXME: This is a bit complicated and slow.
 
         if( mixinName.equals("mix:versionable") && 
