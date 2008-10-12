@@ -41,6 +41,8 @@ import org.priha.nodetype.QNodeType;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
+import org.priha.version.VersionHistoryImpl;
+import org.priha.version.VersionImpl;
 import org.priha.xml.*;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -292,10 +294,10 @@ public class SessionImpl implements Session, NamespaceMapper
     {
         checkLive();
         
+        boolean isSuper = setSuper( true );
+                
         try
         {
-            setSuper( true );
-        
             if( hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
         
             NodeImpl srcnode = getRootNode().getNode(srcAbsPath);
@@ -345,7 +347,7 @@ public class SessionImpl implements Session, NamespaceMapper
         }
         finally
         {
-            setSuper( false );
+            setSuper( isSuper );
         }
     }
 
@@ -633,6 +635,40 @@ public class SessionImpl implements Session, NamespaceMapper
         }
         
         return new QName(c);
+    }
+    
+    /**
+     *  This method creates a correct Node subclass based on the NodeType.  It
+     *  can return Version or VersionHistory objects, as well as regular Nodes. 
+     * 
+     *  @param absPath
+     *  @param assignedType
+     *  @param assignedNodeDef
+     *  @return
+     *  @throws RepositoryException
+     */
+    protected NodeImpl createNode(Path            absPath, 
+                                  QNodeType       assignedType, 
+                                  QNodeDefinition assignedNodeDef,
+                                  boolean         initDefaults)
+        throws RepositoryException
+    {
+        NodeImpl ni;
+        
+        if( assignedType.isNodeType(JCRConstants.Q_NT_VERSION) )
+        {
+            ni = new VersionImpl( this, absPath, assignedType, assignedNodeDef, initDefaults );
+        }
+        else if( assignedType.isNodeType(JCRConstants.Q_NT_VERSIONHISTORY) )
+        {
+            ni = new VersionHistoryImpl( this, absPath, assignedType, assignedNodeDef, initDefaults );                
+        }
+        else
+        {
+            ni = new NodeImpl( this, absPath, assignedType, assignedNodeDef, initDefaults );
+        }
+        
+        return ni;
     }
     
     public String toString()

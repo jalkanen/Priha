@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
@@ -65,7 +66,15 @@ public class XMLImport extends DefaultHandler
         
         SAXParser parser = spf.newSAXParser();
 
-        parser.parse( xmlDoc, this );
+        boolean s = m_session.setSuper( true );
+        try
+        {
+            parser.parse( xmlDoc, this );
+        }
+        finally
+        {
+            m_session.setSuper( s );
+        }
     }
     
     private void checkSystem() throws SAXException
@@ -241,6 +250,7 @@ public class XMLImport extends DefaultHandler
         
         if( name.equals("sv:node") )
         {
+            boolean isSuper = m_session.setSuper( true );
             try
             {
                 log.finest("End -> ");
@@ -252,7 +262,12 @@ public class XMLImport extends DefaultHandler
             }
             catch (RepositoryException e)
             {
+                log.log( Level.WARNING, "Node deserialization failed", e );
                 throw new SAXException("Could not deserialize node",e);
+            }
+            finally
+            {
+                m_session.setSuper( isSuper );
             }
         }
         else if( name.equals("sv:value") )

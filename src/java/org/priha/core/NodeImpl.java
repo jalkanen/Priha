@@ -224,7 +224,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //  Node type and definition are now okay, so we'll create the node
             //  and add it to our session.
             //
-            ni = createNode(absPath, assignedType, assignedNodeDef);
+            ni = m_session.createNode(absPath, assignedType, assignedNodeDef,true);
 
             ni.sanitize();
 
@@ -238,38 +238,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return ni;
     }
 
-    /**
-     *  This method creates a correct Node subclass based on the NodeType.  It
-     *  can return Version or VersionHistory objects, as well as regular Nodes. 
-     * 
-     *  @param absPath
-     *  @param assignedType
-     *  @param assignedNodeDef
-     *  @return
-     *  @throws RepositoryException
-     */
-    private NodeImpl createNode(Path            absPath, 
-                                QNodeType       assignedType, 
-                                QNodeDefinition assignedNodeDef)
-        throws RepositoryException
-    {
-        NodeImpl ni;
-        
-        if( assignedType.isNodeType(JCRConstants.Q_NT_VERSION) )
-        {
-            ni = new VersionImpl( m_session, absPath, assignedType, assignedNodeDef );
-        }
-        else if( assignedType.isNodeType(JCRConstants.Q_NT_VERSIONHISTORY) )
-        {
-            ni = new VersionHistoryImpl( m_session, absPath, assignedType, assignedNodeDef );                
-        }
-        else
-        {
-            ni = new NodeImpl( m_session, absPath, assignedType, assignedNodeDef, true );
-        }
-        
-        return ni;
-    }
+
 
     private QNodeTypeManager.Impl getNodeTypeManager() throws RepositoryException
     {
@@ -1686,11 +1655,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //
         //  Phew!  Preconditions have been checked.  Now, let's get to real business.
         //
-     
+        
+        boolean isSuper = getSession().setSuper(true);
+             
         try
         {
-            getSession().setSuper(true);
-            
             VersionHistoryImpl vh = getVersionHistory();
         
             int version = 0;
@@ -1732,7 +1701,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         }
         finally
         {
-            getSession().setSuper( false );
+            getSession().setSuper( isSuper );
         }
     }
 
@@ -1742,11 +1711,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         if( !isNodeType( "mix:versionable" ) )
             throw new UnsupportedRepositoryOperationException("Not versionable (8.2.6)");
+
+        boolean isSuper = getSession().setSuper( true );
         
         try
         {
-            getSession().setSuper( true );
-        
             setProperty( "jcr:isCheckedOut", true );
         
             //
@@ -1762,7 +1731,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         }
         finally
         {
-            getSession().setSuper( false );
+            getSession().setSuper( isSuper );
         }
     }
 

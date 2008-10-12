@@ -79,11 +79,12 @@ public class VersionManager
     public static void createVersionHistory( NodeImpl nd ) throws UnsupportedRepositoryOperationException, RepositoryException
     {
         String uuid;
+
+        boolean isSuper = nd.getSession().setSuper(true);
         
+
         try
         {
-            nd.getSession().setSuper(true);
-            
             if( !nd.getSession().hasNode( getVersionStoragePath( null ) ) )
             {
                 // FIXME: A bit too complicated
@@ -142,7 +143,7 @@ public class VersionManager
         }
         finally
         {
-            nd.getSession().setSuper(false);
+            nd.getSession().setSuper(isSuper);
         }
     }
 }

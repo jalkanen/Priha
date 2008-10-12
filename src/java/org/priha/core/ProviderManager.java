@@ -333,15 +333,8 @@ public class ProviderManager implements ItemStore
     
         QNodeDefinition nd = type.findNodeDefinition( pt );
     
-        if( VersionManager.isVersionHistoryPath(path) )
-        {
-            ni = VersionHistoryImpl.getInstance( ws.getSession(), path );
-        }
-        else
-        {
-            ni = new NodeImpl( ws.getSession(), path, type, nd, false );
-        }
-        
+        ni = ws.getSession().createNode( path, type, nd, false );
+                
         ni.m_state = ItemState.EXISTS;
 
         return ni;

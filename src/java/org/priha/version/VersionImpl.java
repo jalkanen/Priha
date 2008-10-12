@@ -36,14 +36,14 @@ public class VersionImpl
     extends NodeImpl
     implements Version
 {
-    public VersionImpl( SessionImpl session, Path path, QNodeType primaryType, QNodeDefinition nDef )
+    public VersionImpl( SessionImpl session, Path path, QNodeType primaryType, QNodeDefinition nDef, boolean initDefaults )
         throws ValueFormatException,
                VersionException,
                LockException,
                ConstraintViolationException,
                RepositoryException
     {
-        super( session, path, primaryType, nDef, true );
+        super( session, path, primaryType, nDef, initDefaults );
     }
 
     public VersionHistory getContainingHistory() throws RepositoryException

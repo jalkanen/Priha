@@ -46,13 +46,13 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
 
         QNodeDefinition nDef = versionType.findNodeDefinition( path.getLastComponent() );
 
-        return new VersionHistoryImpl( session, path, versionType, nDef );
+        return new VersionHistoryImpl( session, path, versionType, nDef, true );
     }
 
-    public VersionHistoryImpl(SessionImpl session, Path path, QNodeType primaryType, QNodeDefinition nDef)
+    public VersionHistoryImpl(SessionImpl session, Path path, QNodeType primaryType, QNodeDefinition nDef, boolean initDefaults)
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        super(session, path, primaryType, nDef, true);
+        super(session, path, primaryType, nDef, initDefaults);
     }
 
     public void addVersionLabel(String arg0, String arg1, boolean arg2) throws VersionException, RepositoryException
