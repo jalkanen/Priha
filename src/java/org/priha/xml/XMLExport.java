@@ -34,7 +34,10 @@ public abstract class XMLExport
         
         for( String prefix : m_session.getNamespacePrefixes() )
         {
-            if( !prefix.equals("xml") )
+            //
+            //  XML and default prefixes are not exported.
+            //
+            if( !prefix.equals("xml") && !prefix.equals( "" ) )
                 contentHandler.startPrefixMapping( prefix, m_session.getNamespaceURI( prefix ) );
         }
         
