@@ -1033,6 +1033,19 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return sb.toString();
     }
 
+
+    public void storeFinished( WorkspaceImpl ws )
+    {
+        m_uuids.serialize();
+        m_references.serialize();
+    }
+
+    public void storeStarted( WorkspaceImpl ws )
+    {
+    }
+
+    /*---------------------------------------------------------------------------*/
+    
     /**
      *  Stores something based on UUIDs in an internal map, and
      *  always serializes the map on disk upon addition of new objects.
@@ -1053,6 +1066,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             unserialize();
         }
         
+        public String toString()
+        {
+            return "UUIDObjectStore["+m_name+", "+m_map.size()+" objs]";
+        }
+        
         public T getObject( String uuid )
         {
             return m_map.get( uuid );
@@ -1068,7 +1086,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             {
                 m_map.remove( uuid );
             }
-            //serialize();
         }
         
         @SuppressWarnings("unchecked")
@@ -1085,7 +1102,27 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
             catch( FileNotFoundException e )
             {
-                // OK
+                // Try to read the tempfile
+                try
+                {
+                    in = new ObjectInputStream( new FileInputStream(new File(m_root, m_name+".01")));
+
+                    m_map = (Map<String, T>) in.readObject();
+                }
+                catch( FileNotFoundException e1 )
+                {
+                    // Is ok.
+                }
+                catch( IOException e1 )
+                {
+                    // TODO Auto-generated catch block
+                    e1.printStackTrace();
+                }
+                catch( ClassNotFoundException e1 )
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
             catch( IOException e )
             {
@@ -1113,9 +1150,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
         }
         
-        private void serialize()
+        private synchronized void serialize()
         {
-            File objFile = new File(m_root, m_name);
+            File objFile = new File(m_root, m_name+".01");
             
             ObjectOutputStream out = null ;
             
@@ -1124,6 +1161,18 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 out = new ObjectOutputStream( new FileOutputStream(objFile) );
             
                 out.writeObject( m_map );
+                
+                out.close();
+                out = null;
+                
+                //
+                //  Rename the file
+                //
+                File dest = new File(m_root, m_name);
+             
+                if( dest.exists() ) dest.delete();
+                
+                objFile.renameTo( dest );
             }
             catch( IOException ex )
             {
@@ -1144,15 +1193,5 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 }
             }
         }
-    }
-
-    public void storeFinished( WorkspaceImpl ws )
-    {
-        m_uuids.serialize();
-        m_references.serialize();
-    }
-
-    public void storeStarted( WorkspaceImpl ws )
-    {
     }
 }

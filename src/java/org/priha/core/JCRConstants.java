@@ -19,6 +19,7 @@ public final class JCRConstants
     public static final String JCR_VERSIONHISTORY  = mk( NS_JCP, "versionHistory" );
     public static final String JCR_ISCHECKEDOUT    = mk( NS_JCP, "isCheckedOut" );
     public static final String JCR_BASEVERSION     = mk( NS_JCP, "baseVersion" );
+    public static final String JCR_ROOT            = mk( NS_JCP, "root" );
     public static final String MIX_VERSIONABLE     = mk( NS_JCP_MIX, "versionable" );
     public static final String MIX_REFERENCEABLE   = mk( NS_JCP_MIX, "referenceable" );
     
@@ -37,6 +38,7 @@ public final class JCRConstants
     public static final QName  Q_MIX_VERSIONABLE   = QName.valueOf( MIX_VERSIONABLE );
     public static final QName  Q_MIX_REFERENCEABLE = QName.valueOf( MIX_REFERENCEABLE );
     public static final QName  Q_JCR_BASEVERSION   = QName.valueOf( JCR_BASEVERSION );
+    public static final QName  Q_JCR_ROOT          = QName.valueOf( JCR_ROOT );
     
     private static final String mk(String namespace, String name)
     {

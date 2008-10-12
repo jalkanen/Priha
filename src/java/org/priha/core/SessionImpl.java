@@ -41,9 +41,7 @@ import org.priha.nodetype.QNodeType;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
-import org.priha.xml.StreamContentHandler;
-import org.priha.xml.XMLExport;
-import org.priha.xml.XMLImport;
+import org.priha.xml.*;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -85,9 +83,12 @@ public class SessionImpl implements Session, NamespaceMapper
         }
     }
 
-    public void setSuper(boolean value)
+    public boolean setSuper(boolean value)
     {
+        boolean oldval = m_isSuperSession;
         m_isSuperSession = value;
+        
+        return oldval;
     }
     
     /**
@@ -474,21 +475,36 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public void exportDocumentView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Session.exportDocumentView()");
+        checkLive();
+        
+        XMLExport export = new XMLDocExport(this);
+
+        export.export( absPath, contentHandler, skipBinary, noRecurse );
     }
 
     public void exportDocumentView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException
     {
-        // TODO Auto-generated method stub
+        checkLive();
+        XMLExport export = new XMLDocExport( this );
 
-        throw new UnsupportedRepositoryOperationException("Session.exportDocumentView2()");
+        ContentHandler handler = new StreamContentHandler( out );
+        
+        try
+        {
+            export.export( absPath, handler, skipBinary, noRecurse );
+        }
+        catch (SAXException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
     }
 
     public void exportSystemView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException
     {
         checkLive();
-        XMLExport export = new XMLExport( this );
+        XMLExport export = new XMLSysExport( this );
         
         export.export( absPath, contentHandler, skipBinary, noRecurse );
     }
@@ -496,7 +512,7 @@ public class SessionImpl implements Session, NamespaceMapper
     public void exportSystemView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException
     {
         checkLive();
-        XMLExport export = new XMLExport( this );
+        XMLExport export = new XMLSysExport( this );
 
         ContentHandler handler = new StreamContentHandler( out );
         

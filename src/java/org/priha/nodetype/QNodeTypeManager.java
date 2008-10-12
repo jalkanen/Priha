@@ -312,7 +312,7 @@ public class QNodeTypeManager
 
         return nd;
     }
-
+    
     /**
      *  Finds a node definition from the complete array of all definitions
      *

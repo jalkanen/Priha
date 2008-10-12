@@ -331,7 +331,7 @@ public class ProviderManager implements ItemStore
         QNodeTypeManager ntm = QNodeTypeManager.getInstance();
         QNodeType type = ntm.getNodeType( pt );
     
-        QNodeDefinition nd = ntm.findNodeDefinition( pt );
+        QNodeDefinition nd = type.findNodeDefinition( pt );
     
         if( VersionManager.isVersionHistoryPath(path) )
         {

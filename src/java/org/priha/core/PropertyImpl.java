@@ -206,7 +206,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     {
         if( m_multi != Multi.MULTI )
             throw new ValueFormatException("Attempted to get a MULTI Value object from a SINGLE property "+m_path);
-
+        
         return m_session.getValueFactory().cloneValues(m_value);
     }
 

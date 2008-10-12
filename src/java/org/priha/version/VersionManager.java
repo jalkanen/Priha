@@ -112,11 +112,13 @@ public class VersionManager
                 //  Create the root version.
                 //
                 NodeImpl root = vh.addNode( "jcr:rootVersion", "nt:version" );
-            
-                // Mandatory properties.  FIXME: What are these?
-                root.setProperty( "jcr:frozenPrimaryType", "" );
-                root.setProperty( "jcr:frozenMixinTypes", "" );
-                root.setProperty( "jcr:frozenUuid", "" );
+
+                NodeImpl rootFrozen = root.addNode( "jcr:frozenNode", "nt:frozenNode" );
+                
+                // Mandatory properties. 
+                rootFrozen.setProperty( "jcr:frozenPrimaryType", nd.getProperty( JCRConstants.Q_JCR_PRIMARYTYPE ).getValue() );
+                rootFrozen.setProperty( "jcr:frozenMixinTypes", nd.getProperty( JCRConstants.JCR_MIXIN_TYPES ).getValues() );
+                rootFrozen.setProperty( "jcr:frozenUuid", nd.getUUID() );
                 root.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
 
                 root.setProperty( "jcr:successors", 

@@ -202,6 +202,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //
             if( m_session.itemExists(absPath) )
             {
+                // Priha does not currently support same name siblings
+                throw new ItemExistsException("Node "+absPath+" already exists!");
+/*
                 NodeDefinition nd = parent.getDefinition();
 
                 if( !nd.allowsSameNameSiblings() )
@@ -209,6 +212,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                     // FIXME: This should really check if samenamesiblings are allowed
                     throw new ItemExistsException("Node "+absPath+" already exists!");
                 }
+*/
             }
 
             //
@@ -542,6 +546,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 {
                     pi.loadValue( vfi.createValue( Calendar.getInstance() ) );
                 }
+                else if( Q_JCR_ISCHECKEDOUT.equals(pi.getQName()))
+                {
+                    pi.loadValue( vfi.createValue( true ) );
+                }
                 else
                 {
                     throw new UnsupportedRepositoryOperationException("Automatic setting of property "+pi.getQName()+ " is not supported.");
@@ -687,6 +695,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
             if( !isCheckedOut() )
                 throw new VersionException("Node is not checked out.");
+            
+            if( name.equals( Q_JCR_MIXINTYPES ) )
+                throw new ConstraintViolationException("Manually setting mixinTypes is not allowed.");
         }
         
         //
@@ -735,6 +746,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             QNodeType parentType = parentNode.getPrimaryQNodeType();
             
             QPropertyDefinition pd = parentType.findPropertyDefinition(name,ismultiple);
+            
+            if( pd == null ) throw new RepositoryException("No propertydefinition found for "+parentType+" and "+name);
             
             prop = new PropertyImpl( m_session, propertypath, pd );
             prop.markModified(false); // New properties are not considered modified
@@ -1330,10 +1343,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         if( !isCheckedOut() )
             throw new VersionException( "Node is not checked out, so cannot add new mixin types.");
-        
-        Property p;
+
+        boolean oldsuper = m_session.setSuper( true );
+
         try
         {
+            Property p;
+            
             p = getProperty(Q_JCR_MIXINTYPES);
 
             Value[] v = p.getValues();
@@ -1352,7 +1368,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             Value[] values = new Value[] { vf.createValue(mixinName,PropertyType.NAME) };
             internalSetProperty( Q_JCR_MIXINTYPES, values, PropertyType.NAME );
         }
-
+        finally
+        {
+            m_session.setSuper( oldsuper );
+        }
         //autoCreateProperties();
 
         markModified(true);
@@ -1434,7 +1453,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                                  LockException,
                                                  RepositoryException
     {
-        if( isLocked() ) throw new LockException("Cannot remove mixin");
+        if( isLocked() ) throw new LockException("Node locked, cannot remove mixin");
+        
+        if( !isCheckedOut() ) throw new VersionException("Node is not checked out.");
         
         Property mixinTypes = getProperty("jcr:mixinTypes");
         

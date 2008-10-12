@@ -56,7 +56,7 @@
          <mandatory>false</mandatory>
          <onParentVersion>VERSION</onParentVersion>
          <protected>false</protected>
-         <sameNameSiblings>false</sameNameSiblings> <!--  Technically, this should be true, but we don't support that. -->
+         <sameNameSiblings>true</sameNameSiblings>
       </childNodeDefinition>
 
       <propertyDefinition>
@@ -198,7 +198,106 @@
       </childNodeDefinition>
     </nodetype>
 
-   
+   <nodetype>
+      <name>nt:frozenNode</name>
+      <supertypes>nt:base mix:referenceable</supertypes>
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>true</hasOrderableChildNodes>
+      <primaryItemName/>
+
+      <propertyDefinition>
+          <name>jcr:frozenPrimaryType</name>
+          <requiredType>Name</requiredType>
+          <valueConstraints></valueConstraints>
+          <defaultValues></defaultValues>
+          <autoCreated>true</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+
+      <propertyDefinition>
+          <name>jcr:frozenMixinTypes</name>
+          <requiredType>Name</requiredType>
+          <valueConstraints></valueConstraints>
+          <defaultValues></defaultValues>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+
+      <propertyDefinition>
+          <name>jcr:frozenUuid</name>
+          <requiredType>String</requiredType>
+          <valueConstraints></valueConstraints>
+          <defaultValues></defaultValues>
+          <autoCreated>true</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+      
+      <propertyDefinition>
+          <name>*</name>
+          <requiredType>undefined</requiredType>
+          <valueConstraints></valueConstraints>
+          <defaultValues></defaultValues>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+      
+      <propertyDefinition>
+          <name>*</name>
+          <requiredType>undefined</requiredType>
+          <valueConstraints></valueConstraints>
+          <defaultValues></defaultValues>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <multiple>true</multiple>
+      </propertyDefinition>
+
+      <childNodeDefinition>
+          <name>*</name>
+          <requiredPrimaryTypes>[nt:base]</requiredPrimaryTypes>
+          <defaultPrimaryType></defaultPrimaryType>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <sameNameSiblings>true</sameNameSiblings>
+      </childNodeDefinition>
+
+   </nodetype>
+
+   <nodetype>
+      <name>nt:versionedChild</name>
+      <supertypes>nt:base</supertypes>
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName/>
+
+      <propertyDefinition>
+          <name>jcr:childVersionHistory</name>
+          <requiredType>Reference</requiredType>
+          <valueConstraints>nt:versionHistory</valueConstraints>
+          <defaultValues/>
+          <autoCreated>true</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+   </nodetype>
+         
    <nodetype>
       <name>mix:versionable</name>
       <supertypes>mix:referenceable</supertypes>

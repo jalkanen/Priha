@@ -258,9 +258,11 @@ public class ValueFactoryImpl implements ValueFactory
     public Value[] cloneValues(Value[] values) 
         throws ValueFormatException, IllegalStateException, RepositoryException
     {
-        Value[] v = new Value[values.length];
+        int len = (values != null) ? values.length : 0;
         
-        for( int i = 0; i < values.length; i++ )
+        Value[] v = new Value[len];
+        
+        for( int i = 0; i < len; i++ )
         {
             v[i] = createValue( values[i] );
         }

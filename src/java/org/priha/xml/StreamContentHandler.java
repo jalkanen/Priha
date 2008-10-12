@@ -122,7 +122,14 @@ public class StreamContentHandler implements ContentHandler
         {
             for( Map.Entry<String, String> e : m_prefixes.entrySet() )
             {
-                m_out.print(" xmlns:"+e.getValue()+"='"+e.getKey()+"'");
+                if( e.getKey().length() > 0 )
+                {
+                    m_out.print(" xmlns:"+e.getValue()+"='"+e.getKey()+"'");
+                }
+                else
+                {
+                    m_out.print(" xmlns='"+e.getKey()+"'");
+                }
                 m_out.print("\n    ");
             }
             m_nameSpacesWritten = true;

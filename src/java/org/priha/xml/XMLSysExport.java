@@ -38,44 +38,17 @@ import org.xml.sax.helpers.AttributesImpl;
 /**
  *  Exports the JCR repository as an XML tree using the System View.
  */
-public class XMLExport
+public class XMLSysExport extends XMLExport
 {
-    private SessionImpl m_session;
-    
     private static final int BINARY_BUF_SIZE = 4096;
     
-    private static Logger log = Logger.getLogger(XMLExport.class.getName());
+    private static Logger log = Logger.getLogger(XMLSysExport.class.getName());
     
-    public XMLExport(SessionImpl impl)
+    public XMLSysExport(SessionImpl impl)
     {
-        m_session = impl;
+        super(impl);
     }
 
-    /**
-     *  Exports the JCR repository starting from absPath.
-     *  
-     *  @param absPath The path from which to start the exporting.
-     *  @param contentHandler The SAX ContentHandler which will receive the export events.
-     *  @param skipBinary If true, all BINARY type values will be skipped.
-     *  @param noRecurse If true, won't recurse into subdirectories.
-     *  @throws PathNotFoundException
-     *  @throws RepositoryException
-     *  @throws SAXException If the ContentHandler throws one.
-     */
-    public void export(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, RepositoryException, SAXException
-    {
-        contentHandler.startDocument();
-        
-        contentHandler.startPrefixMapping(m_session.getNamespacePrefix( NS_JCP_SV ), 
-                                          NS_JCP_SV);
-        contentHandler.startPrefixMapping("jcr", NS_JCP);
-        contentHandler.startPrefixMapping("mix", NS_JCP_MIX);
-        contentHandler.startPrefixMapping("nt",  NS_JCP_NT);
-        
-        exportElement(absPath, contentHandler, skipBinary, noRecurse);
-
-        contentHandler.endDocument();
-    }
     
     public void exportElement(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, RepositoryException, SAXException
     {

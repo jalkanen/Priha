@@ -184,6 +184,11 @@ public class QNodeType
         return m_propertyDefinitions;
     }
     
+    public String toString()
+    {
+        return "QNodeType["+m_name+"]";
+    }
+    
     /**
      *  The session-specific parts of the node type.
      *  
