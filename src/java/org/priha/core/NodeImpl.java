@@ -202,9 +202,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //
             if( m_session.itemExists(absPath) )
             {
-                // Priha does not currently support same name siblings
-                throw new ItemExistsException("Node "+absPath+" already exists!");
-/*
+
                 NodeDefinition nd = parent.getDefinition();
 
                 if( !nd.allowsSameNameSiblings() )
@@ -212,7 +210,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                     // FIXME: This should really check if samenamesiblings are allowed
                     throw new ItemExistsException("Node "+absPath+" already exists!");
                 }
-*/
             }
 
             //
@@ -1702,7 +1699,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
             VersionImpl v = (VersionImpl) vh.addNode( Integer.toString( ++version ), "nt:version" );
         
-            v.setProperty( "nt:versionHistory", vh );
+            if(!hasProperty("nt:versionHistory"))
+                setProperty( "nt:versionHistory", vh );
         
             v.setProperty( "jcr:predecessors", getProperty("jcr:predecessors").getValues() );
             v.addMixin( "mix:referenceable" );
