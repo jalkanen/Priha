@@ -4,6 +4,8 @@
         
         * Document view export is now supported.  Versioning also
         seems to mostly work.
+        
+        * Test failures now 83/584.
 
 2008-10-09  Janne Jalkanen <jalkanen@ecyrd.com>
 
