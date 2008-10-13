@@ -17,29 +17,29 @@
  */
 package org.priha.providers;
 
+import static org.priha.core.JCRConstants.Q_JCR_PRIMARYTYPE;
+import static org.priha.core.JCRConstants.Q_JCR_UUID;
+
 import java.io.*;
-import java.net.URLEncoder;
 import java.util.*;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
 import javax.xml.namespace.QName;
 
-import static org.priha.core.JCRConstants.*;
-
-import org.priha.core.JCRConstants;
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.binary.FileBinarySource;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
-import org.priha.util.*;
-import org.priha.xml.XMLUtils;
+import org.priha.util.ConfigurationException;
+import org.priha.util.InvalidPathException;
+import org.priha.util.Path;
+import org.priha.util.PathFactory;
 
 /**
- *  A simple file system -based provider.  This is not particularly optimized,
- *  especially findByUUID() is very slow.
+ *  A simple file system -based provider.  This is not particularly optimized.
  */
 public class FileProvider implements RepositoryProvider, PerformanceReporter
 {

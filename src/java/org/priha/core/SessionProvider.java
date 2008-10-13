@@ -40,6 +40,7 @@ public class SessionProvider
     
     private SortedMap<Path,ItemImpl> m_changedItems;
     
+    // FIXME: This is a leaky cache.
     private Map<Path,ItemImpl> m_fetchedItems = new HashMap<Path,ItemImpl>();
     
     public SessionProvider( SessionImpl session, ItemStore source )

@@ -37,8 +37,6 @@ import org.priha.providers.RepositoryProvider;
 import org.priha.util.ConfigurationException;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
-import org.priha.version.VersionHistoryImpl;
-import org.priha.version.VersionManager;
 
 /**
  *  This is a front-end class for managing multiple providers
