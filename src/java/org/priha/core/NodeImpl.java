@@ -389,7 +389,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return m_primaryType.new Impl(m_session);
     }
 
-    public PropertyIterator getProperties() throws RepositoryException
+    public PropertyIteratorImpl getProperties() throws RepositoryException
     {
         List<PropertyImpl> ls = new ArrayList<PropertyImpl>();
         

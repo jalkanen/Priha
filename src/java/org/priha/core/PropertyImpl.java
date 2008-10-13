@@ -199,7 +199,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         //
         //  Clones the value as per the Javadoc
         //
-        return getSession().getValueFactory().createValue( m_value[0] );
+        return getSession().getValueFactory().createValue( (ValueImpl)m_value[0] );
     }
 
     public Value[] getValues() throws ValueFormatException, RepositoryException

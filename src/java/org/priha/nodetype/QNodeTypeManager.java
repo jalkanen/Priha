@@ -378,6 +378,8 @@ public class QNodeTypeManager
      */
     public QNodeType getNodeType( QName qn ) throws NoSuchNodeTypeException
     {
+        if( qn == null ) throw new NoSuchNodeTypeException("No null node type");
+        
         QNodeType n = m_primaryTypes.get(qn.toString());
         if( n == null )
         {

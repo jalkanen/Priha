@@ -19,7 +19,6 @@ package org.priha.util;
 
 import java.util.Collection;
 
-import javax.jcr.Property;
 import javax.jcr.PropertyIterator;
 
 import org.priha.core.PropertyImpl;
@@ -33,9 +32,9 @@ public class PropertyIteratorImpl
         super(references);
     }
 
-    public Property nextProperty()
+    public PropertyImpl nextProperty()
     {
-        return (Property) next();
+        return (PropertyImpl) next();
     }
 
 }

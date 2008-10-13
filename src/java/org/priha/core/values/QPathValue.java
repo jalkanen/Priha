@@ -46,10 +46,20 @@ public class QPathValue extends QValue
         
     }
 
+    public QPathValue( Path path )
+    {
+        m_value = path;
+    }
+
     @Override
     public ValueImpl getValue(NamespaceMapper nsm)
     {
         return new Impl(nsm);
+    }
+    
+    public Path getPath()
+    {
+        return m_value;
     }
     
     public class Impl extends ValueImpl implements Value, Serializable, QValue.QValueInner
@@ -76,5 +86,11 @@ public class QPathValue extends QValue
         {
             return QPathValue.this;
         }
+    }
+
+    @Override
+    public String getString()
+    {
+        return m_value.toString();
     }
 }

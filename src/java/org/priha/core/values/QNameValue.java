@@ -49,6 +49,11 @@ public class QNameValue extends QValue implements Serializable
         return new Impl(nsm);
     }
     
+    public QName getValue()
+    {
+        return m_value;
+    }
+    
     public class Impl extends ValueImpl implements Value, Serializable, QValue.QValueInner
     {
         private static final long serialVersionUID = 1L;
@@ -74,6 +79,12 @@ public class QNameValue extends QValue implements Serializable
         {
             return QNameValue.this;
         }
+    }
+
+    @Override
+    public String getString()
+    {
+        return m_value.toString();
     }
 }
 

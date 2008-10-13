@@ -31,6 +31,7 @@ import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.binary.FileBinarySource;
+import org.priha.core.values.QValue;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.util.ConfigurationException;
@@ -445,9 +446,21 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         try
         {
+            InputStream in;
+            
+            if( v instanceof QValue.QValueInner )
+            {
+                byte[] ba = ((QValue.QValueInner)v).getQValue().getString().getBytes("UTF-8");
+                in = new ByteArrayInputStream(ba);
+            }
+            else
+            {
+                in = v.getStream();
+            }
+            
             out = new FileOutputStream( f );
         
-            copyContents( v.getStream(), out );
+            copyContents( in, out );
         }
         finally
         {
@@ -1058,12 +1071,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private class UUIDObjectStore<T extends Serializable>
     {
         private String           m_name;
-        private Map<String,T>    m_map = new HashMap<String,T>();
+        private Map<String,T>    m_map;
         
         public UUIDObjectStore( String name )
         {
             m_name = name;
-            unserialize();
         }
         
         public String toString()
@@ -1073,11 +1085,14 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         public T getObject( String uuid )
         {
+            if( m_map == null ) unserialize();
             return m_map.get( uuid );
         }
         
         public void setObject( String uuid, T object )
         {
+            if( m_map == null ) unserialize();
+            
             if( object != null )
             {
                 m_map.put( uuid, object );
@@ -1136,6 +1151,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
             finally
             {
+                if( m_map == null ) m_map = new HashMap<String, T>(); 
+
                 if( in != null ) 
                 {
                     try
@@ -1148,10 +1165,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                     }
                 }
             }
+            
         }
         
         private synchronized void serialize()
         {
+            if( m_map == null ) unserialize();
+            
             File objFile = new File(m_root, m_name+".01");
             
             ObjectOutputStream out = null ;

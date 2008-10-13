@@ -536,7 +536,8 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public void setNamespacePrefix(String newPrefix, String existingUri) throws NamespaceException, RepositoryException
     {
-        //String oldPrefix = m_workspace.getNamespaceRegistry().getPrefix(existingUri);
+        // Throws an exception if the URI does not exist, so this is a cheap way to check for validity.
+        m_workspace.getNamespaceRegistry().getPrefix(existingUri);
         
         if( newPrefix.toLowerCase().startsWith("xml") )
             throw new NamespaceException("No namespace starting with 'xml' may be remapped (6.3.3)");

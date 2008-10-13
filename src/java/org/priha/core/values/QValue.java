@@ -15,4 +15,6 @@ public abstract class QValue
     {
         public QValue getQValue();
     }
+
+    public abstract String getString();
 }

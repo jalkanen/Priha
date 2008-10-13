@@ -20,6 +20,7 @@ package org.priha.core;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,12 +33,14 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.priha.core.locks.LockManager;
 import org.priha.core.namespace.NamespaceRegistryImpl;
 import org.priha.nodetype.QNodeTypeManager;
 import org.priha.query.PrihaQueryManager;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
+import org.priha.util.PropertyIteratorImpl;
 import org.priha.xml.XMLImport;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -93,16 +96,80 @@ public class WorkspaceImpl
 
     public void copy(String srcAbsPath, String destAbsPath) throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Workspace.copy()");
-
+        copy( getName(), srcAbsPath, destAbsPath );
     }
 
     public void copy(String srcWorkspace, String srcAbsPath, String destAbsPath) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException("Workspace.copy2()");
+        SessionImpl srcSession = getSession().getRepository().login( srcWorkspace ); 
+        
+        boolean isSuper = m_session.setSuper( true );
+        try
+        {
+            copy( srcSession, srcAbsPath, destAbsPath );
+            m_session.save();
+        }
+        finally
+        {
+            m_session.setSuper( isSuper );
+            srcSession.logout();
+        }
+    }
+    
+    public void copy(SessionImpl srcSession, String srcAbsPath, String destAbsPath) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
+    {
+        if( m_session.hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
+        
+        NodeImpl srcnode = srcSession.getRootNode().getNode(srcAbsPath);
+        
+        // System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
 
+        String newDestPath = destAbsPath;
+
+        LockManager lm = LockManager.getInstance( srcSession.getWorkspace() );
+        if( lm.hasChildLock( srcnode.getInternalPath() ) )
+            throw new LockException( "Lock on source path prevents copy" );
+
+        Node destnode = m_session.getRootNode().addNode( newDestPath, 
+                                                         srcnode.getPrimaryNodeType().getName() );
+            
+        for( NodeIterator ni = srcnode.getNodes(); ni.hasNext(); )
+        {
+            Node child = ni.nextNode();
+
+            String relPath = srcnode.getName();
+
+            copy( srcSession, child.getPath(), destAbsPath + "/" + relPath );
+        }
+        
+        for( PropertyIteratorImpl pi = srcnode.getProperties(); pi.hasNext(); )
+        {
+            PropertyImpl p = pi.nextProperty();
+
+            // newDestPath = destAbsPath + "/" + nd.getName() + "/" +
+            // p.getName();
+            // System.out.println(" property "+p.getPath()+" ==>
+            // "+newDestPath
+            // );
+            
+            if( p.getQName().equals( JCRConstants.Q_JCR_PRIMARYTYPE )) continue;
+                
+            if( p.getQName().equals( JCRConstants.Q_JCR_UUID) )
+            {
+                destnode.setProperty( p.getName(), UUID.randomUUID().toString() );
+            }
+            else
+            {
+                if( p.getDefinition().isMultiple() )
+                {
+                    destnode.setProperty( p.getName(), p.getValues() );
+                }
+                else
+                {
+                    destnode.setProperty( p.getName(), p.getValue() );
+                }
+            }
+        }
     }
 
     public String[] getAccessibleWorkspaceNames() throws RepositoryException

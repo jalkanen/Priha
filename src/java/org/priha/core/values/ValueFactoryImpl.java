@@ -41,7 +41,7 @@ public class ValueFactoryImpl implements ValueFactory
         m_session = session;
     }
     
-    public ValueImpl createValue(Value value) throws ValueFormatException, IllegalStateException, RepositoryException
+    public ValueImpl createValue(ValueImpl value) throws ValueFormatException, IllegalStateException, RepositoryException
     {
         switch( value.getType() )
         {
@@ -55,10 +55,10 @@ public class ValueFactoryImpl implements ValueFactory
                 return new LongValueImpl( value.getLong() );
                 
             case PropertyType.NAME:
-                return new QNameValue( m_session, value.getString() ).new Impl(m_session);
+                return new QNameValue( ((QNameValue.Impl)value).getQValue().getValue() ).new Impl(m_session);
                 
             case PropertyType.PATH:
-                return new QPathValue( m_session, value.getString() ).new Impl(m_session);
+                return new QPathValue( ((QPathValue.Impl)value).getQValue().getPath() ).new Impl(m_session);
                 
             case PropertyType.REFERENCE:
                 return new ReferenceValueImpl( value.getString() );
@@ -70,7 +70,7 @@ public class ValueFactoryImpl implements ValueFactory
                 return new CalendarValueImpl( value.getDate() );
                 
             case PropertyType.BINARY:
-                return new StreamValueImpl( (ValueImpl)value );
+                return new StreamValueImpl( value );
         }
            
         throw new ValueFormatException("Illegal type "+ PropertyType.nameFromValue( value.getType() ) );
@@ -264,7 +264,7 @@ public class ValueFactoryImpl implements ValueFactory
         
         for( int i = 0; i < len; i++ )
         {
-            v[i] = createValue( values[i] );
+            v[i] = createValue( (ValueImpl)values[i] );
         }
         
         return v;
