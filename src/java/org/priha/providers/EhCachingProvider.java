@@ -39,7 +39,6 @@ import org.priha.core.ProviderManager;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.values.QValue;
-import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
