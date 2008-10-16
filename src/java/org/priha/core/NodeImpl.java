@@ -516,6 +516,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 {
                     pi.loadValue( vfi.createValue( true ) );
                 }
+                else if( Q_JCR_PRIMARYTYPE.equals(pi.getQName()))
+                {
+                    //
+                    //  This is just a guess
+                    //
+                    pi.loadValue( vfi.createValue( Q_NT_UNSTRUCTURED, PropertyType.NAME ) );
+                }
                 else
                 {
                     throw new UnsupportedRepositoryOperationException("Automatic setting of property "+pi.getQName()+ " is not supported.");
@@ -1240,9 +1247,23 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //  Check if nobody has removed us if we were still supposed to exist.
         //
         
-        if( m_state != ItemState.NEW && !ws.nodeExists(m_path))
+        if( m_state != ItemState.NEW )
         {
-            throw new InvalidItemStateException("Looks like this Node has been removed by another session.");
+            if( !ws.nodeExists(m_path) )
+            {
+                throw new InvalidItemStateException("Looks like this Node has been removed by another session.");
+            }
+            
+            try
+            {
+                String uuid = getUUID();
+                
+                NodeImpl currentNode = getSession().getNodeByUUID( uuid );
+                
+                if( !currentNode.getInternalPath().equals(getInternalPath()) )
+                    throw new InvalidItemStateException("Page has been moved");
+            }
+            catch( UnsupportedRepositoryOperationException e ){} // Not referenceable, so it's okay
         }
         
         //
