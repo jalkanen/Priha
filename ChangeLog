@@ -4,6 +4,8 @@
         
         * Fixed issue with wrong exception if the Node was moved by
         another session and then saved.
+        
+        * Test failures at 55 out of 584.
 
 2008-10-13  Janne Jalkanen <jalkanen@ecyrd.com>
 
