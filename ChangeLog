@@ -1,3 +1,10 @@
+2008-10-21  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.1.8
+        
+        * Implemented XPath query API.  It kind of works, but it is pretty
+        slow and does not yet support any of the JCR functions.
+        
 2008-10-13  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.1.7

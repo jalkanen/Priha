@@ -137,7 +137,7 @@ public class SessionProvider
      *  @return
      *  @throws RepositoryException
      */
-    public Collection<PropertyImpl> getReferences( String uuid ) throws RepositoryException
+    public List<PropertyImpl> getReferences( String uuid ) throws RepositoryException
     {
         TreeSet<PropertyImpl> response = new TreeSet<PropertyImpl>();
         
@@ -174,7 +174,10 @@ public class SessionProvider
         
         response.addAll( m_source.getReferences(m_workspace,uuid) );
         
-        return response;
+        // FIXME: Kludge
+        ArrayList<PropertyImpl> ls = new ArrayList<PropertyImpl>();
+        ls.addAll( response );
+        return ls;
     }
 
     public Set<Path> listNodes(Path parentpath) throws RepositoryException

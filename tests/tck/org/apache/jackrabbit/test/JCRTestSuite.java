@@ -16,6 +16,7 @@
  */
 package org.apache.jackrabbit.test;
 
+import junit.framework.Test;
 import junit.framework.TestSuite;
 
 /**
@@ -34,4 +35,7 @@ public class JCRTestSuite extends TestSuite {
         addTest(org.apache.jackrabbit.test.api.observation.TestAll.suite());
     }
 
+    public static Test suite() {
+        return new JCRTestSuite();
+    }
 }

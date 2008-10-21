@@ -104,7 +104,8 @@ public class PerformanceTest extends TestCase
     {
         private Repository m_repository;
         private Credentials m_creds;
-        private int m_numIters;
+        private int m_numNodes;
+        private int m_readIters;
 
         ArrayList<String> propertyPaths = new ArrayList<String>();
         ArrayList<String> uuids = new ArrayList<String>();
@@ -113,7 +114,8 @@ public class PerformanceTest extends TestCase
         {
             m_repository = rep;
             m_creds = creds;
-            m_numIters = numIters;
+            m_numNodes = numIters;
+            m_readIters = numIters * 100;
         }
         
         public void testNewSession() throws LoginException, RepositoryException
@@ -122,13 +124,13 @@ public class PerformanceTest extends TestCase
             //  Test how quickly subsequent sessions can be acquired.
             //
             Perf.start("NewSession");
-            for( int i = 0; i < m_numIters; i++ )
+            for( int i = 0; i < m_numNodes; i++ )
             {
                 Session s2 = m_repository.login(m_creds);
                 s2.logout();
             }
             
-            Perf.stop(m_numIters);
+            Perf.stop(m_numNodes);
         }
         
         public void testSave() throws LoginException, RepositoryException
@@ -145,7 +147,7 @@ public class PerformanceTest extends TestCase
                 //
                 Perf.start("Save");
 
-                for( int i = 0; i < m_numIters; i++ )
+                for( int i = 0; i < m_numNodes; i++ )
                 {
                     String name = TestUtil.getUniqueID(NODENAMELEN);
                 
@@ -168,7 +170,7 @@ public class PerformanceTest extends TestCase
             
                 s.save();
 
-                Perf.stop( m_numIters );
+                Perf.stop( m_numNodes );
             }
             finally
             {
@@ -191,7 +193,7 @@ public class PerformanceTest extends TestCase
                 //
                 Perf.start("LargeSave");
 
-                for( int i = 0; i < m_numIters; i++ )
+                for( int i = 0; i < m_numNodes; i++ )
                 {
                     String name = TestUtil.getUniqueID( NODENAMELEN );
                 
@@ -211,7 +213,7 @@ public class PerformanceTest extends TestCase
             
                 s.save();
 
-                Perf.stop( m_numIters );
+                Perf.stop( m_numNodes );
             }
             finally
             {
@@ -251,7 +253,7 @@ public class PerformanceTest extends TestCase
                     }
                 }
                 
-                Perf.stop(m_numIters);
+                Perf.stop(m_numNodes);
                 
             }
             finally
@@ -275,7 +277,7 @@ public class PerformanceTest extends TestCase
                 //
                 Perf.start("RandRead");
                 
-                for( int i = 0; i < m_numIters; i++ )
+                for( int i = 0; i < m_readIters; i++ )
                 {
                     int item = rand.nextInt( propertyPaths.size() );
                     
@@ -285,7 +287,7 @@ public class PerformanceTest extends TestCase
                     assertEquals( ii.getName(), PROPERTYLEN, ((Property)ii).getString().length() );
                 }
                 
-                Perf.stop(m_numIters);
+                Perf.stop(m_readIters);
             }
             finally
             {
@@ -307,7 +309,7 @@ public class PerformanceTest extends TestCase
                 //
                 Perf.start("UUID");
                 
-                for( int i = 0; i < m_numIters; i++ )
+                for( int i = 0; i < m_readIters; i++ )
                 {
                     int item = rand.nextInt( uuids.size() );
                     
@@ -316,7 +318,7 @@ public class PerformanceTest extends TestCase
                     assertEquals( ni.getName(), PROPERTYLEN, ni.getProperty("test").getString().length() );
                 }
                 
-                Perf.stop(m_numIters);
+                Perf.stop(m_readIters);
             }
             finally
             {
@@ -338,7 +340,7 @@ public class PerformanceTest extends TestCase
                 //
                 Perf.start("LargeRead");
                 
-                for( int i = 0; i < m_numIters; i++ )
+                for( int i = 0; i < m_readIters; i++ )
                 {
                     int item = rand.nextInt( propertyPaths.size() );
                     
@@ -348,7 +350,7 @@ public class PerformanceTest extends TestCase
                     assertEquals( ii.getName(), BLOB_SIZE, ((Property)ii).getLength());
                 }
                 
-                Perf.stop(m_numIters);
+                Perf.stop(m_readIters);
             }
             finally
             {
@@ -370,7 +372,7 @@ public class PerformanceTest extends TestCase
                 //
                 Perf.start("Update");
                 
-                for( int i = 0; i < m_numIters; i++ )
+                for( int i = 0; i < m_numNodes; i++ )
                 {
                     int item = rand.nextInt( propertyPaths.size() );
                     
@@ -381,7 +383,7 @@ public class PerformanceTest extends TestCase
                     s.save();
                 }
                 
-                Perf.stop(m_numIters);
+                Perf.stop(m_numNodes);
             }
             finally
             {

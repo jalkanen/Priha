@@ -24,6 +24,7 @@ public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
         m_nsmap.put("nt",    JCRConstants.NS_JCP_NT);
         m_nsmap.put("mix",   JCRConstants.NS_JCP_MIX);
         m_nsmap.put("xml",   NamespaceSupport.XMLNS);
+        m_nsmap.put("xmlns", NamespaceSupport.NSDECL);
         m_nsmap.put("sv",    JCRConstants.NS_JCP_SV);
         m_nsmap.put("priha", RepositoryManager.NS_PRIHA);
         m_nsmap.put("test",  "http://www.priha.org/test/1.0");

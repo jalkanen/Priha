@@ -11,6 +11,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+/**
+ *  Implements the Document view export.
+ */
 public class XMLDocExport extends XMLExport
 {
     public XMLDocExport( SessionImpl impl )

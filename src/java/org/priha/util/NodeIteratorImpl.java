@@ -17,23 +17,35 @@
  */
 package org.priha.util;
 
-import java.util.Collection;
+import java.util.List;
 
 import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 
+import org.priha.core.NodeImpl;
+
 public class NodeIteratorImpl extends GenericIterator
     implements NodeIterator
 {
-    public NodeIteratorImpl( Collection<Node> list )
+    public NodeIteratorImpl( List<NodeImpl> list )
     {
         super(list);
     }
     
-    public Node nextNode()
+    public NodeIteratorImpl( NodeIteratorImpl m_nodes )
     {
-        Node next = (Node)next();
+        this((List<NodeImpl>) m_nodes.m_list);
+    }
+
+    public NodeImpl nextNode()
+    {
+        NodeImpl next = (NodeImpl)next();
         return next;
+    }
+
+    public NodeImpl get( int index )
+    {
+        return (NodeImpl) m_list.get(index);
     }
 
 

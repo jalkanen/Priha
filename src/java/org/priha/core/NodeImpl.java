@@ -327,9 +327,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return getNode( m_path.resolve(m_session,relPath) );
     }
 
-    public NodeIterator getNodes() throws RepositoryException
+    public NodeIteratorImpl getNodes() throws RepositoryException
     {
-        List<Node> ls = new ArrayList<Node>();
+        List<NodeImpl> ls = new ArrayList<NodeImpl>();
 
         Set<Path> children = m_session.listNodes( m_path );
         
@@ -339,7 +339,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             ls.add( nd );
         }
 
-        NodeIterator it = new NodeIteratorImpl(ls);
+        NodeIteratorImpl it = new NodeIteratorImpl(ls);
 
         return it;
     }
@@ -348,7 +348,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         Pattern p = TextUtil.parseJCRPattern(namePattern);
 
-        ArrayList<Node> matchedpaths = new ArrayList<Node>();
+        ArrayList<NodeImpl> matchedpaths = new ArrayList<NodeImpl>();
 
         Set<Path> children = m_session.listNodes( m_path );
         
@@ -535,7 +535,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public PropertyIterator getReferences() throws RepositoryException
     {
-        Collection<PropertyImpl> references = m_session.getReferences( getUUID() );
+        List<PropertyImpl> references = m_session.getReferences( getUUID() );
 
         return new PropertyIteratorImpl(references);
     }

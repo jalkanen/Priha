@@ -17,7 +17,7 @@
  */
 package org.priha.util;
 
-import java.util.Collection;
+import java.util.List;
 
 import javax.jcr.PropertyIterator;
 
@@ -27,7 +27,7 @@ public class PropertyIteratorImpl
     extends GenericIterator 
     implements PropertyIterator
 {
-    public PropertyIteratorImpl(Collection<PropertyImpl> references)
+    public PropertyIteratorImpl(List<PropertyImpl> references)
     {
         super(references);
     }
@@ -37,4 +37,9 @@ public class PropertyIteratorImpl
         return (PropertyImpl) next();
     }
 
+
+    public PropertyImpl get( int index )
+    {
+        return (PropertyImpl) m_list.get(index);
+    }
 }

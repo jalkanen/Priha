@@ -433,7 +433,7 @@ public class SessionImpl implements Session, NamespaceMapper
         m_provider.remove( itemImpl );
     }
 
-    public Collection<PropertyImpl> getReferences(String uuid) throws RepositoryException
+    public List<PropertyImpl> getReferences(String uuid) throws RepositoryException
     {
         checkLive();
         return m_provider.getReferences( uuid );

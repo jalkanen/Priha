@@ -212,7 +212,7 @@ public class WorkspaceImpl
 
     public QueryManager getQueryManager() throws RepositoryException
     {
-        return new PrihaQueryManager();
+        return new PrihaQueryManager(getSession());
     }
 
     public SessionImpl getSession()

@@ -17,20 +17,22 @@
  */
 package org.priha.util;
 
-import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 public abstract class GenericIterator implements Iterator
 {
     protected Iterator<?> m_iterator;
     protected int m_position;
     protected int m_size;
+    protected List<?> m_list;
 
-    public GenericIterator( Collection<?> list )
+    public GenericIterator( List<?> list )
     {
         m_iterator = list.iterator();
         m_position = 0;
         m_size     = list.size();
+        m_list     = list;
     }
     
     public long getPosition()

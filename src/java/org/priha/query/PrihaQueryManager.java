@@ -23,6 +23,9 @@ import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 
+import org.priha.core.SessionImpl;
+import org.priha.query.xpath.XPathQuery;
+
 
 /**
  *  Manages our Provider modules and provides the QueryManager interface.
@@ -31,22 +34,30 @@ import javax.jcr.query.QueryManager;
  */
 public class PrihaQueryManager implements QueryManager
 {
-    private static final String[] SUPPORTEDLANGUAGES = {  };
+    private static final String[] SUPPORTEDLANGUAGES = { Query.XPATH };
     
     private static final String   DEFAULT_QUERYPROVIDER = "org.priha.BasicQueryProvider";
     
     private QueryProvider m_queryProvider;
+
+    private SessionImpl m_session;
+    
+    public PrihaQueryManager( SessionImpl session )
+    {
+        m_session = session;
+    }
     
     public Query createQuery(String statement, String language) throws InvalidQueryException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        if( language.equals( Query.XPATH ) )
+            return new XPathQuery(m_session,statement);
+        
+        throw new InvalidQueryException("Query language "+language+" is not supported.");
     }
 
     public Query getQuery(Node node) throws InvalidQueryException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        throw new InvalidQueryException("Node not found");
     }
 
     public String[] getSupportedQueryLanguages() throws RepositoryException
