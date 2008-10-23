@@ -41,6 +41,7 @@ import javax.xml.xpath.XPathFactory;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.namespace.NamespaceMapper;
+import org.priha.util.ConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -276,21 +277,34 @@ public class QNodeTypeManager
 
         QNodeDefinition nd = new QNodeDefinition( parent, nsm.toQName( name ) );
 
-        String requiredType = xpath.evaluate( "requiredType", node );
+        String requiredType = xpath.evaluate( "requiredPrimaryTypes", node );
 
         if( requiredType != null && requiredType.length() > 0 )
         {
-            QName requiredQType = nsm.toQName( requiredType );
-            QNodeType[] reqd = new QNodeType[1];
+            String[] types = requiredType.split( "[\\[\\] ,]" );
+            ArrayList<QNodeType> list = new ArrayList<QNodeType>();
+            
+            for( int i = 0; i < types.length; i++ )
+            {
+                // The split operation might end up with empty thingies
+                if( types[i].length() > 0 )
+                {
+                    QName requiredQType = nsm.toQName( types[i] );
 
-            if( requiredQType.equals( parent.getQName() ) )
-                reqd[0] = parent;
-            else
-                reqd[0] = getNodeType( requiredQType );
-
-            nd.m_requiredPrimaryTypes = reqd;
+                    if( requiredQType.equals( parent.getQName() ) )
+                        list.add( parent );
+                    else
+                        list.add( getNodeType( requiredQType ) );
+                }
+            }
+            
+            nd.m_requiredPrimaryTypes = list.toArray( new QNodeType[0] );
         }
-
+        else
+        {
+            throw new ConfigurationException("Mandatory element 'requiredPrimaryTypes' is missing for "+name);
+        }
+        
         String defaultType = xpath.evaluate( "defaultPrimaryType", node );
 
         if( defaultType != null && defaultType.length() > 0 )

@@ -142,63 +142,7 @@
 
    <!-- VERSIONING -->
    
-      <!-- Define nt:version -->
-   <nodetype>
-      <name>nt:version</name>
-      <supertypes>nt:base,mix:referenceable</supertypes>
-      <isMixin>false</isMixin>
-      <hasOrderableChildNodes>false</hasOrderableChildNodes>
-      <primaryItemName></primaryItemName>
-
-      <propertyDefinition>
-          <name>jcr:created</name>
-          <requiredType>Date</requiredType>
-          <valueConstraints></valueConstraints>
-          <defaultValues></defaultValues>
-          <autoCreated>true</autoCreated>
-          <mandatory>true</mandatory>
-          <onParentVersion>ABORT</onParentVersion>
-          <protected>true</protected>
-          <multiple>false</multiple>
-      </propertyDefinition>
-
-      <propertyDefinition>
-          <name>jcr:predecessors</name>
-          <requiredType>Reference</requiredType>
-          <valueConstraints>["nt:version"]</valueConstraints>
-          <defaultValues></defaultValues>
-          <autoCreated>false</autoCreated>
-          <mandatory>false</mandatory>
-          <onParentVersion>ABORT</onParentVersion>
-          <protected>true</protected>
-          <multiple>true</multiple>
-      </propertyDefinition>
-
-      <propertyDefinition>
-          <name>jcr:successors</name>
-          <requiredType>Reference</requiredType>
-          <valueConstraints>["nt:version"]</valueConstraints>
-          <defaultValues></defaultValues>
-          <autoCreated>false</autoCreated>
-          <mandatory>false</mandatory>
-          <onParentVersion>ABORT</onParentVersion>
-          <protected>true</protected>
-          <multiple>true</multiple>
-      </propertyDefinition>
-
-      <childNodeDefinition>
-          <name>jcr:frozenNode</name>
-          <requiredPrimaryTypes>[nt:frozenNode]</requiredPrimaryTypes>
-          <defaultPrimaryType></defaultPrimaryType>
-          <autoCreated>false</autoCreated>
-          <mandatory>false</mandatory>
-          <onParentVersion>ABORT</onParentVersion>
-          <protected>true</protected>
-          <sameNameSiblings>false</sameNameSiblings>
-      </childNodeDefinition>
-    </nodetype>
-
-   <nodetype>
+      <nodetype>
       <name>nt:frozenNode</name>
       <supertypes>nt:base mix:referenceable</supertypes>
       <isMixin>false</isMixin>
@@ -277,6 +221,63 @@
       </childNodeDefinition>
 
    </nodetype>
+   
+      <!-- Define nt:version -->
+   <nodetype>
+      <name>nt:version</name>
+      <supertypes>nt:base,mix:referenceable</supertypes>
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName></primaryItemName>
+
+      <propertyDefinition>
+          <name>jcr:created</name>
+          <requiredType>Date</requiredType>
+          <valueConstraints></valueConstraints>
+          <defaultValues></defaultValues>
+          <autoCreated>true</autoCreated>
+          <mandatory>true</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <multiple>false</multiple>
+      </propertyDefinition>
+
+      <propertyDefinition>
+          <name>jcr:predecessors</name>
+          <requiredType>Reference</requiredType>
+          <valueConstraints>["nt:version"]</valueConstraints>
+          <defaultValues></defaultValues>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <multiple>true</multiple>
+      </propertyDefinition>
+
+      <propertyDefinition>
+          <name>jcr:successors</name>
+          <requiredType>Reference</requiredType>
+          <valueConstraints>["nt:version"]</valueConstraints>
+          <defaultValues></defaultValues>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <multiple>true</multiple>
+      </propertyDefinition>
+
+      <childNodeDefinition>
+          <name>jcr:frozenNode</name>
+          <requiredPrimaryTypes>[nt:frozenNode]</requiredPrimaryTypes>
+          <defaultPrimaryType></defaultPrimaryType>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>ABORT</onParentVersion>
+          <protected>true</protected>
+          <sameNameSiblings>false</sameNameSiblings>
+      </childNodeDefinition>
+    </nodetype>
+
 
    <nodetype>
       <name>nt:versionedChild</name>

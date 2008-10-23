@@ -44,6 +44,12 @@ public class QNodeDefinition extends QItemDefinition
         return m_requiredPrimaryTypes;
     }
 
+
+    public String toString()
+    {
+        return "QNodeType: "+getQName();
+    }
+    
     public class Impl extends QItemDefinition.Impl implements NodeDefinition
     {
         public Impl( NamespaceMapper ns )
@@ -59,6 +65,7 @@ public class QNodeDefinition extends QItemDefinition
 
         public NodeType getDefaultPrimaryType()
         {
+            if( m_defaultPrimaryType == null ) return null;
             return m_defaultPrimaryType.new Impl(m_mapper);
         }
 

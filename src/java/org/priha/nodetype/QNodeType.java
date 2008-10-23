@@ -1,5 +1,8 @@
 package org.priha.nodetype;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
@@ -52,6 +55,10 @@ public class QNodeType
         
         if( nd == null ) return false;
         
+        // if( childNodeName.equals( nd.getQName() ) ) return true;
+        
+        if( nd.getDefaultPrimaryType() == null ) return false;
+        
         return true;
     }
 
@@ -66,6 +73,7 @@ public class QNodeType
         }
         
         QPropertyDefinition pd = findPropertyDefinition(itemName, false);
+        if( pd == null ) pd = findPropertyDefinition(itemName,true);
         
         if( pd != null )
         {
@@ -78,6 +86,8 @@ public class QNodeType
 
     public boolean canSetProperty(QName propertyName, Value value)
     {
+        if( value == null ) return canRemoveItem( propertyName );
+        
         QPropertyDefinition p = findPropertyDefinition(propertyName, false);
         
         if( p == null ) return false;
@@ -89,7 +99,9 @@ public class QNodeType
 
     public boolean canSetProperty(QName propertyName, Value[] values)
     {
-        QPropertyDefinition p = findPropertyDefinition(propertyName, false);
+        if( values == null ) return canRemoveItem( propertyName );
+
+        QPropertyDefinition p = findPropertyDefinition(propertyName, true);
         
         if( p == null ) return false;
         
@@ -348,14 +360,17 @@ public class QNodeType
 
         public NodeType[] getSupertypes()
         {
-            NodeType[] nts = new NodeType[m_parents.length];
+            ArrayList<NodeType> nts = new ArrayList<NodeType>();
             
             for( int i = 0; i < m_parents.length; i++ )
             {
-                nts[i] = m_parents[i].new Impl(m_mapper);
+                NodeType nt = m_parents[i].new Impl(m_mapper);
+                
+                nts.add( nt );
+                nts.addAll( Arrays.asList( nt.getSupertypes() ) );
             }
-            
-            return nts;
+                        
+            return nts.toArray( new NodeType[0] );
         }
 
         public boolean isNodeType(String nodeTypeName)
