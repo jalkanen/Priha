@@ -11,6 +11,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.namespace.QName;
 
+import org.priha.core.SessionImpl;
 import org.priha.core.namespace.NamespaceMapper;
 
 /**
@@ -207,9 +208,9 @@ public class QNodeType
      */
     public class Impl implements NodeType
     {
-        private   NamespaceMapper      m_mapper;
+        private   SessionImpl      m_mapper;
     
-        public Impl(NamespaceMapper mapper)
+        public Impl(SessionImpl mapper)
         {
             m_mapper    = mapper;
         }
@@ -316,34 +317,26 @@ public class QNodeType
 
         public NodeType[] getDeclaredSupertypes()
         {
-            return getSupertypes();
+            ArrayList<NodeType> nts = new ArrayList<NodeType>();
+            
+            for( int i = 0; i < m_parents.length; i++ )
+            {
+                NodeType nt = m_parents[i].new Impl(m_mapper);
+                
+                nts.add( nt );
+            }
+                        
+            return nts.toArray( new NodeType[0] );
         }
 
         public String getName()
         {
-            try
-            {
-                return m_mapper.fromQName( m_name );
-            }
-            catch( NamespaceException e )
-            {
-                // FIXME
-            }
-            return null;
+            return m_mapper.fromQName( m_name );
         }
 
         public String getPrimaryItemName()
         {
-            try
-            {
-                return m_mapper.fromQName(m_primaryItemName);
-            }
-            catch( NamespaceException e )
-            {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-            return null;
+            return m_mapper.fromQName(m_primaryItemName);
         }
 
         public PropertyDefinition[] getPropertyDefinitions()

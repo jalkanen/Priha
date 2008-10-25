@@ -17,17 +17,19 @@
  */
 package org.priha.nodetype;
 
-import javax.jcr.PropertyType;
-import javax.jcr.Value;
+import javax.jcr.*;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.namespace.QName;
 
+import org.priha.core.SessionImpl;
 import org.priha.core.namespace.NamespaceMapper;
+import org.priha.core.values.ValueFactoryImpl;
 
 public class QPropertyDefinition extends QItemDefinition
 {
-    protected Value[] m_defaults   = new Value[0];
+    protected String[] m_defaults   = new String[0];
     protected boolean m_isMultiple = false;
+    protected String[] m_valueConstraints = new String[0];
     
     protected int     m_requiredType = PropertyType.UNDEFINED;
     
@@ -48,14 +50,32 @@ public class QPropertyDefinition extends QItemDefinition
     
     public class Impl extends QItemDefinition.Impl implements PropertyDefinition
     {
-        public Impl( NamespaceMapper ns )
+        public Impl( SessionImpl ns )
         {
             super( ns );
         }
 
         public Value[] getDefaultValues()
         {
-            return m_defaults;
+            Value[] v = new Value[m_defaults.length];
+            
+            for( int i = 0; i < m_defaults.length; i++ )
+            {
+                try
+                {
+                    Value vv;
+                    vv = m_mapper.getValueFactory().createValue( m_defaults[i], m_requiredType );
+                    
+                    v[i] = vv;
+                }
+                catch( RepositoryException e )
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+            
+            return v;
         }
 
         public int getRequiredType()
@@ -65,8 +85,7 @@ public class QPropertyDefinition extends QItemDefinition
 
         public String[] getValueConstraints()
         {
-            // TODO Auto-generated method stub
-            return null;
+            return m_valueConstraints;
         }
 
         public boolean isMultiple()

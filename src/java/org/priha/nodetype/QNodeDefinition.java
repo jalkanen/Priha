@@ -21,7 +21,7 @@ import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.xml.namespace.QName;
 
-import org.priha.core.namespace.NamespaceMapper;
+import org.priha.core.SessionImpl;
 
 public class QNodeDefinition extends QItemDefinition
 {
@@ -52,7 +52,7 @@ public class QNodeDefinition extends QItemDefinition
     
     public class Impl extends QItemDefinition.Impl implements NodeDefinition
     {
-        public Impl( NamespaceMapper ns )
+        public Impl( SessionImpl ns )
         {
             super( ns );
         }

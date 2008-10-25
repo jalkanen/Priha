@@ -23,7 +23,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.OnParentVersionAction;
 import javax.xml.namespace.QName;
 
-import org.priha.core.namespace.NamespaceMapper;
+import org.priha.core.SessionImpl;
 
 public class QItemDefinition
 {
@@ -67,9 +67,9 @@ public class QItemDefinition
      */
     public class Impl implements ItemDefinition
     {
-        NamespaceMapper m_mapper;
+        SessionImpl m_mapper;
         
-        public Impl( NamespaceMapper ns )
+        public Impl( SessionImpl ns )
         {
             m_mapper = ns;
         }
@@ -81,14 +81,7 @@ public class QItemDefinition
 
         public String getName()
         {
-            try
-            {
-                return m_mapper.fromQName( getQName() );
-            }
-            catch( NamespaceException e )
-            {
-                return "";
-            }
+            return m_mapper.fromQName( getQName() );
         }
 
         public int getOnParentVersion()

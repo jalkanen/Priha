@@ -68,7 +68,7 @@
          <mandatory>false</mandatory>
          <onParentVersion>COPY</onParentVersion>
          <protected>false</protected>
-         <multiple>true</multiple>
+         <multiple>false</multiple>
       </propertyDefinition>
 
       <propertyDefinition>
@@ -80,8 +80,9 @@
          <mandatory>false</mandatory>
          <onParentVersion>COPY</onParentVersion>
          <protected>false</protected>
-         <multiple>false</multiple>
+         <multiple>true</multiple>
       </propertyDefinition>
+
    </nodetype>
 
 
@@ -357,7 +358,7 @@
       <propertyDefinition>
           <name>jcr:mergeFailed</name>
           <requiredType>Reference</requiredType>
-          <valueConstraints>nt:version</valueConstraints>
+          <valueConstraints>[nt:version]</valueConstraints>
           <defaultValues/>
           <autoCreated>false</autoCreated>
           <mandatory>false</mandatory>
@@ -454,7 +455,7 @@
           <valueConstraints/>
           <defaultValues/>
           <autoCreated>true</autoCreated>
-          <mandatory>false</mandatory>
+          <mandatory>true</mandatory>
           <onParentVersion>INITIALIZE</onParentVersion>
           <protected>true</protected>
           <multiple>false</multiple>
@@ -599,7 +600,7 @@
          <mandatory>false</mandatory>
          <onParentVersion>VERSION</onParentVersion>
          <protected>false</protected>
-         <sameNameSiblings>false</sameNameSiblings>
+         <sameNameSiblings>true</sameNameSiblings>
       </childNodeDefinition>
 
       <propertyDefinition>

@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.VersionException;
 import javax.xml.namespace.QName;
 
@@ -338,6 +339,20 @@ public class ProviderManager implements ItemStore
         return ni;
     }
 
+    /**
+     *  LOad the state of a single property from the repository.
+     *  
+     *  @param ws
+     *  @param ni
+     *  @param ptPath
+     *  @param name
+     *  @return
+     *  @throws RepositoryException
+     *  @throws ValueFormatException
+     *  @throws VersionException
+     *  @throws LockException
+     *  @throws ConstraintViolationException
+     */
     private PropertyImpl loadProperty(WorkspaceImpl ws, NodeImpl ni, Path ptPath, QName name)
         throws RepositoryException,
         ValueFormatException,
@@ -352,7 +367,23 @@ public class ProviderManager implements ItemStore
         
         boolean multiple = values instanceof ValueImpl[];
    
+        //
+        //  Find the proper property definition.
+        //
         QPropertyDefinition pd = ni.getPrimaryQNodeType().findPropertyDefinition(name,multiple);
+        
+        if( pd == null )
+        {
+            for( NodeType mixin : ni.getMixinNodeTypes() )
+            {
+                pd = ((QNodeType.Impl)mixin).getQNodeType().findPropertyDefinition( name, multiple );
+                
+                if( pd != null ) break;
+            }
+            if( pd == null )
+                throw new RepositoryException("Unable to locate property definition for nodetype "+ni.getPrimaryNodeType()+", name="+name);
+        }
+        
         p.setDefinition( pd.new Impl(ws.getSession()) ); // FIXME: Inoptimal
         
         if( multiple )
@@ -545,6 +576,9 @@ public class ProviderManager implements ItemStore
 
     }
     
+    /**
+     *  Stores information about a provider.
+     */
     private class ProviderInfo
     {
         public String[]           workspaces;

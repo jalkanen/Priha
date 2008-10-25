@@ -39,6 +39,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.priha.core.RepositoryImpl;
+import org.priha.core.SessionImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.namespace.NamespaceMapper;
 import org.priha.util.ConfigurationException;
@@ -264,6 +265,14 @@ public class QNodeTypeManager
         String onParentVersion = xpath.evaluate( "onParentVersion", node );
         pdi.m_onParentVersion  = OnParentVersionAction.valueFromName( onParentVersion );
 
+        String valueConstraints = xpath.evaluate( "valueConstraints", node );
+        
+        pdi.m_valueConstraints = parseList( valueConstraints );
+        
+        String defaultValue = xpath.evaluate( "defaultValues", node );
+        
+        pdi.m_defaults = parseList(defaultValue);
+        
         return pdi;
     }
 
@@ -371,7 +380,7 @@ public class QNodeTypeManager
 
     private String[] parseList( String list )
     {
-        StringTokenizer st = new StringTokenizer(list,", ");
+        StringTokenizer st = new StringTokenizer(list,", []\"");
 
         String[] result = new String[st.countTokens()];
 
@@ -411,9 +420,9 @@ public class QNodeTypeManager
      */
     public class Impl implements NodeTypeManager
     {
-        private NamespaceMapper m_mapper;
+        private SessionImpl m_mapper;
         
-        public Impl( NamespaceMapper nsm )
+        public Impl( SessionImpl nsm )
         {
             m_mapper = nsm;
         }
