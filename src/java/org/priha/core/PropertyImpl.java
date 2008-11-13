@@ -253,6 +253,9 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             
             if( !getParent().isCheckedOut() )
                 throw new VersionException("Parent node is not checked out");
+            
+            if( getParent().isLockedWithoutToken() )
+                throw new LockException("Parent node is locked");
         }
 
         if( m_type != PropertyType.UNDEFINED && value != null && m_type != value.getType() )
@@ -280,6 +283,9 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             
             if( !getParent().isCheckedOut() )
                 throw new VersionException("Parent node is not checked out");
+
+            if( getParent().isLockedWithoutToken() )
+                throw new LockException("Parent node is locked");
         }
 
         if( m_type != PropertyType.UNDEFINED && values != null && values.length >= 1 && values[0] != null && m_type != values[0].getType() )

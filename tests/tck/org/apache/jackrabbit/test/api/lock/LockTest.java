@@ -99,7 +99,6 @@ public class LockTest extends AbstractJCRTest {
             superuser.addLockToken(lockToken);
         }
     }
-
     /**
      * Test session scope: other session may not access nodes that are
      * locked.

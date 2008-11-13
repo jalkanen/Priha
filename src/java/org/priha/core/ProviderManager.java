@@ -71,10 +71,13 @@ public class ProviderManager implements ItemStore
 
         String providerList = m_repository.getProperty( PROP_PRIHA_PROVIDERS );
         
+        if( providerList == null )
+            throw new ConfigurationException("Required property missing",PROP_PRIHA_PROVIDERS);
+        
         String[] providers = providerList.split("\\s");
         
         if( providers.length == 0 )
-            throw new ConfigurationException("Required property missing",PROP_PRIHA_PROVIDERS);
+            throw new ConfigurationException("Empty property",PROP_PRIHA_PROVIDERS);
 
         m_providers = new ProviderInfo[providers.length];
         

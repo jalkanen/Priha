@@ -1097,6 +1097,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         markModified(true);
         m_state = ItemState.REMOVED;
 
+        LockImpl li = m_lockManager.getLock( getInternalPath() );
+        
+        if( li != null )
+            m_lockManager.removeLock( li );
+        
         //
         //  Remove properties
         //
@@ -1325,7 +1330,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         if( !mixin.isMixin() )
             throw new NoSuchNodeTypeException("Type "+mixinName+" is not a mixin type!");
 
-        if( isLocked() )
+        if( isLockedWithoutToken() )
             throw new LockException( "Node is locked, so cannot add new mixin types." );
         
         if( !isCheckedOut() )
@@ -1579,8 +1584,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     }
 
     /**
-     *  Returns true, if this Node is locked (that is, the parent is locked) but the Session which owns
-     *  this Node does not hold a token to modify it.
+     *  Returns true, if this Node is locked (that is, it or it's parents are locked)
+     *   but the Session which owns this Session does not hold a token to modify it.
      *  
      *  @return True, if you cannot modify this Node due to missing token.
      */
@@ -1590,7 +1595,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         {
             if( !getInternalPath().isRoot() )
             {
-                LockImpl li = getParent().getLock();
+                LockImpl li = getLock();
             
                 if( li != null && li.getLockToken() == null )
                 {

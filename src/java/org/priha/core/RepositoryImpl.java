@@ -57,12 +57,18 @@ public class RepositoryImpl implements Repository
     {
         try
         {
-            m_properties = new Properties( FileUtil.findProperties(DEFAULT_PROPERTIES) );
+            Properties defaultProperties = FileUtil.findProperties(DEFAULT_PROPERTIES);
+            
+            if( defaultProperties.isEmpty() )
+                throw new ConfigurationException("Default properties not found - broken distribution!?!");
+   
+            m_properties = new Properties(defaultProperties);
         }
         catch (IOException e)
         {
             throw new ConfigurationException("Loading of default properties failed");
         }
+                
         if( prefs.isEmpty() )
             log.warning("No \"priha.properties\" found, using just the default properties");
 

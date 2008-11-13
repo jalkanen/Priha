@@ -49,8 +49,14 @@
               <include name="org/priha/**"/>
               <exclude name="**/*Test.class"/>
            </fileset>
+         <!--   
            <fileset dir="src/java">
               <include name="**/*.xml"/>
+           </fileset>
+           -->
+            
+           <fileset dir="etc">
+              <include name="priha_default.properties"/>
            </fileset>
            <fileset dir=".">
               <include name="LICENSE"/>
@@ -60,7 +66,7 @@
              <attribute name="Implementation-Vendor" value="Janne Jalkanen (jalkanen@ecyrd.com)"/>
              <attribute name="Implementation-Title" value="Priha Java Content Repository"/>
              <attribute name="Implementation-Version" value="${version}"/>
-             <attribute name="Implementation-URL" value="http://www.ecyrd.com/"/>
+             <attribute name="Implementation-URL" value="http://www.priha.org/"/>
              <attribute name="Specification-Title" value="JSR-170 Java Content Repository"/>
              <attribute name="Main-Class" value="org/priha/Release"/>
            </manifest>   

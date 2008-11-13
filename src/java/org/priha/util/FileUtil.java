@@ -122,12 +122,12 @@ public class FileUtil
      *  
      *  @param propertyPaths
      *  @return
-     *  @throws IOException
+     *  @throws IOException If the reading failed.
      */
     public static Properties findProperties(String[] propertyPaths) throws IOException
     {
         Properties props = new Properties();
-    
+        
         for( int i = 0; i < propertyPaths.length; i++ )
         {
             InputStream in = RepositoryImpl.class.getResourceAsStream(propertyPaths[i]);
@@ -139,6 +139,7 @@ public class FileUtil
                 break;
             }
         }
+        
         return props;
     }
 }

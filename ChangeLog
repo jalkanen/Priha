@@ -1,3 +1,10 @@
+2008-11-14  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.1.10
+        
+        * Fixed most of locking tests (now we actually remove locks
+        when you delete a node).
+
 2008-10-23  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.1.9

@@ -20,11 +20,13 @@ package org.priha.core.locks;
 import java.util.UUID;
 
 import javax.jcr.Node;
+import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 
+import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
 import org.priha.util.Path;
 
@@ -76,9 +78,11 @@ public class LockImpl implements Lock
     {
         return m_session.getUserID();
     }
-
+    
     public String getLockToken()
     {
+        if(m_session == null) return null;
+        
         String[] tokens = m_session.getLockTokens();
         
         for( String tok : tokens )
@@ -134,13 +138,24 @@ public class LockImpl implements Lock
      *  @param s
      *  @return True, if this LockImpl is expired
      */
-    protected boolean expire(Session s)
+    protected boolean expire(SessionImpl s)
     {
         if( m_session == s )
         {
             m_session = null;
             if( m_isSessionScoped )
             {
+                try
+                {
+                    NodeImpl nd = (NodeImpl)s.getItem( m_lockPath );
+                    nd.unlock();
+                }
+                catch( RepositoryException e )
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                } 
+                
                 return true;
             }
         }

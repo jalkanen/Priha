@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import javax.jcr.Session;
 import javax.jcr.Workspace;
 
+import org.priha.core.SessionImpl;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 
@@ -117,7 +118,7 @@ public class LockManager
         return lm;
     }
 
-    public synchronized void expireSessionLocks( Session session )
+    public synchronized void expireSessionLocks( SessionImpl session )
     {
         for( Iterator<Map.Entry<Path,LockImpl>> i = m_locks.entrySet().iterator(); i.hasNext(); )
         {
