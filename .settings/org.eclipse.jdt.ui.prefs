@@ -1,5 +1,6 @@
-#Wed Sep 17 21:23:40 EEST 2008
+#Fri Nov 14 00:13:29 EET 2008
 eclipse.preferences.version=1
 formatter_profile=_Janne's coding conventions
 formatter_settings_version=10
+internal.default.compliance=default
 org.eclipse.jdt.ui.text.custom_code_templates=<?xml version\="1.0" encoding\="UTF-8"?><templates/>
