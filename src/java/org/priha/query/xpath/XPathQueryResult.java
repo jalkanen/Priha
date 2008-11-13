@@ -11,7 +11,6 @@ import javax.jcr.query.RowIterator;
 
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class XPathQueryResult implements QueryResult

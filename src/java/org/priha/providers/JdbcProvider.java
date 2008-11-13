@@ -272,17 +272,13 @@ public class JdbcProvider implements RepositoryProvider
                     
                     return v;
                 }
-                else
-                {
-                    ValueImpl v = ws.getSession().getValueFactory().createValue( value.getBinaryStream(), type );
+                
+                ValueImpl v = ws.getSession().getValueFactory().createValue( value.getBinaryStream(), type );
+         
+                return v;
+            }
             
-                    return v;
-                }
-            }
-            else
-            {
-                throw new PathNotFoundException("No such property "+path);
-            }
+            throw new PathNotFoundException("No such property "+path);
         }
         catch( SQLException e )
         {

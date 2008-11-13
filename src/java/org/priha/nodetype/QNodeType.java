@@ -3,7 +3,6 @@ package org.priha.nodetype;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
@@ -12,7 +11,6 @@ import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.namespace.QName;
 
 import org.priha.core.SessionImpl;
-import org.priha.core.namespace.NamespaceMapper;
 
 /**
  *  QNodeType provides non-Session -specific things of NodeTypes.

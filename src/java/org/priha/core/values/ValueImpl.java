@@ -36,7 +36,7 @@ public abstract class ValueImpl implements Value, Cloneable
 {
     protected VALUE_STATE m_state   = VALUE_STATE.UNDEFINED;    
 
-    private enum   VALUE_STATE { UNDEFINED, VALUE, STREAM };
+    private enum   VALUE_STATE { UNDEFINED, VALUE, STREAM }
     
     protected ValueImpl() {}
 

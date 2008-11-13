@@ -712,13 +712,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 
                 return result;
             }
-            else
-            {
-                File df = new File( nodeDir, makeFilename( path.getLastComponent(), ".data" ) );
-                ValueImpl v = prepareValue(ws, df, propType);
+            
+            File df = new File( nodeDir, makeFilename( path.getLastComponent(), ".data" ) );
+            ValueImpl v = prepareValue(ws, df, propType);
 
-                return v;
-            }
+            return v;
         }
         catch( IOException e )
         {            

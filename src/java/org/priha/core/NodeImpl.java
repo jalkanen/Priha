@@ -282,10 +282,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             
                 return nodeInOtherWS.getInternalPath().resolve(m_session,correspondingPath.toString()).toString();
             }
-            else
-            {
-                return ((NodeImpl)internalSession.getRootNode()).getNode(correspondingPath).getPath();
-            }
+            
+            return ((NodeImpl)internalSession.getRootNode()).getNode(correspondingPath).getPath();
         }
         catch( PathNotFoundException e )
         {

@@ -17,7 +17,6 @@
  */
 package org.priha.nodetype;
 
-import javax.jcr.NamespaceException;
 import javax.jcr.nodetype.ItemDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.OnParentVersionAction;

@@ -17,13 +17,13 @@
  */
 package org.priha.nodetype;
 
-import javax.jcr.*;
+import javax.jcr.PropertyType;
+import javax.jcr.RepositoryException;
+import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.namespace.QName;
 
 import org.priha.core.SessionImpl;
-import org.priha.core.namespace.NamespaceMapper;
-import org.priha.core.values.ValueFactoryImpl;
 
 public class QPropertyDefinition extends QItemDefinition
 {

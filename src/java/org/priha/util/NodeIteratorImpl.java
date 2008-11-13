@@ -19,7 +19,6 @@ package org.priha.util;
 
 import java.util.List;
 
-import javax.jcr.Node;
 import javax.jcr.NodeIterator;
 
 import org.priha.core.NodeImpl;

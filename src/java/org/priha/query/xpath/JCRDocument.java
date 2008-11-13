@@ -1,10 +1,7 @@
 package org.priha.query.xpath;
 
 import java.util.ArrayList;
-import java.util.List;
 
-import javax.jcr.NamespaceException;
-import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 
 import org.priha.core.NodeImpl;

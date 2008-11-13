@@ -38,7 +38,7 @@ import org.priha.util.Path;
 
 public class PropertyImpl extends ItemImpl implements Property, Comparable<PropertyImpl>
 {
-    private enum Multi { UNDEFINED, SINGLE, MULTI };
+    private enum Multi { UNDEFINED, SINGLE, MULTI }
 
     private Value[]            m_value;
     private Multi              m_multi = Multi.UNDEFINED;
