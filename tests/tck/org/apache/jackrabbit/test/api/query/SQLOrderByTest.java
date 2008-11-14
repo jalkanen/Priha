@@ -44,8 +44,12 @@ public class SQLOrderByTest extends AbstractQueryTest {
      * tests
      */
     protected void setUp() throws Exception {
+
         isReadOnly = true;
         super.setUp();
+
+        checkLanguage( Query.SQL );
+
         // setup common base statement
         StringBuffer tmp = new StringBuffer("SELECT ").append(escapeIdentifierForSQL(propertyName1));
         tmp.append(" FROM ").append(escapeIdentifierForSQL(testNodeType));

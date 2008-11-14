@@ -65,8 +65,7 @@ public class DOMElement extends DOMNode implements Element
 
     public String getTagName()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return getNodeName();
     }
 
     public boolean hasAttribute( String name )
@@ -114,6 +113,8 @@ public class DOMElement extends DOMNode implements Element
     {
         try
         {
+            if( m_path.isRoot() ) return null;
+            
             NodeImpl parent = (NodeImpl)m_session.getItem(m_path.getParentPath());
             
             NodeIteratorImpl ni = parent.getNodes();

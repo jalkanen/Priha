@@ -20,6 +20,7 @@ import javax.jcr.Node;
 import javax.jcr.RepositoryException;
 import javax.jcr.NodeIterator;
 import javax.jcr.Session;
+import javax.jcr.query.Query;
 import javax.jcr.util.TraversingItemVisitor;
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,8 @@ public class SQLPathTest extends AbstractQueryTest {
     protected void setUp() throws Exception {
         isReadOnly = true;
         super.setUp();
+        checkLanguage( Query.SQL );
+        
         session = helper.getReadOnlySession();
         // check precondition for this test
         if (testRootNode.hasNodes()) {

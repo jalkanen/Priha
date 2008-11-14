@@ -20,6 +20,7 @@ import org.apache.jackrabbit.test.NotExecutableException;
 
 import javax.jcr.RepositoryException;
 import javax.jcr.Node;
+import javax.jcr.query.Query;
 
 /**
  * Tests SQL statements with a join of a node type with a mixin type.
@@ -37,7 +38,10 @@ import javax.jcr.Node;
  * @keywords sql
  */
 public class SQLJoinTest extends AbstractQueryTest {
-
+    protected void setUp() throws Exception {
+        super.setUp();
+        checkLanguage( Query.SQL );
+    }
     /**
      * Test a SQL query with a primary and mixin nodetype join.
      */

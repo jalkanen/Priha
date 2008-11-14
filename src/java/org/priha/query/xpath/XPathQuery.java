@@ -20,7 +20,6 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.priha.core.SessionImpl;
-import org.priha.query.JCRFunctionResolver;
 import org.priha.util.Path;
 import org.w3c.dom.*;
 import org.xml.sax.InputSource;
@@ -30,15 +29,35 @@ public class XPathQuery implements Query
     private XPathFactory m_factory = XPathFactory.newInstance();
     private String       m_statement;
     private SessionImpl  m_session;
-    
+
     public XPathQuery( SessionImpl session, String statement )
     {
-        m_statement = statement;
+        m_statement = sanitizeStatement(statement);
         m_session   = session;
-        
+    
         m_factory.setXPathFunctionResolver( new JCRFunctionResolver() );
     }
 
+    /**
+     *  Turns the JCRXPathStatement (XPath OrderByClause?) into a
+     *  XPath clause.
+     *  
+     *  @param statement
+     *  @return
+     */
+    private String sanitizeStatement( String statement )
+    {
+        int idx = statement.indexOf(" order by");
+        
+        if( idx != -1 )
+        {
+            // FIXME: Should mark up the sorting order
+            return statement.substring(0,idx);
+        }
+        
+        return statement;
+    }
+    
     public QueryResult execute() throws RepositoryException
     {
         XPath xp = m_factory.newXPath();
@@ -48,13 +67,15 @@ public class XPathQuery implements Query
         try
         {
             Object o;
+
+            System.out.println("Statement="+m_statement);
         
             if( true )
             {
                 DOMElement n = new DOMElement(m_session,Path.ROOT);
                 JCRDocument doc = new JCRDocument(m_session,n);
                 
-                write(doc);
+                //write(doc);
                 
                 o  = xp.evaluate( m_statement, 
                                   doc, 
@@ -67,15 +88,12 @@ public class XPathQuery implements Query
             
                 m_session.exportDocumentView( "/", ba, true, false );
             
-                System.out.println( new String(ba.toByteArray()) );
+                //System.out.println( new String(ba.toByteArray()) );
                 o = xp.evaluate(  m_statement, 
                                   new InputSource(new ByteArrayInputStream(ba.toByteArray())), 
                                   XPathConstants.NODESET );
             }
             ns = (NodeList) o;
-
-            System.out.println("Statement="+m_statement);
-
             return new XPathQueryResult(m_session,ns);
         }
         catch( XPathExpressionException e )

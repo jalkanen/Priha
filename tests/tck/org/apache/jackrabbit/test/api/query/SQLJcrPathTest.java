@@ -43,6 +43,8 @@ public class SQLJcrPathTest extends AbstractQueryTest {
     protected void setUp() throws Exception {
         isReadOnly = true;
         super.setUp();
+        checkLanguage( Query.SQL );
+        
         session = helper.getReadOnlySession();
         testRootNode = session.getRootNode().getNode(testPath);
     }

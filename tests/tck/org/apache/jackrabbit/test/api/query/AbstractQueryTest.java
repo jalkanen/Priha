@@ -78,6 +78,26 @@ public abstract class AbstractQueryTest extends AbstractJCRTest {
     }
 
     /**
+     *  Checks whether the query language is supported, and throws a NotExecutableException
+     *  if it is not.
+     *  
+     *  @param language Language to check for
+     *  @throws RepositoryException From getQueryManager()
+     *  @throws NotExecutableException If the language is not supported.
+     */
+    protected void checkLanguage( String language ) throws RepositoryException, NotExecutableException
+    {
+        String[] langs = superuser.getWorkspace().getQueryManager().getSupportedQueryLanguages();
+            
+        for( int i = 0; i < langs.length; i++ )
+        {
+            if( langs[i].equals(language) ) return;
+        }
+
+        throw new NotExecutableException(language);
+    }
+    
+    /**
      * Create a {@link Query} for a given {@link Statement}.
      *
      * @param statement the query should be created for

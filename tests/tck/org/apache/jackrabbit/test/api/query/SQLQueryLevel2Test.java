@@ -31,7 +31,10 @@ import javax.jcr.Value;
  * @keywords level2 sql
  */
 public class SQLQueryLevel2Test extends AbstractQueryLevel2Test {
-
+    protected void setUp() throws Exception {
+        super.setUp();
+        checkLanguage( Query.SQL );
+    }
     /**
      * Test if the optional jcr:score property for full-text search is
      * supported.
@@ -39,6 +42,7 @@ public class SQLQueryLevel2Test extends AbstractQueryLevel2Test {
      * For configuration description see {@link #setUpFullTextTest()}.
      */
     public void testScoreColumn() throws Exception {
+        
         setUpFullTextTest();
         QueryResult result = execute(getFullTextStatement());
         RowIterator rows = result.getRows();

@@ -1,21 +1,23 @@
 package org.priha.query.xpath;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
 
-import javax.jcr.NodeIterator;
-import javax.jcr.PropertyIterator;
-import javax.jcr.RepositoryException;
+import javax.jcr.*;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
+import org.priha.util.GenericIterator;
 import org.w3c.dom.NodeList;
 
 public class XPathQueryResult implements QueryResult
 {
-    private NodeList m_list;
+
+    private NodeList    m_list;
     private SessionImpl m_session;
     
     public XPathQueryResult( SessionImpl session, NodeList ns )
@@ -55,8 +57,7 @@ public class XPathQueryResult implements QueryResult
     
     public NodeIterator getNodes() throws RepositoryException
     {
-        return null;
-        //return m_list.getNodes();
+        return new NodeListIterator();
     }
 
     public RowIterator getRows() throws RepositoryException
@@ -64,50 +65,116 @@ public class XPathQueryResult implements QueryResult
         return new RowIteratorImpl();
     }
 
-    public class RowIteratorImpl implements RowIterator
+    /**
+     *  Provides a custom NodeIterator for the results of the
+     *  search.
+     */
+    private class NodeListIterator implements NodeIterator
     {
+        private int      m_currIdx = 0;
 
-        public Row nextRow()
+        public Node nextNode()
         {
-            // TODO Auto-generated method stub
-            return null;
+            if(!hasNext()) throw new NoSuchElementException();
+            
+            try
+            {
+                return ((DOMNode)m_list.item(m_currIdx++)).getJCRNode();
+            }
+            catch (RepositoryException e)
+            {
+                e.printStackTrace();
+                return null;
+            }
         }
 
         public long getPosition()
         {
-            // TODO Auto-generated method stub
-            return 0;
+            return m_currIdx;
         }
 
         public long getSize()
         {
-            // TODO Auto-generated method stub
-            return 0;
+            return m_list.getLength();
         }
 
-        public void skip( long arg0 )
+        public void skip(long arg0)
         {
-            // TODO Auto-generated method stub
-            
+            m_currIdx += arg0;
         }
 
         public boolean hasNext()
         {
-            // TODO Auto-generated method stub
-            return false;
+            return m_currIdx < getSize();
         }
 
         public Object next()
         {
-            // TODO Auto-generated method stub
-            return null;
+            return nextNode();
         }
 
         public void remove()
         {
-            // TODO Auto-generated method stub
-            
+            // No-op
         }
-        
+
     }
+    
+    private class RowIteratorImpl extends NodeListIterator implements RowIterator
+    {
+        public Row nextRow()
+        {
+            Node nd = nextNode();
+            
+            return new RowImpl(nd);
+        }
+
+        public Object next()
+        {
+            return nextRow();
+        }        
+    }
+    
+    public static class RowImpl implements Row
+    {
+        private Node m_node;
+        
+        public RowImpl(Node nd)
+        {
+            m_node = nd;
+        }
+
+        public Value getValue(String arg0) throws ItemNotFoundException, RepositoryException
+        {
+            if( arg0.equals("jcr:path") )
+            {
+                return m_node.getSession().getValueFactory().createValue(m_node.getPath(),PropertyType.PATH);
+            }
+            else if( arg0.equals("jcr:score") )
+            {
+                return m_node.getSession().getValueFactory().createValue( 0 ); // FIXME!
+            }
+            
+            return m_node.getProperty(arg0).getValue();
+        }
+
+        public Value[] getValues() throws RepositoryException
+        {
+            ArrayList<Value> values = new ArrayList<Value>();
+            
+            for( PropertyIterator pi = m_node.getProperties(); pi.hasNext(); )
+            {
+                Property p = pi.nextProperty();
+                
+                values.add( p.getValue() );
+            }
+            
+            values.add( getValue("jcr:path") );
+            values.add( getValue("jcr:score") );
+            
+            return values.toArray(new Value[values.size()]);
+        }
+
+    }
+
 }
