@@ -10,6 +10,7 @@ import javax.xml.namespace.QName;
 
 import org.priha.RepositoryManager;
 import org.priha.core.JCRConstants;
+import org.priha.util.PathFactory;
 import org.xml.sax.helpers.NamespaceSupport;
 
 public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
@@ -90,6 +91,7 @@ public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper
             throw new NamespaceException("Prefix "+prefix+" may not be registered (7.2)");
         }
         
+        PathFactory.reset();
         m_nsmap.put( prefix, uri );
     }
 
