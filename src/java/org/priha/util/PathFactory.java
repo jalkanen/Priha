@@ -17,6 +17,9 @@
  */
 package org.priha.util;
 
+import java.lang.ref.WeakReference;
+import java.util.WeakHashMap;
+
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 
@@ -33,7 +36,17 @@ import org.priha.core.namespace.NamespaceMapper;
  */
 public class PathFactory
 {
-    //private static WeakHashMap<String,WeakReference<Path>> c_map = new WeakHashMap<String,WeakReference<Path>>();
+    private static WeakHashMap<String,WeakReference<Path>> c_map = new WeakHashMap<String,WeakReference<Path>>();
+    
+    /**
+     *  This method clears up the PathFactory cache maps.  It is mandatory that this
+     *  method is called every time when you change namespace mappings, otherwise the results
+     *  of getPath() might no longer be correct.
+     */
+    public static void reset()
+    {
+        c_map.clear();
+    }
     
     /**
      *  Turns a String to a Path.
@@ -46,7 +59,6 @@ public class PathFactory
     public static Path getPath(NamespaceMapper ns, String path) throws NamespaceException, RepositoryException
     {
         Path result = null;
-/*        
         WeakReference<Path> ref = c_map.get(path);
         
         if( ref != null )
@@ -56,12 +68,11 @@ public class PathFactory
         
         if( result == null )
         {
-        */
             result = new Path(ns,path);
-        /*    
+    
             c_map.put( path, new WeakReference<Path>(result) );
         }
-        */
+
         return result;
     }
 
