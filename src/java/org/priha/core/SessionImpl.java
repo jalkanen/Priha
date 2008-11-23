@@ -554,6 +554,7 @@ public class SessionImpl implements Session, NamespaceMapper
             throw new NamespaceException("Existing prefix cannot be remapped (6.3.3)");
         }
         
+        PathFactory.reset();
         m_nsmap.put(newPrefix, existingUri );
     }
 
