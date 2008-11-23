@@ -32,10 +32,8 @@ import org.priha.core.namespace.NamespaceMapper;
 /**
  *  Manages paths, which are a key ingredient in JCR.  A Path is an immutable
  *  object, so you can't change it once you create it. 
- *
- *  @author jalkanen
  */
-public class Path implements Comparable<Path>, Serializable
+public final class Path implements Comparable<Path>, Serializable
 {
     private static final long serialVersionUID = 1L;
 
@@ -45,15 +43,15 @@ public class Path implements Comparable<Path>, Serializable
      *  <p>
      *  Using this is faster than using <code>Path p = new Path("/")</code>.
      */
-    public static final Path ROOT = new Path("/");
+    public static final Path         ROOT = new Path("/");
 
-    private final QName[] m_components;
+    private final       QName[]      m_components;
 
-    private boolean m_isAbsolute = false;
+    private boolean                  m_isAbsolute = false;
 
-    private String  m_cachedString;
+    private String                   m_cachedString;
 
-    private Path    m_cachedParentPath;
+    private Path                     m_cachedParentPath;
     
     /** This constructor is useful only to subclasses or serialization. */
     protected Path()
@@ -119,6 +117,11 @@ public class Path implements Comparable<Path>, Serializable
         {
             m_components[i+start.length] = pathEnd.m_components[i];
         }
+    }
+
+    public Path(QName name, boolean b)
+    {
+        this( new QName[] { name }, b );
     }
 
     /**
@@ -476,5 +479,10 @@ public class Path implements Comparable<Path>, Serializable
     public final int compareTo(Path o)
     {
         return toString().compareTo( o.toString() );
+    }
+
+    public QName[] getElements()
+    {
+        return m_components;
     }
 }
