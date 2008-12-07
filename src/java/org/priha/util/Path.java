@@ -379,6 +379,7 @@ public final class Path implements Comparable<Path>, Serializable
         for( Component q : m_components )
         {
             sb.append( ns.fromQName( q ) );
+            if( q.getIndex() != 1 ) sb.append('[').append(q.getIndex()).append(']');
             sb.append( '/' );
         }
         
@@ -517,7 +518,7 @@ public final class Path implements Comparable<Path>, Serializable
      *  A Path component consists of a QName with an optional index (to support
      *  same name siblings).
      */
-    public static class Component extends QName
+    public static class Component extends QName implements Serializable
     {
         private static final long serialVersionUID = 8038593715235147911L;
 
@@ -526,7 +527,6 @@ public final class Path implements Comparable<Path>, Serializable
         public Component(String localPart)
         {
             super(localPart);
-            // TODO Auto-generated constructor stub
         }
 
         public Component(String namespaceURI, String localpart)
@@ -550,7 +550,7 @@ public final class Path implements Comparable<Path>, Serializable
             m_index = index;
         }
         
-        public int getIndex()
+        public final int getIndex()
         {
             return m_index;
         }
