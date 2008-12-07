@@ -73,36 +73,150 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
     {
         Path relPath = node.getRelativePath();
         QueryCollector qc = (QueryCollector)data;
-        Object result = null;
+        Boolean result = false;
+        PropertyImpl prop = null;
         
         NodeImpl currNode = qc.getCurrentItem();
+        
+        if( currNode.hasProperty(relPath.toString()) )
+        {
+            prop = currNode.getProperty(relPath.toString());
+        }
         
         switch( node.getOperation() )
         {
             case QueryConstants.OPERATION_NOT_NULL:
-                if( currNode.hasProperty(relPath.toString()) )
-                {
-                    result = qc;
-                }
-                
+                result = prop != null;
                 break;
 
             case QueryConstants.OPERATION_GT_VALUE:
             case QueryConstants.OPERATION_GT_GENERAL:
-                if( currNode.hasProperty(relPath.getLastComponent()) )
+                if( prop != null )
                 {
-                    PropertyImpl p = currNode.getProperty(relPath.getLastComponent());
-                
-                    if( p.getDouble() > node.getDoubleValue() )
-                        result = qc;
+                    switch( node.getValueType() )
+                    {
+                        case QueryConstants.TYPE_DOUBLE:
+                            result = prop.getDouble() > node.getDoubleValue();
+                            break;
+                        case QueryConstants.TYPE_LONG:
+                            result = prop.getLong() > node.getLongValue();
+                            break;
+                        case QueryConstants.TYPE_STRING:
+                            result = prop.getString().compareTo(node.getStringValue()) > 0;
+                            break;
+                        case QueryConstants.TYPE_DATE:
+                        case QueryConstants.TYPE_TIMESTAMP:
+                            result = prop.getDate().getTime().after(node.getDateValue());
+                            break;
+                    }
                 }
+                    
+                break;
+              
+            case QueryConstants.OPERATION_EQ_VALUE:
+            case QueryConstants.OPERATION_EQ_GENERAL:
+                if( prop != null )
+                {
+                    switch(node.getValueType())
+                    {
+                        case QueryConstants.TYPE_LONG:
+                            result = prop.getLong() == node.getLongValue();
+                            break;
+                        case QueryConstants.TYPE_DOUBLE:
+                            result = prop.getDouble() == node.getDoubleValue();
+                            break;                            
+                        case QueryConstants.TYPE_STRING:
+                            result = prop.getString().equals(node.getStringValue());
+                            break;
+                        case QueryConstants.TYPE_DATE:
+                        case QueryConstants.TYPE_TIMESTAMP:
+                            result = prop.getDate().getTime().compareTo(node.getDateValue()) == 0;
+                            break;
+                    }
+                }
+                break;
+                
+            case QueryConstants.OPERATION_LT_VALUE:
+            case QueryConstants.OPERATION_LT_GENERAL:
+                if( prop != null )
+                {
+                    switch(node.getValueType())
+                    {
+                        case QueryConstants.TYPE_LONG:
+                            result = prop.getLong() < node.getLongValue();
+                            break;
+                        case QueryConstants.TYPE_DOUBLE:
+                            result = prop.getDouble() < node.getDoubleValue();
+                            break;                            
+                        case QueryConstants.TYPE_STRING:
+                            result = prop.getString().compareTo(node.getStringValue()) < 0;
+                            break;
+                        case QueryConstants.TYPE_DATE:
+                        case QueryConstants.TYPE_TIMESTAMP:
+                            result = prop.getDate().getTime().before(node.getDateValue());
+                            break;
+
+                    }                    
+                }
+                break;
+                
+            case QueryConstants.OPERATION_GE_VALUE:
+            case QueryConstants.OPERATION_GE_GENERAL:
+                if( prop != null )
+                {
+                    switch(node.getValueType())
+                    {
+                        case QueryConstants.TYPE_LONG:
+                            result = prop.getLong() >= node.getLongValue();
+                            break;
+                        case QueryConstants.TYPE_DOUBLE:
+                            result = prop.getDouble() >= node.getDoubleValue();
+                            break;                            
+                        case QueryConstants.TYPE_STRING:
+                            result = prop.getString().compareTo(node.getStringValue()) >= 0;
+                            break;
+                        case QueryConstants.TYPE_DATE:
+                        case QueryConstants.TYPE_TIMESTAMP:
+                            result = prop.getDate().getTime().compareTo(node.getDateValue()) >= 0;
+                            break;
+
+                    }
+                }
+                break;
+                
+            case QueryConstants.OPERATION_LE_VALUE:
+            case QueryConstants.OPERATION_LE_GENERAL:
+                if( prop != null )
+                {
+                    switch(node.getValueType())
+                    {
+                        case QueryConstants.TYPE_LONG:
+                            result = prop.getLong() <= node.getLongValue();
+                            break;
+                        case QueryConstants.TYPE_DOUBLE:
+                            result = prop.getDouble() <= node.getDoubleValue();
+                            break;                            
+                        case QueryConstants.TYPE_STRING:
+                            result = prop.getString().compareTo(node.getStringValue()) <= 0;
+                            break;
+                        case QueryConstants.TYPE_DATE:
+                        case QueryConstants.TYPE_TIMESTAMP:
+                            result = prop.getDate().getTime().compareTo(node.getDateValue()) <= 0;
+                            break;
+
+                    }
+                }
+                break;
+                
+            case QueryConstants.OPERATION_NULL:
+                result = prop == null;
                 break;
                 
             default:
                 throw new UnsupportedRepositoryOperationException("Unknown operation "+node.getOperation());
         }
        
-        return result;
+        return result ? qc : null;
     }
 
 

@@ -6,11 +6,14 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 import javax.jcr.query.QueryResult;
 
+import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import org.priha.RepositoryManager;
 import org.priha.TestUtil;
 import org.priha.util.ConfigurationException;
+import org.priha.util.PathTest;
 
 public class XPathTest extends TestCase
 {
@@ -145,4 +148,9 @@ public class XPathTest extends TestCase
         checkMatchedPaths( qr, "/bookstore/book2" );
     }
 
+    
+    public static Test suite()
+    {
+        return new TestSuite( XPathTest.class );
+    }
 }

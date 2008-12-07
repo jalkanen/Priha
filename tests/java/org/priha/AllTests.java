@@ -14,6 +14,7 @@ public class AllTests extends TestCase
         suite.addTest( org.priha.core.AllTests.suite() );
         suite.addTest( org.priha.util.AllTests.suite() );
         suite.addTest( org.priha.xml.AllTests.suite() );
+        suite.addTest( org.priha.query.AllTests.suite() );
         
         return suite;
     }

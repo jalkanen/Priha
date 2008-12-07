@@ -27,7 +27,6 @@ import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 import javax.xml.namespace.QName;
 
-import org.priha.core.SessionImpl;
 import org.priha.core.namespace.NamespaceMapper;
 
 /**
@@ -46,7 +45,7 @@ public final class Path implements Comparable<Path>, Serializable
      */
     public static final Path         ROOT = new Path("/");
 
-    private final       QName[]      m_components;
+    private final       Component[]  m_components;
 
     private boolean                  m_isAbsolute = false;
 
@@ -57,7 +56,7 @@ public final class Path implements Comparable<Path>, Serializable
     /** This constructor is useful only to subclasses or serialization. */
     protected Path()
     {
-        m_components = new QName[0];
+        m_components = new Component[0];
     }
     
     /** Use only internally when you know you don't have namespaces. */
@@ -65,7 +64,7 @@ public final class Path implements Comparable<Path>, Serializable
     {
         if( abspath.length() > 0 && abspath.charAt(0) == '/' ) m_isAbsolute = true;
 
-        QName[] c = null;
+        Component[] c = null;
         try
         {
             c = parsePath( null, abspath );
@@ -75,7 +74,26 @@ public final class Path implements Comparable<Path>, Serializable
         m_components = c;
     }
     
+    /**
+     *  Creates a Path from a number of QName components.  The index
+     *  of all the components is assumed to be 1.
+     *  
+     *  @param components A list of components
+     *  @param absolute true, if this path should be absolute; false if relative.
+     */
     public Path( QName[] components, boolean absolute )
+    {
+        Component[] comps = new Component[components.length];
+        
+        for( int i = 0; i < components.length; i++ )
+        {
+            comps[i] = new Component(components[i]);
+        }
+        m_components = comps;
+        m_isAbsolute = absolute;
+    }
+
+    public Path( Component[] components, boolean absolute )
     {
         m_components = components;
         m_isAbsolute = absolute;
@@ -105,9 +123,9 @@ public final class Path implements Comparable<Path>, Serializable
     public Path( NamespaceMapper ns, String pathStart, Path pathEnd ) throws NamespaceException, RepositoryException
     {
         if( pathStart.length() > 0 && pathStart.charAt(0) == '/' ) m_isAbsolute = true;
-        QName[] start = parsePath( ns, pathStart );
+        Component[] start = parsePath( ns, pathStart );
         
-        m_components = new QName[start.length+pathEnd.depth()];
+        m_components = new Component[start.length+pathEnd.depth()];
         
         for( int i = 0; i < start.length; i++ )
         {
@@ -134,9 +152,17 @@ public final class Path implements Comparable<Path>, Serializable
      * @throws RepositoryException 
      * @throws NamespaceException 
      */
-    private QName cleanComponent(NamespaceMapper ns, String s) throws NamespaceException, RepositoryException
+    private Component cleanComponent(NamespaceMapper ns, String s) throws NamespaceException, RepositoryException
     {
-        if( s.endsWith("[1]") ) s = s.substring(0,s.length()-3);
+        int index = 1;
+        int bracket = s.indexOf('[');
+      
+        if( bracket != -1 )
+        {
+            String sidx = s.substring(bracket+1, s.length()-1);
+            index = Integer.parseInt(sidx);
+            s = s.substring( 0, bracket );
+        }
         
         QName q;
         
@@ -149,12 +175,12 @@ public final class Path implements Comparable<Path>, Serializable
             q = QName.valueOf( s );
         }
         
-        return q;
+        return new Component( q, index );
     }
     
-    private QName[] parsePath( NamespaceMapper ns, String path ) throws NamespaceException, RepositoryException
+    private Component[] parsePath( NamespaceMapper ns, String path ) throws NamespaceException, RepositoryException
     {
-        ArrayList<QName> ls = new ArrayList<QName>();
+        ArrayList<Component> ls = new ArrayList<Component>();
         StringBuilder sb = new StringBuilder(32); // Just a guess
         
         for( int i = 0; i < path.length(); i++ )
@@ -184,14 +210,14 @@ public final class Path implements Comparable<Path>, Serializable
         if( sb.length() > 0 )
             ls.add( cleanComponent(ns, sb.toString()) );
         
-        return ls.toArray( new QName[ls.size()] );
+        return ls.toArray( new Component[ls.size()] );
     }
     /**
      *  Gets one path component.
      * @param idx Which component to get.  The top-most component is at index zero.
      * @return The component.
      */
-    public final QName getComponent( int idx )
+    public final Component getComponent( int idx )
     {
         return m_components[idx];
     }
@@ -200,11 +226,11 @@ public final class Path implements Comparable<Path>, Serializable
      *  Returns the name of the last component of the path (i.e. the name)
      * @return The name.  If this is the root, returns "" (empty string).
      */
-    public final QName getLastComponent()
+    public final Component getLastComponent()
     {
         if( isRoot() )
         {
-            return new QName( "" );
+            return new Component( "" );
         }
         return m_components[depth()-1];
     }
@@ -232,7 +258,7 @@ public final class Path implements Comparable<Path>, Serializable
      *  @return String describing the name of the parent.
      *  @throws InvalidPathException If you try to get the parent of the root node.
      */
-    public final QName getParentName()
+    public final Component getParentName()
         throws InvalidPathException
     {
         if( isRoot() ) throw new InvalidPathException("Root has no parent");
@@ -290,7 +316,7 @@ public final class Path implements Comparable<Path>, Serializable
         }
         if( startidx < 0 || endidx < 0 ) throw new InvalidPathException("Negative index");
 
-        QName[] components = new QName[endidx-startidx];
+        Component[] components = new Component[endidx-startidx];
         
         for( int i = startidx; i < endidx; i++ )
         {
@@ -311,7 +337,7 @@ public final class Path implements Comparable<Path>, Serializable
         StringBuilder sb = new StringBuilder( m_components.length * 16 );
         if( m_isAbsolute ) sb.append("/");
 
-        for( QName c : m_components )
+        for( Component c : m_components )
         {
             sb.append( c );
             sb.append("/");
@@ -350,7 +376,7 @@ public final class Path implements Comparable<Path>, Serializable
         
         if( isAbsolute() ) sb.append("/");
         
-        for( QName q : m_components )
+        for( Component q : m_components )
         {
             sb.append( ns.fromQName( q ) );
             sb.append( '/' );
@@ -363,7 +389,7 @@ public final class Path implements Comparable<Path>, Serializable
     }
 
     /**
-     *  Adds a component to the path (since QNames are not paths),
+     *  Adds a component to the path (since Components are not paths),
      *  and returns a new Path.
      *  
      *  @param component Component to add at the end of the Path.
@@ -371,12 +397,12 @@ public final class Path implements Comparable<Path>, Serializable
      */
     public final Path resolve( QName component )
     {
-        ArrayList<QName> list = new ArrayList<QName>();
+        ArrayList<Component> list = new ArrayList<Component>();
         
         list.addAll( Arrays.asList( m_components ) );
-        list.add(  component );
+        list.add( new Component(component) );
         
-        return new Path( list.toArray(new QName[list.size()]), m_isAbsolute );
+        return new Path( list.toArray(new Component[list.size()]), m_isAbsolute );
     }
     
     /**
@@ -389,8 +415,8 @@ public final class Path implements Comparable<Path>, Serializable
      */
     public final Path resolve(NamespaceMapper ns, String relPath) throws NamespaceException, RepositoryException
     {
-        ArrayList<QName> p    = new ArrayList<QName>();
-        ArrayList<QName> list = new ArrayList<QName>();
+        ArrayList<Component> p    = new ArrayList<Component>();
+        ArrayList<Component> list = new ArrayList<Component>();
 
         if( !relPath.startsWith("/") )
         {
@@ -419,7 +445,7 @@ public final class Path implements Comparable<Path>, Serializable
             }
         }
 
-        return new Path( list.toArray(new QName[list.size()]), m_isAbsolute );
+        return new Path( list.toArray(new Component[list.size()]), m_isAbsolute );
     }
 
     /**
@@ -482,8 +508,62 @@ public final class Path implements Comparable<Path>, Serializable
         return toString().compareTo( o.toString() );
     }
 
-    public QName[] getElements()
+    public Component[] getElements()
     {
         return m_components;
+    }
+    
+    /**
+     *  A Path component consists of a QName with an optional index (to support
+     *  same name siblings).
+     */
+    public static class Component extends QName
+    {
+        private static final long serialVersionUID = 8038593715235147911L;
+
+        private int m_index = 1;
+        
+        public Component(String localPart)
+        {
+            super(localPart);
+            // TODO Auto-generated constructor stub
+        }
+
+        public Component(String namespaceURI, String localpart)
+        {
+            super( namespaceURI, localpart );
+        }
+        
+        public Component(String namespaceURI, String localPart, String prefix )
+        {
+            super( namespaceURI, localPart, prefix );
+        }
+        
+        public Component(QName name)
+        {
+            super( name.getNamespaceURI(), name.getLocalPart(), name.getPrefix() );
+        }
+        
+        public Component(QName name, int index )
+        {
+            this(name);
+            m_index = index;
+        }
+        
+        public int getIndex()
+        {
+            return m_index;
+        }
+        
+        public String toString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append(super.toString());
+            if( m_index != 1 )
+            {
+                sb.append("[").append(m_index).append("]");
+            }
+            return sb.toString();
+        }
     }
 }
