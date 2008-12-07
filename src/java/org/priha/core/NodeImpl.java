@@ -325,6 +325,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return getNode( m_path.resolve(m_session,relPath) );
     }
 
+    public NodeImpl getNode(QName name) throws PathNotFoundException, RepositoryException
+    {
+        return getNode( m_path.resolve(name) );
+    }
+
     public NodeIteratorImpl getNodes() throws RepositoryException
     {
         List<NodeImpl> ls = new ArrayList<NodeImpl>();
@@ -576,6 +581,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     public boolean hasNode(String relPath) throws RepositoryException
     {
         Path absPath = m_path.resolve(m_session,relPath);
+        return m_session.hasNode(absPath);
+    }
+
+
+    public boolean hasNode(QName name) throws RepositoryException
+    {
+        Path absPath = m_path.resolve(name);
         return m_session.hasNode(absPath);
     }
 

@@ -27,6 +27,7 @@ import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 import javax.xml.namespace.QName;
 
+import org.priha.core.SessionImpl;
 import org.priha.core.namespace.NamespaceMapper;
 
 /**

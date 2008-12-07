@@ -210,7 +210,7 @@ public class WorkspaceImpl
         // TODO Auto-generated method stub
     }
 
-    public QueryManager getQueryManager() throws RepositoryException
+    public PrihaQueryManager getQueryManager() throws RepositoryException
     {
         return new PrihaQueryManager(getSession());
     }

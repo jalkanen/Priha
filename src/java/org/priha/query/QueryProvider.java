@@ -17,7 +17,13 @@
  */
 package org.priha.query;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.query.QueryResult;
+
+import org.priha.core.SessionImpl;
+import org.priha.query.aqt.QueryRootNode;
+
 public interface QueryProvider
 {
-
+    public QueryResult query( SessionImpl session, QueryRootNode nd ) throws RepositoryException;
 }

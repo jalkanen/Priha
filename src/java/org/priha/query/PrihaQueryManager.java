@@ -24,7 +24,9 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 
 import org.priha.core.SessionImpl;
-import org.priha.query.xpath.XPathQuery;
+import org.priha.query.aqt.DefaultQueryNodeFactory;
+import org.priha.query.aqt.QueryRootNode;
+import org.priha.query.aqt.xpath.XPathQueryBuilder;
 
 
 /**
@@ -47,10 +49,26 @@ public class PrihaQueryManager implements QueryManager
         m_session = session;
     }
     
+    /**
+     *  Get the QueryProvider which will be used to resolve the actual query.
+     *  
+     *  @return A QueryProvider instance.
+     */
+    protected QueryProvider getQueryProvider()
+    {
+        return new SimpleQueryProvider();
+    }
+    
     public Query createQuery(String statement, String language) throws InvalidQueryException, RepositoryException
     {
         if( language.equals( Query.XPATH ) )
-            return new XPathQuery(m_session,statement);
+        {
+            QueryRootNode root = XPathQueryBuilder.createQuery(statement, 
+                                                               m_session, 
+                                                               new DefaultQueryNodeFactory(null) );
+            
+            return new XPathQueryImpl( m_session, statement );
+        }
         
         throw new InvalidQueryException("Query language "+language+" is not supported.");
     }

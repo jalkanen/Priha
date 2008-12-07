@@ -76,7 +76,7 @@
     <!-- - - - - - - - - - - - - - - - - - 
           target: compile                      
          - - - - - - - - - - - - - - - - - -->
-    <target name="compile">
+    <target name="compile" depends="generatedsources">
        <mkdir dir="build"/>
        <javac srcdir="src/java"
          destdir="build"
@@ -90,9 +90,38 @@
        </javac>
     </target>
 
+	<!-- Looks like this creates an invalid JJT file.  It needs
+	     some manual editing, so we'll just generate it once
+	     and check it into SVN. -->
+	<target name="xpath-jjt">
+		<mkdir dir="src/generated-sources"/>
+		<xslt style="src/javacc/xpath/strip.xsl"
+			in="src/javacc/xpath/xpath-grammar.xml"
+			out="src/generated-sources/stripped-xpath-grammar.xml"
+			force="yes"/>
+		<xslt style="src/javacc/xpath/jjtree-priha.xsl"
+			in="src/generated-sources/stripped-xpath-grammar.xml"
+			out="src/javacc/xpath/XPath.jjt"
+			force="yes"/>
+	</target>
+	
+	<target name="generatedsources">
+		<mkdir dir="src/generated-sources/org/priha/query/aqt/xpath"/>
+		<jjtree target="src/javacc/xpath/XPath.jjt"
+		        outputdirectory="src/generated-sources/org/priha/query/aqt/xpath"
+		        javacchome="${user.home}/Java/javacc-4.1"
+		        nodepackage="org.priha.query.aqt.xpath"/>
+		<javacc target="src/generated-sources/org/priha/query/aqt/xpath/XPath.jj"
+				javacchome="${user.home}/Java/javacc-4.1"
+				outputdirectory="src/generated-sources/org/priha/query/aqt/xpath"/>
+		<!-- We have our own implementation of SimpleNode -->
+		<delete file="src/generated-sources/org/priha/query/aqt/xpath/SimpleNode.java"/>
+	</target>
+	
     <target name="clean">
      
-       <delete dir="build"/>
+        <delete dir="build"/>
+    	<delete dir="src/generated-sources/org"/>
    
     </target>
  

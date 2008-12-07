@@ -1,8 +1,9 @@
-package org.priha.query.xpath;
+package org.priha.query;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.jcr.*;
 import javax.jcr.query.QueryResult;
@@ -10,35 +11,26 @@ import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 
 import org.priha.core.NodeImpl;
-import org.priha.core.SessionImpl;
-import org.priha.util.GenericIterator;
-import org.w3c.dom.NodeList;
+import org.priha.util.NodeIteratorImpl;
 
-public class XPathQueryResult implements QueryResult
+public class QueryResultImpl implements QueryResult
 {
-
-    private NodeList    m_list;
-    private SessionImpl m_session;
-    
-    public XPathQueryResult( SessionImpl session, NodeList ns )
+    private List<NodeImpl> m_matches;
+        
+    public QueryResultImpl(List<NodeImpl> matches)
     {
-        m_session = session;
-        m_list = ns;
+        m_matches = matches;
     }
 
     public String[] getColumnNames() throws RepositoryException
     {
-        ArrayList<String> names = new ArrayList<String>();
+        Set<String> names = new TreeSet<String>();
         
         //System.out.println("Column names:");
-        
-        for( int i = 0; i < m_list.getLength(); i++ )
-        {
-            //System.out.println(":"+m_list.item( i ));
-            DOMNode n = (DOMNode)m_list.item( i );
 
-            NodeImpl nd = n.getJCRNode();
-            
+        // FIXME: Is kinda slow.
+        for( NodeImpl nd : m_matches )
+        {
             PropertyIterator props = nd.getProperties();
             
             while( props.hasNext() )
@@ -54,74 +46,24 @@ public class XPathQueryResult implements QueryResult
         
         return names.toArray( new String[0] );
     }
-    
+
     public NodeIterator getNodes() throws RepositoryException
     {
-        return new NodeListIterator();
+        return new NodeIteratorImpl( m_matches );
     }
 
     public RowIterator getRows() throws RepositoryException
     {
-        return new RowIteratorImpl();
+        return new RowIteratorImpl( m_matches );
     }
 
-    /**
-     *  Provides a custom NodeIterator for the results of the
-     *  search.
-     */
-    private class NodeListIterator implements NodeIterator
+    private class RowIteratorImpl extends NodeIteratorImpl implements RowIterator
     {
-        private int      m_currIdx = 0;
-
-        public Node nextNode()
+        public RowIteratorImpl(List<NodeImpl> list)
         {
-            if(!hasNext()) throw new NoSuchElementException();
-            
-            try
-            {
-                return ((DOMNode)m_list.item(m_currIdx++)).getJCRNode();
-            }
-            catch (RepositoryException e)
-            {
-                e.printStackTrace();
-                return null;
-            }
+            super(list);
         }
 
-        public long getPosition()
-        {
-            return m_currIdx;
-        }
-
-        public long getSize()
-        {
-            return m_list.getLength();
-        }
-
-        public void skip(long arg0)
-        {
-            m_currIdx += arg0;
-        }
-
-        public boolean hasNext()
-        {
-            return m_currIdx < getSize();
-        }
-
-        public Object next()
-        {
-            return nextNode();
-        }
-
-        public void remove()
-        {
-            // No-op
-        }
-
-    }
-    
-    private class RowIteratorImpl extends NodeListIterator implements RowIterator
-    {
         public Row nextRow()
         {
             Node nd = nextNode();
@@ -176,5 +118,4 @@ public class XPathQueryResult implements QueryResult
         }
 
     }
-
 }
