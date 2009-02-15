@@ -76,7 +76,7 @@
     <!-- - - - - - - - - - - - - - - - - - 
           target: compile                      
          - - - - - - - - - - - - - - - - - -->
-    <target name="compile" depends="generatedsources">
+    <target name="compile">
        <mkdir dir="build"/>
        <javac srcdir="src/java"
          destdir="build"

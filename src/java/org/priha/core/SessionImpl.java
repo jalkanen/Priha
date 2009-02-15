@@ -147,11 +147,13 @@ public class SessionImpl implements Session, NamespaceMapper
     
     public boolean hasNode( Path absPath ) throws RepositoryException
     {
+        checkLive();
         return m_provider.nodeExists( absPath );
     }
 
     boolean hasProperty( Path absPath ) throws RepositoryException
     {
+        checkLive();
         try
         {
             ItemImpl ii = m_provider.getItem(absPath);
@@ -175,6 +177,7 @@ public class SessionImpl implements Session, NamespaceMapper
      */
     public void checkPermission(String absPath, String actions) throws AccessControlException, RepositoryException
     {
+        checkLive();
         return;
     }
 
@@ -233,7 +236,6 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public NodeImpl getRootNode() throws RepositoryException
     {
-        checkLive();
         return (NodeImpl) getItem(Path.ROOT);
     }
 
@@ -255,6 +257,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public boolean hasPendingChanges() throws RepositoryException
     {
+        checkLive();
         return m_provider.hasPendingChanges();
     }
 
@@ -536,6 +539,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public void setNamespacePrefix(String newPrefix, String existingUri) throws NamespaceException, RepositoryException
     {
+        checkLive();
         // Throws an exception if the URI does not exist, so this is a cheap way to check for validity.
         m_workspace.getNamespaceRegistry().getPrefix(existingUri);
         
@@ -571,6 +575,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public String[] getNamespacePrefixes() throws RepositoryException
     {
+        checkLive();
         Set<String> prefixes = new TreeSet<String>();
         
         Set<String> uris = new TreeSet<String>();
@@ -587,6 +592,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public String getNamespaceURI(String prefix) throws NamespaceException, RepositoryException
     {
+        checkLive();
         String uri = m_nsmap.get(prefix);
         
         if( uri == null )
@@ -621,6 +627,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public QName toQName(String c) throws NamespaceException, RepositoryException
     {
+        checkLive();
         if( c == null ) return null;
         
         if( c.indexOf( '{' ) != -1 ) throw new RepositoryException("Already in QName format: "+c);
