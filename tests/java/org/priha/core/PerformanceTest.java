@@ -358,6 +358,56 @@ public class PerformanceTest extends TestCase
             }
         }
 
+        /**
+         *  Produces two figures: getProperty and getItem.  The same item
+         *  is fetched through both methods, and the performance is measured.
+         */
+        public void testCachedNode() throws RepositoryException
+        {
+            Session s = m_repository.login(m_creds);
+            
+            try
+            {
+                String ss = propertyPaths.get( 0 ); 
+
+                Item ii = s.getItem(ss);
+                Node nd = ii.getParent();
+                String propName = ii.getName();
+                
+                //
+                //  First, access directly with getProperty()
+                //
+                Perf.start("getProperty");
+                
+                for( int i = 0; i < m_readIters; i++ )
+                {
+                    Property prop = nd.getProperty( propName );
+                    
+                    assertNotNull( prop.getString() );
+                }
+                
+                Perf.stop(m_readIters);
+                
+                //
+                //  Then, with getItem()
+                //
+                Perf.start("getItem");
+                
+                for( int i = 0; i < m_readIters; i++ )
+                {
+                    Property prop = (Property) s.getItem( ss );
+                    
+                    assertNotNull( prop.getString() );
+                }                
+                
+                Perf.stop(m_readIters);
+            }
+            finally
+            {
+                s.logout();
+            }
+        }
+        
         public void testUpdate() throws RepositoryException
         {
             Session s = m_repository.login(m_creds);
@@ -421,6 +471,8 @@ public class PerformanceTest extends TestCase
             tc.testUUIDRead();
             
             tc.testUpdate();
+            
+            tc.testCachedNode();
             
             //
             //  Test how quickly we can then empty the repository.
