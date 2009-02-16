@@ -401,6 +401,19 @@ public class PerformanceTest extends TestCase
                 }                
                 
                 Perf.stop(m_readIters);
+                
+                // Finally, with getByUUID()
+                
+                String uuid = uuids.get(0);
+                Perf.start("propUUID");
+                
+                for( int i = 0; i < m_readIters; i++ )
+                {
+                    Property prop = s.getNodeByUUID( uuid ).getProperty( propName );
+                    assertNotNull( prop.getString() );
+                }
+                
+                Perf.stop(m_readIters);
             }
             finally
             {

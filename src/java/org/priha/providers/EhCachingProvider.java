@@ -160,6 +160,18 @@ public class EhCachingProvider implements RepositoryProvider
         return ws.getName()+";"+path.toString()+";N";
     }
 
+    /** For UUIDs */
+    private final String getUid(WorkspaceImpl ws, String uuid)
+    {
+        return uuid; // UUIDs are unique enough
+    }
+
+    /** For Reverse UUIDs */
+    private final String getRUid(WorkspaceImpl ws, Path path )
+    {
+        return ws.getName()+";"+path.toString()+";U";
+    }
+    
     public void open(RepositoryImpl rep, Credentials credentials, String workspaceName) throws RepositoryException, NoSuchWorkspaceException
     {
         m_realProvider.open(rep, credentials, workspaceName);
@@ -189,9 +201,44 @@ public class EhCachingProvider implements RepositoryProvider
         m_realProvider.copy(ws, srcpath, destpath);
     }
 
+    /*
+     *  UUIDs are fairly safe because even if the Node was deleted, SessionImpl will
+     *  attempt to fetch the Node itself based on the Path, so that will fail then.
+     *  So we can just cache all the values happily.
+     *  
+     *  Also, the mappings don't really change, except in a move() operation.
+     *  
+     *  (non-Javadoc)
+     *  @see org.priha.providers.RepositoryProvider#findByUUID(org.priha.core.WorkspaceImpl, java.lang.String)
+     */
     public Path findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
-        return m_realProvider.findByUUID(ws, uuid);
+        try
+        {
+            Element e = m_valueCache.get( getUid( ws, uuid ) );
+        
+            if( e != null )
+            {
+                return (Path)e.getObjectValue();
+            }
+        
+            Path p = m_realProvider.findByUUID(ws, uuid);
+        
+            m_valueCache.put( new Element( getUid( ws, uuid ), p ) );
+            m_valueCache.put( new Element( getRUid( ws, p ), uuid ) );  
+        
+            return p;
+        }
+        catch( LockTimeoutException e )
+        {
+            throw new RepositoryException("Lock timeout getting propery value");
+        }
+        catch( RuntimeException e )
+        {
+            // Release lock
+            m_valueCache.put( new Element( getUid( ws, uuid ), null ) );
+            throw new RepositoryException("Error getting property value");
+        }
     }
 
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException
@@ -340,6 +387,18 @@ public class EhCachingProvider implements RepositoryProvider
 
     public void move(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
     {
+        //
+        //  We need to make sure UUID mapping is still okay.
+        //
+        
+        Element e = m_valueCache.get( getRUid(ws,srcpath) );
+        if( e != null )
+        {
+            String uuid = (String)e.getValue();
+            m_valueCache.remove( uuid );
+            m_valueCache.remove( getRUid(ws,srcpath) );
+        }
+        
         m_realProvider.move(ws, srcpath, destpath);
     }
 

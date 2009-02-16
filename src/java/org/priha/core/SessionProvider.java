@@ -40,8 +40,9 @@ public class SessionProvider
     
     private SortedMap<Path,ItemImpl> m_changedItems;
     
-    // FIXME: This is a leaky cache.
-    private Map<Path,ItemImpl> m_fetchedItems = new HashMap<Path,ItemImpl>();
+    private Map<Path,ItemImpl> m_fetchedItems = new SizeLimitedHashMap<Path,ItemImpl>();
+
+    private Map<String,NodeImpl> m_uuidMap    = new SizeLimitedHashMap<String,NodeImpl>();
     
     public SessionProvider( SessionImpl session, ItemStore source )
     {
@@ -109,23 +110,19 @@ public class SessionProvider
             }
             catch(RepositoryException e) {}
         }
-/*
-        for( ItemImpl ni : m_fetchedItems.values() )
-        {
-            try
-            {
-                if( ni.isNode() )
-                {
-                    String pid = ((NodeImpl)ni).getUUID();
-                    if( uuid.equals(pid) ) return (NodeImpl)ni;
-                }
-            }
-            catch(RepositoryException e) {}
-        }
-*/
-        NodeImpl ii = m_source.findByUUID( m_workspace, uuid );
+
+        NodeImpl ii = m_uuidMap.get( uuid );
         
-        if( ii != null ) m_fetchedItems.put( ii.getInternalPath(), ii );
+        if( ii == null )
+        {
+            ii = m_source.findByUUID( m_workspace, uuid );
+            
+            if( ii != null ) 
+            {
+                m_fetchedItems.put( ii.getInternalPath(), ii );
+                m_uuidMap.put( uuid, ii );
+            }
+        }
         
         return ii;
     }
@@ -204,6 +201,8 @@ public class SessionProvider
 
     public void move(Path srcpath, Path destpath) throws RepositoryException
     {
+        m_uuidMap.clear();
+        m_fetchedItems.clear();
         m_source.move(m_workspace, srcpath, destpath);
     }
 
@@ -331,6 +330,11 @@ public class SessionProvider
                                 }
                                 toberemoved.add(ni.getInternalPath());
                                 m_fetchedItems.remove( ni.getInternalPath() );
+                                if( ni.isNodeType( "mix:referenceable" ) )
+                                {
+                                    String uuid = ni.getUUID();
+                                    m_uuidMap.remove( uuid );
+                                }
                                 break;
                         }
                     }
@@ -531,5 +535,14 @@ public class SessionProvider
         return m_source.nodeExists( m_workspace, path );
     }
 
-
+    private static class SizeLimitedHashMap<K,V> extends LinkedHashMap<K,V>
+    {
+        private static final int MAX_SIZE = 100;
+        
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<K,V> eldest)
+        {
+            return size() > MAX_SIZE;
+        }
+    }
 }
