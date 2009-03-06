@@ -7,6 +7,12 @@ import org.priha.core.SessionImpl;
 import org.priha.query.aqt.DefaultQueryNodeFactory;
 import org.priha.query.aqt.xpath.XPathQueryBuilder;
 
+/**
+ *  Implements an XPath query by using the XPathQueryBuilder to construct
+ *  an abstract query tree (AQT).
+ *  
+ *  @author Janne Jalkanen
+ */
 public class XPathQueryImpl extends QueryImpl implements Query
 {
     private String      m_statement;
@@ -18,7 +24,6 @@ public class XPathQueryImpl extends QueryImpl implements Query
                                                       session, 
                                                       new DefaultQueryNodeFactory(null) ) );
         m_statement = statement;
-        System.out.println("Statement = "+statement);
     }
 
     public String getLanguage()

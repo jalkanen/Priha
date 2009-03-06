@@ -154,7 +154,9 @@ public interface RepositoryProvider
     public void addNode( WorkspaceImpl ws, Path path ) throws RepositoryException;
     
     /**
-     *  Sets or adds a new Property to the repository.
+     *  Sets or adds a new Property to the repository.  Note that
+     *  a Property may be multi-valued.  It is up to the provider to
+     *  decide how it serializes the data.
      * 
      *  @param ws The workspace
      *  @param property The Property content to store.

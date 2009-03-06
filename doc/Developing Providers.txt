@@ -1,0 +1,49 @@
+
+Developing your own Providers, a quick introduction
+
+(Please note that this document concerns an API which is not yet frozen
+by any means.)
+
+        ---------------------------------------------------
+
+Priha has a lot of layering to accommodate for the Session-Repository
+split that JCR does. However, most of the time, if you wish to connect to
+your own backend, you don't need to care about that.
+
+The chief interface to implement is called RepositoryProvider, and that
+abstracts whatever filesystem/DB you have against the Priha concepts.
+
+Priha abstracts the repository at a fairly high level.  This means that a
+RepositoryProvider class will need to understand some basics of the JCR
+Repository structure.
+
+The Javadocs of the RepositoryProvider class should be fairly comprehensive,
+so those should be reviewed before attempt to implement anything.
+
+
+The Lifecycle
+=============
+
+When Priha starts, it calls start() on your provider.  When it shuts down,
+it calls stop().  It is possible that stop() is not closed if the JVM crashes.
+
+Whenever someone performs a Repository.login(), Priha calls open() on your
+provider.  Whenever logout() is called, it calls close().
+
+
+Loading Data
+============
+
+TBD
+
+Saving Data
+===========
+
+Whenever Priha starts sending your provider data to save, it will call
+first the storeStarted() method, and after that, a number of putPropertyValue()
+methods.  Once they've been all sent through, a storeFinished() call is made.
+
+At the moment, Priha will make sure of synchronization, that is, between 
+storeStarted() and storeFinished() no other reads or writes will take place.  
+Yes, this means that writes may slow down the operation of the entire app so 
+make it snappy.

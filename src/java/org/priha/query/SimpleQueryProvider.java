@@ -2,7 +2,6 @@ package org.priha.query;
 
 import java.util.ArrayList;
 
-import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
@@ -17,6 +16,14 @@ import org.priha.query.aqt.*;
 import org.priha.util.NodeIteratorImpl;
 import org.priha.util.Path;
 
+/**
+ *  This class provides a very simple query provider which does direct comparisons
+ *  against the contents of the repository. The upside is that this makes it very
+ *  simple; with the obvious downside that this is really slow because it
+ *  traverses the entire repository one matched Node at a time.
+ *  
+ *  @author Janne Jalkanen
+ */
 public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements QueryProvider
 {
     public QueryResult query(SessionImpl session, QueryRootNode nd) throws RepositoryException
@@ -207,7 +214,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
                     }
                 }
                 break;
-                
+                                
             case QueryConstants.OPERATION_NULL:
                 result = prop == null;
                 break;

@@ -10,11 +10,23 @@ import javax.jcr.version.VersionException;
 import org.priha.core.SessionImpl;
 import org.priha.query.aqt.QueryRootNode;
 
+/**
+ *  The root class for Priha query implementations.
+ *  
+ *  @author Janne Jalkanen
+ */
 public abstract class QueryImpl implements Query
 {
     private QueryRootNode m_root;
     private SessionImpl m_session;
-    
+ 
+    /**
+     *  Construct a QueryImpl for a given Session and a given abstract
+     *  query tree.  Subclasses are expected to create the AQT.
+     *  
+     *  @param session The Session against which this Query is created
+     *  @param root The AQT Root node
+     */
     public QueryImpl(SessionImpl session, QueryRootNode root)
     {
         m_session = session;
@@ -30,8 +42,7 @@ public abstract class QueryImpl implements Query
 
     public String getStoredQueryPath() throws ItemNotFoundException, RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedRepositoryOperationException("Priha does not yet support stored queries.");
     }
 
     public Node storeAsNode(String arg0)
@@ -43,8 +54,7 @@ public abstract class QueryImpl implements Query
                                             UnsupportedRepositoryOperationException,
                                             RepositoryException
     {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedRepositoryOperationException("Priha does not yet support stored queries.");
     }
 
 }
