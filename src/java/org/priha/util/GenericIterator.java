@@ -20,6 +20,11 @@ package org.priha.util;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ *  Provides a base class for the different Iterators that JCR defines.
+ *  
+ *  @author jalkanen
+ */
 public abstract class GenericIterator implements Iterator
 {
     protected Iterator<?> m_iterator;
