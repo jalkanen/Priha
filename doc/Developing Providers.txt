@@ -34,7 +34,18 @@ provider.  Whenever logout() is called, it calls close().
 Loading Data
 ============
 
-TBD
+The RepositoryProvider is expected to construct a new ValueImpl (or a ValueImpl
+array in case of a multi-valued Property) and return it whenever getPropertyValue()
+is called.
+
+It should be noted that according to JCR rules, *new* Value objects should
+always be constructed - you can't reuse any old ones you might be having around.
+You can reuse the data, but not the Value objects.
+
+All methods relating to reading data must be threadsafe - Priha allows multiple
+threads to access the repository.  So if your reading methods cause anything
+to written, make sure they're synchronized properly.
+
 
 Saving Data
 ===========
@@ -47,3 +58,9 @@ At the moment, Priha will make sure of synchronization, that is, between
 storeStarted() and storeFinished() no other reads or writes will take place.  
 Yes, this means that writes may slow down the operation of the entire app so 
 make it snappy.
+
+You may ignore the storeStarted() and storeFinished() calls, if you so please.
+However, if saving fails for some reason, make sure that your data structures
+don't get corrupted.  A good idea is to collect everything into a big list and
+just flush stuff on the disk at storeFinished().
+
