@@ -156,7 +156,16 @@ public class XPathTest extends TestCase
 
         checkMatchedPaths( qr, "/bookstore/book2", "/bookstore/funbooks/book" );
     }
-    
+
+    public void testContainsQuery2() throws Exception
+    {
+        Query q = m_mgr.createQuery("//*[jcr:contains(@title,'forty')]", Query.XPATH );
+
+        QueryResult qr = q.execute();
+
+        checkMatchedPaths( qr, "/bookstore/book2", "/bookstore/funbooks/book" );
+    }
+
     public static Test suite()
     {
         return new TestSuite( XPathTest.class );

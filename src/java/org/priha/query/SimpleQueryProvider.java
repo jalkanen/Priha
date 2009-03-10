@@ -2,9 +2,7 @@ package org.priha.query;
 
 import java.util.ArrayList;
 
-import javax.jcr.PathNotFoundException;
-import javax.jcr.RepositoryException;
-import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.*;
 import javax.jcr.query.QueryResult;
 import javax.xml.namespace.QName;
 
@@ -292,6 +290,48 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         
         return c;
     }
+
+    @Override
+    public Object visit( TextsearchQueryNode node, Object data ) throws RepositoryException
+    {
+        System.out.println("Searching for "+node.getQuery()+" from path "+node.getRelativePath());
+        
+        QueryCollector c = (QueryCollector) data;
+        NodeImpl currNode = c.getCurrentItem();
+        
+        int score = 0;
+        
+        PropertyIterator pi = currNode.getProperties();
+        
+        Path checkPath = node.getRelativePath();
+        
+        while( pi.hasNext() )
+        {
+            PropertyImpl p = (PropertyImpl)pi.nextProperty();
+            
+            if( checkPath != null && !checkPath.getLastComponent().equals( p.getQName() ) )
+                continue;
+            
+            switch( p.getType() )
+            {
+                case PropertyType.STRING:
+                    String val = p.getString();
+                    
+                    // FIXME: Does not support the query type yet
+                    if( val.contains( node.getQuery() ) ) score++;
+                    
+                    break;
+                    
+                default:
+                    // No action
+                    break;    
+            }
+        }
+        
+        return score > 0 ? c : null;
+    }
+
+
 
     private boolean checkPredicates( LocationStepQueryNode node, QueryCollector data ) throws RepositoryException
     {

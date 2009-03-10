@@ -1,3 +1,52 @@
+/*
+ * Generated using "maven jackrabbit:generage-xpath-parser-jjt" from the
+ * the following files with the following copyright and license notices:
+ *
+ * javacc.xsl, jjtree.xsl, and strip.xsl:
+ * --------------------------------------
+ * Copyright (c) 2002 World Wide Web Consortium,
+ * (Massachusetts Institute of Technology, Institut National de
+ * Recherche en Informatique et en Automatique, Keio University). All
+ * Rights Reserved. This program is distributed under the W3C's Software
+ * Intellectual Property License. This program is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY; without even
+ * the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+ * PURPOSE.
+ * See W3C License http://www.w3.org/Consortium/Legal/ for more details.
+ *
+ * jjtree-jackrabbit.xsl:
+ * ----------------------
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * xpath-grammar.xml:
+ * ------------------
+ * Copyright (c) 2002 W3C(r) (http://www.w3.org/) (MIT (http://www.lcs.mit.edu/), 
+ * INRIA (http://www.inria.fr/), Keio (http://www.keio.ac.jp/)), 
+ * All Rights Reserved.
+ * See http://www.w3.org/Consortium/Legal/ipr-notice-20000612#Copyright.
+ * W3C liability 
+ * (http://www.w3.org/Consortium/Legal/ipr-notice-20000612#Legal_Disclaimer), 
+ * trademark 
+ * (http://www.w3.org/Consortium/Legal/ipr-notice-20000612#W3C_Trademarks), 
+ * document use 
+ * (http://www.w3.org/Consortium/Legal/copyright-documents-19990405), 
+ * and software licensing rules 
+ * (http://www.w3.org/Consortium/Legal/copyright-software-19980720) 
+ * apply.
+ */
 options {
 
 	  
@@ -233,24 +282,16 @@ TOKEN :
  < DoubleLiteral : (("." <Digits>) | (<Digits> ("." (["0" - "9"])*)?)) ["e", "E"] (["+", "-"])? <Digits> > : OPERATOR
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR>
 TOKEN :
 {
- < StringLiteral : (("\"" ((("\"" "\"") | ~
-							["\""]
-						))* "\"") | ("'" ((("'" "'") | ~
-							["'"]
-						))* "'")) > : OPERATOR
+ < StringLiteral : (("\"" ((<PredefinedEntityRef> | <CharRef> | ("\"" "\"") | ~["\"", "&"]))* "\"") | ("'" ((<PredefinedEntityRef> | <CharRef> | ("'" "'") | ~["'", "&"]))* "'")) > : OPERATOR
 }
 
 <KINDTESTFORPI>
 TOKEN :
 {
- < StringLiteralForKindTest : (("\"" ((("\"" "\"") | ~
-							["\""]
-						))* "\"") | ("'" ((("'" "'") | ~
-							["'"]
-						))* "'")) > : KINDTESTFORPI
+ < StringLiteralForKindTest : (("\"" ((<PredefinedEntityRef> | <CharRef> | ("\"" "\"") | ~["\"", "&"]))* "\"") | ("'" ((<PredefinedEntityRef> | <CharRef> | ("'" "'") | ~["'", "&"]))* "'")) > : KINDTESTFORPI
 }
 
 <DEFAULT>
@@ -262,11 +303,7 @@ TOKEN :
 <XQUERYVERSION>
 TOKEN :
 {
- < StringLiteralForVersion : (("\"" ((("\"" "\"") | ~
-							["\""]
-						))* "\"") | ("'" ((("'" "'") | ~
-							["'"]
-						))* "'")) > : XQUERYVERSION
+ < StringLiteralForVersion : (("\"" ((<PredefinedEntityRef> | <CharRef> | ("\"" "\"") | ~["\"", "&"]))* "\"") | ("'" ((<PredefinedEntityRef> | <CharRef> | ("'" "'") | ~["'", "&"]))* "'")) > : XQUERYVERSION
 }
 
 <XQUERYVERSION>
@@ -275,20 +312,16 @@ TOKEN :
  < XQueryEncoding : "encoding" > : XQUERYVERSION
 }
 
-<DEFAULT>
+<DEFAULT, ITEMTYPE>
 TOKEN :
 {
  < AtStringLiteral : "at" (<skip_>)* <URLLiteral> > : DEFAULT
 }
 
-<NAMESPACEDECL>
+<NAMESPACEDECL, NAMESPACEKEYWORD>
 TOKEN :
 {
- < URLLiteral : (("\"" ((("\"" "\"") | ~
-							["\""]
-						))* "\"") | ("'" ((("'" "'") | ~
-							["'"]
-						))* "'")) > : DEFAULT
+ < URLLiteral : (("\"" ((<PredefinedEntityRef> | <CharRef> | ("\"" "\"") | ~["\"", "&"]))* "\"") | ("'" ((<PredefinedEntityRef> | <CharRef> | ("'" "'") | ~["'", "&"]))* "'")) > : DEFAULT
 }
 
 <DEFAULT>
@@ -299,7 +332,7 @@ TOKEN :
 <DEFAULT, OPERATOR, KINDTEST, NAMESPACEDECL, XMLSPACE_DECL, SINGLETYPE, ITEMTYPE, NAMESPACEKEYWORD, VARNAME, OCCURRENCEINDICATOR, CLOSEKINDTEST, XQUERYVERSION>
 SKIP:
 {
-  < <skip_>>
+  <<skip_>>
 }
 
 TOKEN :
@@ -311,9 +344,7 @@ TOKEN :
 <OCCURRENCEINDICATOR>
 SKIP :
 {
- < NotOccurrenceIndicator : ~
-			["*", "?", "+"]
-		 > { input_stream.backup(1); } : OPERATOR
+ < NotOccurrenceIndicator : ~["*", "?", "+"] > { input_stream.backup(1); } : OPERATOR
 }
 
 <DEFAULT>
@@ -328,7 +359,7 @@ TOKEN :
  < ProcessingInstructionStartForElementContent : "<?" > { pushState(); } : PROCESSING_INSTRUCTION
 }
 
-<PROCESSING_INSTRUCTION>
+<PROCESSING_INSTRUCTION, PROCESSING_INSTRUCTION_CONTENT>
 TOKEN :
 {
  < ProcessingInstructionEnd : "?>" > { popState(); }
@@ -454,37 +485,37 @@ TOKEN :
  < No : "no" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < External : "external" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Or : "or" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < And : "and" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Div : "div" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Idiv : "idiv" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Mod : "mod" > : DEFAULT
@@ -496,7 +527,7 @@ TOKEN :
  < Multiply : "*" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < In : "in" > : DEFAULT
@@ -518,7 +549,7 @@ TOKEN :
  < #LocalPart : <NCName> >
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < VariableIndicator : "$" > : VARNAME
@@ -553,25 +584,25 @@ TOKEN :
  < DeclareConstruction : "declare" (<skip_>)+ "construction" > : OPERATOR
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Satisfies : "satisfies" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Return : "return" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Then : "then" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Else : "else" > : DEFAULT
@@ -619,13 +650,13 @@ TOKEN :
  < DeclareNamespace : "declare" (<skip_>)+ "namespace" > : NAMESPACEDECL
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < To : "to" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Where : "where" > : DEFAULT
@@ -637,55 +668,55 @@ TOKEN :
  < Collation : "collation" > : OPERATOR
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Intersect : "intersect" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Union : "union" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Except : "except" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < As : "as" > : ITEMTYPE
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < AtWord : "at" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Case : "case" > : ITEMTYPE
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Instanceof : "instance" (<skip_>)+ "of" > : ITEMTYPE
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Castable : "castable" (<skip_>)+ "as" > : SINGLETYPE
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < RparAs : ")" (<skip_>)* "as" > : ITEMTYPE
@@ -881,7 +912,7 @@ TOKEN :
  < SlashSlash : "//" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Equals : "=" > : DEFAULT
@@ -893,97 +924,97 @@ TOKEN :
  < AssignEquals : "=" > : NAMESPACEDECL
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Is : "is" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < NotEquals : "!=" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < LtEquals : "<=" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < LtLt : "<<" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < GtEquals : ">=" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < GtGt : ">>" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < FortranEq : "eq" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < FortranNe : "ne" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < FortranGt : "gt" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < FortranGe : "ge" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < FortranLt : "lt" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < FortranLe : "le" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < ColonEquals : ":=" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Lt : "<" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Gt : ">" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Minus : "-" > : DEFAULT
@@ -1007,7 +1038,7 @@ TOKEN :
  < UnaryPlus : "+" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, OCCURRENCEINDICATOR>
 TOKEN :
 {
  < OccurrenceZeroOrOne : "?" > : OPERATOR
@@ -1025,13 +1056,13 @@ TOKEN :
  < OccurrenceOneOrMore : "+" > : OPERATOR
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Vbar : "|" > : DEFAULT
 }
 
-<DEFAULT>
+<DEFAULT, ITEMTYPE>
 TOKEN :
 {
  < Lpar : "(" > : DEFAULT
@@ -1043,7 +1074,7 @@ TOKEN :
  < At : "@" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Lbrack : "[" > : DEFAULT
@@ -1055,13 +1086,13 @@ TOKEN :
  < Rbrack : "]" > : OPERATOR
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR>
 TOKEN :
 {
  < Rpar : ")" > : OPERATOR
 }
 
-<KINDTEST>
+<KINDTEST, KINDTESTFORPI, CLOSEKINDTEST>
 TOKEN :
 {
  < RparForKindTest : ")" > { popState(); }
@@ -1079,25 +1110,25 @@ TOKEN :
  < Every : "every" (<skip_>)* <VariableIndicator> > : VARNAME
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR>
 TOKEN :
 {
  < ForVariable : "for" (<skip_>)* <VariableIndicator> > : VARNAME
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR>
 TOKEN :
 {
  < LetVariable : "let" (<skip_>)* <VariableIndicator> > : VARNAME
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < CastAs : "cast" (<skip_>)+ "as" > : SINGLETYPE
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < TreatAs : "treat" (<skip_>)+ "as" > : ITEMTYPE
@@ -1234,7 +1265,7 @@ TOKEN :
  < TypeswitchLpar : "typeswitch" (<skip_>)* "(" > : DEFAULT
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < Comma : "," > : DEFAULT
@@ -1246,13 +1277,13 @@ TOKEN :
  < CommaForKindTest : "," > : KINDTEST
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR, XQUERYVERSION, ITEMTYPE>
 TOKEN :
 {
  < SemiColon : ";" > : DEFAULT
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR>
 TOKEN :
 {
  < QuerySeparator : "%%%" > : DEFAULT
@@ -1282,13 +1313,13 @@ TOKEN :
  < DotDot : ".." > : OPERATOR
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < OrderBy : "order" (<skip_>)+ "by" > : DEFAULT
 }
 
-<OPERATOR>
+<OPERATOR, ITEMTYPE>
 TOKEN :
 {
  < OrderByStable : "stable" (<skip_>)+ "order" (<skip_>)+ "by" > : DEFAULT
@@ -1330,7 +1361,7 @@ TOKEN :
  < QNameForSequenceType : (<Prefix> ":")? <LocalPart> > : OCCURRENCEINDICATOR
 }
 
-<SINGLETYPE>
+<SINGLETYPE, ITEMTYPE>
 TOKEN :
 {
  < QNameForAtomicType : (<Prefix> ":")? <LocalPart> > : OPERATOR
@@ -1384,13 +1415,13 @@ TOKEN :
  < CdataSectionEnd : ("]" "]" ">") > { popState(); }
 }
 
-<ELEMENT_CONTENT>
+<ELEMENT_CONTENT, QUOT_ATTRIBUTE_CONTENT, APOS_ATTRIBUTE_CONTENT>
 TOKEN :
 {
  < PredefinedEntityRef : "&" ("lt" | "gt" | "amp" | "quot" | "apos") ";" >
 }
 
-<ELEMENT_CONTENT>
+<ELEMENT_CONTENT, QUOT_ATTRIBUTE_CONTENT, APOS_ATTRIBUTE_CONTENT>
 TOKEN :
 {
  < CharRef : "&#" (<Digits> | ("x" <HexDigits>)) ";" >
@@ -1443,31 +1474,31 @@ TOKEN :
  < ValueIndicator : "=" > : START_TAG
 }
 
-<START_TAG>
+<START_TAG, END_TAG>
 TOKEN :
 {
  < TagQName : <QName> >
 }
 
-<ELEMENT_CONTENT>
+<ELEMENT_CONTENT, QUOT_ATTRIBUTE_CONTENT, APOS_ATTRIBUTE_CONTENT>
 TOKEN :
 {
  < Lbrace : "{" > { pushState(); } : DEFAULT
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR, KINDTEST, CLOSEKINDTEST>
 TOKEN :
 {
  < LbraceExprEnclosure : "{" > { pushState(OPERATOR); } : DEFAULT
 }
 
-<ELEMENT_CONTENT>
+<ELEMENT_CONTENT, QUOT_ATTRIBUTE_CONTENT, APOS_ATTRIBUTE_CONTENT>
 TOKEN :
 {
  < LCurlyBraceEscape : "{{" >
 }
 
-<ELEMENT_CONTENT>
+<ELEMENT_CONTENT, QUOT_ATTRIBUTE_CONTENT, APOS_ATTRIBUTE_CONTENT>
 TOKEN :
 {
  < RCurlyBraceEscape : "}}" >
@@ -1554,7 +1585,7 @@ SPECIAL_TOKEN :
  < #ExtensionContents : (<ExtensionContentChar>)* >
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR, NAMESPACEDECL, NAMESPACEKEYWORD, XMLSPACE_DECL, ITEMTYPE, VARNAME, EXPR_COMMENT>
 SPECIAL_TOKEN :
 {
  < ExtensionStart : "(::" > { pushState(); } : EXT_KEY
@@ -1582,7 +1613,7 @@ SPECIAL_TOKEN :
  < #CommentContents : (<CommentContent>)+  >
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR, NAMESPACEDECL, NAMESPACEKEYWORD, XMLSPACE_DECL, SINGLETYPE, ITEMTYPE, KINDTEST, KINDTESTFORPI, CLOSEKINDTEST, OCCURRENCEINDICATOR, VARNAME, EXPR_COMMENT>
 SPECIAL_TOKEN :
 {
  < CommentStart : "(:" > { pushState(); } : EXPR_COMMENT
@@ -1641,7 +1672,7 @@ TOKEN :
  < #NCName : <Nmstart> (<Nmchar>)* >
 }
 
-<START_TAG>
+<START_TAG, END_TAG>
 TOKEN :
 {
  < S : (<WhitespaceChar>)+  >
@@ -1653,7 +1684,7 @@ TOKEN :
  < SForPI : (<WhitespaceChar>)+  > : PROCESSING_INSTRUCTION_CONTENT
 }
 
-<EXT_CONTENT>
+<EXT_CONTENT, EXT_KEY, EXT_NAME>
 SPECIAL_TOKEN :
 {
  < SForExt : (<WhitespaceChar>)+  >
@@ -1664,7 +1695,7 @@ TOKEN :
  < #Char : ["\t", "\r", "\n", "\u0020" - "\uFFFD"] >
 }
 
-<DEFAULT>
+<DEFAULT, OPERATOR>
 TOKEN :
 {
  < Rbrace : "}" > { popState(); }

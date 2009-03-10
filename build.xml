@@ -106,13 +106,14 @@
 	</target>
 	
 	<target name="generatedsources">
+		<delete dir="src/generated-sources/org/priha/query/aqt/xpath"/>
 		<mkdir dir="src/generated-sources/org/priha/query/aqt/xpath"/>
 		<jjtree target="src/javacc/xpath/XPath.jjt"
 		        outputdirectory="src/generated-sources/org/priha/query/aqt/xpath"
-		        javacchome="${user.home}/Java/javacc-4.1"
+		        javacchome="${user.home}/Java/javacc-3.2"
 		        nodepackage="org.priha.query.aqt.xpath"/>
 		<javacc target="src/generated-sources/org/priha/query/aqt/xpath/XPath.jj"
-				javacchome="${user.home}/Java/javacc-4.1"
+				javacchome="${user.home}/Java/javacc-3.2"
 				outputdirectory="src/generated-sources/org/priha/query/aqt/xpath"/>
 		<!-- We have our own implementation of SimpleNode -->
 		<delete file="src/generated-sources/org/priha/query/aqt/xpath/SimpleNode.java"/>
