@@ -31,6 +31,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         c.setCurrentItem( session.getRootNode() );
         visit( nd, c );
         
+        /*
         System.out.println(nd.dump());
         
         if( c.m_matches.size() == 0 ) System.out.println("No matches");
@@ -39,7 +40,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         {
             System.out.println(ii);
         }
-        
+        */
         return new QueryResultImpl( c.m_matches );
     }
 
@@ -294,7 +295,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
     @Override
     public Object visit( TextsearchQueryNode node, Object data ) throws RepositoryException
     {
-        System.out.println("Searching for "+node.getQuery()+" from path "+node.getRelativePath());
+        // System.out.println("Searching for "+node.getQuery()+" from path "+node.getRelativePath());
         
         QueryCollector c = (QueryCollector) data;
         NodeImpl currNode = c.getCurrentItem();

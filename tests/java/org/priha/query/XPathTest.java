@@ -111,6 +111,26 @@ public class XPathTest extends TestCase
 
         checkMatchedPaths( qr,  "/bookstore", "/bookstore/book", "/bookstore/book2", "/bookstore/funbooks", "/bookstore/funbooks/book");
     }
+
+    public void testQuery32() throws InvalidQueryException, RepositoryException
+    {
+        Query q = m_mgr.createQuery( "//*", Query.XPATH );
+        
+        QueryResult qr = q.execute();
+
+        checkMatchedPaths( qr,  "/bookstore", "/bookstore/book", "/bookstore/book2", "/bookstore/funbooks", "/bookstore/funbooks/book");
+
+        Node nd = m_session.getRootNode().getNode("bookstore/book2");
+        nd.remove();
+        
+        m_session.save();
+        
+        q = m_mgr.createQuery( "//*", Query.XPATH );
+        
+        qr = q.execute();
+
+        checkMatchedPaths( qr,  "/bookstore", "/bookstore/book", "/bookstore/funbooks", "/bookstore/funbooks/book");        
+    }
     
     public void testQuery4() throws InvalidQueryException, RepositoryException
     {
