@@ -1090,8 +1090,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             throw new InvalidItemStateException("Item has already been removed by another Session "+getPath());
         }
         
-        if( isLockedWithoutToken() )
-            throw new LockException("This item is locked, so you cannot remove it.");
+        if( getParent().isLockedWithoutToken() )
+            throw new LockException("The parent is locked, so you cannot remove it.");
         
         if( getPath().equals("/") || getPath().equals("/jcr:system") ) return; // Refuse to remove
 
