@@ -45,6 +45,18 @@ public class CalendarValueImpl extends ValueImpl implements Value, Serializable
         m_value = c;
     }
 
+    public CalendarValueImpl( Double value ) throws ValueFormatException
+    {
+        this( value.longValue() );
+    }
+    
+    public CalendarValueImpl( Long value ) throws ValueFormatException
+    {
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis( value );
+        m_value = cal;                
+    }
+    
     public CalendarValueImpl(String value) throws ValueFormatException
     {
         Calendar cal = Calendar.getInstance();

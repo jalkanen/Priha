@@ -215,7 +215,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //
             //  Check if parent allows adding this.
             //
-            if( !parent.getDefinition().getDeclaringNodeType().canAddChildNode(getSession().fromQName(absPath.getLastComponent())) )
+            if( !parent.getPrimaryNodeType().canAddChildNode(getSession().fromQName(absPath.getLastComponent())) )
             {
                 throw new ConstraintViolationException("Parent node does not allow adding nodes of name "+absPath.getLastComponent());
             }

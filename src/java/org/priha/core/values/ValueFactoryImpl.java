@@ -32,6 +32,7 @@ import org.priha.util.FileUtil;
 /**
  *  This is a session-specific holder of things.
  */
+// FIXME: This class could stand some refactoring - lots of duplicated code here.
 public class ValueFactoryImpl implements ValueFactory
 {
     private SessionImpl m_session;
@@ -196,6 +197,67 @@ public class ValueFactoryImpl implements ValueFactory
         throw new ValueFormatException("Illegal type "+PropertyType.nameFromValue(type));
     }
 
+    /**
+     *  Returns true, if the given String value can be converted to the given
+     *  type.
+     *  
+     *  @param value
+     *  @param type
+     *  @return
+     */
+    public static boolean canConvert( ValueImpl value, int type )
+    {
+        Value v = null;
+        
+        try
+        {
+            switch( type )
+            {
+                case PropertyType.BOOLEAN:
+                    v = new BooleanValueImpl(value.getString());
+                    break;
+                
+                case PropertyType.DOUBLE:
+                    v = new DoubleValueImpl(value.getString());
+                    break;
+                
+                case PropertyType.LONG:
+                    v = new LongValueImpl(value.getString());
+                    break;
+                
+                case PropertyType.DATE:
+                    switch( value.getType() )
+                    {
+                        case PropertyType.LONG:
+                            v = new CalendarValueImpl(value.getLong());
+                            break;
+                        case PropertyType.DOUBLE:
+                            v = new CalendarValueImpl(value.getDouble());
+                            break;
+                        default:
+                            v = new CalendarValueImpl(value.getString());
+                    }
+                    break;
+                
+                case PropertyType.NAME:
+                case PropertyType.PATH:
+                case PropertyType.REFERENCE:
+                    break;
+                
+                case PropertyType.STRING:
+                    v = new StringValueImpl(value.getString());
+                    break;
+                
+                case PropertyType.BINARY:
+                    v = new StreamValueImpl(value);
+                    break;
+            }
+        }
+        catch( Exception e ) {}
+
+        return v != null;
+    }
+    
     public ValueImpl createValue(String value, int type) throws ValueFormatException
     {
         switch( type )

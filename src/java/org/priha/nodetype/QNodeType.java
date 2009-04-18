@@ -3,6 +3,7 @@ package org.priha.nodetype;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
@@ -11,6 +12,9 @@ import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.namespace.QName;
 
 import org.priha.core.SessionImpl;
+import org.priha.core.values.QValue;
+import org.priha.core.values.ValueFactoryImpl;
+import org.priha.core.values.ValueImpl;
 
 /**
  *  QNodeType provides non-Session -specific things of NodeTypes.
@@ -56,7 +60,7 @@ public class QNodeType
         
         // if( childNodeName.equals( nd.getQName() ) ) return true;
         
-        if( nd.getDefaultPrimaryType() == null ) return false;
+        //if( nd.getDefaultPrimaryType() == null ) return false;
         
         return true;
     }
@@ -92,6 +96,21 @@ public class QNodeType
         if( p == null ) return false;
         
         if( p.isProtected() ) return false;
+        
+        if( p.m_requiredType != PropertyType.UNDEFINED && p.m_requiredType != value.getType() )
+        {
+            // Different types, so let's see if it can be converted.
+            // FIXME: This can be slow with large properties.
+            try
+            {
+                return ValueFactoryImpl.canConvert( (ValueImpl)value, p.m_requiredType );
+            }
+            catch( Exception e ) 
+            {
+                // Obviously not since it can't even be read.
+                return false; 
+            }
+        }
         
         return true;
     }
