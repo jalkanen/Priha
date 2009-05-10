@@ -116,7 +116,6 @@ public class StringValueImpl extends ValueImpl implements Value, Serializable
     @Override
     public String toString()
     {
-        checkValue();
         return m_value;
     }
 }
