@@ -170,7 +170,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         out.flush();
     }
     
-    private static void copyContents(FileReader in, StringWriter out)
+    private static void copyContents(Reader in, Writer out)
         throws IOException
     {
         char[] buf = new char[32768];
@@ -585,7 +585,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private String readContentsAsString( File file )
         throws IOException
     {
-        FileReader in = new FileReader( file );
+        Reader in = new InputStreamReader( new FileInputStream(file), "UTF-8" );
         
         try
         {
