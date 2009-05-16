@@ -199,13 +199,6 @@ public class SessionProvider
         return m_source.listWorkspaces();
     }
 
-    public void move(Path srcpath, Path destpath) throws RepositoryException
-    {
-        m_uuidMap.clear();
-        m_fetchedItems.clear();
-        m_source.move(m_workspace, srcpath, destpath);
-    }
-
     public boolean nodeExists(Path path) throws RepositoryException
     {
         ItemImpl ni = m_changedItems.get( path );
@@ -498,7 +491,8 @@ public class SessionProvider
     }
 
     /**
-     *  A comparator which puts primarytypes first.
+     *  A comparator which puts primarytypes first, and otherwise follows the
+     *  natural Path.toString() ordering.
      */
     private static final class PrimaryTypePreferringComparator implements Comparator<Path>
     {
@@ -525,24 +519,58 @@ public class SessionProvider
 
     /**
      *  Goes directly into the repository, to find whether a Node exists currently.
+     *  It ignores the transient state; so any new node additions or removals are
+     *  ignored.
      *  
-     *  @param path
-     *  @return
-     *  @throws RepositoryException
+     *  @param path The path to check
+     *  @return True, if the backend holds a given Node.
+     *  @throws RepositoryException If something goes wrong.
      */
     public boolean nodeExistsInRepository( Path path ) throws RepositoryException
     {
         return m_source.nodeExists( m_workspace, path );
     }
 
+    /**
+     *  Provides a HashMap which has a maximum size. If the HashMap
+     *  becomes full, it will start expelling the oldest entries.  It can
+     *  be used to create a cache which does not grow bigger than limited.
+     *  
+     *  @param <K> Type of the key.
+     *  @param <V> Type of the value.
+     */
     private static class SizeLimitedHashMap<K,V> extends LinkedHashMap<K,V>
     {
         private static final int MAX_SIZE = 100;
+        private int m_maxSize = MAX_SIZE;
         
+        /**
+         *  Creates a SizeLimitedHashMap for a certain size.
+         *  
+         *  @param maxSize Maximum size.
+         */
+        public SizeLimitedHashMap(int maxSize)
+        {
+            super();
+            m_maxSize = maxSize;
+        }
+        
+        /**
+         *  Creates a SizeLimitedHashMap with the default size {@value SizeLimitedHashMap#MAX_SIZE}.
+         */
+        public SizeLimitedHashMap()
+        {
+            super();
+        }
+        
+        /**
+         *  Returns true, making the underlying implementation remove the eldest item,
+         *  when the hashmap has grown bigger than the specified maximum size.
+         */
         @Override
         protected boolean removeEldestEntry(Map.Entry<K,V> eldest)
         {
-            return size() > MAX_SIZE;
+            return size() > m_maxSize;
         }
     }
 }

@@ -46,8 +46,6 @@ public interface ItemStore
 
     Collection<? extends String> listWorkspaces() throws RepositoryException;
 
-    void move(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException;
-
     boolean nodeExists(WorkspaceImpl m_workspace, Path path) throws RepositoryException;
 
 

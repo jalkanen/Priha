@@ -464,11 +464,6 @@ public class ProviderManager implements ItemStore
         }
     }
 
-    public void move(WorkspaceImpl m_workspace, Path srcpath, Path destpath) throws RepositoryException
-    {
-        
-    }
-
     public boolean nodeExists(WorkspaceImpl ws, Path path) throws ConfigurationException
     {
         ProviderInfo pi = getProviderInfo( ws, path );

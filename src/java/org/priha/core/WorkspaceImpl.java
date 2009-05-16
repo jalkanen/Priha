@@ -99,9 +99,26 @@ public class WorkspaceImpl
         copy( getName(), srcAbsPath, destAbsPath );
     }
 
+    /**
+     *  Throws a LockException if the given absolute path or any of its child nodes
+     *  is locked.
+     */
+    private void checkLock( String abspath ) throws LockException, RepositoryException
+    {
+        LockManager lm = LockManager.getInstance( this );
+        
+        if( lm.findLock( PathFactory.getPath( m_session, abspath ) ) != null )
+            throw new LockException("Destination path "+abspath+" is locked and cannot be modified.");
+        
+    }
+    
     public void copy(String srcWorkspace, String srcAbsPath, String destAbsPath) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         SessionImpl srcSession = getSession().getRepository().login( srcWorkspace ); 
+        
+        // Superuser does not care about locking, so we'll check it separately.
+        
+        checkLock(destAbsPath);
         
         boolean isSuper = m_session.setSuper( true );
         try
@@ -251,9 +268,30 @@ public class WorkspaceImpl
         
     }
 
+    /**
+     *  Implemented simply by starting a new Session, which then performs the copy, 
+     *  and then calling save() on it. 
+     */
+    // TODO: This should really call the relevant methods in the provider which
+    //       would make moves a lot faster.
     public void move(String srcAbsPath, String destAbsPath) throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("Workspace.move()");
+        // Superuser does not care about locking, so we'll check it separately.
+        
+        checkLock(destAbsPath);
+
+        SessionImpl s = m_session.getRepository().superUserLogin( getName() );
+        
+        try
+        {
+            s.move( srcAbsPath, destAbsPath );
+
+            s.save();
+        }
+        finally
+        {
+            s.logout();
+        }
     }
 
     public void restore(Version[] versions, boolean removeExisting) throws ItemExistsException, UnsupportedRepositoryOperationException, VersionException, LockException, InvalidItemStateException, RepositoryException
