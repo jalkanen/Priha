@@ -28,7 +28,6 @@ import javax.jcr.*;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.observation.ObservationManager;
-import javax.jcr.query.QueryManager;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.xml.parsers.ParserConfigurationException;
@@ -45,6 +44,10 @@ import org.priha.xml.XMLImport;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+/**
+ *  Implements a JCR Workspace.  This class mostly functions as a facade for
+ *  ProviderManager, which takes care of the actual repository management.
+ */
 public class WorkspaceImpl
     implements Workspace
 {
@@ -55,6 +58,14 @@ public class WorkspaceImpl
     
     private Logger log = Logger.getLogger(WorkspaceImpl.class.getName());
     
+    /**
+     *  Create a new Workspace.
+     *  
+     *  @param session The SessionImpl to which this Workspace is tied to
+     *  @param name The name of the Workspace
+     *  @param mgr The ProviderManager instance which owns the repository.
+     *  @throws RepositoryException If a NodeTypeManager cannot be instantiated.
+     */
     public WorkspaceImpl( SessionImpl session, String name, ProviderManager mgr )
         throws RepositoryException
     {
@@ -87,6 +98,9 @@ public class WorkspaceImpl
         return pi;
     }
 
+    /**
+     *  Currently unsupported.
+     */
     public void clone(String srcWorkspace, String srcAbsPath, String destAbsPath, boolean removeExisting) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         // TODO Auto-generated method stub
@@ -94,6 +108,9 @@ public class WorkspaceImpl
 
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public void copy(String srcAbsPath, String destAbsPath) throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         copy( getName(), srcAbsPath, destAbsPath );
@@ -112,6 +129,9 @@ public class WorkspaceImpl
         
     }
     
+    /**
+     *  {@inheritDoc}
+     */
     public void copy(String srcWorkspace, String srcAbsPath, String destAbsPath) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         SessionImpl srcSession = getSession().getRepository().login( srcWorkspace ); 
@@ -133,6 +153,21 @@ public class WorkspaceImpl
         }
     }
     
+    /**
+     *  Performs the actual copy.
+     *  
+     *  @param srcSession
+     *  @param srcAbsPath
+     *  @param destAbsPath
+     *  @throws NoSuchWorkspaceException
+     *  @throws ConstraintViolationException
+     *  @throws VersionException
+     *  @throws AccessDeniedException
+     *  @throws PathNotFoundException
+     *  @throws ItemExistsException
+     *  @throws LockException
+     *  @throws RepositoryException
+     */
     public void copy(SessionImpl srcSession, String srcAbsPath, String destAbsPath) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         if( m_session.hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
@@ -206,37 +241,58 @@ public class WorkspaceImpl
         return importer;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public String getName()
     {
         return m_name;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public NamespaceRegistryImpl getNamespaceRegistry() throws RepositoryException
     {
         return RepositoryImpl.getGlobalNamespaceRegistry();
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public QNodeTypeManager.Impl getNodeTypeManager() throws RepositoryException
     {
         return m_nodeTypeManager;
     }
 
+    /**
+     *  Unsupported at the moment.
+     */
     public ObservationManager getObservationManager() throws UnsupportedRepositoryOperationException, RepositoryException
     {
         throw new UnsupportedRepositoryOperationException("Workspace.getObservationManager()");
         // TODO Auto-generated method stub
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public PrihaQueryManager getQueryManager() throws RepositoryException
     {
         return new PrihaQueryManager(getSession());
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public SessionImpl getSession()
     {
         return m_session;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, InvalidSerializedDataException, LockException, AccessDeniedException, RepositoryException
     {
         SessionImpl suSession = m_session.getRepository().superUserLogin( m_name );
@@ -294,6 +350,9 @@ public class WorkspaceImpl
         }
     }
 
+    /**
+     *  Unsupported at the moment.
+     */
     public void restore(Version[] versions, boolean removeExisting) throws ItemExistsException, UnsupportedRepositoryOperationException, VersionException, LockException, InvalidItemStateException, RepositoryException
     {
         // TODO Auto-generated method stub
@@ -301,6 +360,9 @@ public class WorkspaceImpl
 
     }
     
+    /**
+     *  Performs a logout; to be called by SessionImpl only.
+     */
     public void logout()
     {
         m_providerManager.close(this);
