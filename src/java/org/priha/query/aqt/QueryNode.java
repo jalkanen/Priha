@@ -16,6 +16,8 @@
  */
 package org.priha.query.aqt;
 
+import java.util.HashMap;
+
 import javax.jcr.RepositoryException;
 
 /**
@@ -71,6 +73,12 @@ public abstract class QueryNode {
     private final QueryNode parent;
 
     /**
+     *  Stores attributes in the QueryNode if so required.
+     */
+    
+    private HashMap<String,Object> m_attributes = new HashMap<String,Object>();
+    
+    /**
      * Constructs a new <code>QueryNode</code> with a reference to it's parent.
      *
      * @param parent the parent node, or <code>null</code> if this is the root
@@ -91,6 +99,16 @@ public abstract class QueryNode {
         return parent;
     }
 
+    public void setAttribute( String key, Object value )
+    {
+        m_attributes.put(key, value);
+    }
+    
+    public Object getAttribute( String key )
+    {
+        return m_attributes.get(key);
+    }
+    
     /**
      * Dumps this QueryNode and its child nodes to a String.
      * @return the query tree as a String.

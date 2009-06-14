@@ -38,7 +38,7 @@ public class NodeIteratorImpl extends GenericIterator
 
     public NodeImpl nextNode()
     {
-        NodeImpl next = (NodeImpl)next();
+        NodeImpl next = (NodeImpl)super.next();
         return next;
     }
 

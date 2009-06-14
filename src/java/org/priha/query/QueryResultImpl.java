@@ -74,7 +74,8 @@ public class QueryResultImpl implements QueryResult
         public Object next()
         {
             return nextRow();
-        }        
+        }
+
     }
     
     public static class RowImpl implements Row

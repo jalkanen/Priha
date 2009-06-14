@@ -30,7 +30,7 @@ public class TextsearchQueryNode extends QueryNode {
      * The query statement inside the textsearch clause
      */
     private final String query;
-
+    
     /**
      * Limits the scope of this textsearch clause to a node or a property with
      * the given relative path.

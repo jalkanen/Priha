@@ -65,7 +65,7 @@ public class Release
     /**
      *  The current minor revision.
      */
-    public static final int    MINORREVISION = 17;
+    public static final int    MINORREVISION = 18;
 
     /**
      *  The version string of the form version.revision.minorrevision.  At
