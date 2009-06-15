@@ -88,7 +88,8 @@ public class VersionManager
             if( !nd.getSession().hasNode( getVersionStoragePath( null ) ) )
             {
                 // FIXME: A bit too complicated
-                nd.addNode( getVersionStoragePath( null ).toString(RepositoryImpl.getGlobalNamespaceRegistry()) );
+                NodeImpl storage = nd.addNode( getVersionStoragePath( null ).toString(RepositoryImpl.getGlobalNamespaceRegistry()) );
+                storage.getParent().save();
             }
         
             if( nd.hasProperty( JCRConstants.Q_JCR_UUID ) ) 
@@ -139,6 +140,8 @@ public class VersionManager
                                 PropertyType.REFERENCE );
 
                 nd.setProperty( "jcr:isCheckedOut", true );
+                
+                vh.getParent().save();
             }
         }
         finally

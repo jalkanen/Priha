@@ -62,7 +62,20 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
 
     public VersionIterator getAllVersions() throws RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("getAllVersions()");
+        ArrayList<Version> allVersions = new ArrayList<Version>();
+        Version v = getRootVersion();
+        
+        while( v != null )
+        {
+            allVersions.add( v );
+            Version[] succs = v.getSuccessors();
+            
+            if( succs.length == 0 ) break;
+            
+            v = succs[0]; // Priha does not support multiple successors.
+        }
+        
+        return new VersionIteratorImpl(allVersions);
     }
 
     public Version getRootVersion() throws RepositoryException

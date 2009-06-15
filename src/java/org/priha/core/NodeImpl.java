@@ -29,6 +29,7 @@ import javax.jcr.*;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.*;
+import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.xml.namespace.QName;
@@ -1113,6 +1114,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             m_lockManager.removeLock( li );
         
         //
+        //  Remove version history
+        //
+        if( isNodeType( "mix:versionable" ) )
+        {
+            getVersionHistory().remove();
+        }
+        
+        //
         //  Remove properties
         //
         for( PropertyIterator pit = getProperties(); pit.hasNext(); )
@@ -1130,6 +1139,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             nd.remove();
         }
 
+        
         log.finer("Removed "+getPath());
     }
 
@@ -1731,8 +1741,44 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             setProperty( "jcr:baseVersion", v );
             setProperty( "jcr:isCheckedOut", false );
 
+            //
+            //  Store the contents into the frozen node of the Version node. 
+            //
+            NodeImpl fn = v.addNode("jcr:frozenNode","nt:frozenNode");
+
+            for( PropertyIteratorImpl pi = getProperties(); pi.hasNext(); )
+            {
+                PropertyImpl p = pi.nextProperty();
+                
+                if( p.getQName().equals( JCRConstants.Q_JCR_PRIMARYTYPE ) )
+                {
+                    fn.setProperty( "jcr:frozenPrimaryType", p.getValue() );
+                }
+                else if( p.getQName().equals( JCRConstants.Q_JCR_UUID ) )
+                {
+                    fn.setProperty( "jcr:frozenUuid", p.getValue() );
+                }
+                else if( p.getQName().equals( JCRConstants.Q_JCR_MIXINTYPES ) )
+                {
+                    fn.setProperty( "jcr:frozenMixinTypes", p.getValues() );
+                }
+                else if( p.getDefinition().getOnParentVersion() == OnParentVersionAction.COPY )
+                {
+                    // FIXME: SHould probably deal with the others as well.
+                    if( p.getDefinition().isMultiple() )
+                    {
+                        fn.setProperty( p.getName(), p.getValues() );
+                    }
+                    else
+                    {
+                        fn.setProperty( p.getName(), p.getValue() );
+                    }
+                }
+            }
+            
+            vh.save();
             // FIXME: Here.
-        
+            
             return v;
         }
         finally

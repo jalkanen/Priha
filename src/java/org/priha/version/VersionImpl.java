@@ -67,11 +67,18 @@ public class VersionImpl
 
     public Version[] getSuccessors() throws RepositoryException
     {
-        Property p = getProperty("jcr:successors");
+        try
+        {
+            Property p = getProperty("jcr:successors");
         
-        Version[] result = collateVersions(p);
+            Version[] result = collateVersions(p);
         
-        return result;
+            return result;
+        }
+        catch( PathNotFoundException e )
+        {
+            return new Version[0];
+        }
     }
 
     private Version[] collateVersions(Property p) throws ValueFormatException, RepositoryException, ItemNotFoundException
