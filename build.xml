@@ -80,10 +80,14 @@
          - - - - - - - - - - - - - - - - - -->
     <target name="compile">
        <mkdir dir="build"/>
-       <javac srcdir="src/java"
-         destdir="build"
-         target="1.5"
-         debug="off">
+       
+       <javac destdir="build"
+              target="1.5"
+              debug="off">
+       	  <src>
+       	     <dirset dir="src/java"/>
+       	     <dirset dir="src/generated-sources"/>
+       	  </src>
           <classpath>
              <fileset dir="lib">
                 <include name="*.jar"/>
