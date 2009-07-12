@@ -17,7 +17,16 @@
  */
 package org.priha.core;
 
-import static org.priha.core.JCRConstants.*;
+import static org.priha.core.JCRConstants.JCR_UUID;
+import static org.priha.core.JCRConstants.Q_JCR_BASEVERSION;
+import static org.priha.core.JCRConstants.Q_JCR_CREATED;
+import static org.priha.core.JCRConstants.Q_JCR_ISCHECKEDOUT;
+import static org.priha.core.JCRConstants.Q_JCR_MIXINTYPES;
+import static org.priha.core.JCRConstants.Q_JCR_PRIMARYTYPE;
+import static org.priha.core.JCRConstants.Q_JCR_UUID;
+import static org.priha.core.JCRConstants.Q_MIX_VERSIONABLE;
+import static org.priha.core.JCRConstants.Q_NT_BASE;
+import static org.priha.core.JCRConstants.Q_NT_UNSTRUCTURED;
 
 import java.io.InputStream;
 import java.util.*;
@@ -28,7 +37,10 @@ import java.util.regex.Pattern;
 import javax.jcr.*;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
-import javax.jcr.nodetype.*;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
@@ -46,8 +58,6 @@ import org.priha.util.*;
 import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
 import org.priha.version.VersionManager;
-
-import sun.security.x509.IssuerAlternativeNameExtension;
 
 public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 {
