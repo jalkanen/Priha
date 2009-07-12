@@ -47,7 +47,9 @@
         <jar destfile="build/priha-${version}.jar">
            <fileset dir="build">
               <include name="org/priha/**"/>
-              <exclude name="**/*Test.class"/>
+              <exclude name="**/*.jj"/>
+	          <exclude name="**/*Test.class"/>
+              <exclude name="**/*Tests.class"/>
            </fileset>
          <!--   
            <fileset dir="src/java">
@@ -167,5 +169,16 @@
            </fileset>
            <report format="noframes" todir="/tmp/reports" />
         </junitreport>   
-    </target>   
+    </target>  
+	
+	<target name="dist" depends="jar,javadoc">
+        <java classpath="build" outputproperty="version" classname="org.priha.Release" 
+              args="-versiononly">
+        </java>   
+
+		<zip zipfile="build/priha-${version}.zip">
+			<zipfileset dir="build" includes="*.jar" prefix="priha-${version}"/>
+			<zipfileset dir="." includes="ChangeLog README doc/**" prefix="priha-${version}"/>
+		</zip>
+	</target>
 </project>
