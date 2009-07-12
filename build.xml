@@ -138,6 +138,9 @@
           <packageset dir="src/java">
             <include name="org/priha/**" />
           </packageset>
+        <packageset dir="src/generated-sources">
+          <include name="org/priha/**" />
+        </packageset>
           <classpath>
              <fileset dir="lib">
                <include name="*.jar"/>  
