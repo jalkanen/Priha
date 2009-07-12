@@ -17,7 +17,10 @@
  */
 package org.priha.core.values;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
@@ -50,6 +53,22 @@ public class BooleanValueImpl extends ValueImpl implements Value, Serializable
         checkValue();
 
         return m_value;
+    }
+    
+    @Override
+    public InputStream getStream() throws RepositoryException
+    {
+        checkStream();
+        
+        try
+        {
+            return new ByteArrayInputStream( m_value.toString().getBytes("UTF-8") );
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new RepositoryException("Yeah right, you don't have UTF-8.  Your platform is b0rked.");
+        }
+
     }
     
     @Override

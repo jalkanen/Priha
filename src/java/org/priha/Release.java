@@ -65,7 +65,7 @@ public class Release
     /**
      *  The current minor revision.
      */
-    public static final int    MINORREVISION = 19;
+    public static final int    MINORREVISION = 20;
 
     /**
      *  The version string of the form version.revision.minorrevision.  At
@@ -86,7 +86,7 @@ public class Release
         Repository.SPEC_VERSION_DESC,             "1.0",
         Repository.REP_NAME_DESC,                 APPNAME,
         Repository.REP_VENDOR_DESC,               "Janne Jalkanen",
-        Repository.REP_VENDOR_URL_DESC,           "http://www.ecyrd.com/",
+        Repository.REP_VENDOR_URL_DESC,           "http://www.priha.org/",
         Repository.REP_VERSION_DESC,              VERSTR,
         Repository.LEVEL_1_SUPPORTED,             STR_TRUE,
         Repository.LEVEL_2_SUPPORTED,             STR_TRUE,

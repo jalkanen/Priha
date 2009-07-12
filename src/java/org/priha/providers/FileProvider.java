@@ -100,6 +100,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return mangleName(p);
     }
 
+    /**
+     *  Create a valid filename based on the QName and a suffix.
+     *  
+     *  @param name
+     *  @param suffix
+     *  @return
+     */
     private String makeFilename( QName name, String suffix )
     {
         String filename;
@@ -152,38 +159,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         return nodeDir;
     }
-    
-    /**
-     *  Just copies all characters from <i>in</i> to <i>out</i>.
-     */
-    private static void copyContents( InputStream in, OutputStream out )
-        throws IOException
-    {
-        byte[] buf = new byte[32768];
-        int bytesRead = 0;
-
-        while ((bytesRead = in.read(buf)) > 0) 
-        {
-            out.write(buf, 0, bytesRead);
-        }
-
-        out.flush();
-    }
-    
-    private static void copyContents(Reader in, Writer out)
-        throws IOException
-    {
-        char[] buf = new char[32768];
-        int bytesRead = 0;
-
-        while ((bytesRead = in.read(buf)) > 0) 
-        {
-            out.write(buf, 0, bytesRead);
-        }
-
-        out.flush();
-    }
-
     
     public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
     {
@@ -581,25 +556,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             m_uuids.setObject( property.getString(), property.getInternalPath().getParentPath() );
         }
     }
-
-    private String readContentsAsString( File file )
-        throws IOException
-    {
-        Reader in = new InputStreamReader( new FileInputStream(file), "UTF-8" );
-        
-        try
-        {
-            StringWriter out = new StringWriter();
-            copyContents( in, out );  
-        
-            return out.toString();
-        }
-        finally
-        {
-            in.close();
-        }
-    }
-    
     private ValueImpl prepareValue( WorkspaceImpl ws, File propFile, String propType )
         throws IOException, RepositoryException
     {
@@ -731,8 +687,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
         File nodeFile = getNodeDir( ws, path );
 
-        log.fine("Deleting path and all subdirectories: "+path);
-        
         if( nodeFile != null )
         {
             if( nodeFile.exists() )
@@ -754,57 +708,107 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 // Must be a property
 
                 File infoFile = new File( nodeFile.getParentFile(), makeFilename(path.getLastComponent(),".info") );
-                File dataFile = new File( nodeFile.getParentFile(), makeFilename(path.getLastComponent(),".data") );
 
-                //
-                //  Clean away references, as this one is obviously no longer referencing anyone.
-                //
-                Properties prop = new Properties();
+                DataContent dc = new DataContent( path, nodeFile.getParentFile(), path.getLastComponent() );
+                
                 try
                 {
-                    prop.load( new FileInputStream(infoFile) );
+                    dc.iterate( new DataVisitor(){
+                        public void visit(Path p, Properties props, File dataFile) throws IOException
+                        {
+                            int type = PropertyType.valueFromName( props.getProperty( PROP_TYPE ) );
+                        
+                            if( type == PropertyType.REFERENCE )
+                            {
+                                String uuid = readContentsAsString( dataFile );
+                                System.out.println("Removing refs "+uuid);
+                                cleanRefMapping(p,uuid);
+                            }
+                        
+                            if( p.getLastComponent().equals( Q_JCR_UUID ) )
+                            {
+                                try
+                                {
+                                    String uuid = readContentsAsString( dataFile );
+                                    
+                                    System.out.println("Removing UUID "+uuid);
+                                    cleanUuidMapping( uuid );
+                                }
+                                catch( IOException e )
+                                {
+                                    // Fail quietly; it might be that the UUID file does not exist for some reason.
+                                }  
+                            }
+                        
+                            System.out.println("Deleting datafile "+dataFile.getAbsolutePath());
+                            dataFile.delete();
+                        }
+                    } );
                     
-                    int type = PropertyType.valueFromName( prop.getProperty( PROP_TYPE ) );
-                    
-                    if( type == PropertyType.REFERENCE )
-                    {
-                        String uuid = readContentsAsString( dataFile );
-                        cleanRefMapping(path,uuid);
-                    }
+                    infoFile.delete();
                 }
-                catch( FileNotFoundException e1 )
+                catch( Exception ex )
                 {
-                    // We're deleting, so it does not matter at all if we can't find this stuff.
+                    log.warning( "Oh noes, removal failed! "+ex.getMessage() );
                 }
-                catch( IOException e1 )
-                {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
-
-                //
-                //  UUID management.
-                //
-                if( path.getLastComponent().equals( Q_JCR_UUID ) )
-                {
-                    try
-                    {
-                        String uuid = readContentsAsString( dataFile );
-                        cleanUuidMapping( uuid );
-                    }
-                    catch( IOException e )
-                    {
-                        // Fail quietly; it might be that the UUID file does not exist for some reason.
-                    }
-                }
-                
-                infoFile.delete();
-                dataFile.delete();
             }
         }
 
     }
 
+    private interface DataVisitor
+    {
+        public void visit(Path path, Properties properties, File dataFile) throws IOException;
+    }
+    
+    private class DataContent
+    {
+        private Path m_path;
+        private File m_dir;
+        private QName m_basename;
+        
+        public DataContent(Path path, File dir, QName basename )
+        {
+            m_path = path;
+            m_dir = dir;
+            m_basename = basename;
+        }
+        
+        /**
+         *  Visits over each property value file in this content.
+         *  
+         *  @param visitor
+         *  @throws PathNotFoundException
+         *  @throws IOException
+         */
+        public void iterate( DataVisitor visitor ) throws PathNotFoundException, IOException
+        {
+            Properties props = getPropertyInfo( m_dir, m_basename );
+            
+            // String propType = props.getProperty(PROP_TYPE);
+            Boolean isMultiple = new Boolean(props.getProperty(PROP_MULTIPLE));
+            
+            if( isMultiple )
+            {
+                int items = Integer.parseInt( props.getProperty( PROP_NUM_PROPERTIES ) );
+                
+                for( int i = 0; i < items; i++ )
+                {
+                    File df = new File( m_dir, makeFilename(m_basename,"."+i+".data") );
+
+                    visitor.visit( m_path, props, df );
+                }
+            }
+            else
+            {
+                File df = new File( m_dir, makeFilename(m_basename, ".data") );
+                
+                visitor.visit( m_path, props, df );
+            }
+   
+        }
+    }
+    
     /**
      *  The UUID in question is removed, so we'll clear it now.
      *  
@@ -815,17 +819,20 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         m_uuids.setObject( uuid, null );
     }
 
-
     private void cleanRefMapping( Path path, String uuid ) throws IOException
     {
         Path[] refs = m_references.getObject( uuid );
             
+        System.out.println("Removing "+path+" ==> "+uuid );
+        
         ArrayList<Path> newrefs = new ArrayList<Path>();
         
         if(refs == null) 
         {
+            /*
             refs = new Path[1];
             refs[0] = path;
+            */
         }
         else
         {
@@ -838,7 +845,10 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
         }
         
-        m_references.setObject( uuid, newrefs.toArray( new Path[newrefs.size()] ) );
+        m_references.setObject( uuid, 
+                                newrefs.size() > 0 ? 
+                                    newrefs.toArray( new Path[newrefs.size()] ) :
+                                        null );
     }
 
     private void saveRefShortcut( Path path, ValueImpl v ) throws ValueFormatException, IllegalStateException, RepositoryException, IOException
@@ -1055,6 +1065,59 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
     }
 
+    
+    /**
+     *  Just copies all characters from <i>in</i> to <i>out</i>.
+     */
+    private static void copyContents( InputStream in, OutputStream out )
+        throws IOException
+    {
+        byte[] buf = new byte[32768];
+        int bytesRead = 0;
+
+        while ((bytesRead = in.read(buf)) > 0) 
+        {
+            out.write(buf, 0, bytesRead);
+        }
+
+        out.flush();
+    }
+    
+    private static void copyContents(Reader in, Writer out)
+        throws IOException
+    {
+        char[] buf = new char[32768];
+        int bytesRead = 0;
+
+        while ((bytesRead = in.read(buf)) > 0) 
+        {
+            out.write(buf, 0, bytesRead);
+        }
+
+        out.flush();
+    }
+
+
+    private String readContentsAsString( File file )
+        throws IOException
+    {
+        Reader in = new InputStreamReader( new FileInputStream(file), "UTF-8" );
+        
+        try
+        {
+            StringWriter out = new StringWriter();
+            copyContents( in, out );  
+        
+            return out.toString();
+        }
+        finally
+        {
+            in.close();
+        }
+    }
+    
+
+
     /*---------------------------------------------------------------------------*/
     
     /**
@@ -1070,6 +1133,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         private String           m_name;
         private Map<String,T>    m_map;
+        private boolean          m_changed = false;
         
         public UUIDObjectStore( String name )
         {
@@ -1099,6 +1163,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             {
                 m_map.remove( uuid );
             }
+            
+            m_changed = true;
         }
         
         @SuppressWarnings("unchecked")
@@ -1170,6 +1236,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         {
             if( m_map == null ) unserialize();
             
+            if( !m_changed ) return;
+            
             File objFile = new File(m_root, m_name+".01");
             
             ObjectOutputStream out = null ;
@@ -1191,6 +1259,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 if( dest.exists() ) dest.delete();
                 
                 objFile.renameTo( dest );
+                
+                m_changed = false;
             }
             catch( IOException ex )
             {

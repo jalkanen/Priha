@@ -32,6 +32,11 @@ import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
 import org.priha.util.Path;
 
+/**
+ *  Implements a JCR Version.  The JCR specification is slightly ambiguous on
+ *  whether a Version with no predecessors/successors should return an empty
+ *  array, but we will return an empty array if no such beast exists.
+ */
 public class VersionImpl
     extends NodeImpl
     implements Version
@@ -46,11 +51,17 @@ public class VersionImpl
         super( session, path, primaryType, nDef, initDefaults );
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public VersionHistory getContainingHistory() throws RepositoryException
     {
         return (VersionHistory)getParent();
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public Calendar getCreated() throws RepositoryException
     {
         Property p = getProperty("jcr:created");
@@ -58,13 +69,28 @@ public class VersionImpl
         return p.getDate();
     }
 
+    /**
+     *  Priha returns a valid array unless there was something weird
+     *  going on. If there are no predecessors, an empty array is returned.
+     */
     public Version[] getPredecessors() throws RepositoryException
     {
-        Property p = getProperty("jcr:predecessors");
+        try
+        {
+            Property p = getProperty("jcr:predecessors");
         
-        return collateVersions( p );
+            return collateVersions( p );
+        }
+        catch( PathNotFoundException e )
+        {
+            return new Version[0];
+        }
     }
 
+    /**
+     *  Priha returns a valid array unless there was something weird
+     *  going on. If there are no successors, an empty array is returned.
+     */
     public Version[] getSuccessors() throws RepositoryException
     {
         try
@@ -81,7 +107,17 @@ public class VersionImpl
         }
     }
 
-    private Version[] collateVersions(Property p) throws ValueFormatException, RepositoryException, ItemNotFoundException
+    /**
+     *  Creates a Version array based on the UUIDs stored in the Property.
+     *  
+     *  @param p Multi-valued property to iterate over. Must contain UUIDs.
+     *  @return An array of Versions.
+     *  @throws ValueFormatException If the contents of p are not UUIDs.
+     *  @throws RepositoryException If something goes wrong
+     *  @throws ItemNotFoundException If an Version object based on the UUID cannot be found.
+     */
+    private Version[] collateVersions(Property p) 
+        throws ValueFormatException, RepositoryException, ItemNotFoundException
     {
         Value[] vals = p.getValues();
         

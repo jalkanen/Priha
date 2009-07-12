@@ -18,6 +18,7 @@
 package org.priha.version;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.jcr.*;
 import javax.jcr.lock.LockException;
@@ -163,6 +164,39 @@ public class VersionHistoryImpl extends NodeImpl implements VersionHistory
                                               RepositoryException
     {
         throw new UnsupportedRepositoryOperationException("removeVersion(String)");
+    }
+
+
+    @Override
+    public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
+    {
+        System.out.println("VersionHistory.remove("+getPath()+")");
+        // First, we'll remove all the children
+        
+        List<Version> toberemoved = new ArrayList<Version>();
+        
+        VersionIterator i = getAllVersions();
+        
+        while( i.hasNext() )
+        {
+            Version v = i.nextVersion();
+            
+            toberemoved.add( v );
+        }
+        
+        for( Version v : toberemoved ) 
+        {
+            System.out.println("  Removing version "+v.getName());
+            try
+            {
+                v.remove();
+            }
+            catch(Exception ex) { ex.printStackTrace(); }
+        }
+        
+        System.out.println("Remove version history "+this);
+        // Then we remove the Node itself.
+        super.remove();
     }
 
     public void removeVersionLabel(String arg0) throws VersionException, RepositoryException

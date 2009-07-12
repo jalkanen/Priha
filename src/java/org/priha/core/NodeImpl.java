@@ -47,8 +47,13 @@ import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
 import org.priha.version.VersionManager;
 
+import sun.security.x509.IssuerAlternativeNameExtension;
+
 public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 {
+    private static final String JCR_PREDECESSORS = "jcr:predecessors";
+    private static final String JCR_SUCCESSORS = "jcr:successors";
+
     private QNodeDefinition      m_definition;
     
     private QNodeType            m_primaryType;
@@ -1091,19 +1096,22 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             throw new InvalidItemStateException("Item has already been removed by another Session "+getPath());
         }
         
-        if( getParent().isLockedWithoutToken() )
-            throw new LockException("The parent is locked, so you cannot remove it.");
-        
         if( getPath().equals("/") || getPath().equals("/jcr:system") ) return; // Refuse to remove
 
         NodeType parentType = getParent().getPrimaryNodeType();
-        
-        if( !parentType.canRemoveItem(getName()) &&
-            getParent().getState() != ItemState.REMOVED )
+    
+        if( !getSession().isSuper() )
         {
-            throw new ConstraintViolationException("Attempted to delete a mandatory child node:"+getInternalPath());
+            if( getParent().isLockedWithoutToken() )
+                throw new LockException("The parent is locked, so you cannot remove it.");
+        
+            if( !parentType.canRemoveItem(getName()) &&
+                getParent().getState() != ItemState.REMOVED )
+            {
+                throw new ConstraintViolationException("Attempted to delete a mandatory child node:"+getInternalPath());
+            }
         }
-
+        
         m_session.remove( this );
         markModified(true);
         m_state = ItemState.REMOVED;
@@ -1118,7 +1126,19 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //
         if( isNodeType( "mix:versionable" ) )
         {
-            getVersionHistory().remove();
+            //
+            //  Version histories cannot be removed unless you have a
+            //  superuser session.
+            //
+            boolean isSuper = m_session.setSuper(true);
+            try
+            {
+                getVersionHistory().remove();
+            }
+            finally
+            {
+                m_session.setSuper( isSuper );
+            }
         }
         
         //
@@ -1138,7 +1158,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
           
             nd.remove();
         }
-
         
         log.finer("Removed "+getPath());
     }
@@ -1717,25 +1736,25 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             if(!hasProperty("nt:versionHistory"))
                 setProperty( "nt:versionHistory", vh );
         
-            v.setProperty( "jcr:predecessors", getProperty("jcr:predecessors").getValues() );
+            v.setProperty( JCR_PREDECESSORS, getProperty(JCR_PREDECESSORS).getValues() );
             v.addMixin( "mix:referenceable" );
             v.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
             
-            setProperty( "jcr:predecessors", new Value[0], PropertyType.REFERENCE );
+            setProperty( JCR_PREDECESSORS, new Value[0], PropertyType.REFERENCE );
         
-            PropertyImpl preds = v.getProperty("jcr:predecessors");
+            PropertyImpl preds = v.getProperty(JCR_PREDECESSORS);
             for( Value val : preds.getValues() )
             {
                 String uuid = val.getString();
                 Node pred = m_session.getNodeByUUID(uuid);
          
-                Value[] s = pred.getProperty("jcr:successors").getValues();
+                Value[] s = pred.getProperty( JCR_SUCCESSORS ).getValues();
             
                 List<Value> l = new ArrayList<Value>();
                 l.addAll( Arrays.asList(s) );
                 l.add( m_session.getValueFactory().createValue(v) );
 
-                pred.setProperty( "jcr:successors", l.toArray(s) );
+                pred.setProperty( JCR_SUCCESSORS, l.toArray(s) );
             }
         
             setProperty( "jcr:baseVersion", v );
@@ -1803,9 +1822,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //
             //  We don't support multiple predecessors, so this is okay, I think.
             //
-            setProperty( "jcr:predecessors",
+            setProperty( JCR_PREDECESSORS,
                          new ValueImpl[] { getSession().getValueFactory().createValue( getBaseVersion() ) } );
         
+            setProperty( JCR_SUCCESSORS, 
+                         new ValueImpl[0] );
             //
             //  Persist immediately.
             //
