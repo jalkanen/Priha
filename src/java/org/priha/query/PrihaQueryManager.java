@@ -75,7 +75,11 @@ public class PrihaQueryManager implements QueryManager
 
     public Query getQuery(Node node) throws InvalidQueryException, RepositoryException
     {
-        throw new InvalidQueryException("Node not found");
+        if( !node.isNodeType( "nt:query" ) )
+            throw new InvalidQueryException("Node is not of type 'nt:query'");
+        
+        return createQuery( node.getProperty( "jcr:statement" ).getString(),
+                            node.getProperty( "jcr:language" ).getString() );
     }
 
     public String[] getSupportedQueryLanguages() throws RepositoryException

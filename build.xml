@@ -186,6 +186,7 @@
 		<zip zipfile="build/priha-${version}.zip">
 			<zipfileset dir="build" includes="*.jar" prefix="priha-${version}"/>
 			<zipfileset dir="." includes="ChangeLog README doc/**" prefix="priha-${version}"/>
+			<zipfileset dir="lib" includes="jcr-*.jar" prefix="priha-${version}"/>
 		</zip>
 	</target>
 </project>
