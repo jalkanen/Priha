@@ -1749,10 +1749,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             v.setProperty( JCR_PREDECESSORS, getProperty(JCR_PREDECESSORS).getValues() );
             v.addMixin( "mix:referenceable" );
             v.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
+            v.setProperty( JCR_SUCCESSORS, new Value[0], PropertyType.REFERENCE );
             
             setProperty( JCR_PREDECESSORS, new Value[0], PropertyType.REFERENCE );
         
             PropertyImpl preds = v.getProperty(JCR_PREDECESSORS);
+
             for( Value val : preds.getValues() )
             {
                 String uuid = val.getString();
@@ -1760,11 +1762,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
          
                 Value[] s = pred.getProperty( JCR_SUCCESSORS ).getValues();
             
-                List<Value> l = new ArrayList<Value>();
-                l.addAll( Arrays.asList(s) );
-                l.add( m_session.getValueFactory().createValue(v) );
+                List<Value> successorList = new ArrayList<Value>();
+                
+                successorList.addAll( Arrays.asList(s) );
+                successorList.add( m_session.getValueFactory().createValue(v) );
 
-                pred.setProperty( JCR_SUCCESSORS, l.toArray(s) );
+                pred.setProperty( JCR_SUCCESSORS, successorList.toArray(s) );
             }
         
             setProperty( "jcr:baseVersion", v );

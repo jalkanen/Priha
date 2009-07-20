@@ -59,7 +59,7 @@ public class WorkspaceImpl
     private Logger log = Logger.getLogger(WorkspaceImpl.class.getName());
     
     /**
-     *  Create a new Workspace.
+     *  Create a new Workspace instance.
      *  
      *  @param session The SessionImpl to which this Workspace is tied to
      *  @param name The name of the Workspace
@@ -204,14 +204,26 @@ public class WorkspaceImpl
             // "+newDestPath
             // );
             
+            //
+            // The primary type is already set above upon the creation of the Node.
+            //
+            
             if( p.getQName().equals( JCRConstants.Q_JCR_PRIMARYTYPE )) continue;
                 
+            //
+            // Section 7.1.7; the new node must get a new UUID.
+            //
+            
             if( p.getQName().equals( JCRConstants.Q_JCR_UUID) )
             {
                 destnode.setProperty( p.getName(), UUID.randomUUID().toString() );
             }
             else
             {
+                //
+                //  Copy the property
+                //
+                
                 if( p.getDefinition().isMultiple() )
                 {
                     destnode.setProperty( p.getName(), p.getValues() );
@@ -224,6 +236,9 @@ public class WorkspaceImpl
         }
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public String[] getAccessibleWorkspaceNames() throws RepositoryException
     {
         Collection<String> list = m_providerManager.listWorkspaces();
@@ -231,6 +246,9 @@ public class WorkspaceImpl
         return list.toArray(new String[0]);
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     // FIXME: SuperUserSession leaks.
     public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior) throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, AccessDeniedException, RepositoryException
     {
