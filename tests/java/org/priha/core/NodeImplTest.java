@@ -180,4 +180,29 @@ public class NodeImplTest extends TestCase
         
         assertTrue( "Property add didn't reflect up to the changed node", n.isModified() );
     }
+    
+    public void testDeleteAndReplace() throws Exception
+    {
+        Node n = m_session.getRootNode().addNode( "foo" );
+        
+        n.setProperty( "prop1", "testproperty" );
+        
+        m_session.save();
+        
+        assertTrue( "property never appeared", n.hasProperty( "prop1" ) );
+        
+        // Remove
+        Property p = n.getProperty( "prop1" );
+        p.remove();
+        n.save();
+
+        assertFalse( "property still here", n.hasProperty( "prop1" ) );
+        
+        n.setProperty( "prop1", "new value" );
+        
+        n.save();
+        
+        assertTrue( "property disappeared", n.hasProperty( "prop1" ) );
+        assertEquals( "property value", "new value", n.getProperty( "prop1" ).getString());
+    }
 }
