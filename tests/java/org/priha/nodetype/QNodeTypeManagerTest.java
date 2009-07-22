@@ -3,10 +3,11 @@ package org.priha.nodetype;
 import java.io.InputStream;
 import java.util.logging.LogManager;
 
-import javax.jcr.Node;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
+import javax.jcr.*;
+import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.*;
+import javax.jcr.version.OnParentVersionAction;
+import javax.jcr.version.VersionException;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -115,6 +116,24 @@ public class QNodeTypeManagerTest extends TestCase
         assertTrue( m_session.itemExists("/test/jcr:content") );
     }
 
+    public void testUuid() throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException
+    {
+        Node nd = m_session.getRootNode().addNode("test", "nt:unstructured");
+        
+        nd.addMixin( "mix:referenceable" );
+        
+        m_session.save();
+        
+        Property uuid = nd.getProperty( "jcr:uuid" );
+        
+        PropertyDefinition pd = uuid.getDefinition();
+        
+        assertEquals( "parentversion", OnParentVersionAction.INITIALIZE, pd.getOnParentVersion() );
+        assertTrue( "autocreated", pd.isAutoCreated() );
+        assertTrue( "mandatory", pd.isMandatory() );
+        assertFalse( "multiple", pd.isMultiple() );
+    }
+    
     public static Test suite()
     {
         return new TestSuite( QNodeTypeManagerTest.class );
