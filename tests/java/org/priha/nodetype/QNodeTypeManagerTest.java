@@ -134,6 +134,32 @@ public class QNodeTypeManagerTest extends TestCase
         assertFalse( "multiple", pd.isMultiple() );
     }
     
+    public void testUuid2() throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException
+    {
+        Node nd = m_session.getRootNode().addNode("test", "nt:unstructured");
+        
+        nd.addMixin( "mix:referenceable" );
+        
+        m_session.save();
+        
+        nd = (Node) m_session.getItem( "/test" );
+        
+        for( PropertyIterator pi = nd.getProperties(); pi.hasNext(); )
+        {
+            Property p = pi.nextProperty();
+            
+            if( nd.getName().equals("jcr:uuid") )
+            {
+                PropertyDefinition pd = p.getDefinition();
+        
+                assertEquals( "parentversion", OnParentVersionAction.INITIALIZE, pd.getOnParentVersion() );
+                assertTrue( "autocreated", pd.isAutoCreated() );
+                assertTrue( "mandatory", pd.isMandatory() );
+                assertFalse( "multiple", pd.isMultiple() );
+            }
+        }
+    }
+    
     public static Test suite()
     {
         return new TestSuite( QNodeTypeManagerTest.class );
