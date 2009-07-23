@@ -83,7 +83,7 @@
        
        <javac destdir="build"
               target="1.5"
-              debug="off">
+              debug="on">
        	  <src>
        	     <dirset dir="src/java"/>
        	     <dirset dir="src/generated-sources"/>
