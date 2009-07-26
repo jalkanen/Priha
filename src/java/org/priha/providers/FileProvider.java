@@ -721,7 +721,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                             if( type == PropertyType.REFERENCE )
                             {
                                 String uuid = readContentsAsString( dataFile );
-                                System.out.println("Removing refs "+uuid);
+                                //System.out.println("Removing refs "+uuid);
                                 cleanRefMapping(p,uuid);
                             }
                         
@@ -731,7 +731,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                                 {
                                     String uuid = readContentsAsString( dataFile );
                                     
-                                    System.out.println("Removing UUID "+uuid);
+                                    //System.out.println("Removing UUID "+uuid);
                                     cleanUuidMapping( uuid );
                                 }
                                 catch( IOException e )
@@ -740,7 +740,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                                 }  
                             }
                         
-                            System.out.println("Deleting datafile "+dataFile.getAbsolutePath());
+                            //System.out.println("Deleting datafile "+dataFile.getAbsolutePath());
                             dataFile.delete();
                         }
                     } );
@@ -823,7 +823,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         Path[] refs = m_references.getObject( uuid );
             
-        System.out.println("Removing "+path+" ==> "+uuid );
+        //System.out.println("Removing "+path+" ==> "+uuid );
         
         ArrayList<Path> newrefs = new ArrayList<Path>();
         

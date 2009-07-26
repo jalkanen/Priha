@@ -81,7 +81,7 @@ public class PerformanceTest extends TestCase
         
         try
         {
-            Class cc = Class.forName("org.apache.jackrabbit.core.TransientRepository");
+            Class<?> cc = Class.forName("org.apache.jackrabbit.core.TransientRepository");
             Repository rep = (Repository) cc.newInstance();
         
             millionIterationsTest(rep, m_creds, m_iterations);
