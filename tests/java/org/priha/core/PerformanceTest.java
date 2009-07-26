@@ -9,6 +9,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.priha.Release;
 import org.priha.RepositoryManager;
 import org.priha.TestUtil;
 import org.priha.core.RepositoryImpl;
@@ -26,7 +27,7 @@ public class PerformanceTest extends TestCase
     private static int PROPERTYLEN = 16;
     
     private Credentials m_creds = new SimpleCredentials("username","password".toCharArray());
-   
+    
     public void setUp()
     {
         String iters = System.getProperty("perftest.iterations");
@@ -75,18 +76,30 @@ public class PerformanceTest extends TestCase
         millionIterationsTest( rep, m_creds, m_iterations );
     }
     
-    public void testJackrabbit() throws Exception
+    public static Repository getJackrabbitRepository()
     {
-        Perf.setProvider("Jackrabbit");
-        
         try
         {
             Class<?> cc = Class.forName("org.apache.jackrabbit.core.TransientRepository");
-            Repository rep = (Repository) cc.newInstance();
+            return (Repository) cc.newInstance();
+        }
+        catch( Exception e )
+        {
+            return null;
+        }
+    }
+    
+    public void testJackrabbit() throws Exception
+    {
+        Perf.setProvider("Jackrabbit");
+
+        Repository rep = getJackrabbitRepository();
         
+        if( rep != null )
+        {
             millionIterationsTest(rep, m_creds, m_iterations);
         }
-        catch( ClassNotFoundException e )
+        else
         {
             System.out.println("Skipping Jackrabbit comparison tests; classes not found in classpath");
         }
@@ -590,6 +603,12 @@ public class PerformanceTest extends TestCase
         {
             System.out.println("Test results.  The number is operations/seconds - larger means faster.");
             System.out.println("Blob size "+BLOB_SIZE/1024+" kB");
+            System.out.println("Priha version "+Release.VERSTR);
+            
+            Repository jr = getJackrabbitRepository();
+            if( jr != null )
+                System.out.println("Jackrabbit version "+jr.getDescriptor( Repository.REP_VERSION_DESC ));
+            
             ArrayList<String> keys = new ArrayList<String>();
             
             keys.addAll( results.values().iterator().next().keySet() );
