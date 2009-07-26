@@ -41,6 +41,10 @@ import org.priha.util.PathFactory;
 
 /**
  *  A simple file system -based provider.  This is not particularly optimized.
+ *  Stores UUIDs and references as journaling files which are compacted
+ *  at every N writes and on shutdown.  If there is a power outage just
+ *  in the middle of this process, it's possible that the file ends up
+ *  being corrupted.  Currently there is no way to rebuild the UUIDs.
  */
 public class FileProvider implements RepositoryProvider, PerformanceReporter
 {
@@ -57,8 +61,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     
     private Path m_systemPath;
     
-    private UUIDObjectStore<Path[]> m_references = new UUIDObjectStore<Path[]>("references.ser");
-    private UUIDObjectStore<Path>   m_uuids      = new UUIDObjectStore<Path>("uuid.ser");
+    private UUIDObjectStore<Path[]> m_references;
+    private UUIDObjectStore<Path>   m_uuids;
     
     public FileProvider() throws RepositoryException
     {
@@ -294,12 +298,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
         }
         
+        m_references = new UUIDObjectStore<Path[]>("references.ser");
+        m_uuids      = new UUIDObjectStore<Path>("uuid.ser");
     }
 
     public void close(WorkspaceImpl ws)
     {
         m_hitCount[Count.Close.ordinal()]++;
-        // Does nothing, which is fine.
     }
 
     public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
@@ -875,7 +880,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.Stop.ordinal()]++;
 
-        // No need to do anything
+        m_references.shutdown();
+        m_uuids.shutdown();
     }
 /*
     private Path findUUIDFromPath( WorkspaceImpl ws, String uuid, Path path ) throws RepositoryException
@@ -1057,8 +1063,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
     public void storeFinished( WorkspaceImpl ws )
     {
-        m_uuids.serialize();
-        m_references.serialize();
     }
 
     public void storeStarted( WorkspaceImpl ws )
@@ -1134,10 +1138,47 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         private String           m_name;
         private Map<String,T>    m_map;
         private boolean          m_changed = false;
+        private ObjectOutputStream m_journal;
+        private int              m_writeCount;
+        
+        /* After this many writes the store is compacted. */
+        private static final int COMPACT_LIMIT = 100;
         
         public UUIDObjectStore( String name )
         {
             m_name = name;
+            
+            try
+            {
+                m_journal = new ObjectOutputStream(new BufferedOutputStream(new FileOutputStream( new File(m_root, m_name), true )));
+            }
+            catch( FileNotFoundException e )
+            {
+                // FIXME: Should do something sane.
+                e.printStackTrace();
+            }
+            catch( IOException e )
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+        
+        public void shutdown()
+        {
+            try
+            {
+                if( m_journal != null )
+                {
+                    serialize();
+                    m_journal.close();
+                }
+            }
+            catch( IOException e )
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
         
         public String toString()
@@ -1155,53 +1196,88 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         {
             if( m_map == null ) unserialize();
             
-            if( object != null )
+            try
             {
-                m_map.put( uuid, object );
+                if( object != null )
+                {
+                    m_map.put( uuid, object );
+                    writeAddedObject( uuid, object );
+//                    System.out.println("   ADD "+uuid+" = "+object);
+                }
+                else
+                {
+                    m_map.remove( uuid );
+
+                    writeRemovedObject( uuid );
+//                    System.out.println("   REMOVE "+uuid);
+                }
+
+                m_journal.flush();
+                
+                if( ++m_writeCount > COMPACT_LIMIT )
+                {
+                    serialize();
+                    m_writeCount = 0;
+                }
             }
-            else
+            catch( IOException e )
             {
-                m_map.remove( uuid );
+                // FIXME: Should do something sane.
+                e.printStackTrace();
             }
-            
-            m_changed = true;
+        }
+
+        private void writeRemovedObject( String uuid ) throws IOException
+        {
+            m_journal.writeUTF( uuid );
+            m_journal.writeBoolean( false );
+        }
+
+        private void writeAddedObject( String uuid, T object ) throws IOException
+        {
+            m_journal.writeUTF( uuid );
+            m_journal.writeBoolean( true );
+            m_journal.writeObject( object );
         }
         
         @SuppressWarnings("unchecked")
         private void unserialize()
         {
             File objFile = new File(m_root, m_name);
-
+            m_map = new HashMap<String,T>();
+            
+//            System.out.println("------ UNSERIALIZE()");
+            
+            if( !objFile.exists() ) return;
+            
+            long start = System.currentTimeMillis();
+            
             ObjectInputStream in = null;
             try
             {
-                in = new ObjectInputStream( new FileInputStream(objFile) );
+                in = new ObjectInputStream( new BufferedInputStream(new FileInputStream(objFile)) );
                 
-                m_map = (Map<String, T>) in.readObject();
+                while( in.available() > 0 )
+                {
+                    String uuid = in.readUTF();
+                    Boolean addRemove = in.readBoolean();
+                    
+                    if( addRemove )
+                    {
+                        T o = (T) in.readObject();
+//                        System.out.println(" >>> read in "+uuid+" = "+o);
+                        m_map.put( uuid, o );
+                    }
+                    else
+                    {
+//                        System.out.println(" >>> removing "+uuid);
+                        m_map.remove( uuid );
+                    }
+                }
             }
             catch( FileNotFoundException e )
             {
-                // Try to read the tempfile
-                try
-                {
-                    in = new ObjectInputStream( new FileInputStream(new File(m_root, m_name+".01")));
-
-                    m_map = (Map<String, T>) in.readObject();
-                }
-                catch( FileNotFoundException e1 )
-                {
-                    // Is ok.
-                }
-                catch( IOException e1 )
-                {
-                    // TODO Auto-generated catch block
-                    e1.printStackTrace();
-                }
-                catch( ClassNotFoundException e1 )
-                {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+                // Fine, the journal just did not exist.
             }
             catch( IOException e )
             {
@@ -1215,8 +1291,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
             finally
             {
-                if( m_map == null ) m_map = new HashMap<String, T>(); 
-
                 if( in != null ) 
                 {
                     try
@@ -1228,57 +1302,38 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                         e.printStackTrace();
                     }
                 }
+                
+                log.fine( "Unserialized UUID store "+m_name+" in "+(System.currentTimeMillis()-start)+" ms" );
             }
             
         }
         
-        private synchronized void serialize()
+        private synchronized void serialize() throws IOException
         {
-            if( m_map == null ) unserialize();
+//            System.out.println("++++++ COMPACTING...");
+
+            long start = System.currentTimeMillis();
             
-            if( !m_changed ) return;
-            
-            File objFile = new File(m_root, m_name+".01");
-            
-            ObjectOutputStream out = null ;
+            if( m_map == null ) return;
             
             try
             {
-                out = new ObjectOutputStream( new FileOutputStream(objFile) );
-            
-                out.writeObject( m_map );
+                File fout = new File( m_root, m_name );
+
+                m_journal = new ObjectOutputStream( new BufferedOutputStream(new FileOutputStream(fout,false)) );
                 
-                out.close();
-                out = null;
-                
-                //
-                //  Rename the file
-                //
-                File dest = new File(m_root, m_name);
-             
-                if( dest.exists() ) dest.delete();
-                
-                objFile.renameTo( dest );
-                
-                m_changed = false;
-            }
-            catch( IOException ex )
-            {
-                log.warning( ex.getMessage() );
+                for( Map.Entry<String, T> i : m_map.entrySet() )
+                {
+                    writeAddedObject( i.getKey(), i.getValue() );
+                }
             }
             finally
             {
-                if( out != null )
-                {
-                    try
-                    {
-                        out.close();
-                    }
-                    catch( IOException e )
-                    {
-                        e.printStackTrace();
-                    }
-                }
+                m_journal.flush();
+                
+                long stop = System.currentTimeMillis();
+                
+                log.fine("Compacted UUID store "+m_name+" in "+(stop-start)+" ms");
             }
         }
     }

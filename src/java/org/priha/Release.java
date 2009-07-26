@@ -50,7 +50,7 @@ public class Release
     /**
      *  The copyright string.  Value is {@value}.
      */
-    public static final String COPYRIGHT     = "(C) Janne Jalkanen 2007-2008";
+    public static final String COPYRIGHT     = "(C) Janne Jalkanen 2007-2009";
 
     /**
      *  The current major version.
@@ -65,7 +65,7 @@ public class Release
     /**
      *  The current minor revision.
      */
-    public static final int    MINORREVISION = 21;
+    public static final int    MINORREVISION = 22;
 
     /**
      *  The version string of the form version.revision.minorrevision.  At

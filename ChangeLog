@@ -1,5 +1,12 @@
 2009-07-14  Janne Jalkanen <jalkanen@ecyrd.com>
    
+        * 0.1.22
+        
+        * Massively improved FileProvider save speed by implementing
+        journaling for the UUID and Reference storage.
+
+2009-07-14  Janne Jalkanen <jalkanen@ecyrd.com>
+   
         * 0.1.21
 
         * Stored query support added.
