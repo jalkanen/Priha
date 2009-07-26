@@ -372,7 +372,7 @@ public final class Path implements Comparable<Path>, Serializable
     
     public final String toString( NamespaceMapper ns ) throws NamespaceException, RepositoryException
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         
         if( isAbsolute() ) sb.append("/");
         
@@ -517,12 +517,16 @@ public final class Path implements Comparable<Path>, Serializable
     /**
      *  A Path component consists of a QName with an optional index (to support
      *  same name siblings).
+     *  <p>
+     *  This class also stores a rendered version of its own name internally
+     *  for speed purposes.
      */
     public static class Component extends QName implements Serializable
     {
         private static final long serialVersionUID = 8038593715235147911L;
 
         private int m_index = 1;
+        private String m_cachedString;
         
         public Component(String localPart)
         {
@@ -557,13 +561,18 @@ public final class Path implements Comparable<Path>, Serializable
         
         public String toString()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.append(super.toString());
-            if( m_index != 1 )
+            if( m_cachedString == null )
             {
-                sb.append("[").append(m_index).append("]");
+                StringBuilder sb = new StringBuilder();
+                sb.append(super.toString());
+                if( m_index != 1 )
+                {
+                    sb.append("[").append(m_index).append("]");
+                }
+                m_cachedString = sb.toString();
             }
-            return sb.toString();
+            
+            return m_cachedString;
         }
     }
 }
