@@ -1275,6 +1275,10 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                     }
                 }
             }
+            catch( EOFException e )
+            {
+                // S'okay; it's just empty when we open it.
+            }
             catch( FileNotFoundException e )
             {
                 // Fine, the journal just did not exist.
