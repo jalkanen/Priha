@@ -154,7 +154,7 @@ public class WorkspaceImpl
     }
     
     /**
-     *  Performs the actual copy.
+     *  Performs the actual copy, but does not save.
      *  
      *  @param srcSession
      *  @param srcAbsPath
@@ -189,7 +189,7 @@ public class WorkspaceImpl
         {
             Node child = ni.nextNode();
 
-            String relPath = srcnode.getName();
+            String relPath = child.getName();
 
             copy( srcSession, child.getPath(), destAbsPath + "/" + relPath );
         }
