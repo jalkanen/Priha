@@ -437,7 +437,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         if( wsnames.indexOf(workspaceName) == -1 )
             throw new NoSuchWorkspaceException(workspaceName);
         
-        log.info("Workspace "+workspaceName+" has been opened.");
+        log.fine("Workspace "+workspaceName+" has been opened.");
     }
 
     public void close(WorkspaceImpl ws)
