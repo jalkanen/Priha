@@ -203,7 +203,7 @@ public abstract class ItemImpl implements Item
 
     public String toString()
     {
-        return "Node["+m_path.toString()+"]";
+        return "Node["+m_session.getWorkspace().getName()+":"+m_path.toString()+"]";
     }
 
     /** Marks this Node + its parent modified. 
