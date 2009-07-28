@@ -382,7 +382,8 @@ public class SessionImpl implements Session, NamespaceMapper
             QNodeDefinition nd = rootType.findNodeDefinition( QName.valueOf("*") );
             
             ni = new NodeImpl( this, "/", rootType, nd, true );
-
+            ni.addMixin( "mix:referenceable" ); // Make referenceable.
+            
             //m_provider.addNode( ni );
             ni.markModified(true);
             
