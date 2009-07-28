@@ -62,7 +62,7 @@ import org.priha.version.VersionManager;
 public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 {
     private static final String JCR_PREDECESSORS = "jcr:predecessors";
-    private static final String JCR_SUCCESSORS = "jcr:successors";
+    private static final String JCR_SUCCESSORS   = "jcr:successors";
 
     private QNodeDefinition      m_definition;
     
@@ -70,6 +70,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     static Logger log = Logger.getLogger( NodeImpl.class.getName() );
 
+    /** 
+     *  Do not change.  This is the fixed UUID for the root node for each workspace. If you
+     *  change this, horrible things may happen.
+     *  
+     *  The UUID is a standard Type 3 UUID, generated from the byte array [ 0x00 ].
+     */
+    private static final UUID ROOT_UUID      = UUID.nameUUIDFromBytes( new byte[] { 0x00 } );
+    
     /**
      *  Creates a clone of the NodeImpl, and places it to the given Session
      *  
@@ -525,7 +533,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
                 if( Q_JCR_UUID.equals(pi.getQName()) )
                 {
-                    pi.loadValue( vfi.createValue( UUID.randomUUID().toString() ) );
+                    UUID uuid;
+                    if( m_path.isRoot() )
+                        uuid = ROOT_UUID;
+                    else
+                        uuid = UUID.randomUUID();
+                    
+                    pi.loadValue( vfi.createValue( uuid.toString() ) );
                 }
                 else if( Q_JCR_CREATED.equals(pi.getQName() ))
                 {
@@ -1049,9 +1063,33 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                                    InvalidItemStateException,
                                                    RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        if( m_session.hasPendingChanges() )
+            throw new InvalidItemStateException("A Session must not have unsaved changes prior to calling update()");
+        
+        SessionImpl srcSession = m_session.getRepository().login(srcWorkspaceName);
+        
+        // FIXME: This should really reuse the Session somehow.  Now we do two logins, one here
+        //        and one in getCorrespondingNodePath()
+        try
+        {
+            String correspondingPath = getCorrespondingNodePath( srcWorkspaceName );
 
+            String destPath = getParent().getPath()+"/"+getName();
+            
+            remove();
+            m_session.save();
+            
+            m_session.getWorkspace().copy( srcSession, correspondingPath, destPath );
+            m_session.save();
+        }
+        catch( ItemNotFoundException e )
+        {
+            // Return quietly; nothing happens in this case.
+        }
+        finally
+        {
+            srcSession.logout();
+        }
     }
 
     public boolean isNode()

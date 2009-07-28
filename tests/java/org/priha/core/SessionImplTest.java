@@ -33,6 +33,18 @@ public class SessionImplTest extends TestCase
         TestUtil.emptyRepo(m_repository);
     }
 
+    /**
+     *  Makes sure nobody tampers with root node UUID.
+     */
+    public void testRootUUID() throws Exception
+    {
+        Node nd = m_session.getRootNode();
+        
+        assertTrue( "uuid missing", nd.hasProperty( "jcr:uuid" ) );
+        
+        assertEquals( "uuid value", "93b885ad-fe0d-3089-8df6-34904fd59f71", nd.getUUID() );
+    }
+    
     public void testExportSystemView1() throws Exception
     {
         Node nd = m_session.getRootNode().addNode("foo");
