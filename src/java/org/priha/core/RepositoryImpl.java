@@ -140,12 +140,17 @@ public class RepositoryImpl implements Repository
         return keys;
     }
 
+    private String getDefaultWorkspace()
+    {
+        return m_providerManager.getDefaultWorkspace();
+    }
+    
     public SessionImpl login(Credentials credentials, String workspaceName)
         throws LoginException,
                NoSuchWorkspaceException,
                RepositoryException
     {
-        if( workspaceName == null ) workspaceName = DEFAULT_WORKSPACE;
+        if( workspaceName == null ) workspaceName = getDefaultWorkspace();
 
         m_providerManager.open( credentials, workspaceName );
 
@@ -232,6 +237,7 @@ public class RepositoryImpl implements Repository
         @Override
         public void run()
         {
+            log.fine( "Running shutdown process..." );
             m_providerManager.stop();
         }
         

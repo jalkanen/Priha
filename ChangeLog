@@ -1,4 +1,12 @@
-2009-07-14  Janne Jalkanen <jalkanen@ecyrd.com>
+2009-07-28  Janne Jalkanen <jalkanen@ecyrd.com>
+   
+        * 0.1.23
+        
+        * FileProvider now properly stores UUIDs per workspace,
+        as opposed to being global (oops - but the JCR spec *is* confusing
+        in this regard; Univerally Unique IDs are not actually unique...)
+        
+2009-07-27  Janne Jalkanen <jalkanen@ecyrd.com>
    
         * 0.1.22
         

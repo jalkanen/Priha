@@ -44,12 +44,13 @@ workspaces by declaring them in the property file as well, by using the
 "test", add the following:
 
    priha.provider.myProvider.workspaces = default test
-   
-Note that in the absences of this declaration, there is always a workspace
-called "default".  When the user calls Session.login() with no parameters,
-the "default" workspace is used.  However, if you do define the workspaces
-in your config, then you must remember to declare the default workspace as
-well (or else Session.login() will fail to work).
+
+If you do not define any workspaces, a workspace called "default" will be
+created.  However, if you *do* create workspaces, the first one defined
+will become the default workspace - that is, that's the one returned when
+you do Repository.login() with no arguments.  In general it's a good
+practice to explicitly define to which workspace you want to connect to
+with Repository.login().
 
 Also, you may only define a workspace once - these are unique across a set
 of providers.
@@ -83,6 +84,11 @@ Then we'll set up the provider list:
 
    priha.providers = myOtherProvider myProvider
 
+
+The default workspace is defined as the first workspace of the first provider
+of the list.
+
+The workspace names must be unique across all providers.
 
 
 Setting up caching

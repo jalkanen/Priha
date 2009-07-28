@@ -227,6 +227,8 @@ public class RepositoryTest extends TestCase
         Session s = r.login();
         Session s2 = r.login("testworkspace");
         
+        assertFalse( "Must end up in different workspaces", s.getWorkspace().getName().equals(s2.getWorkspace().getName()) );
+        
         Node nd = s2.getRootNode().addNode("largefiles");
         nd = nd.addNode("test");
         nd.setProperty("reallybig", 42);
@@ -237,11 +239,11 @@ public class RepositoryTest extends TestCase
         s.save();
         s2.save();
         
-        File f = new File("/tmp/priha/fileprovider/workspaces/default/small/reallysmall.info");
+        File f = new File("/tmp/priha-multi/fileprovider/workspaces/default/small/reallysmall.info");
         
         assertTrue("small", f.exists() );
         
-        File f2 = new File("/tmp/priha/fileprovider2/workspaces/testworkspace/largefiles/test/reallybig.info");
+        File f2 = new File("/tmp/priha-multi/fileprovider2/workspaces/testworkspace/largefiles/test/reallybig.info");
         
         assertTrue("big", f2.exists() );
         

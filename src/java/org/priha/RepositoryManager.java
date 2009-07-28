@@ -47,6 +47,9 @@ import org.priha.util.FileUtil;
  *     Property newp = (Property)session.getItem("/myfirstnode/myfirstproperty");
  *     System.out.println( newp.getString() );
  *  </pre>
+ *  <p>The workspace you get with Repository.login() depends on the configuration.
+ *  It is always the <i>first</i> workspace defined for the first provider that
+ *  is on the "priha.providers" line.
  *  
  */
 // TODO: Add JNDI configuration somewhere here

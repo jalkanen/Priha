@@ -61,9 +61,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     
     private Path m_systemPath;
     
-    private UUIDObjectStore<Path[]> m_references;
-    private UUIDObjectStore<Path>   m_uuids;
-    
+    private Map<String,UUIDObjectStore<Path[]>> m_references = new HashMap<String, UUIDObjectStore<Path[]>>();
+    private Map<String,UUIDObjectStore<Path>>   m_uuids      = new HashMap<String, UUIDObjectStore<Path>>();
+        
     public FileProvider() throws RepositoryException
     {
         resetCounts();
@@ -242,11 +242,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             if( f.isDirectory() )
             {
                 list.add( f.getName() );
-                if( f.getName().equals(RepositoryImpl.DEFAULT_WORKSPACE) ) m_hasdefault = true;
+                //if( f.getName().equals(RepositoryImpl.DEFAULT_WORKSPACE) ) m_hasdefault = true;
             }
         }
         
-        if( !m_hasdefault ) list.add( RepositoryImpl.DEFAULT_WORKSPACE );
+        //if( !m_hasdefault ) list.add( RepositoryImpl.DEFAULT_WORKSPACE );
         return list;
     }
 
@@ -296,15 +296,35 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 wsroot.mkdirs();
                 log.finer("Created workspace directory "+wsroot);
             }
+
+            //
+            //  Reset the workspaces.
+            //
+            m_references.put( wsname, 
+                              new UUIDObjectStore<Path[]>(mangleName(wsname)+"-references.ser") );
+            m_uuids.put( wsname, 
+                         new UUIDObjectStore<Path>(mangleName(wsname)+"-uuid.ser") );
         }
-        
-        m_references = new UUIDObjectStore<Path[]>("references.ser");
-        m_uuids      = new UUIDObjectStore<Path>("uuid.ser");
     }
 
-    public void close(WorkspaceImpl ws)
+    public void stop(RepositoryImpl rep)
     {
-        m_hitCount[Count.Close.ordinal()]++;
+        m_hitCount[Count.Stop.ordinal()]++;
+     
+        log.fine("Shutting down FileProvider...");
+        
+        for( UUIDObjectStore<Path[]> s : m_references.values() )
+        {
+            s.shutdown();
+        }
+        
+        for( UUIDObjectStore<Path> s : m_uuids.values() )
+        {
+            s.shutdown();
+        }
+        
+        m_references.clear();
+        m_uuids.clear();
     }
 
     public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
@@ -417,9 +437,38 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         if( wsnames.indexOf(workspaceName) == -1 )
             throw new NoSuchWorkspaceException(workspaceName);
         
-        log.fine("Repository has been opened.");
+        log.info("Workspace "+workspaceName+" has been opened.");
     }
 
+    public void close(WorkspaceImpl ws)
+    {
+        log.fine( "Workspace "+ws.getName()+" closing..." );
+        m_hitCount[Count.Close.ordinal()]++;
+        
+        try
+        {
+            m_uuids.get( ws.getName() ).serialize();
+        }
+        catch( IOException e )
+        {
+            log.info( "Unable to store UUID references upon workspace logout."+e.getMessage() );
+        }
+        catch( NullPointerException e )
+        {
+            log.warning( "A non-configured workspace '"+ws.getName()+"' detected.  If you are using a multiprovider configuration, please check this workspace actually exists." );
+            return;
+        }
+        
+        try
+        {
+            m_references.get( ws.getName() ).serialize();
+        }
+        catch( IOException e )
+        {
+            log.info( "Unable to store UUID references upon workspace logout."+e.getMessage() );
+        }
+    }
+    
     private void writeValue( File f, ValueImpl v ) throws IOException, IllegalStateException, RepositoryException
     {
         OutputStream out = null;
@@ -488,7 +537,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                         for( ValueImpl vi : oldval )
                         {
                             String uuid = vi.getString();
-                            cleanRefMapping( property.getInternalPath(), uuid );
+                            cleanRefMapping( ws, property.getInternalPath(), uuid );
                         }
                     }
                     catch( PathNotFoundException e ){} // This is okay
@@ -497,7 +546,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 for( int i = 0; i < values.length; i++ )
                 {
                     File df = new File( nodeDir, makeFilename( qname, "."+i+".data" ) );
-                    saveRefShortcut( property.getInternalPath(), (ValueImpl)values[i] );
+                    saveRefShortcut( ws, property.getInternalPath(), (ValueImpl)values[i] );
                     writeValue( df, (ValueImpl)values[i] );
                 }
                 
@@ -509,11 +558,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                     try
                     {
                         ValueImpl oldval = (ValueImpl) getPropertyValue( ws, property.getInternalPath() );
-                        cleanRefMapping( property.getInternalPath(), oldval.getString() );
+                        cleanRefMapping( ws, property.getInternalPath(), oldval.getString() );
                     }
                     catch(PathNotFoundException e) {} // OK
 
-                    saveRefShortcut( property.getInternalPath(), property.getValue() );
+                    saveRefShortcut( ws, property.getInternalPath(), property.getValue() );
                 }
 
                 File df = new File( nodeDir, makeFilename( qname, ".data" ) );
@@ -558,9 +607,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         if( property.getQName().equals(Q_JCR_UUID) )
         {
-            m_uuids.setObject( property.getString(), property.getInternalPath().getParentPath() );
+            UUIDObjectStore<Path> uuids = m_uuids.get( property.getSession().getWorkspace().getName() );
+            uuids.setObject( property.getString(), property.getInternalPath().getParentPath() );
         }
     }
+    
     private ValueImpl prepareValue( WorkspaceImpl ws, File propFile, String propType )
         throws IOException, RepositoryException
     {
@@ -686,7 +737,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     }
 
     // FIXME: Does not remove UUID maps.
-    public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
+    public void remove(final WorkspaceImpl ws, final Path path) throws RepositoryException
     {
         m_hitCount[Count.Remove.ordinal()]++;
 
@@ -727,7 +778,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                             {
                                 String uuid = readContentsAsString( dataFile );
                                 //System.out.println("Removing refs "+uuid);
-                                cleanRefMapping(p,uuid);
+                                cleanRefMapping( ws, p, uuid );
                             }
                         
                             if( p.getLastComponent().equals( Q_JCR_UUID ) )
@@ -737,7 +788,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                                     String uuid = readContentsAsString( dataFile );
                                     
                                     //System.out.println("Removing UUID "+uuid);
-                                    cleanUuidMapping( uuid );
+                                    cleanUuidMapping( ws, uuid );
                                 }
                                 catch( IOException e )
                                 {
@@ -819,14 +870,14 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  
      *  @param uuid
      */
-    private void cleanUuidMapping( String uuid )
+    private void cleanUuidMapping( WorkspaceImpl ws, String uuid )
     {
-        m_uuids.setObject( uuid, null );
+        m_uuids.get(ws.getName()).setObject( uuid, null );
     }
 
-    private void cleanRefMapping( Path path, String uuid ) throws IOException
+    private void cleanRefMapping( WorkspaceImpl ws, Path path, String uuid ) throws IOException
     {
-        Path[] refs = m_references.getObject( uuid );
+        Path[] refs = m_references.get(ws.getName()).getObject( uuid );
             
         //System.out.println("Removing "+path+" ==> "+uuid );
         
@@ -850,19 +901,19 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
         }
         
-        m_references.setObject( uuid, 
-                                newrefs.size() > 0 ? 
-                                    newrefs.toArray( new Path[newrefs.size()] ) :
-                                        null );
+        m_references.get(ws.getName()).setObject( uuid, 
+                                                  newrefs.size() > 0 ? 
+                                                      newrefs.toArray( new Path[newrefs.size()] ) :
+                                                          null );
     }
 
-    private void saveRefShortcut( Path path, ValueImpl v ) throws ValueFormatException, IllegalStateException, RepositoryException, IOException
+    private void saveRefShortcut( WorkspaceImpl ws, Path path, ValueImpl v ) throws ValueFormatException, IllegalStateException, RepositoryException, IOException
     {
         if( v.getType() == PropertyType.REFERENCE )
         {
             String uuid = v.getString();
 
-            Path[] refs = m_references.getObject( uuid );
+            Path[] refs = m_references.get(ws.getName()).getObject( uuid );
             if( refs == null ) refs = new Path[0];
             
             Path[] newrefs = new Path[refs.length+1];
@@ -871,18 +922,12 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             
             newrefs[newrefs.length-1] = path;
 
-            m_references.setObject( uuid, newrefs );
+            m_references.get(ws.getName()).setObject( uuid, newrefs );
         }
     }
     
 
-    public void stop(RepositoryImpl rep)
-    {
-        m_hitCount[Count.Stop.ordinal()]++;
 
-        m_references.shutdown();
-        m_uuids.shutdown();
-    }
 /*
     private Path findUUIDFromPath( WorkspaceImpl ws, String uuid, Path path ) throws RepositoryException
     {
@@ -922,7 +967,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.FindByUUID.ordinal()]++;
 
-        Path cachedPath = m_uuids.getObject( uuid );
+        Path cachedPath = m_uuids.get(ws.getName()).getObject( uuid );
         
         if( cachedPath == null )
         {
@@ -997,7 +1042,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         m_hitCount[Count.FindReferences.ordinal()]++;
 
-        Path[] refs = m_references.getObject( uuid );
+        Path[] refs = m_references.get(ws.getName()).getObject( uuid );
         
         if( refs != null )
         {
@@ -1128,7 +1173,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  Stores something based on UUIDs in an internal map, and
      *  always serializes the map on disk upon addition of new objects.
      *  
-     *  @param <T>
+     *  @param <T> A class to store - MUST implement Serializable.
      */
     // FIXME: Should be faster by storing the map in a separate thread to collect multiple changes.
     // FIXME: Should create a new file each time and not overwrite a previous one; then remove
@@ -1137,7 +1182,6 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         private String           m_name;
         private Map<String,T>    m_map;
-        private boolean          m_changed = false;
         private ObjectOutputStream m_journal;
         private int              m_writeCount;
         
@@ -1183,7 +1227,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         public String toString()
         {
-            return "UUIDObjectStore["+m_name+", "+m_map.size()+" objs]";
+            return "UUIDObjectStore["+m_name+", "+(m_map != null ? m_map.size() : "no")+" objs]";
         }
         
         public T getObject( String uuid )

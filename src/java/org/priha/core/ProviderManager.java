@@ -54,6 +54,8 @@ public class ProviderManager implements ItemStore
     
     private Logger               log = Logger.getLogger(ProviderManager.class.getName());
     
+    private String               m_defaultWorkspaceName;
+    
     public ProviderManager( RepositoryImpl repository ) throws ConfigurationException
     {
         m_repository = repository;
@@ -65,6 +67,11 @@ public class ProviderManager implements ItemStore
     public static final String PROP_PRIHA_PROVIDER_PREFIX = "priha.provider.";
     public static final String DEFAULT_PROVIDERLIST       = "defaultProvider";
     
+    /**
+     *  Initializes all the Providers defined in the property file.
+     *  
+     *  @throws ConfigurationException If the properties would define an illegal configuration.
+     */
     private void initialize() throws ConfigurationException
     {
         m_workspaceAccess = new HashMap<String,ProviderInfo>();
@@ -94,6 +101,15 @@ public class ProviderManager implements ItemStore
             String workspaceList = props.getProperty("workspaces","default");
             
             String[] workspaces = workspaceList.split("\\s");
+            
+            if( m_defaultWorkspaceName == null )
+            {
+                if( workspaces.length == 0 ) throw new ConfigurationException("The first provider ("+providers[i]+") MUST have at least one workspace defined!");
+                
+                m_defaultWorkspaceName = workspaces[0];
+                
+                log.fine("Default workspace is set to '"+m_defaultWorkspaceName+"'");
+            }
             
             log.fine("Provider "+i+": "+providers[i]+" is a "+className);
             RepositoryProvider p = instantiateProvider( m_repository, className, props );
@@ -582,5 +598,16 @@ public class ProviderManager implements ItemStore
         public String[]           workspaces;
         public RepositoryProvider provider;
         public ReadWriteLock      lock;
+    }
+
+    /**
+     *  Returns the name of the default workspace.  This is usually "default", but
+     *  it may change depending on how you configure Priha.
+     *  
+     *  @return
+     */
+    public String getDefaultWorkspace()
+    {
+        return m_defaultWorkspaceName;
     }
 }
