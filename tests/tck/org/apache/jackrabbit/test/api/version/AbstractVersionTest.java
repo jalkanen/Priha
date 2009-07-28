@@ -17,11 +17,13 @@
 package org.apache.jackrabbit.test.api.version;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
+import org.apache.jackrabbit.test.NotExecutableException;
 
 import javax.jcr.nodetype.NodeTypeManager;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.Node;
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.version.VersionHistory;
 
@@ -42,6 +44,9 @@ public class AbstractVersionTest extends AbstractJCRTest {
     protected void setUp() throws Exception {
         super.setUp();
 
+        if(superuser.getRepository().getDescriptor( Repository.OPTION_VERSIONING_SUPPORTED ).equals( "false" ))
+            throw new NotExecutableException("Versioning not supported");
+        
         NodeTypeManager ntMgr = superuser.getWorkspace().getNodeTypeManager();
 
         // assert that this repository support versioning

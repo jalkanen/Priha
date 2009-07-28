@@ -16,10 +16,7 @@
  */
 package org.apache.jackrabbit.test.api.version;
 
-import javax.jcr.Node;
-import javax.jcr.PropertyIterator;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
+import javax.jcr.*;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
 import org.apache.jackrabbit.test.NotExecutableException;
@@ -50,6 +47,9 @@ public class GetReferencesNodeTest extends AbstractJCRTest {
 
     protected void setUp() throws Exception {
         super.setUp();
+
+        if(superuser.getRepository().getDescriptor( Repository.OPTION_VERSIONING_SUPPORTED ).equals( "false" ))
+            throw new NotExecutableException("Versioning not supported");
 
         versionableNodeType = getProperty(PROP_VERSIONABLE_NODE_TYPE);
         if (versionableNodeType == null) {

@@ -16,15 +16,12 @@
  */
 package org.apache.jackrabbit.test.api.version;
 
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.Workspace;
+import javax.jcr.*;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.NodeTypeManager;
 
 import org.apache.jackrabbit.test.AbstractJCRTest;
+import org.apache.jackrabbit.test.NotExecutableException;
 
 /**
  * <code>AbstractMergeTest</code> is the abstract base class for all merge
@@ -70,6 +67,9 @@ public abstract class AbstractMergeTest extends AbstractJCRTest {
      */
     protected void setUp() throws Exception {
         super.setUp();
+
+        if(superuser.getRepository().getDescriptor( Repository.OPTION_VERSIONING_SUPPORTED ).equals( "false" ))
+            throw new NotExecutableException("Versioning not supported");
 
         NodeTypeManager ntm = superuser.getWorkspace().getNodeTypeManager();
 
