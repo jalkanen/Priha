@@ -230,7 +230,7 @@ public final class Path implements Comparable<Path>, Serializable
     {
         if( isRoot() )
         {
-            return new Component( "" );
+            return Component.ROOT_COMPONENT;
         }
         return m_components[depth()-1];
     }
@@ -523,6 +523,11 @@ public final class Path implements Comparable<Path>, Serializable
      */
     public static class Component extends QName implements Serializable
     {
+        /**
+         *  Name of the root component.
+         */
+        public static final Component ROOT_COMPONENT = new Component("");
+
         private static final long serialVersionUID = 8038593715235147911L;
 
         private int m_index = 1;
