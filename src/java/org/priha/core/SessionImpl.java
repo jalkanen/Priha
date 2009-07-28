@@ -310,7 +310,7 @@ public class SessionImpl implements Session, NamespaceMapper
             String newDestPath = destAbsPath;
 
             LockManager lm = LockManager.getInstance( m_workspace );
-            if( lm.hasChildLock( srcnode.getInternalPath() ) )
+            if( lm.findLock( srcnode.getInternalPath() ) != null )
                 throw new LockException( "Lock on source path prevents move" );
 
             Node destnode = getRootNode().addNode( newDestPath, srcnode.getPrimaryNodeType().getName() );

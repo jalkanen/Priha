@@ -6,6 +6,8 @@
         as opposed to being global (oops - but the JCR spec *is* confusing
         in this regard; Univerally Unique IDs are not actually unique...)
         
+        * Session.move() was checking for a wrong lock.
+        
 2009-07-27  Janne Jalkanen <jalkanen@ecyrd.com>
    
         * 0.1.22
