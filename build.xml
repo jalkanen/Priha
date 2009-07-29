@@ -23,7 +23,7 @@
        <pathelement path="etc" />
      
        <fileset dir="${user.home}/.maven/repository/org.apache.jackrabbit/jars/">
-          <include name="*-1.4.jar"/>
+          <include name="*-1.5.*.jar"/>
        </fileset>
      
        <fileset dir="${user.home}/.m2/repository/">
