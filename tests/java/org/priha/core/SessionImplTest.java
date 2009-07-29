@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
 import javax.jcr.Node;
+import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 
 import junit.framework.Test;
@@ -23,7 +24,7 @@ public class SessionImplTest extends TestCase
         m_repository = RepositoryManager.getRepository();
         TestUtil.emptyRepo(m_repository);
         
-        m_session = (SessionImpl) m_repository.login();
+        m_session = m_repository.login(new SimpleCredentials("foo",new char[0]));
     }
     
     public void tearDown() throws Exception

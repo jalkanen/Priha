@@ -27,7 +27,7 @@ public class RepositoryTest extends TestCase
 
         TestUtil.emptyRepo(m_repository);
         
-        m_session = m_repository.login();
+        m_session = m_repository.login(new SimpleCredentials("foo",new char[0]));
     }
     
     protected void tearDown() throws Exception
@@ -67,7 +67,7 @@ public class RepositoryTest extends TestCase
     
     public void testRemove() throws Exception
     {
-        Session s = m_repository.login();
+        Session s = m_repository.login(new SimpleCredentials("foo",new char[0]));
         
         s.getRootNode().addNode("test");
         
@@ -89,7 +89,7 @@ public class RepositoryTest extends TestCase
     
     public void testSave() throws Exception
     {
-        Session s = m_repository.login();
+        Session s = m_repository.login(new SimpleCredentials("foo",new char[0]));
         
         Node nd = s.getRootNode();
         
@@ -108,7 +108,7 @@ public class RepositoryTest extends TestCase
 
     public void testSave2() throws Exception
     {
-        Session s = m_repository.login();
+        Session s = m_repository.login(new SimpleCredentials("foo",new char[0]));
         
         Node nd = s.getRootNode();
         
@@ -131,7 +131,7 @@ public class RepositoryTest extends TestCase
 
     public void testRemoveProperty() throws Exception
     {
-        Session s = m_repository.login();
+        Session s = m_repository.login(new SimpleCredentials("foo",new char[0]));
         
         Node nd = s.getRootNode();
         
@@ -167,7 +167,7 @@ public class RepositoryTest extends TestCase
     
     public void testTraversal() throws Exception
     {
-        Session s = m_repository.login();
+        Session s = m_repository.login(new SimpleCredentials("foo",new char[0]));
         
         Node nd = s.getRootNode();
 
@@ -224,8 +224,8 @@ public class RepositoryTest extends TestCase
         
         TestUtil.emptyRepo(r);
         
-        Session s = r.login();
-        Session s2 = r.login("testworkspace");
+        Session s = r.login(new SimpleCredentials("foo",new char[0]));
+        Session s2 = r.login(new SimpleCredentials("foo",new char[0]),"testworkspace");
         
         assertFalse( "Must end up in different workspaces", s.getWorkspace().getName().equals(s2.getWorkspace().getName()) );
         

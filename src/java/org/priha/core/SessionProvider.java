@@ -72,7 +72,9 @@ public class SessionProvider
         ItemImpl ii = m_changedItems.get(path);
 
         if( ii != null ) 
+        {
             return ii;
+        }
         
         ii = m_fetchedItems.get(path);
         

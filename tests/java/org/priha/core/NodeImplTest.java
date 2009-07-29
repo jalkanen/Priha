@@ -22,12 +22,12 @@ public class NodeImplTest extends TestCase
         super.setUp();
         
         m_repository = RepositoryManager.getRepository();
-        m_session = m_repository.login();
+        m_session = m_repository.login(new SimpleCredentials("foo",new char[0]));
         Node nd = m_session.getRootNode().addNode("gobble");
         nd.addMixin("mix:referenceable");
         m_session.save();
         
-        m_session2 = m_repository.login();
+        m_session2 = m_repository.login(new SimpleCredentials("foo",new char[0]));
     }
 
     @Override

@@ -1726,7 +1726,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return true;
     }
 
-
     public void cancelMerge(Version version)
                                             throws VersionException,
                                                 InvalidItemStateException,

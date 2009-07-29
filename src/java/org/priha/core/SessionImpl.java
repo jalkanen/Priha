@@ -74,14 +74,14 @@ public class SessionImpl implements Session, NamespaceMapper
         m_workspace  = new WorkspaceImpl( this, name, rep.getProviderManager() );
         m_provider   = new SessionProvider( this, rep.getProviderManager() );
         
-        if( !hasNode("/") )
-        {
-            repopulate();
-        }
-        
         if( creds instanceof SimpleCredentials )
         {
             m_credentials = (SimpleCredentials)creds;
+        }
+
+        if( !hasNode("/") )
+        {
+            repopulate();
         }
     }
 
@@ -158,6 +158,7 @@ public class SessionImpl implements Session, NamespaceMapper
         {
             ItemImpl ii = m_provider.getItem(absPath);
             
+            if( ii.getState() == ItemState.REMOVED ) return false;
             if( !ii.isNode() ) return true;
         }
         catch( PathNotFoundException e) {}
@@ -172,15 +173,35 @@ public class SessionImpl implements Session, NamespaceMapper
     }
 
     /**
-     *  Priha does not mandate any permission checking.  This method just returns quietly, since
-     *  everyone has all the permissions all the time.
+     *  Any credentials are fine to give full access.
      */
     public void checkPermission(String absPath, String actions) throws AccessControlException, RepositoryException
     {
         checkLive();
+        actions = actions.trim();
+        
+        if( actions.equals( "read" ) )
+            return;
+        
+        if( m_credentials == null && !isSuper() ) 
+            throw new AccessControlException("Read-only session");
+        
         return;
     }
 
+    /** Quick way to check for write permissions. */
+    protected void checkWritePermission() throws AccessControlException, RepositoryException
+    {
+        try
+        {
+            checkPermission("/","add_node");
+        }
+        catch( AccessControlException e )
+        {
+            throw new AccessDeniedException(e.getMessage());
+        }
+    }
+    
     public Object getAttribute(String name)
     {
         Object res = null;
@@ -263,8 +284,9 @@ public class SessionImpl implements Session, NamespaceMapper
 
     public Session impersonate(Credentials credentials) throws LoginException, RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("Session.impersonate()");
-        // TODO Auto-generated method stub
+        checkLive();
+        
+        return m_repository.login( credentials, getWorkspace().getName() );
     }
 
     public final boolean isLive()
@@ -296,6 +318,7 @@ public class SessionImpl implements Session, NamespaceMapper
     public void move(String srcAbsPath, String destAbsPath) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException
     {
         checkLive();
+        checkWritePermission();
         
         boolean isSuper = setSuper( true );
                 
@@ -371,6 +394,8 @@ public class SessionImpl implements Session, NamespaceMapper
      */
     private void repopulate() throws RepositoryException
     {
+        boolean isSuper = setSuper(true);
+        
         if( !hasNode("/") )
         {
             NodeImpl ni = null;
@@ -399,6 +424,8 @@ public class SessionImpl implements Session, NamespaceMapper
             // FIXME: Should probably set up all sorts of things.
             save();
         }
+        
+        setSuper(isSuper);
     }
 
     public void removeLockToken(String lt)
@@ -422,6 +449,7 @@ public class SessionImpl implements Session, NamespaceMapper
     protected void saveNodes( Path pathprefix ) throws RepositoryException
     {
         checkLive();
+        checkWritePermission();
         m_provider.save( pathprefix );
     }
 
@@ -434,6 +462,7 @@ public class SessionImpl implements Session, NamespaceMapper
     public void remove(ItemImpl itemImpl) throws RepositoryException
     {
         checkLive();
+        checkWritePermission();
         m_provider.remove( itemImpl );
     }
 
@@ -449,6 +478,8 @@ public class SessionImpl implements Session, NamespaceMapper
     public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException, InvalidSerializedDataException, LockException, RepositoryException
     {
         checkLive();
+        checkWritePermission();
+        
         XMLImport importer = new XMLImport( this, false, PathFactory.getPath(this,parentAbsPath), uuidBehavior );
         
         try
@@ -541,6 +572,7 @@ public class SessionImpl implements Session, NamespaceMapper
     public void setNamespacePrefix(String newPrefix, String existingUri) throws NamespaceException, RepositoryException
     {
         checkLive();
+        
         // Throws an exception if the URI does not exist, so this is a cheap way to check for validity.
         m_workspace.getNamespaceRegistry().getPrefix(existingUri);
         

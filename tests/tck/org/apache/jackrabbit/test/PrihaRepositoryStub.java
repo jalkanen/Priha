@@ -23,7 +23,7 @@ public class PrihaRepositoryStub extends RepositoryStub
             if( r.getProperty("stub.initialized") == null )
             {
                 //String testws = getProperty(PROP_WORKSPACE_NAME);
-                Session s = r.login();
+                Session s = r.login( getSuperuserCredentials() );
 
                 String testroot = getProperty(PROP_TESTROOT);
                 if( testroot == null) throw new RepositoryStubException("No testroot defined");
@@ -69,4 +69,25 @@ public class PrihaRepositoryStub extends RepositoryStub
             throw new RepositoryStubException(e.getMessage());
         }
     }
+
+    @Override
+    public Credentials getReadOnlyCredentials()
+    {
+        return null;
+    }
+
+    @Override
+    public Credentials getReadWriteCredentials()
+    {
+        return new SimpleCredentials("foo", new char[0]);
+    }
+
+    @Override
+    public Credentials getSuperuserCredentials()
+    {
+        return new SimpleCredentials("foo", new char[0]);
+    }
+    
+    
+    
 }

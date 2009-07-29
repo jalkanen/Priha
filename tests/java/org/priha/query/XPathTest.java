@@ -23,7 +23,7 @@ public class XPathTest extends TestCase
     public void setUp() throws LoginException, ConfigurationException, RepositoryException
     {
         TestUtil.emptyRepo(RepositoryManager.getRepository());
-        m_session = RepositoryManager.getRepository().login();
+        m_session = RepositoryManager.getRepository().login(new SimpleCredentials("foo",new char[0]));
         
         Node nd = m_session.getRootNode();
         

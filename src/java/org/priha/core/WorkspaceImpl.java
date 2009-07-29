@@ -40,6 +40,7 @@ import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
 import org.priha.util.PropertyIteratorImpl;
+import org.priha.version.VersionManager;
 import org.priha.xml.XMLImport;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -102,6 +103,8 @@ public class WorkspaceImpl
      *  If removeExisting is true, removes Nodes with conflicting UUIDs.  If it's false,
      *  this exists with a ItemExistsException.
      *  
+     *  Does not save the Session.
+     *  
      *  @param srcNode
      *  @param removeExisting
      *  @throws RepositoryException
@@ -146,6 +149,7 @@ public class WorkspaceImpl
         throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         checkLock(destAbsPath);
+        getSession().checkWritePermission();
         
         SessionImpl srcSession = getSession().getRepository().login(srcWorkspace);
         
@@ -156,11 +160,11 @@ public class WorkspaceImpl
             if( removeExisting && getSession().itemExists( destAbsPath ) )
             {
                 getSession().getItem( destAbsPath ).remove();
-                getSession().save();
+                //getSession().save();
             }
 
             checkUUIDs( (NodeImpl)srcSession.getItem( srcAbsPath ), removeExisting );
-            getSession().save();
+            //getSession().save();
             
             copy( srcSession, srcAbsPath, destAbsPath, true );
             
@@ -205,7 +209,8 @@ public class WorkspaceImpl
         // Superuser does not care about locking, so we'll check it separately.
         
         checkLock(destAbsPath);
-        
+        getSession().checkWritePermission();
+
         boolean isSuper = m_session.setSuper( true );
         try
         {
@@ -217,6 +222,22 @@ public class WorkspaceImpl
             m_session.setSuper( isSuper );
             srcSession.logout();
         }
+    }
+    
+    /**
+     *  Checks if the node or any of its parents are checked in.
+     *  
+     *  @param n
+     *  @return
+     *  @throws RepositoryException
+     */
+    private boolean isCheckedIn( NodeImpl n ) throws RepositoryException
+    {
+        if( !n.isCheckedOut() ) return true;
+        
+        if( n.getInternalPath().isRoot() ) return false;
+        
+        return isCheckedIn( n.getParent() );
     }
     
     /**
@@ -247,10 +268,15 @@ public class WorkspaceImpl
         LockManager lm = LockManager.getInstance( srcSession.getWorkspace() );
         if( lm.hasChildLock( srcnode.getInternalPath() ) )
             throw new LockException( "Lock on source path prevents copy" );
-
-        Node destnode = m_session.getRootNode().addNode( newDestPath, 
-                                                         srcnode.getPrimaryNodeType().getName() );
-            
+        
+        NodeImpl destnode = m_session.getRootNode().addNode( newDestPath, 
+                                                             srcnode.getPrimaryNodeType().getName() );
+        
+        if( isCheckedIn( destnode ) )
+        {
+            throw new VersionException("Destination node (or one of its parent nodes) is checked in, and therefore unmodifiable.");
+        }
+        
         for( NodeIterator ni = srcnode.getNodes(); ni.hasNext(); )
         {
             Node child = ni.nextNode();
@@ -420,6 +446,7 @@ public class WorkspaceImpl
         // Superuser does not care about locking, so we'll check it separately.
         
         checkLock(destAbsPath);
+        getSession().checkWritePermission();
 
         SessionImpl s = m_session.getRepository().superUserLogin( getName() );
         

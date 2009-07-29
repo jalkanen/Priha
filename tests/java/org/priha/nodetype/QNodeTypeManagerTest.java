@@ -38,7 +38,7 @@ public class QNodeTypeManagerTest extends TestCase
         
         TestUtil.emptyRepo(m_repository);
 
-        m_session = m_repository.login();
+        m_session = m_repository.login(new SimpleCredentials("foo",new char[0]));
 
         m_mgr = m_session.getWorkspace().getNodeTypeManager();
     }
