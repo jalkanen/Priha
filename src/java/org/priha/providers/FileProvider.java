@@ -1067,7 +1067,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         "con", "prn", "nul", "aux", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
         "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9"
     };
-    
+
+    private static final String APPROVED_PUNCTUATION = " ./_,-+:";
+
     /**
      *  This makes sure that the queried page name
      *  is still readable by the file system.  For example, all XML entities
@@ -1077,12 +1079,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  @return The mangled name.
      */
     
-    private static final String APPROVED_PUNCTUATION = " ./_,-+:";
+    // TODO: This method is extremely speed-critical
     protected static String mangleName( String name )
     {
         StringBuilder sb = new StringBuilder(name.length()+32);
         
-        for( int i = 0; i < name.length(); i++ )
+        int len = name.length();
+        for( int i = 0; i < len; i++ )
         {
             char ch = name.charAt( i );
             
