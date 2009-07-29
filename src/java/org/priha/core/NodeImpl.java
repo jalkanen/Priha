@@ -1642,6 +1642,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         m_session.removeLockToken( lock.getLockToken() );
         m_lockManager.removeLock( lock );
+        lock.invalidate();
         
         save();
     }
