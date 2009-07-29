@@ -1,3 +1,10 @@
+2009-07-29  Janne Jalkanen <jalkanen@ecyrd.com>
+   
+        * 0.1.25
+
+		* Workspace.clone() now works as well, completing support for
+		corresponding nodes and workspace cloning. Yay!
+		
 2009-07-28  Janne Jalkanen <jalkanen@ecyrd.com>
    
         * 0.1.24

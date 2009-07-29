@@ -1079,7 +1079,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             remove();
             m_session.save();
             
-            m_session.getWorkspace().copy( srcSession, correspondingPath, destPath );
+            m_session.getWorkspace().copy( srcSession, correspondingPath, destPath, true );
             m_session.save();
         }
         catch( ItemNotFoundException e )
