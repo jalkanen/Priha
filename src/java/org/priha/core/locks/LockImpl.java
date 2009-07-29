@@ -127,6 +127,8 @@ public class LockImpl implements Lock
 
     public void refresh() throws LockException, RepositoryException
     {
+        if( !isLive() ) throw new LockException("Lock is not live");
+        
         // No timer implemented, so nothing happens.
     }
 
@@ -168,6 +170,6 @@ public class LockImpl implements Lock
     public void invalidate()
     {
         m_session = null;
-        m_isSessionScoped = false;
+        m_isSessionScoped = true;
     }
 }
