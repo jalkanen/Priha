@@ -423,8 +423,11 @@ public class WorkspaceImpl
         {
             log.log( Level.WARNING, "Importing failed", e );
             
-            if( e.getException() != null && e.getException() instanceof ItemExistsException )
-                throw (ItemExistsException) e.getException();
+            if( e.getException() != null 
+                && (e.getException() instanceof RepositoryException) )
+            {
+                throw (RepositoryException) e.getException();
+            }
             
             throw new InvalidSerializedDataException("Importing failed: "+e.getMessage());
         }

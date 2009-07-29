@@ -6,10 +6,12 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -22,6 +24,7 @@ import org.priha.core.namespace.NamespaceRegistryImpl;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QPropertyDefinition;
 import org.priha.util.Base64;
+import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -83,6 +86,12 @@ public class XMLImport extends DefaultHandler
         m_style = ParserStyle.SYSTEM;        
     }
     
+    private void checkDocument() throws SAXException
+    {
+        if( m_style == ParserStyle.SYSTEM ) throw new SAXException("Document view elements found in a System level document.");
+        m_style = ParserStyle.DOCUMENT;
+    }
+    
     private PropertyStore getProp(NodeStore ns, QName name)
     {
         for( PropertyStore ps : ns.m_properties )
@@ -103,7 +112,15 @@ public class XMLImport extends DefaultHandler
      */
     private void deserializeStore( NodeStore ns ) throws ValueFormatException, IllegalStateException, RepositoryException
     {
-        String primaryType = getProp(ns,JCRConstants.Q_JCR_PRIMARYTYPE).m_values.get(0).getString();
+        PropertyStore psp = getProp(ns,JCRConstants.Q_JCR_PRIMARYTYPE);
+        String primaryType;
+        String uuid       = null;
+        NodeImpl uuidNode = null;
+        
+        if( psp != null && psp.m_values.size() > 0 )
+            primaryType = psp.m_values.get(0).getString();
+        else
+            primaryType = "nt:unstructured"; // FIXME: Stupid guess.
         
         String path = m_currentPath.toString();
                 
@@ -113,7 +130,78 @@ public class XMLImport extends DefaultHandler
             throw new ItemExistsException("There already exists a node at "+path);
         }
         
-        NodeImpl nd = m_currentNode.addNode( path, primaryType );
+        //
+        //  Find the UUID and, if it exists, a possible previous Node which
+        //  has the same UUID.
+        //
+        PropertyStore uuidPS = ns.findProperty( JCRConstants.Q_JCR_UUID );
+        
+        if( uuidPS != null ) 
+        {
+            uuid = uuidPS.m_values.get(0).getString();
+            try
+            {
+                uuidNode = m_session.getNodeByUUID( uuid );
+            }
+            catch( ItemNotFoundException e ) {}
+        }
+        
+        NodeImpl nd;
+
+        //
+        //  Do we need to replace an existing Node with the same UUID?
+        //
+        if( m_uuidBehavior == ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING 
+            && uuid != null 
+            && uuidNode != null )
+        {
+            NodeImpl parent = uuidNode.getParent();
+            uuidNode.remove();
+
+            m_currentNode = parent;
+        }
+        
+        nd = m_currentNode.addNode( m_currentStore.m_nodeName, primaryType );
+
+        //
+        //  If there's an UUID, we have to figure out what to do with it.
+        //
+        if( uuid != null )
+        {
+            nd.addMixin( "mix:referenceable" );
+
+            switch( m_uuidBehavior )
+            {
+                case ImportUUIDBehavior.IMPORT_UUID_COLLISION_THROW:
+                    if( uuidNode != null )
+                        throw new ItemExistsException("UUID "+uuid+" already exists in repository, and IMPORT_UUID_COLLISION_THROW was defined.");
+                    
+                    nd.setProperty( "jcr:uuid", uuid );
+                    break;
+                    
+                case ImportUUIDBehavior.IMPORT_UUID_CREATE_NEW:
+                    // Will be created automatically on save()
+                    break;
+                    
+                case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING:
+                    if( uuidNode != null && uuidNode.getInternalPath().isParentOf( m_currentPath ) )
+                    {
+                        throw new ConstraintViolationException("Importing this node ("+nd+") would result in one of its parents being removed - "+
+                                                               "which, in general, is kinda like traveling back in time and shooting your "+
+                                                               "grandparents.  Most time traveling guidelines strongly recommend against this, as "+
+                                                               "it will lead to paradoxes.  This is also why it is not possible within JCR.  Not that "+
+                                                               "this is exactly time travel technology, far from it, but it just keeps stuff neat "+
+                                                               "and tidy, you know.");
+                    }
+                    uuidNode.remove();
+                    nd.setProperty( "jcr:uuid", uuid );
+                    break;
+                    
+                case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REPLACE_EXISTING:
+                    nd.setProperty( "jcr:uuid", uuid );
+                    break;
+            }
+        }
         
         m_currentNode = nd;
         
@@ -132,6 +220,10 @@ public class XMLImport extends DefaultHandler
                 }
                 continue;
             }
+            
+            // Already handled
+            if( ps.m_propertyName.equals(JCRConstants.Q_JCR_UUID) ) continue;
+            
             
             //
             //  Start the real unmarshalling
@@ -160,7 +252,11 @@ public class XMLImport extends DefaultHandler
             }
         }
         
-        if( m_immediateCommit ) m_session.save();
+        System.out.println("Imported new node "+nd);
+        if( m_immediateCommit ) 
+        {
+            m_session.save();
+        }
     }
     
     @Override
@@ -237,10 +333,45 @@ public class XMLImport extends DefaultHandler
             
             return;
         }
-        
-        m_style = ParserStyle.DOCUMENT;
 
-        throw new SAXException("Document view import not yet supported");
+        //
+        //  Alright, this is then a Document view document.
+        //
+        checkDocument();
+        
+        String nodeName = name;
+
+        m_currentStore = new NodeStore();
+        m_currentStore.m_nodeName = nodeName;
+        try
+        {
+            for( int i = 0; i < attrs.getLength(); i++ )
+            {
+                String attname = attrs.getQName(i);
+                if( attname.equals( "" ) ) attname = attrs.getLocalName(i);
+
+                m_currentProperty = new PropertyStore();
+            
+                String attvalue = attrs.getValue(i);
+            
+                NamespaceRegistryImpl nr = m_session.getWorkspace().getNamespaceRegistry();
+
+                m_currentProperty.m_propertyName = nr.toQName( attname );
+                m_currentProperty.m_propertyType = PropertyType.STRING;
+                m_currentProperty.addValue( m_session.getValueFactory().createValue( attvalue ) );
+                
+                m_currentStore.m_properties.add( m_currentProperty );
+            }
+            m_currentPath = m_currentPath.resolve(m_session.toQName( nodeName ) );
+
+            deserializeStore( m_currentStore );
+        }
+        catch( RepositoryException e )
+        {
+            throw new SAXException(e);
+        }
+        
+        return;
     }
 
     @Override
@@ -279,12 +410,41 @@ public class XMLImport extends DefaultHandler
             m_currentStore.m_properties.add( m_currentProperty );
             m_currentProperty = null;
         }
+        else
+        {
+            // Document view
+            try
+            {
+                m_currentPath = m_currentPath.getParentPath();
+                m_currentNode = m_currentNode.getParent();
+            }
+            catch( Exception e )
+            {
+                throw new SAXException(e);
+            }
+        }
     }
 
     @Override
     public void startPrefixMapping(String prefix, String uri) throws SAXException
     {
-        // System.out.println(prefix + " = " + uri );
+        System.out.println(prefix + " = " + uri );
+        try
+        {
+            NamespaceRegistry r = m_session.getWorkspace().getNamespaceRegistry();
+            
+            r.registerNamespace( prefix, uri );
+        }
+        catch( NamespaceException e )
+        {
+            // Ignore quietly; this is usually because there are mappings in the
+            // document which are known to us.
+            // e.printStackTrace();
+        }
+        catch( RepositoryException e )
+        {
+            throw new SAXException(e);
+        }
     }
 
     /**
@@ -298,6 +458,22 @@ public class XMLImport extends DefaultHandler
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException
     {
+        if( m_style == ParserStyle.DOCUMENT )
+        {
+            try
+            {
+                String valueString = new String(ch,start,length);
+                NodeImpl xmlText = m_currentNode.addNode( "jcr:xmltext" );
+                xmlText.setProperty( "jcr:xmlcharacters", valueString );
+            }
+            catch( RepositoryException e )
+            {
+                throw new SAXException(e);
+            }
+            return;
+        }
+        
+        // System
         if( m_readingValue )
         {
             try
@@ -343,12 +519,27 @@ public class XMLImport extends DefaultHandler
     {
         public String        m_nodeName;
         public List<PropertyStore> m_properties = new ArrayList<PropertyStore>();
+        
+        public PropertyStore findProperty( QName name )
+        {
+            for( PropertyStore ps : m_properties )
+            {
+                if( ps.m_propertyName.equals(name) ) return ps;
+            }
+            
+            return null;
+        }
     }
     
     private static class PropertyStore
     {
         public QName        m_propertyName;
         public int          m_propertyType;
-        public List<Value>  m_values = new ArrayList<Value>();
+        private List<Value>  m_values = new ArrayList<Value>();
+        
+        public void addValue(Value v)
+        {
+            m_values.add( v );
+        }
     }
 }

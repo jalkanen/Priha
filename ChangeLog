@@ -8,6 +8,10 @@
         * Implemented rudimentary access control - calling Repository.login()
         now creates a readonly session.  Any credentials (even empty) create 
         a read-write session.
+        
+        * Implemented Document view import
+        
+        * Fixed some caching issues with SessionProvider.
 		
 2009-07-28  Janne Jalkanen <jalkanen@ecyrd.com>
    

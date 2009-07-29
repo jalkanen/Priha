@@ -57,6 +57,30 @@ public class SessionProvider
         m_changedItems = new TreeMap<Path,ItemImpl>( new PrimaryTypePreferringComparator() );
     }
     
+    private void clearSingleItem( final Path p, final String uuid )
+    {
+        if( p != null )    m_fetchedItems.remove( p );
+        if( uuid != null ) m_uuidMap.remove( uuid );        
+    }
+    
+    /**
+     *  Visits all Sessions from this particular Repository and clears local caches.
+     *  
+     *  @param p
+     *  @param uuid
+     */
+    private void clearAllCaches( final Path p, final String uuid )
+    {
+        m_workspace.getSession().getRepository().visit( new RepositoryImpl.SessionVisitor() {
+
+            public void visit( SessionImpl session )
+            {
+                session.m_provider.clearSingleItem( p, uuid );
+            }
+            
+        });
+    }
+    
     public void save() throws RepositoryException
     {
         save( Path.ROOT );
@@ -323,13 +347,13 @@ public class SessionProvider
                                 {
                                     throw new InvalidItemStateException("The item has been removed by some other Session "+ii.getInternalPath());
                                 }
-                                toberemoved.add(ni.getInternalPath());
-                                m_fetchedItems.remove( ni.getInternalPath() );
+                                String uuid = null;
                                 if( ni.isNodeType( "mix:referenceable" ) )
                                 {
-                                    String uuid = ni.getUUID();
-                                    m_uuidMap.remove( uuid );
+                                    uuid = ni.getUUID();
                                 }
+                                toberemoved.add( ni.getInternalPath() );
+                                clearAllCaches( ni.getInternalPath(), uuid );
                                 break;
                         }
                     }
@@ -349,7 +373,7 @@ public class SessionProvider
                                 
                             case REMOVED:
                                 toberemoved.add(pi.getInternalPath());
-                                m_fetchedItems.remove( pi.getInternalPath() );
+                                clearAllCaches( pi.getInternalPath(), null );
                                 break;                     
                         }
                     }                

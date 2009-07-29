@@ -752,18 +752,25 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             Path p = propertypath.getParentPath();
 
-            NodeImpl parentNode = (NodeImpl) m_session.getItem(p);
+            try
+            {
+                NodeImpl parentNode = (NodeImpl) m_session.getItem(p);
 
-            boolean ismultiple = value instanceof Object[];
+                boolean ismultiple = value instanceof Object[];
 
-            QNodeType parentType = parentNode.getPrimaryQNodeType();
+                QNodeType parentType = parentNode.getPrimaryQNodeType();
             
-            QPropertyDefinition pd = parentType.findPropertyDefinition(name,ismultiple);
+                QPropertyDefinition pd = parentType.findPropertyDefinition(name,ismultiple);
             
-            if( pd == null ) throw new RepositoryException("No propertydefinition found for "+parentType+" and "+name);
+                if( pd == null ) throw new RepositoryException("No propertydefinition found for "+parentType+" and "+name);
             
-            prop = new PropertyImpl( m_session, propertypath, pd );
-            prop.markModified(false); // New properties are not considered modified
+                prop = new PropertyImpl( m_session, propertypath, pd );
+                prop.markModified(false); // New properties are not considered modified
+            }
+            catch( PathNotFoundException e )
+            {
+                throw new InvalidItemStateException("Parent not located; the item is in indeterminate state.");
+            }
         }
         else
         {

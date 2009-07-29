@@ -206,6 +206,21 @@ public class RepositoryImpl implements Repository
     }
 
     /**
+     *  Visits all current Sessions
+     * 
+     *  @param v
+     */
+    protected void visit( SessionVisitor v )
+    {
+        for( WeakReference<SessionImpl> wr : m_sessionManager.m_sessions )
+        {
+            SessionImpl si = wr.get();
+            
+            if( si != null ) v.visit(si);
+        }
+    }
+    
+    /**
      *  The SessionManager holds a list of Sessions currently owned by this Repository.  This
      *  is used to manage the proper shutdown of the Sessions.
      *
@@ -225,7 +240,11 @@ public class RepositoryImpl implements Repository
             m_sessions.add( new WeakReference<SessionImpl>(session) );
             return session;
         }
-
+    }
+    
+    protected interface SessionVisitor
+    {
+        public void visit( SessionImpl session );
     }
     
     /**
