@@ -33,6 +33,7 @@ import javax.jcr.version.VersionException;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.priha.core.locks.LockImpl;
 import org.priha.core.locks.LockManager;
 import org.priha.core.namespace.NamespaceMapper;
 import org.priha.core.values.ValueFactoryImpl;
@@ -324,27 +325,41 @@ public class SessionImpl implements Session, NamespaceMapper
                 
         try
         {
-            if( hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
+            Path path = PathFactory.getPath( this, destAbsPath );
+
+            if( m_workspace.isCheckedIn( (NodeImpl)getItem(path.getParentPath()) ) )
+                throw new VersionException("Versioned node checked in");
+
+            if( hasNode( path ) ) 
+            {
+                throw new ItemExistsException("Destination node already exists!");
+            }
         
             NodeImpl srcnode = getRootNode().getNode(srcAbsPath);
         
-            // System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
+            System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
 
             String newDestPath = destAbsPath;
 
             LockManager lm = LockManager.getInstance( m_workspace );
-            if( lm.findLock( srcnode.getInternalPath() ) != null )
+            if( lm.findLock( srcnode.getInternalPath().getParentPath() ) != null )
                 throw new LockException( "Lock on source path prevents move" );
 
-            Node destnode = getRootNode().addNode( newDestPath, srcnode.getPrimaryNodeType().getName() );
+            LockImpl lock = lm.findLock( srcnode.getInternalPath() );
+            if( lock != null )
+                lm.moveLock( lock, PathFactory.getPath(newDestPath) );
             
+            NodeImpl destnode = getRootNode().addNode( newDestPath, srcnode.getPrimaryNodeType().getName() );
+
             for( NodeIterator ni = srcnode.getNodes(); ni.hasNext(); )
             {
                 Node child = ni.nextNode();
 
                 String relPath = srcnode.getName();
 
-                move( child.getPath(), destAbsPath + "/" + relPath );
+                String newPath = destAbsPath + "/" + relPath;
+                
+                move( child.getPath(), newPath );
             }
         
             for( PropertyIterator pi = srcnode.getProperties(); pi.hasNext(); )

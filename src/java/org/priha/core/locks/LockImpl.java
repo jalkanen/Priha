@@ -172,4 +172,9 @@ public class LockImpl implements Lock
         m_session = null;
         m_isSessionScoped = true;
     }
+    
+    protected void move( Path destPath )
+    {
+        m_lockPath = destPath;
+    }
 }

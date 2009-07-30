@@ -1854,6 +1854,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             }
             
             vh.save();
+            save();
             // FIXME: Here.
             
             return v;

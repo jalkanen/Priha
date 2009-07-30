@@ -231,7 +231,7 @@ public class WorkspaceImpl
      *  @return
      *  @throws RepositoryException
      */
-    private boolean isCheckedIn( NodeImpl n ) throws RepositoryException
+    protected boolean isCheckedIn( NodeImpl n ) throws RepositoryException
     {
         if( !n.isCheckedOut() ) return true;
         
@@ -257,7 +257,15 @@ public class WorkspaceImpl
      */
     protected void copy(SessionImpl srcSession, String srcAbsPath, String destAbsPath, boolean preserveUUIDs ) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
-        if( m_session.hasNode( destAbsPath ) ) throw new ItemExistsException("Destination node already exists!");
+        Path path = PathFactory.getPath( getSession(), destAbsPath );
+
+        if( isCheckedIn( (NodeImpl)m_session.getItem(path.getParentPath()) ) )
+            throw new VersionException("Versioned node checked in");
+
+        if( m_session.hasNode( destAbsPath ) ) 
+        {
+            throw new ItemExistsException("Destination node already exists!");
+        }
         
         NodeImpl srcnode = srcSession.getRootNode().getNode(srcAbsPath);
         

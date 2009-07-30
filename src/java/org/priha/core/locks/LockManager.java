@@ -33,6 +33,8 @@ import org.priha.util.Path;
  *  manages *all* the locks for a given workspace, regardless of the
  *  Session which accesses it.
  */
+
+// FIXME: This class should avoid synchronization as much as possible.
 public class LockManager
 {
     private static HashMap<String,LockManager> m_lockManagers = new HashMap<String,LockManager>();
@@ -132,6 +134,20 @@ public class LockManager
         }
     }
 
+    /**
+     *  Updates a lock with a new path.
+     *  
+     *  @param lock Lock to change.
+     *  @param destPath New path.
+     */
+    public synchronized void moveLock(LockImpl lock, Path destPath)
+    {
+        System.out.println("Moving lock from "+lock.getPath()+" to "+destPath);
+        removeLock(lock);
+        lock.move(destPath);
+        addLock(lock);
+    }
+    
     public synchronized void removeLock(LockImpl lock)
     {
         m_locks.remove(lock.getPath());
