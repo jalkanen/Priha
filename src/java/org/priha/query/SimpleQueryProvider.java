@@ -116,6 +116,8 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         if( currNode.hasProperty(relPath.toString()) )
         {
             prop = currNode.getProperty(relPath.toString());
+            
+            if( prop.getDefinition().isMultiple() ) return null;
         }
         
         switch( node.getOperation() )
