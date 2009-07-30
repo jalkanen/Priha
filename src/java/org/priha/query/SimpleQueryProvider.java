@@ -1,8 +1,6 @@
 package org.priha.query;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.*;
 
 import javax.jcr.*;
 import javax.jcr.query.QueryResult;
@@ -13,6 +11,7 @@ import org.priha.core.NodeImpl;
 import org.priha.core.PropertyImpl;
 import org.priha.core.SessionImpl;
 import org.priha.query.aqt.*;
+import org.priha.query.aqt.OrderQueryNode.OrderSpec;
 import org.priha.util.NodeIteratorImpl;
 import org.priha.util.Path;
 
@@ -43,7 +42,35 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
             System.out.println(ii);
         }
         */
+
+        System.out.println("---");
+        for( ItemImpl ii : c.m_matches )
+        {
+            System.out.println(ii);
+        }
+
+        if( nd.getOrderNode() != null )
+        {
+            Collections.sort( c.m_matches, new QuerySorter( nd.getOrderNode() ) );
+
+            System.out.println("+++");
+            for( ItemImpl ii : c.m_matches )
+            {
+                System.out.println(ii);
+            }
+        }
+
         return new QueryResultImpl( c.m_matches );
+    }
+
+
+
+    @Override
+    public Object visit( OrderQueryNode node, Object data ) throws RepositoryException
+    {
+        System.out.println("O "+node.dump());
+        // TODO Auto-generated method stub
+        return super.visit( node, data );
     }
 
 
@@ -359,6 +386,22 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
     }
 
 
+    /**
+     * //element(*,"nt:base")
+     */
+    @Override
+    public Object visit( NodeTypeQueryNode node, Object data ) throws RepositoryException
+    {
+        QueryCollector c = (QueryCollector) data;
+        NodeImpl currNode = c.getCurrentItem();
+        
+        if( currNode.isNodeType( currNode.getSession().fromQName( node.getValue() ) ) )
+            return c;
+        
+        return null;
+    }
+
+
 
     private boolean checkPredicates( LocationStepQueryNode node, QueryCollector data ) throws RepositoryException
     {
@@ -475,7 +518,51 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         }
         
         tokensOnThisLine.add(sb.toString());
-        return (String[]) tokensOnThisLine.toArray(new String[0]);
+        return tokensOnThisLine.toArray(new String[0]);
     }
 
+    private class QuerySorter implements Comparator<NodeImpl>
+    {
+        OrderSpec[] m_specs;
+        
+        public QuerySorter( OrderQueryNode orderNode )
+        {
+            m_specs = orderNode.getOrderSpecs();
+            System.out.println("Sorting by "+m_specs[0].getProperty());
+        }
+
+        public int compare( NodeImpl o1, NodeImpl o2 )
+        {
+            for( int i = 0; i < m_specs.length; i++ )
+            {
+                QName propName = m_specs[i].getProperty();
+                PropertyImpl p1 = null, p2 = null;
+                int result = 0;
+                
+                try
+                {
+                    p1 = o1.getProperty( propName );
+                    p2 = o2.getProperty( propName );
+                    
+                    result = p1.getValue().compareTo( p2.getValue() );
+                    System.out.println("p1 ="+p1+", p2="+p2+", result="+result);                    
+                }
+                catch( PathNotFoundException e )
+                {
+                    if( p1 == null ) result = 1;
+                    if( p2 == null ) result = -1;
+                }
+                catch( RepositoryException e )
+                {
+                    return 0;
+                }
+                
+                if( result == 0 ) continue; // Next property
+                
+                return m_specs[i].isAscending() ? result : -result;
+            }
+            return 0;
+        }
+        
+    }
 }

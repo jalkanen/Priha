@@ -130,4 +130,9 @@ public class CalendarValueImpl extends ValueImpl implements Value, Serializable
         String val = Long.toString( m_value.getTimeInMillis() );
         return new ByteArrayInputStream(val.getBytes());
     }
+    
+    public String toString()
+    {
+        return c_isoFormat.get().format( m_value.getTime() );
+    }
 }

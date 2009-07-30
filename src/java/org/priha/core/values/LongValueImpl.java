@@ -76,6 +76,20 @@ public class LongValueImpl extends ValueImpl implements Value, Serializable
     }
     
     @Override
+    public int compareTo( ValueImpl value )
+    {
+        try
+        {
+            if( value.getType() == PropertyType.DOUBLE || value.getType() == PropertyType.LONG )
+                return m_value.compareTo(value.getLong());
+        
+            return super.compareTo( value );
+        }
+        catch( RepositoryException e ) {}
+        
+        return 0;
+    }
+    @Override
     public String getString() throws ValueFormatException, IllegalStateException, RepositoryException
     {
         checkValue();

@@ -82,4 +82,26 @@ public class DoubleValueImpl extends ValueImpl implements Value, Serializable
         return Double.toString( m_value );
     }
 
+    @Override
+    public int compareTo( ValueImpl value )
+    {
+        try
+        {
+            if( value.getType() == PropertyType.DOUBLE || value.getType() == PropertyType.LONG )
+                return m_value.compareTo(value.getDouble());
+        
+            return super.compareTo( value );
+        }
+        catch( RepositoryException e ) {}
+        
+        return 0;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        // TODO Auto-generated method stub
+        return super.clone();
+    }
+
 }

@@ -32,7 +32,7 @@ import javax.jcr.ValueFormatException;
  *  so you will want to implement those which you can convert to.
  *
  */
-public abstract class ValueImpl implements Value, Cloneable
+public abstract class ValueImpl implements Value, Cloneable, Comparable<ValueImpl>
 {
     protected VALUE_STATE m_state   = VALUE_STATE.UNDEFINED;    
 
@@ -126,5 +126,25 @@ public abstract class ValueImpl implements Value, Cloneable
     public String toString()
     {
         return getClass().getName()+":"+m_state;
+    }
+
+    /**
+     *  By default, does String comparison, which means it may fail.  Subclasses are expected
+     *  to override.
+     */
+    public int compareTo( ValueImpl value )
+    {
+        try
+        {
+            String s1 = getString();
+            String s2 = value.getString();
+        
+            return s1.compareTo( s2 );
+        }
+        catch(Exception e)
+        {
+            // FIXME: Probably not correct.
+            return 0;
+        }
     }
 }
