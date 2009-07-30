@@ -9,7 +9,6 @@ import javax.jcr.version.VersionException;
 
 import org.priha.core.SessionImpl;
 import org.priha.query.aqt.QueryRootNode;
-import org.priha.util.Path;
 
 /**
  *  The root class for Priha query implementations.
