@@ -11,6 +11,7 @@ import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 
 import org.priha.core.NodeImpl;
+import org.priha.core.PropertyImpl;
 import org.priha.util.NodeIteratorImpl;
 
 public class QueryResultImpl implements QueryResult
@@ -34,8 +35,14 @@ public class QueryResultImpl implements QueryResult
             PropertyIterator props = nd.getProperties();
             
             while( props.hasNext() )
-                names.add( props.nextProperty().getName() );
-            
+            {
+                Property pi = props.nextProperty();
+                //
+                //  Multiproperties are never matched.
+                //
+                if( !pi.getDefinition().isMultiple() )
+                    names.add( pi.getName() );
+            }
         }
         
         //
