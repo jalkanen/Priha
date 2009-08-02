@@ -59,8 +59,7 @@ public class QNodeDefinition extends QItemDefinition
 
         public boolean allowsSameNameSiblings()
         {
-            return false; // Priha does not support samenamesiblings yet.
-            //return m_allowsSameNameSiblings;
+            return m_allowsSameNameSiblings;
         }
 
         public NodeType getDefaultPrimaryType()

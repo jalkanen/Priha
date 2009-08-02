@@ -215,7 +215,15 @@ public class SessionProvider
             }
         }
         
-        res.addAll( m_source.listNodes(m_workspace, parentpath) );
+        try
+        {
+            res.addAll( m_source.listNodes(m_workspace, parentpath) );
+        }
+        catch( PathNotFoundException e )
+        {
+            // This is fine, because it could be that the node has not yet
+            // been save()d.
+        }
         
         return res;
     }

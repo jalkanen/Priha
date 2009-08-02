@@ -143,6 +143,17 @@ public final class Path implements Comparable<Path>, Serializable
         this( new QName[] { name }, b );
     }
 
+    public Path( Path parentPath, Component component )
+    {
+        m_isAbsolute = parentPath.m_isAbsolute;
+        m_components = new Component[parentPath.getElements().length+1];
+        for( int i = 0; i < parentPath.m_components.length; i++ )
+        {
+            m_components[i] = parentPath.m_components[i];
+        }
+        m_components[m_components.length-1] = component;
+    }
+
     /**
      *  In Priha context, any path component ending with [1] is always
      *  treated as the component itself, as per JCR-170 4.3.1.
@@ -558,12 +569,15 @@ public final class Path implements Comparable<Path>, Serializable
             this(name);
             m_index = index;
         }
-        
+
         public final int getIndex()
         {
             return m_index;
         }
         
+        /**
+         *  Returns the QName String representation of the Component, including the index.
+         */
         public String toString()
         {
             if( m_cachedString == null )
@@ -578,6 +592,19 @@ public final class Path implements Comparable<Path>, Serializable
             }
             
             return m_cachedString;
+        }
+        
+        /**
+         *  Returns the String representation of the Component, including the index,
+         *  using a NamespaceMapper.
+         *  <p>
+         *  The difference between using ns.fromQName(component) and component.toString(ns)
+         *  is that the first one will NOT return the index.  Sometimes this may be
+         *  desireable.
+         */
+        public String toString(NamespaceMapper ns) throws NamespaceException
+        {
+            return ns.fromQName( this ) + ((m_index != 1) ? "["+m_index+"]" : "");
         }
     }
 }

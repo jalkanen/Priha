@@ -65,7 +65,7 @@ public class Release
     /**
      *  The current minor revision.
      */
-    public static final int    MINORREVISION = 26;
+    public static final int    MINORREVISION = 27;
 
     /**
      *  The version string of the form version.revision.minorrevision.  At
@@ -91,7 +91,7 @@ public class Release
         Repository.LEVEL_1_SUPPORTED,             STR_TRUE,
         Repository.LEVEL_2_SUPPORTED,             STR_TRUE,
         Repository.OPTION_TRANSACTIONS_SUPPORTED, STR_FALSE,
-        Repository.OPTION_VERSIONING_SUPPORTED,   STR_TRUE,
+        Repository.OPTION_VERSIONING_SUPPORTED,   STR_FALSE,
         Repository.OPTION_LOCKING_SUPPORTED,      STR_TRUE,
         Repository.OPTION_OBSERVATION_SUPPORTED,  STR_FALSE,
         Repository.OPTION_QUERY_SQL_SUPPORTED,    STR_FALSE,

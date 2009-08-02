@@ -171,7 +171,7 @@
           <mandatory>false</mandatory>
           <onParentVersion>ABORT</onParentVersion>
           <protected>true</protected>
-          <multiple>false</multiple>
+          <multiple>true</multiple>
       </propertyDefinition>
 
       <propertyDefinition>
@@ -455,7 +455,7 @@
           <valueConstraints/>
           <defaultValues/>
           <autoCreated>true</autoCreated>
-          <mandatory>true</mandatory>
+          <mandatory>false</mandatory>
           <onParentVersion>INITIALIZE</onParentVersion>
           <protected>true</protected>
           <multiple>false</multiple>
@@ -584,7 +584,7 @@
       </propertyDefinition>
    </nodetype>
 
-   <!-- Define nt:unstructured -->
+   <!-- Define nt:unstructured clone which does not have same name siblings -->
    <nodetype>
       <name>test:sameNameSibsFalseChildNodeDefinition</name>
       <supertypes>nt:base</supertypes>
@@ -595,12 +595,12 @@
       <childNodeDefinition>
          <name>*</name>
          <requiredPrimaryTypes>[nt:base]</requiredPrimaryTypes>
-         <defaultPrimaryType>nt:unstructured</defaultPrimaryType>
+         <defaultPrimaryType>test:sameNameSibsFalseChildNodeDefinition</defaultPrimaryType>
          <autoCreated>false</autoCreated>
          <mandatory>false</mandatory>
          <onParentVersion>VERSION</onParentVersion>
          <protected>false</protected>
-         <sameNameSiblings>true</sameNameSiblings>
+         <sameNameSiblings>false</sameNameSiblings>
       </childNodeDefinition>
 
       <propertyDefinition>

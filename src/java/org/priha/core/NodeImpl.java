@@ -221,8 +221,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 throw new ConstraintViolationException("No node definition for this node type");
             }
             
+            // Residual definitions
+            if( assignedNodeDef.getQName().toString().equals("*") )
+            {
+                assignedNodeDef = assignedType.findNodeDefinition( absPath.getLastComponent() );
+            }
+            
             //
-            //  Check for same name siblings
+            //  Check for same name siblings.  If they are allowed, and they already
+            //  exist, we figure out the number of other existing nodes and modify the absPath
+            //  accordingly for the new path.
             //
             if( m_session.itemExists(absPath) )
             {
@@ -231,9 +239,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
                 if( !nd.allowsSameNameSiblings() )
                 {
-                    // FIXME: This should really check if samenamesiblings are allowed
-                    throw new ItemExistsException("Node "+absPath+" already exists!");
+                    throw new ItemExistsException("Node "+absPath+" already exists, and the parent node does not allow same name siblings!");
                 }
+                
+                NodeIterator iter = parent.getNodes( absPath.getLastComponent().toString(m_session) );
+                
+                int newPos = ((int)iter.getSize())+1;
+                
+                absPath = new Path( absPath.getParentPath(), 
+                                    new Path.Component(absPath.getLastComponent(),newPos) );
+                
             }
 
             //
@@ -381,7 +396,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         for( Path path : children )
         {
-            Matcher match = p.matcher( path.getLastComponent().toString() );
+            Matcher match = p.matcher( m_session.fromQName( path.getLastComponent() ) );
 
             if( match.matches() )
             {
