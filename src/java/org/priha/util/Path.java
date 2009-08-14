@@ -35,7 +35,7 @@ import org.priha.core.namespace.NamespaceMapper;
  */
 public final class Path implements Comparable<Path>, Serializable
 {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     /**
      *  This is a static instance of the root path so that you don't have
@@ -49,9 +49,9 @@ public final class Path implements Comparable<Path>, Serializable
 
     private boolean                  m_isAbsolute = false;
 
-    private String                   m_cachedString;
+    private transient String         m_cachedString;
 
-    private Path                     m_cachedParentPath;
+    private transient Path           m_cachedParentPath;
     
     /** This constructor is useful only to subclasses or serialization. */
     protected Path()
@@ -539,10 +539,10 @@ public final class Path implements Comparable<Path>, Serializable
          */
         public static final Component ROOT_COMPONENT = new Component("");
 
-        private static final long serialVersionUID = 8038593715235147911L;
+        private static final long serialVersionUID = 8038593715235147912L;
 
         private int m_index = 1;
-        private String m_cachedString;
+        private transient String m_cachedString;
         
         public Component(String localPart)
         {
