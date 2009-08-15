@@ -9,6 +9,9 @@
         now you no longer can save a target node without saving the source
         node and vice versa.
         
+        * Fixed issue with NodeType.canAddChildNode() which was not properly
+        adhering to JSR-170, but was being overly lenient.
+        
 2009-08-02  Janne Jalkanen <jalkanen@ecyrd.com>
    
         * 0.1.27

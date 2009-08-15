@@ -11,6 +11,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.namespace.QName;
 
+import org.apache.jackrabbit.test.api.nodetype.CanAddChildNodeCallWithNodeTypeTest;
 import org.priha.core.SessionImpl;
 import org.priha.core.values.QValue;
 import org.priha.core.values.ValueFactoryImpl;
@@ -50,21 +51,55 @@ public class QNodeType
     {
         return m_primaryItemName;
     }
+
     
     public boolean canAddChildNode(QName childNodeName)
+    {
+        return canAddChildNode(childNodeName, null);
+    }
+    
+    /**
+     *  Determines whether a child Node can be added of a predeterminate
+     *  type.
+     *  
+     *  @param childNodeName Name of the new child.
+     *  @param type Type to check.
+     *  @return True, if this node type allows adding this child of this type.
+     */
+    public boolean canAddChildNode(QName childNodeName,QName type)
     {
         QNodeDefinition nd = null;
         nd = findNodeDefinition( childNodeName );
         
+        //System.out.println(this+", "+childNodeName+" = "+type);
+        // If no node definition, means that there's no child type.
         if( nd == null ) return false;
         
-        // if( childNodeName.equals( nd.getQName() ) ) return true;
+        if( nd.getDefaultPrimaryType() == null && type == null ) return false;
+
+        if( type != null )
+        {
+            try
+            {
+                QNodeType t = QNodeTypeManager.getInstance().getNodeType(type);
+                for( QNodeType reqdType : nd.m_requiredPrimaryTypes )
+                {
+                    if( t.isNodeType(reqdType.getQName()) )
+                        return true;
+                }
+            }
+            catch( RepositoryException e )
+            {
+                return false;
+            }
+        }
+             
+        if( nd.getDefaultPrimaryType() != null && type == null ) return true;
         
-        //if( nd.getDefaultPrimaryType() == null ) return false;
-        
-        return true;
+        return false;
     }
 
+    
     public boolean canRemoveItem(QName itemName)
     {
         QNodeDefinition nd;
@@ -248,8 +283,17 @@ public class QNodeType
 
         public boolean canAddChildNode(String childNodeName, String nodeTypeName)
         {
-            // FIXME: not entirely accurate
-            return canAddChildNode(childNodeName);
+            try
+            {
+                return QNodeType.this.canAddChildNode( m_mapper.toQName( childNodeName ), 
+                                                       m_mapper.toQName( nodeTypeName ) );
+            }
+            catch( RepositoryException e )
+            {
+                // FIXME: log
+            }
+
+            return false;
         }
 
         public boolean canRemoveItem(String itemName)
