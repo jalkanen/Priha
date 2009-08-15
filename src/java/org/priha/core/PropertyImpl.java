@@ -154,7 +154,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         return getValue().getLong();
     }
 
-    public Node getNode() throws ValueFormatException, RepositoryException
+    public NodeImpl getNode() throws ValueFormatException, RepositoryException
     {
         if( m_multi != Multi.SINGLE )
             throw new ValueFormatException("Attempted to get a SINGLE reference value from a MULTI property "+m_path);
@@ -163,7 +163,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
 
         String uuid = getValue().getString();
 
-        Node nd = m_session.getNodeByUUID( uuid );
+        NodeImpl nd = m_session.getNodeByUUID( uuid );
 
         return nd;
     }

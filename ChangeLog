@@ -5,6 +5,10 @@
         * Fixed some issues with XML importing; the determination whether
         a property was multi or single was confused in quite a few cases.
         
+        * Fixed issue where Session.move() constraints were not observed -
+        now you no longer can save a target node without saving the source
+        node and vice versa.
+        
 2009-08-02  Janne Jalkanen <jalkanen@ecyrd.com>
    
         * 0.1.27

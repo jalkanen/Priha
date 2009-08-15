@@ -55,6 +55,16 @@ import org.xml.sax.SAXException;
 public class SessionImpl implements Session, NamespaceMapper
 {
     private static final String JCR_SYSTEM = "jcr:system";
+    
+    /**
+     *  This is a magical property which gets added to a Node whenever
+     *  a move occurs.  It's value is a Path which points from source to target
+     *  and target to source nodes which have been saved - it's point is
+     *  to make sure that the user will save both the source and the target
+     *  at the same time.  This property is never saved to the Provider.
+     */
+    static final String MOVE_CONSTRAINT = "priha:moveConstraint";
+    
     private RepositoryImpl m_repository;
     private WorkspaceImpl  m_workspace;
     private List<String>   m_lockTokens = new ArrayList<String>();
@@ -384,6 +394,9 @@ public class SessionImpl implements Session, NamespaceMapper
                 }
             }
 
+            srcnode.getParent().setProperty( MOVE_CONSTRAINT, destnode.getParent().getPath() );
+            destnode.getParent().setProperty( MOVE_CONSTRAINT, srcnode.getParent().getPath() );
+            
             srcnode.remove();
         }
         finally

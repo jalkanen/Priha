@@ -23,10 +23,12 @@ import java.util.*;
 import java.util.Map.Entry;
 
 import javax.jcr.*;
+import javax.jcr.nodetype.ConstraintViolationException;
 import javax.xml.namespace.QName;
 
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
+import org.priha.util.PathFactory;
 
 /**
  *  This is a special provider which stores the state of the Session.
@@ -306,6 +308,42 @@ public class SessionProvider
             }
         }
         
+        //
+        //  Test MOVE_CONSTRAINT
+        //
+        
+        for( Iterator<Entry<Path, ItemImpl>> i = m_changedItems.entrySet().iterator(); i.hasNext(); )
+        {
+            Entry<Path, ItemImpl> entry = i.next();
+            
+            ItemImpl ii = entry.getValue();
+
+            if( path.isParentOf(ii.getInternalPath()) || path.equals( ii.getInternalPath() ))
+            {
+                if( ii.isNode() )
+                {
+                    NodeImpl ni = (NodeImpl)ii;
+                    
+                    if( ni.hasProperty(SessionImpl.MOVE_CONSTRAINT) )
+                    {
+                        String tgtPath = ni.getProperty(SessionImpl.MOVE_CONSTRAINT).getString();
+                        
+                        NodeImpl tgt = (NodeImpl)m_changedItems.get(PathFactory.getPath(m_workspace.getSession(),tgtPath));
+                        
+                        if( tgt != null &&
+                            path.isParentOf(tgt.getInternalPath()) )
+                        {
+                            // Is okay; as it should be.  We no longer need this.
+                        }
+                        else
+                        {
+                            throw new ConstraintViolationException("When moving, both source and target Nodes must be saved in one go.");
+                        }
+                    }
+                }
+            }
+        }        
+        
         List<Path> toberemoved = new ArrayList<Path>();
         
         List<ItemImpl> unsaved = new ArrayList<ItemImpl>();
@@ -372,6 +410,13 @@ public class SessionProvider
                         switch( pi.getState() )
                         {
                             case NEW:
+                                // Do not save internal names.
+                                if( pi.getName().equals(SessionImpl.MOVE_CONSTRAINT) )
+                                {
+                                    toberemoved.add(pi.getInternalPath());
+                                    break;
+                                }
+                                // FALLTHROUGH ok.
                             case EXISTS:
                                 pi.preSave();
                                 m_source.putProperty( m_workspace, pi );
