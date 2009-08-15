@@ -79,10 +79,28 @@ public class QNameValue extends QValue implements Serializable
         {
             return QNameValue.this;
         }
+        
+        public String toString()
+        {
+            try
+            {
+                return getString();
+            }
+            catch( Exception e )
+            {
+                return "Conversion failed for "+m_value;
+            }
+        }
     }
 
     @Override
     public String getString()
+    {
+        return m_value.toString();
+    }
+    
+    @Override
+    public String toString()
     {
         return m_value.toString();
     }

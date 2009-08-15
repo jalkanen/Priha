@@ -89,10 +89,17 @@ public class LongValueImpl extends ValueImpl implements Value, Serializable
         
         return 0;
     }
+    
     @Override
     public String getString() throws ValueFormatException, IllegalStateException, RepositoryException
     {
         checkValue();
         return Long.toString( m_value );
+    }
+    
+    @Override
+    public String toString()
+    {
+        return m_value.toString();
     }
 }

@@ -1,9 +1,6 @@
 package org.priha.xml;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -22,8 +19,10 @@ import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
 import org.priha.core.namespace.NamespaceRegistryImpl;
 import org.priha.nodetype.QNodeType;
+import org.priha.nodetype.QNodeTypeManager;
 import org.priha.nodetype.QPropertyDefinition;
 import org.priha.util.Base64;
+import org.priha.util.FileUtil;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.xml.sax.Attributes;
@@ -66,10 +65,13 @@ public class XMLImport extends DefaultHandler
     {
         SAXParserFactory spf = SAXParserFactory.newInstance();
         spf.setNamespaceAware( true );
+        spf.setValidating( false );
+        spf.setFeature( "http://xml.org/sax/features/namespace-prefixes", true );
         
         SAXParser parser = spf.newSAXParser();
 
         boolean s = m_session.setSuper( true );
+        
         try
         {
             parser.parse( xmlDoc, this );
@@ -168,7 +170,7 @@ public class XMLImport extends DefaultHandler
         //
         if( uuid != null )
         {
-            nd.addMixin( "mix:referenceable" );
+            //nd.addMixin( "mix:referenceable" );
 
             switch( m_uuidBehavior )
             {
@@ -229,30 +231,37 @@ public class XMLImport extends DefaultHandler
             //  Start the real unmarshalling
             //
             log.finest("   Property: "+ps.m_propertyName);
-                        
-            QNodeType parentType = nd.getPrimaryQNodeType();
-            
+                                    
             //
             //  Now we try to figure out whether this should be a multi or a single property.
             //  The problem is when it is a multi property, but it was written as a single value.
             //
-            QPropertyDefinition pdmulti = parentType.findPropertyDefinition( ps.m_propertyName, true );
-            //PropertyDefinition pdsingle = parentType.findPropertyDefinition( ps.m_propertyName, false );
+            //  If there is a multidefinition, but no single definition, we assume this
+            //  to be a multiproperty.  If both exist, we'll assume a single property, unless
+            //  the single property is matched to be a wildcard.
+            //
+            QPropertyDefinition pdmulti = nd.findPropertyDefinition( ps.m_propertyName, true );
+            QPropertyDefinition pdsingle = nd.findPropertyDefinition( ps.m_propertyName, false );
             
-            boolean ismultiproperty = (pdmulti != null && !pdmulti.getQName().toString().equals("*"));
+            boolean ismultiproperty = (pdmulti != null && 
+                (pdsingle == null || (pdsingle != null && pdsingle.isWildCard() && !pdmulti.isWildCard()) ) );
             
             if( ps.m_values.size() == 1 && !ismultiproperty )
             {
                 nd.setProperty( m_session.fromQName( ps.m_propertyName ), ps.m_values.get(0) );
+                
+                //System.out.println("  "+ps.m_propertyName+" => SINGLE = "+ps.m_values.get(0));
             }
             else
             {
                 nd.setProperty( m_session.fromQName( ps.m_propertyName ), 
                                 ps.m_values.toArray( new Value[ps.m_values.size()] ) );
+
+                //System.out.println("  "+ps.m_propertyName+" => MULTI = "+ps.m_values.size()+" items");
             }
         }
         
-        System.out.println("Imported new node "+nd);
+//        System.out.println("Imported new node "+nd);
         if( m_immediateCommit ) 
         {
             m_session.save();
@@ -428,7 +437,7 @@ public class XMLImport extends DefaultHandler
     @Override
     public void startPrefixMapping(String prefix, String uri) throws SAXException
     {
-        System.out.println(prefix + " = " + uri );
+//        System.out.println(prefix + " = " + uri );
         try
         {
             NamespaceRegistry r = m_session.getWorkspace().getNamespaceRegistry();
@@ -529,6 +538,12 @@ public class XMLImport extends DefaultHandler
             
             return null;
         }
+        
+        @Override
+        public String toString()
+        {
+            return m_nodeName;
+        }
     }
     
     private static class PropertyStore
@@ -540,6 +555,12 @@ public class XMLImport extends DefaultHandler
         public void addValue(Value v)
         {
             m_values.add( v );
+        }
+        
+        @Override
+        public String toString()
+        {
+            return m_propertyName.toString();
         }
     }
 }

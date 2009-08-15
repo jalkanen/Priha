@@ -86,10 +86,29 @@ public class QPathValue extends QValue
         {
             return QPathValue.this;
         }
+        
+        @Override
+        public String toString()
+        {
+            try
+            {
+                return m_value.toString(m_mapper);
+            }
+            catch( RepositoryException e )
+            {
+                return "Unable to interpret value "+m_value.toString();
+            }
+        }
     }
 
     @Override
     public String getString()
+    {
+        return m_value.toString();
+    }
+    
+    @Override
+    public String toString()
     {
         return m_value.toString();
     }

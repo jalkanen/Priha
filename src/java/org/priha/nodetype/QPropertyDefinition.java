@@ -42,7 +42,19 @@ public class QPropertyDefinition extends QItemDefinition
     {
         return m_isMultiple;
     }
-    
+
+    /**
+     *  Returns true, if this property type defines a wildcard type
+     *  instead of being specific.  All property definitions which
+     *  have the name "*" are considered to be wildcards.
+     *  
+     *  @return True, if this is a wildcard definition.
+     */
+    public boolean isWildCard()
+    {
+        return getQName().toString().equals("*");
+    }
+
     /**
      *  Implements the PropertyDefinition with its Session-specific
      *  thingies.

@@ -37,10 +37,7 @@ import java.util.regex.Pattern;
 import javax.jcr.*;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
-import javax.jcr.nodetype.ConstraintViolationException;
-import javax.jcr.nodetype.NoSuchNodeTypeException;
-import javax.jcr.nodetype.NodeDefinition;
-import javax.jcr.nodetype.NodeType;
+import javax.jcr.nodetype.*;
 import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
@@ -1249,9 +1246,36 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     }
     
     /**
-     *  Assumes nothing, goes through the properties, makes sure all things are correct
-     *
-     *
+     *  Locates a PropertyDefinition for the given property name from the array of
+     *  the mixintypes and the primary type for this Node.
+     *  
+     *  @param propertyName The QName of the property to look for
+     *  @param multiple Is this a multiproperty or a single property?
+     *  @return A valid PropertyDefinition, or null, if it cannot be located.
+     *  @throws RepositoryException If mixin node types cannot be determined.
+     */
+    public QPropertyDefinition findPropertyDefinition(QName propertyName,boolean multiple) throws RepositoryException
+    {
+        QPropertyDefinition qp;
+        
+        //
+        //  Mixin types can override the primary type; especially since the
+        //  primary type can contain a wildcard.
+        //
+        for( NodeType nt : getMixinNodeTypes() )
+        {
+            QNodeType qnt = ((QNodeType.Impl)nt).getQNodeType();
+            
+            qp = qnt.findPropertyDefinition(propertyName, multiple);
+            
+            if( qp != null ) return qp;
+        }
+        
+        return getPrimaryQNodeType().findPropertyDefinition(propertyName, multiple);
+    }
+    
+    /**
+     *  Assumes nothing, goes through the properties, makes sure all things are correct.
      */
     public void sanitize() throws RepositoryException
     {
@@ -1463,6 +1487,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             }
 
             newval[newval.length-1] = vf.createValue(mixinName,PropertyType.NAME);
+            internalSetProperty( Q_JCR_MIXINTYPES, newval, PropertyType.NAME );
         }
         catch( PathNotFoundException e )
         {

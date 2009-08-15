@@ -104,4 +104,9 @@ public class DoubleValueImpl extends ValueImpl implements Value, Serializable
         return super.clone();
     }
 
+    @Override
+    public String toString()
+    {
+        return m_value.toString();
+    }
 }

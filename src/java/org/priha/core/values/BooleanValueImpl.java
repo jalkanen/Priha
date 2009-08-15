@@ -77,4 +77,10 @@ public class BooleanValueImpl extends ValueImpl implements Value, Serializable
         checkValue();
         return m_value.toString();
     }
+    
+    @Override
+    public String toString()
+    {
+        return m_value.toString();
+    }
 }
