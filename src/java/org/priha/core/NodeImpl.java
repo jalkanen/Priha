@@ -363,7 +363,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         return getNode( m_path.resolve(m_session,relPath) );
     }
-
+    
     public NodeImpl getNode(QName name) throws PathNotFoundException, RepositoryException
     {
         return getNode( m_path.resolve(name) );
@@ -386,7 +386,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return it;
     }
 
-    public NodeIterator getNodes(String namePattern) throws RepositoryException
+    public NodeIteratorImpl getNodes(String namePattern) throws RepositoryException
     {
         Pattern p = TextUtil.parseJCRPattern(namePattern);
 
@@ -407,7 +407,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return new NodeIteratorImpl(matchedpaths);
     }
 
-    public Item getPrimaryItem() throws ItemNotFoundException, RepositoryException
+    public ItemImpl getPrimaryItem() throws ItemNotFoundException, RepositoryException
     {
         NodeType nd = getPrimaryNodeType();
 
@@ -1168,7 +1168,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         if( getPath().equals("/") || getPath().equals("/jcr:system") ) return; // Refuse to remove
 
-        NodeType parentType = getParent().getPrimaryNodeType();
+        NodeImpl parent = getParent();
+        NodeType parentType = parent.getPrimaryNodeType();
     
         if( !getSession().isSuper() )
         {
@@ -1228,6 +1229,30 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
           
             nd.remove();
         }
+        
+        //
+        //  Fix same name siblings
+        // 
+        
+//        int myIndex = m_path.getLastComponent().getIndex();
+//        
+//        for( NodeIteratorImpl ni = parent.getNodes( getName() ); ni.hasNext(); )
+//        {
+//            NodeImpl n = ni.nextNode();
+//            
+//            int siblingIndex = n.getInternalPath().getLastComponent().getIndex();
+//            
+//            if( myIndex >= siblingIndex ) continue;
+//            
+//            Path destPath = new Path(n.getParent().getInternalPath(),
+//                                     new Path.Component(getQName(),siblingIndex-1) );
+//            
+//            System.out.println("Moving "+n+" to "+destPath);
+//            getSession().move( n.getInternalPath().toString( m_session ), 
+//                               destPath.toString( m_session ) );
+//        }
+        
+        
         
         log.finer("Removed "+getPath());
     }

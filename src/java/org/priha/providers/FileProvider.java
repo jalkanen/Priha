@@ -236,17 +236,14 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         File[] dirs = getWorkspaceRoot().listFiles();
         
-        boolean m_hasdefault = false;
         for( File f : dirs )
         {
             if( f.isDirectory() )
             {
                 list.add( f.getName() );
-                //if( f.getName().equals(RepositoryImpl.DEFAULT_WORKSPACE) ) m_hasdefault = true;
             }
         }
         
-        //if( !m_hasdefault ) list.add( RepositoryImpl.DEFAULT_WORKSPACE );
         return list;
     }
 

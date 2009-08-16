@@ -32,8 +32,8 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         c.setCurrentItem( session.getRootNode() );
         visit( nd, c );
         
-        /*
         System.out.println(nd.dump());
+        /*
         
         if( c.m_matches.size() == 0 ) System.out.println("No matches");
         
@@ -66,9 +66,28 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
 
 
     @Override
+    public Object visit( AndQueryNode node, Object data ) throws RepositoryException
+    {
+        QueryCollector c = (QueryCollector)data;
+
+        QueryNode[] operands = node.getOperands();
+        
+        for( int i = 0; i < operands.length; i++ )
+        {
+            c = (QueryCollector) operands[i].accept( this, c );
+            
+            // Stop at the first sign of non-match
+            if( c == null ) return null;
+        }
+        
+        return c;
+    }
+
+
+
+    @Override
     public Object visit( OrderQueryNode node, Object data ) throws RepositoryException
     {
-        System.out.println("O "+node.dump());
         // TODO Auto-generated method stub
         return super.visit( node, data );
     }
@@ -123,7 +142,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         switch( node.getOperation() )
         {
             case QueryConstants.OPERATION_NOT_NULL:
-                result = prop != null;
+                result = (prop != null);
                 break;
 
             case QueryConstants.OPERATION_GT_VALUE:
@@ -273,16 +292,20 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         if( name != null )
         {
             // Check if a child by this name exists.
+            // Also include same name siblings.
             
             if( currNode.hasNode(name) )
             {
-                NodeImpl ni = currNode.getNode(name);
-                
-                c.setCurrentItem(ni);
-                
-                if( c.m_isLast && checkPredicates(node,c) )
+                for( NodeIteratorImpl iter = currNode.getNodes(currNode.getSession().fromQName( name )); iter.hasNext(); )
                 {
-                    c.addMatch( ni );
+                    NodeImpl ni = iter.nextNode();
+                
+                    c.setCurrentItem(ni);
+                
+                    if( c.m_isLast && checkPredicates(node,c) )
+                    {
+                        c.addMatch( ni );
+                    }
                 }
             }
             

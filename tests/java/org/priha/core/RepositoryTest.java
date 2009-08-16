@@ -262,6 +262,53 @@ public class RepositoryTest extends TestCase
         assertFalse("big remove", f2.exists());
     }
     
+    
+    public void testSameNameSiblings() throws Exception
+    {
+        Node nd = m_session.getRootNode().addNode("test", "nt:unstructured");
+
+        Node nd21 = nd.addNode( "samename", "nt:unstructured" );
+        nd21.setProperty( "order", 1 );
+        Node nd22 = nd.addNode( "samename", "nt:unstructured" );
+        nd22.setProperty( "order", 2 );
+        Node nd23 = nd.addNode( "samename", "nt:unstructured" );
+        nd23.setProperty( "order", 3 );
+        
+        m_session.save();
+        
+        nd = (Node) m_session.getItem("/test/samename[1]");
+        assertEquals( "one", 1, nd.getProperty( "order" ).getLong() );
+
+        nd = (Node) m_session.getItem("/test/samename[2]");
+        assertEquals( "two", 2, nd.getProperty( "order" ).getLong() );
+
+        nd = (Node) m_session.getItem("/test/samename[3]");
+        assertEquals( "three", 3, nd.getProperty( "order" ).getLong() );
+    }
+
+    public void testSameNameSiblingsRemoval() throws Exception
+    {
+        Node nd = m_session.getRootNode().addNode("test", "nt:unstructured");
+
+        Node nd21 = nd.addNode( "samename", "nt:unstructured" );
+        nd21.setProperty( "order", 1 );
+        Node nd22 = nd.addNode( "samename", "nt:unstructured" );
+        nd22.setProperty( "order", 2 );
+        Node nd23 = nd.addNode( "samename", "nt:unstructured" );
+        nd23.setProperty( "order", 3 );
+        
+        m_session.save();
+        
+        nd22.remove();
+        m_session.save();
+        
+        nd = (Node) m_session.getItem("/test/samename[1]");
+        assertEquals( "one", 1, nd.getProperty( "order" ).getLong() );
+
+        nd = (Node) m_session.getItem("/test/samename[2]");
+        assertEquals( "samename[3] not moved to samename[2]", 3, nd.getProperty( "order" ).getLong() );
+    }
+
     public static Test suite()
     {
         return new TestSuite( RepositoryTest.class );

@@ -20,38 +20,43 @@ public class PrihaRepositoryStub extends RepositoryStub
         {
             RepositoryImpl r = RepositoryManager.getRepository();
 
-            if( r.getProperty("stub.initialized") == null )
+            Session s = r.login( getSuperuserCredentials() );
+
+            String testroot = getProperty(PROP_PREFIX + "." + PROP_TESTROOT);
+            if( testroot == null) throw new RepositoryStubException("No testroot defined");
+
+            if(testroot.startsWith("/")) testroot = testroot.substring(1);
+
+            Node testRoot;
+                
+            if( !s.getRootNode().hasNode(testroot) )
             {
-                //String testws = getProperty(PROP_WORKSPACE_NAME);
-                Session s = r.login( getSuperuserCredentials() );
-
-                String testroot = getProperty(PROP_TESTROOT);
-                if( testroot == null) throw new RepositoryStubException("No testroot defined");
-
-                if(testroot.startsWith("/")) testroot = testroot.substring(1);
-
-                Node testRoot;
-                
-                if( !s.getRootNode().hasNode(testroot) )
-                {
-                    testRoot = s.getRootNode().addNode(testroot);
-                }
-                else
-                {
-                    testRoot = s.getRootNode().getNode(testroot);
-                }
-
-                if( !testRoot.hasNode("footest") )
-                {
-                    Node nd = testRoot.addNode("footest");
-                    nd.addMixin("mix:referenceable");
-                }
-                
-                s.save();
-                
-                s.logout();
-                r.setProperty("stub.initialized", "true");
+                testRoot = s.getRootNode().addNode(testroot);
             }
+            else
+            {
+                testRoot = s.getRootNode().getNode(testroot);
+            }
+
+            if( !s.getRootNode().hasNode("querytest") )
+            {
+                //
+                //  Create some Nodes with properties for Query tests.
+                //
+                Node nd = s.getRootNode().addNode("querytest");
+                nd.addMixin("mix:referenceable");
+                nd.setProperty( getProperty(PROP_PREFIX + "." + PROP_PROP_NAME1), "mofa" );
+                    
+                Node nd2 = nd.addNode( PROP_NODE_NAME1 );
+                nd2.setProperty( getProperty(PROP_PREFIX + "." + PROP_PROP_NAME1), "fafa" );
+
+                nd2 = nd.addNode( PROP_NODE_NAME2 );
+                nd2.setProperty( getProperty(PROP_PREFIX + "." + PROP_PROP_NAME1), "famo" );
+            }
+                
+            s.save();
+                
+            s.logout();
 
             return r;
         }

@@ -42,6 +42,7 @@ import org.priha.nodetype.QNodeType;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
+import org.priha.util.Path.Component;
 import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
 import org.priha.xml.*;
@@ -347,7 +348,7 @@ public class SessionImpl implements Session, NamespaceMapper
         
             NodeImpl srcnode = getRootNode().getNode(srcAbsPath);
         
-            System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
+            //System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
 
             String newDestPath = destAbsPath;
 
@@ -745,4 +746,5 @@ public class SessionImpl implements Session, NamespaceMapper
     {
         return "Session["+(isSuper()?"SUPER":"")+"]";
     }
+
 }

@@ -1,3 +1,13 @@
+2009-08-17  Janne Jalkanen <jalkanen@ecyrd.com>
+   
+        * 0.1.29
+        
+        * Fixed a number of issues on queries; including range queries
+        and queries on same-name siblings.
+        
+        * Improved repository layout for JCR TCK tests to actually
+        have content for queries...
+
 2009-08-15  Janne Jalkanen <jalkanen@ecyrd.com>
    
         * 0.1.28
