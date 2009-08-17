@@ -9,26 +9,38 @@ import javax.jcr.*;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
+import javax.xml.namespace.QName;
 
 import org.priha.core.NodeImpl;
-import org.priha.core.PropertyImpl;
 import org.priha.util.NodeIteratorImpl;
 
 public class QueryResultImpl implements QueryResult
 {
     private List<NodeImpl> m_matches;
-        
-    public QueryResultImpl(List<NodeImpl> matches)
+    private List<QName>    m_columnNames;
+    
+    public QueryResultImpl(List<NodeImpl> matches, List<QName> columnNames)
     {
-        m_matches = matches;
+        m_matches     = matches;
+        m_columnNames = columnNames;
     }
 
     public String[] getColumnNames() throws RepositoryException
     {
         Set<String> names = new TreeSet<String>();
         
+        if( m_matches.size() > 0 )
+        {
+            NodeImpl ni = m_matches.iterator().next();
+            
+            for( QName q : m_columnNames )
+            {
+                names.add( ni.getSession().fromQName( q ) );
+                System.out.println("COLUMN "+q);
+            }
+        }
         //System.out.println("Column names:");
-
+/*
         // FIXME: Is kinda slow.
         for( NodeImpl nd : m_matches )
         {
@@ -44,7 +56,7 @@ public class QueryResultImpl implements QueryResult
                     names.add( pi.getName() );
             }
         }
-        
+  */      
         //
         //  These two always exist in addition to the search result.
         //

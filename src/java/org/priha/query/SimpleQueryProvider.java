@@ -3,87 +3,123 @@ package org.priha.query;
 import java.util.*;
 
 import javax.jcr.*;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
 import javax.xml.namespace.QName;
 
-import org.priha.core.ItemImpl;
-import org.priha.core.NodeImpl;
-import org.priha.core.PropertyImpl;
-import org.priha.core.SessionImpl;
+import org.priha.core.*;
+import org.priha.nodetype.QNodeType;
+import org.priha.nodetype.QNodeTypeManager;
+import org.priha.nodetype.QPropertyDefinition;
 import org.priha.query.aqt.*;
 import org.priha.query.aqt.OrderQueryNode.OrderSpec;
 import org.priha.util.NodeIteratorImpl;
 import org.priha.util.Path;
 
 /**
- *  This class provides a very simple query provider which does direct comparisons
- *  against the contents of the repository. The upside is that this makes it very
- *  simple; with the obvious downside that this is really slow because it
- *  traverses the entire repository one matched Node at a time.
- *  
- *  @author Janne Jalkanen
+ * This class provides a very simple query provider which does direct
+ * comparisons against the contents of the repository. The upside is that this
+ * makes it very simple; with the obvious downside that this is really slow
+ * because it traverses the entire repository one matched Node at a time.
+ * 
+ * @author Janne Jalkanen
  */
 public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements QueryProvider
 {
-    public QueryResult query(SessionImpl session, QueryRootNode nd) throws RepositoryException
+    public QueryResult query( SessionImpl session, QueryRootNode root ) throws RepositoryException
     {
         QueryCollector c = new QueryCollector();
-        
+
         c.setCurrentItem( session.getRootNode() );
-        visit( nd, c );
-        
-        System.out.println(nd.dump());
+        visit( root, c );
+
+        System.out.println( root.dump() );
         /*
-        
-        if( c.m_matches.size() == 0 ) System.out.println("No matches");
-        
+         * if( c.m_matches.size() == 0 ) System.out.println("No matches"); for(
+         * ItemImpl ii : c.m_matches ) { System.out.println(ii); }
+         */
+
+        System.out.println( "---" );
         for( ItemImpl ii : c.m_matches )
         {
-            System.out.println(ii);
-        }
-        */
-
-        System.out.println("---");
-        for( ItemImpl ii : c.m_matches )
-        {
-            System.out.println(ii);
+            System.out.println( ii );
         }
 
-        if( nd.getOrderNode() != null )
+        if( root.getOrderNode() != null )
         {
-            Collections.sort( c.m_matches, new QuerySorter( nd.getOrderNode() ) );
+            Collections.sort( c.m_matches, new QuerySorter( root.getOrderNode() ) );
 
-            System.out.println("+++");
+            System.out.println( "+++" );
             for( ItemImpl ii : c.m_matches )
             {
-                System.out.println(ii);
+                System.out.println( ii );
             }
         }
 
-        return new QueryResultImpl( c.m_matches );
+        //
+        // Figure out which columns were selected.
+        //
+        List<QName> columns = new ArrayList<QName>();
+        columns.addAll( Arrays.asList( root.getSelectProperties() ) );
+
+        // Shamelessly lifted from Jackrabbit :-)
+        if( columns.size() == 0 )
+        {
+            // use node type constraint
+            LocationStepQueryNode[] steps = root.getLocationNode().getPathSteps();
+            final QName[] ntName = new QName[1];
+            steps[steps.length - 1].acceptOperands( new DefaultQueryNodeVisitor() {
+
+                public Object visit( AndQueryNode node, Object data ) throws RepositoryException
+                {
+                    return node.acceptOperands( this, data );
+                }
+
+                public Object visit( NodeTypeQueryNode node, Object data )
+                {
+                    ntName[0] = node.getValue();
+                    return data;
+                }
+            }, null );
+            
+            if( ntName[0] == null )
+            {
+                ntName[0] = JCRConstants.Q_NT_BASE;
+            }
+            
+            QNodeType nt = QNodeTypeManager.getInstance().getNodeType( ntName[0] );
+            QPropertyDefinition[] propDefs = nt.getQPropertyDefinitions();
+            
+            for( QPropertyDefinition propDef : propDefs )
+            {
+                if( !propDef.isWildCard() && !propDef.isMultiple() )
+                {
+                    columns.add( propDef.getQName() );
+                }
+            }
+        }
+
+        return new QueryResultImpl( c.m_matches, columns );
     }
-
-
 
     @Override
     public Object visit( AndQueryNode node, Object data ) throws RepositoryException
     {
-        QueryCollector c = (QueryCollector)data;
+        QueryCollector c = (QueryCollector) data;
 
         QueryNode[] operands = node.getOperands();
-        
+
         for( int i = 0; i < operands.length; i++ )
         {
             c = (QueryCollector) operands[i].accept( this, c );
-            
+
             // Stop at the first sign of non-match
-            if( c == null ) return null;
+            if( c == null )
+                return null;
         }
-        
+
         return c;
     }
-
-
 
     @Override
     public Object visit( OrderQueryNode node, Object data ) throws RepositoryException
@@ -92,53 +128,78 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         return super.visit( node, data );
     }
 
-
-
     @Override
-    public Object visit(PathQueryNode node, Object data) throws RepositoryException
+    public Object visit( PathQueryNode node, Object data ) throws RepositoryException
     {
         LocationStepQueryNode[] steps = node.getPathSteps();
-        
-        QueryCollector c = (QueryCollector)data;
+
+        QueryCollector c = (QueryCollector) data;
 
         try
         {
             for( int i = 0; i < steps.length; i++ )
             {
-                if( i == steps.length-1 ) 
+                if( i == steps.length - 1 )
                     c.m_isLast = true;
                 c = (QueryCollector) steps[i].accept( this, c );
-            }        
+            }
         }
         catch( PathNotFoundException e )
         {
             // No matches is found
-            
+
             c.m_matches.clear();
         }
-        
+
         return c;
     }
 
+    /**
+     * Is used to evaluate a single Value against a constraint.
+     */
+    private interface OperationResolver
+    {
+        public Boolean eval( Value value ) throws RepositoryException;
+    }
 
+    /**
+     * Evaluates all values of the given property using the given
+     * OperationResolver and returns a logical OR of the results.
+     */
+    private Boolean resolveOp( PropertyImpl prop, OperationResolver resolver ) throws ValueFormatException, RepositoryException
+    {
+        Boolean result = false;
+
+        if( prop.getDefinition().isMultiple() )
+        {
+            for( Value v : prop.getValues() )
+            {
+                result |= resolver.eval( v );
+            }
+        }
+        else
+        {
+            result = resolver.eval( prop.getValue() );
+        }
+
+        return result;
+    }
 
     @Override
-    public Object visit(RelationQueryNode node, Object data) throws RepositoryException
+    public Object visit( final RelationQueryNode node, Object data ) throws RepositoryException
     {
         Path relPath = node.getRelativePath();
-        QueryCollector qc = (QueryCollector)data;
+        QueryCollector qc = (QueryCollector) data;
         Boolean result = false;
         PropertyImpl prop = null;
-        
+
         NodeImpl currNode = qc.getCurrentItem();
-        
-        if( currNode.hasProperty(relPath.toString()) )
+
+        if( currNode.hasProperty( relPath.toString() ) )
         {
-            prop = currNode.getProperty(relPath.toString());
-            
-            if( prop.getDefinition().isMultiple() ) return null;
+            prop = currNode.getProperty( relPath.toString() );
         }
-        
+
         switch( node.getOperation() )
         {
             case QueryConstants.OPERATION_NOT_NULL:
@@ -152,174 +213,343 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
                     switch( node.getValueType() )
                     {
                         case QueryConstants.TYPE_DOUBLE:
-                            result = prop.getDouble() > node.getDoubleValue();
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getDouble() > node.getDoubleValue();
+                                }
+                            } );
                             break;
+
                         case QueryConstants.TYPE_LONG:
-                            result = prop.getLong() > node.getLongValue();
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getLong() > node.getLongValue();
+                                }
+                            } );
                             break;
+
                         case QueryConstants.TYPE_STRING:
-                            result = prop.getString().compareTo(node.getStringValue()) > 0;
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getString().compareTo( node.getStringValue() ) > 0;
+                                }
+                            } );
                             break;
+
                         case QueryConstants.TYPE_DATE:
                         case QueryConstants.TYPE_TIMESTAMP:
-                            result = prop.getDate().getTime().after(node.getDateValue());
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getDate().getTime().after( node.getDateValue() );
+                                }
+                            } );
                             break;
                     }
                 }
-                    
+
                 break;
-              
+
             case QueryConstants.OPERATION_EQ_VALUE:
             case QueryConstants.OPERATION_EQ_GENERAL:
                 if( prop != null )
                 {
-                    switch(node.getValueType())
+                    switch( node.getValueType() )
                     {
                         case QueryConstants.TYPE_LONG:
-                            result = prop.getLong() == node.getLongValue();
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getLong() == node.getLongValue();
+                                }
+                            } );
                             break;
                         case QueryConstants.TYPE_DOUBLE:
-                            result = prop.getDouble() == node.getDoubleValue();
-                            break;                            
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return (value.getDouble() - node.getDoubleValue()) < 1e-12;
+                                }
+                            } );
+                            break;
                         case QueryConstants.TYPE_STRING:
-                            result = prop.getString().equals(node.getStringValue());
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getString().equals( node.getStringValue() );
+                                }
+                            } );
                             break;
                         case QueryConstants.TYPE_DATE:
                         case QueryConstants.TYPE_TIMESTAMP:
-                            result = prop.getDate().getTime().compareTo(node.getDateValue()) == 0;
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getDate().getTime().compareTo( node.getDateValue() ) == 0;
+                                }
+                            } );
                             break;
                     }
                 }
                 break;
-                
+
             case QueryConstants.OPERATION_LT_VALUE:
             case QueryConstants.OPERATION_LT_GENERAL:
                 if( prop != null )
                 {
-                    switch(node.getValueType())
+                    switch( node.getValueType() )
                     {
                         case QueryConstants.TYPE_LONG:
-                            result = prop.getLong() < node.getLongValue();
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getLong() < node.getLongValue();
+                                }
+                            } );
+
                             break;
                         case QueryConstants.TYPE_DOUBLE:
-                            result = prop.getDouble() < node.getDoubleValue();
-                            break;                            
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getDouble() < node.getDoubleValue();
+                                }
+                            } );
+                            break;
                         case QueryConstants.TYPE_STRING:
-                            result = prop.getString().compareTo(node.getStringValue()) < 0;
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getString().compareTo( node.getStringValue() ) < 0;
+                                }
+                            } );
                             break;
                         case QueryConstants.TYPE_DATE:
                         case QueryConstants.TYPE_TIMESTAMP:
-                            result = prop.getDate().getTime().before(node.getDateValue());
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getDate().getTime().before( node.getDateValue() );
+                                }
+                            } );
                             break;
 
-                    }                    
+                    }
                 }
                 break;
-                
+
             case QueryConstants.OPERATION_GE_VALUE:
             case QueryConstants.OPERATION_GE_GENERAL:
                 if( prop != null )
                 {
-                    switch(node.getValueType())
+                    switch( node.getValueType() )
                     {
                         case QueryConstants.TYPE_LONG:
-                            result = prop.getLong() >= node.getLongValue();
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getLong() >= node.getLongValue();
+                                }
+                            } );
                             break;
                         case QueryConstants.TYPE_DOUBLE:
-                            result = prop.getDouble() >= node.getDoubleValue();
-                            break;                            
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getDouble() >= node.getDoubleValue();
+                                }
+                            } );
+                            break;
                         case QueryConstants.TYPE_STRING:
-                            result = prop.getString().compareTo(node.getStringValue()) >= 0;
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getString().compareTo( node.getStringValue() ) >= 0;
+                                }
+                            } );
                             break;
                         case QueryConstants.TYPE_DATE:
                         case QueryConstants.TYPE_TIMESTAMP:
-                            result = prop.getDate().getTime().compareTo(node.getDateValue()) >= 0;
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getDate().getTime().compareTo( node.getDateValue() ) >= 0;
+                                }
+                            } );
                             break;
 
                     }
                 }
                 break;
-                
+
             case QueryConstants.OPERATION_LE_VALUE:
             case QueryConstants.OPERATION_LE_GENERAL:
                 if( prop != null )
                 {
-                    switch(node.getValueType())
+                    switch( node.getValueType() )
                     {
                         case QueryConstants.TYPE_LONG:
-                            result = prop.getLong() <= node.getLongValue();
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getLong() <= node.getLongValue();
+                                }
+                            } );
                             break;
                         case QueryConstants.TYPE_DOUBLE:
-                            result = prop.getDouble() <= node.getDoubleValue();
-                            break;                            
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getDouble() <= node.getDoubleValue();
+                                }
+                            } );
+                            break;
                         case QueryConstants.TYPE_STRING:
-                            result = prop.getString().compareTo(node.getStringValue()) <= 0;
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getString().compareTo( node.getStringValue() ) <= 0;
+                                }
+                            } );
                             break;
                         case QueryConstants.TYPE_DATE:
                         case QueryConstants.TYPE_TIMESTAMP:
-                            result = prop.getDate().getTime().compareTo(node.getDateValue()) <= 0;
+                            result = resolveOp( prop, new OperationResolver() {
+                                public Boolean eval( Value value )
+                                                                  throws ValueFormatException,
+                                                                      IllegalStateException,
+                                                                      RepositoryException
+                                {
+                                    return value.getDate().getTime().compareTo( node.getDateValue() ) <= 0;
+                                }
+                            } );
                             break;
 
                     }
                 }
                 break;
-                                
+
             case QueryConstants.OPERATION_NULL:
                 result = prop == null;
                 break;
-                
+
             default:
-                throw new UnsupportedRepositoryOperationException("Unknown operation "+node.getOperation());
+                throw new UnsupportedRepositoryOperationException( "Unknown operation " + node.getOperation() );
         }
-       
+
         return result ? qc : null;
     }
 
-
-
     @Override
-    public Object visit(LocationStepQueryNode node, Object data) throws RepositoryException
+    public Object visit( LocationStepQueryNode node, Object data ) throws RepositoryException
     {
         QName name = node.getNameTest();
         QueryCollector c = (QueryCollector) data;
         NodeImpl currNode = c.getCurrentItem();
-        
 
         //
-        //  If there is a named path component, then check that one.
-        //  If there isn't, then check all children.
+        // If there is a named path component, then check that one.
+        // If there isn't, then check all children.
         //
         if( name != null )
         {
             // Check if a child by this name exists.
             // Also include same name siblings.
-            
-            if( currNode.hasNode(name) )
+            if( name.getLocalPart().length() == 0 )
             {
-                for( NodeIteratorImpl iter = currNode.getNodes(currNode.getSession().fromQName( name )); iter.hasNext(); )
+                // Root node
+                c.setCurrentItem( currNode );
+                if( c.m_isLast && checkPredicates( node, c ) )
+                {
+                    c.addMatch( currNode );
+                }
+            }
+            else if( currNode.hasNode( name ) )
+            {
+                for( NodeIteratorImpl iter = currNode.getNodes( currNode.getSession().fromQName( name ) ); iter.hasNext(); )
                 {
                     NodeImpl ni = iter.nextNode();
-                
-                    c.setCurrentItem(ni);
-                
-                    if( c.m_isLast && checkPredicates(node,c) )
+
+                    c.setCurrentItem( ni );
+
+                    if( c.m_isLast && checkPredicates( node, c ) )
                     {
                         c.addMatch( ni );
                     }
                 }
             }
-            
+
             //
-            //  If required, perform also the same check to all descendants of
-            //  the current node.
+            // If required, perform also the same check to all descendants of
+            // the current node.
             //
             if( node.getIncludeDescendants() )
             {
                 for( NodeIteratorImpl iter = currNode.getNodes(); iter.hasNext(); )
                 {
                     NodeImpl child = iter.nextNode();
-                    
-                    c.setCurrentItem(child);
+
+                    c.setCurrentItem( child );
                     visit( node, c );
                 }
             }
@@ -327,22 +557,23 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         else
         {
             //
-            //  It is required to match all of the children.
+            // It is required to match all of the children.
             //
-            
+
             for( NodeIteratorImpl iter = currNode.getNodes(); iter.hasNext(); )
             {
                 NodeImpl child = iter.nextNode();
-                
-                c.setCurrentItem(child);
-                
-                if( c.m_isLast && checkPredicates(node,c) )
-                    c.addMatch(child);
-                
-                visit( node,c );
+
+                c.setCurrentItem( child );
+
+                if( c.m_isLast && checkPredicates( node, c ) )
+                    c.addMatch( child );
+
+                if( node.getIncludeDescendants() )
+                    visit( node, c );
             }
         }
-        
+
         return c;
     }
 
@@ -350,66 +581,67 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
     public Object visit( TextsearchQueryNode node, Object data ) throws RepositoryException
     {
         // System.out.println("Searching for "+node.getQuery()+" from path "+node.getRelativePath());
-        
+
         QueryCollector c = (QueryCollector) data;
         NodeImpl currNode = c.getCurrentItem();
-        
+
         int score = 0;
-        
+
         PropertyIterator pi = currNode.getProperties();
-        
+
         Path checkPath = node.getRelativePath();
 
         //
-        //  The tokens are cached in the QueryNode so that we can avoid reparsing them
-        //  every time a node is visited.
-        //  We do this in a lazy manner.
+        // The tokens are cached in the QueryNode so that we can avoid reparsing
+        // them
+        // every time a node is visited.
+        // We do this in a lazy manner.
         //
-        String[] tokens = (String[])node.getAttribute( "parsedTokens" );
-        
+        String[] tokens = (String[]) node.getAttribute( "parsedTokens" );
+
         if( tokens == null )
         {
-            tokens = parseLine(node.getQuery());
-            node.setAttribute("parsedTokens",tokens);
+            tokens = parseLine( node.getQuery() );
+            node.setAttribute( "parsedTokens", tokens );
         }
-        
-        while( pi.hasNext() )
+
+        while ( pi.hasNext() )
         {
-            PropertyImpl p = (PropertyImpl)pi.nextProperty();
-            
+            PropertyImpl p = (PropertyImpl) pi.nextProperty();
+
             if( checkPath != null && !checkPath.getLastComponent().equals( p.getQName() ) )
                 continue;
-            
+
             switch( p.getType() )
             {
                 case PropertyType.STRING:
                     String val = p.getString();
-                    
+
                     for( int i = 0; i < tokens.length; i++ )
                     {
-                        // FIXME: Should be cached somehow so that there's no need to create a new String.
-                        if( tokens[i].charAt(0) == '-' && val.contains(tokens[i].substring(1)))
+                        // FIXME: Should be cached somehow so that there's no
+                        // need to create a new String.
+                        if( tokens[i].charAt( 0 ) == '-' && val.contains( tokens[i].substring( 1 ) ) )
                         {
                             score = 0;
                             break;
                         }
-                        else if( val.contains( tokens[i] ) ) 
+                        else if( val.contains( tokens[i] ) )
                         {
                             score++;
                         }
                     }
-                    
+
                     break;
-                    
+
                 default:
                     // No action
-                    break;    
+                    break;
             }
         }
-        
+
         return score > 0 ? c : null;
     }
-
 
     /**
      * //element(*,"nt:base")
@@ -419,81 +651,74 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
     {
         QueryCollector c = (QueryCollector) data;
         NodeImpl currNode = c.getCurrentItem();
-        
+
         if( currNode.isNodeType( currNode.getSession().fromQName( node.getValue() ) ) )
             return c;
-        
+
         return null;
     }
 
-
-
     private boolean checkPredicates( LocationStepQueryNode node, QueryCollector data ) throws RepositoryException
     {
-        Object[] result = node.acceptOperands(this, data);
-        
+        Object[] result = node.acceptOperands( this, data );
+
         if( node.getPredicates().length != 0 && result.length == 0 )
         {
             return false;
         }
-        
+
         return true;
     }
 
     /**
-     *  This class collects the results of the Query.
+     * This class collects the results of the Query.
      */
-    
+
     private class QueryCollector
     {
         public boolean m_isLast;
+
         private NodeImpl m_currentItem;
+
         private ArrayList<NodeImpl> m_matches = new ArrayList<NodeImpl>();
-        
+
         public NodeImpl getCurrentItem()
         {
             return m_currentItem;
         }
 
-        public void setCurrentItem(NodeImpl item)
+        public void setCurrentItem( NodeImpl item )
         {
             m_currentItem = item;
         }
-        
+
         public void addMatch( NodeImpl ii )
         {
             m_matches.add( ii );
         }
     }
-    
+
     /**
      * Parses an incoming String and returns an array of elements.
      * 
-     * 
-     * @param nextLine
-     *            the string to parse
+     * @param nextLine the string to parse
      * @return the comma-tokenized list of elements, or null if nextLine is null
      * @throws IOException if bad things happen during the read
      */
     /*
-    Copyright 2005 Bytecode Pty Ltd.
+     * Copyright 2005 Bytecode Pty Ltd. Licensed under the Apache License,
+     * Version 2.0 (the "License"); you may not use this file except in
+     * compliance with the License. You may obtain a copy of the License at
+     * http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable
+     * law or agreed to in writing, software distributed under the License is
+     * distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+     * KIND, either express or implied. See the License for the specific
+     * language governing permissions and limitations under the License.
+     */
 
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-    */
-
-    private String[] parseLine(String nextLine) 
+    private String[] parseLine( String nextLine )
     {
-        if (nextLine == null) 
+        if( nextLine == null )
         {
             return null;
         }
@@ -502,58 +727,71 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         StringBuilder sb = new StringBuilder();
         boolean inQuotes = false;
 
-        for (int i = 0; i < nextLine.length(); i++) 
+        for( int i = 0; i < nextLine.length(); i++ )
         {
-            char c = nextLine.charAt(i);
-            if (c == '\"') 
+            char c = nextLine.charAt( i );
+            if( c == '\"' )
             {
-                // this gets complex... the quote may end a quoted block, or escape another quote.
+                // this gets complex... the quote may end a quoted block, or
+                // escape another quote.
                 // do a 1-char lookahead:
-                if( inQuotes  // we are in quotes, therefore there can be escaped quotes in here.
-                    && nextLine.length() > (i+1)  // there is indeed another character to check.
-                    && nextLine.charAt(i+1) == '\"' )
-                {   // ..and that char. is a quote also.
-                    // we have two quote chars in a row == one quote char, so consume them both and
+                if( inQuotes // we are in quotes, therefore there can be escaped
+                             // quotes in here.
+                    && nextLine.length() > (i + 1) // there is indeed another
+                                                   // character to check.
+                    && nextLine.charAt( i + 1 ) == '\"' )
+                { // ..and that char. is a quote also.
+                    // we have two quote chars in a row == one quote char, so
+                    // consume them both and
                     // put one on the token. we do *not* exit the quoted text.
-                    sb.append(nextLine.charAt(i+1));
+                    sb.append( nextLine.charAt( i + 1 ) );
                     i++;
                 }
                 else
                 {
                     inQuotes = !inQuotes;
-                    // the tricky case of an embedded quote in the middle: a,bc"d"ef,g
-                    if(i>2 //not on the begining of the line
-                        && nextLine.charAt(i-1) != ' ' //not at the begining of an escape sequence 
-                            && nextLine.length()>(i+1) &&
-                            nextLine.charAt(i+1) != ' ' )//not at the end of an escape sequence
+                    // the tricky case of an embedded quote in the middle:
+                    // a,bc"d"ef,g
+                    if( i > 2 // not on the begining of the line
+                        && nextLine.charAt( i - 1 ) != ' ' // not at the
+                                                           // begining of an
+                                                           // escape sequence
+                        && nextLine.length() > (i + 1) && nextLine.charAt( i + 1 ) != ' ' )// not
+                                                                                           // at
+                                                                                           // the
+                                                                                           // end
+                                                                                           // of
+                                                                                           // an
+                                                                                           // escape
+                                                                                           // sequence
                     {
-                        sb.append(c);
+                        sb.append( c );
                     }
                 }
-            } 
-            else if (c == ' ' && !inQuotes) 
+            }
+            else if( c == ' ' && !inQuotes )
             {
-                tokensOnThisLine.add(sb.toString());
+                tokensOnThisLine.add( sb.toString() );
                 sb = new StringBuilder(); // start work on next token
             }
-            else 
+            else
             {
-                sb.append(c);
+                sb.append( c );
             }
         }
-        
-        tokensOnThisLine.add(sb.toString());
-        return tokensOnThisLine.toArray(new String[0]);
+
+        tokensOnThisLine.add( sb.toString() );
+        return tokensOnThisLine.toArray( new String[0] );
     }
 
     private class QuerySorter implements Comparator<NodeImpl>
     {
         OrderSpec[] m_specs;
-        
+
         public QuerySorter( OrderQueryNode orderNode )
         {
             m_specs = orderNode.getOrderSpecs();
-            System.out.println("Sorting by "+m_specs[0].getProperty());
+            System.out.println( "Sorting by " + m_specs[0].getProperty() );
         }
 
         public int compare( NodeImpl o1, NodeImpl o2 )
@@ -563,31 +801,34 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
                 QName propName = m_specs[i].getProperty();
                 PropertyImpl p1 = null, p2 = null;
                 int result = 0;
-                
+
                 try
                 {
                     p1 = o1.getProperty( propName );
                     p2 = o2.getProperty( propName );
-                    
+
                     result = p1.getValue().compareTo( p2.getValue() );
-                    System.out.println("p1 ="+p1+", p2="+p2+", result="+result);                    
+                    System.out.println( "p1 =" + p1 + ", p2=" + p2 + ", result=" + result );
                 }
                 catch( PathNotFoundException e )
                 {
-                    if( p1 == null ) result = 1;
-                    if( p2 == null ) result = -1;
+                    if( p1 == null )
+                        result = 1;
+                    if( p2 == null )
+                        result = -1;
                 }
                 catch( RepositoryException e )
                 {
                     return 0;
                 }
-                
-                if( result == 0 ) continue; // Next property
-                
+
+                if( result == 0 )
+                    continue; // Next property
+
                 return m_specs[i].isAscending() ? result : -result;
             }
             return 0;
         }
-        
+
     }
 }

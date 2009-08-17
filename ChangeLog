@@ -1,3 +1,14 @@
+2009-08-18  Janne Jalkanen <jalkanen@ecyrd.com>
+   
+        * 0.1.30
+        
+        * Fixed QueryImpl.getColumnNames() to default to the proper
+        node constraint; was happily returning everything that was found...
+        (JCR spec not too specific about this part, had to dig through
+        some Jackrabbit mailing lists...) 
+        
+        * Implemented multivalue matching.
+        
 2009-08-17  Janne Jalkanen <jalkanen@ecyrd.com>
    
         * 0.1.29
