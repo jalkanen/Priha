@@ -87,7 +87,7 @@ public class PathTest extends TestCase
         assertFalse( "p2->p1", p2.isParentOf(p1) );
     }
 
-    private static final int SPEED_ITERS = 10000;
+    private static final int SPEED_ITERS = 100000;
     
     public void testSpeed() throws Exception
     {

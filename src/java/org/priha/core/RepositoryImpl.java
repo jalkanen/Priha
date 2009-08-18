@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -212,11 +213,17 @@ public class RepositoryImpl implements Repository
      */
     protected void visit( SessionVisitor v )
     {
-        for( WeakReference<SessionImpl> wr : m_sessionManager.m_sessions )
+        synchronized( m_sessionManager.m_sessions )
         {
-            SessionImpl si = wr.get();
+            for( Iterator<WeakReference<SessionImpl>> i = m_sessionManager.m_sessions.iterator(); i.hasNext(); )
+            {
+                WeakReference<SessionImpl> wr = i.next();
             
-            if( si != null ) v.visit(si);
+                SessionImpl si = wr.get();
+            
+                if( si != null ) v.visit(si);
+                else i.remove();
+            }
         }
     }
     
@@ -233,12 +240,15 @@ public class RepositoryImpl implements Repository
         public SessionImpl openSession( Credentials credentials, String workspaceName ) 
             throws RepositoryException
         {
-            SessionImpl session = new SessionImpl( RepositoryImpl.this, 
-                                                   credentials, 
-                                                   workspaceName );
+            synchronized(m_sessions)
+            {
+                SessionImpl session = new SessionImpl( RepositoryImpl.this, 
+                                                       credentials, 
+                                                       workspaceName );
             
-            m_sessions.add( new WeakReference<SessionImpl>(session) );
-            return session;
+                m_sessions.add( new WeakReference<SessionImpl>(session) );
+                return session;
+            }
         }
     }
     

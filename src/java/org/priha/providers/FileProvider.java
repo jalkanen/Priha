@@ -52,7 +52,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private static final String PROP_MULTIPLE       = "multiple";
     private static final String PROP_TYPE           = "type";
     private static final String PROP_PATH           = "path";
-
+    private static final int    BUFFER_SIZE         = 4096;
+    
     private File m_root;
     
     private Logger log = Logger.getLogger( getClass().getName() );
@@ -1121,7 +1122,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private static void copyContents( InputStream in, OutputStream out )
         throws IOException
     {
-        byte[] buf = new byte[32768];
+        byte[] buf = new byte[BUFFER_SIZE];
         int bytesRead = 0;
 
         while ((bytesRead = in.read(buf)) > 0) 
@@ -1135,7 +1136,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private static void copyContents(Reader in, Writer out)
         throws IOException
     {
-        char[] buf = new char[32768];
+        char[] buf = new char[BUFFER_SIZE];
         int bytesRead = 0;
 
         while ((bytesRead = in.read(buf)) > 0) 

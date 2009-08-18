@@ -1,9 +1,9 @@
 package org.priha.query;
 
+import java.io.IOException;
 import java.util.*;
 
 import javax.jcr.*;
-import javax.jcr.nodetype.NodeType;
 import javax.jcr.query.QueryResult;
 import javax.xml.namespace.QName;
 
@@ -140,7 +140,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
             for( int i = 0; i < steps.length; i++ )
             {
                 if( i == steps.length - 1 )
-                    c.m_isLast = true;
+                    c.setLast(true);
                 c = (QueryCollector) steps[i].accept( this, c );
             }
         }
@@ -503,38 +503,40 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
     @Override
     public Object visit( LocationStepQueryNode node, Object data ) throws RepositoryException
     {
-        QName name = node.getNameTest();
+        QName checkedName = node.getNameTest();
         QueryCollector c = (QueryCollector) data;
         NodeImpl currNode = c.getCurrentItem();
 
+        System.out.println("LOC = "+currNode+", check="+checkedName);
         //
         // If there is a named path component, then check that one.
         // If there isn't, then check all children.
         //
-        if( name != null )
+        if( checkedName != null )
         {
             // Check if a child by this name exists.
             // Also include same name siblings.
-            if( name.getLocalPart().length() == 0 )
+            if( checkedName.getLocalPart().length() == 0 )
             {
                 // Root node
                 c.setCurrentItem( currNode );
-                if( c.m_isLast && checkPredicates( node, c ) )
+                if( c.isLast() && checkPredicates( node, c ) )
                 {
                     c.addMatch( currNode );
                 }
             }
-            else if( currNode.hasNode( name ) )
+            else if( currNode.hasNode( checkedName ) )
             {
-                for( NodeIteratorImpl iter = currNode.getNodes( currNode.getSession().fromQName( name ) ); iter.hasNext(); )
+                for( NodeIteratorImpl iter = currNode.getNodes( currNode.getSession().fromQName( checkedName ) ); iter.hasNext(); )
                 {
                     NodeImpl ni = iter.nextNode();
 
                     c.setCurrentItem( ni );
 
-                    if( c.m_isLast && checkPredicates( node, c ) )
+                    if( c.isLast() && checkPredicates( node, c ) )
                     {
                         c.addMatch( ni );
+                        System.out.println("   MATCH");
                     }
                 }
             }
@@ -566,7 +568,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
 
                 c.setCurrentItem( child );
 
-                if( c.m_isLast && checkPredicates( node, c ) )
+                if( c.isLast() && checkPredicates( node, c ) )
                     c.addMatch( child );
 
                 if( node.getIncludeDescendants() )
@@ -674,25 +676,38 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
      * This class collects the results of the Query.
      */
 
-    private class QueryCollector
+    private static class QueryCollector
     {
-        public boolean m_isLast;
+        private boolean m_isLast;
 
         private NodeImpl m_currentItem;
 
         private ArrayList<NodeImpl> m_matches = new ArrayList<NodeImpl>();
 
-        public NodeImpl getCurrentItem()
+        /**
+         *  Is this the last path component to be matched?
+         */
+        public final boolean isLast()
+        {
+            return m_isLast;
+        }
+        
+        public final void setLast( boolean b )
+        {
+            m_isLast = b;
+        }
+        
+        public final NodeImpl getCurrentItem()
         {
             return m_currentItem;
         }
 
-        public void setCurrentItem( NodeImpl item )
+        public final void setCurrentItem( NodeImpl item )
         {
             m_currentItem = item;
         }
 
-        public void addMatch( NodeImpl ii )
+        public final void addMatch( NodeImpl ii )
         {
             m_matches.add( ii );
         }
@@ -784,7 +799,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         return tokensOnThisLine.toArray( new String[0] );
     }
 
-    private class QuerySorter implements Comparator<NodeImpl>
+    private static class QuerySorter implements Comparator<NodeImpl>
     {
         OrderSpec[] m_specs;
 

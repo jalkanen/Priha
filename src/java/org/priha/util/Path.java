@@ -99,7 +99,7 @@ public final class Path implements Comparable<Path>, Serializable
         m_isAbsolute = absolute;
     }
 
-    public boolean isAbsolute()
+    public final boolean isAbsolute()
     {
         return m_isAbsolute;
     }
@@ -127,15 +127,20 @@ public final class Path implements Comparable<Path>, Serializable
         
         m_components = new Component[start.length+pathEnd.depth()];
         
+        System.arraycopy( start, 0, m_components, 0, start.length );
+        /*
         for( int i = 0; i < start.length; i++ )
         {
             m_components[i] = start[i];
         }
-        
+        */
+        System.arraycopy( pathEnd.m_components, 0, m_components, start.length, pathEnd.depth() );
+        /*
         for( int i = 0; i < pathEnd.depth(); i++ )
         {
             m_components[i+start.length] = pathEnd.m_components[i];
         }
+        */
     }
 
     public Path(QName name, boolean b)
@@ -147,10 +152,14 @@ public final class Path implements Comparable<Path>, Serializable
     {
         m_isAbsolute = parentPath.m_isAbsolute;
         m_components = new Component[parentPath.getElements().length+1];
+        
+        System.arraycopy( parentPath.m_components, 0, m_components, 0, parentPath.m_components.length );
+        /*
         for( int i = 0; i < parentPath.m_components.length; i++ )
         {
             m_components[i] = parentPath.m_components[i];
         }
+        */
         m_components[m_components.length-1] = component;
     }
 
@@ -329,11 +338,13 @@ public final class Path implements Comparable<Path>, Serializable
 
         Component[] components = new Component[endidx-startidx];
         
+        System.arraycopy( m_components, startidx, components, 0, endidx-startidx );
+        /*
         for( int i = startidx; i < endidx; i++ )
         {
             components[i-startidx] = m_components[i];
         }
-
+         */
         Path newpath = new Path( components, startidx == 0 ? m_isAbsolute : false );
 
         return newpath;
@@ -409,12 +420,7 @@ public final class Path implements Comparable<Path>, Serializable
      */
     public final Path resolve( QName component )
     {
-        ArrayList<Component> list = new ArrayList<Component>();
-        
-        list.addAll( Arrays.asList( m_components ) );
-        list.add( new Component(component) );
-        
-        return new Path( list.toArray(new Component[list.size()]), m_isAbsolute );
+        return new Path( this, new Component(component) );
     }
     
     /**
@@ -439,7 +445,8 @@ public final class Path implements Comparable<Path>, Serializable
 
         for( int i = 0; i < p.size(); i++ )
         {
-            if( p.get(i).getLocalPart().equals("..") )
+            String lp = p.get(i).getLocalPart();
+            if( lp.equals("..") )
             {
                 if( list.size() == 0 )
                 {
@@ -447,11 +454,11 @@ public final class Path implements Comparable<Path>, Serializable
                 }
                 list.remove(list.size()-1);
             }
-            else if( p.get(i).getLocalPart().equals(".") )
+            else if( lp.equals(".") )
             {
                 // Do nothing
             }
-            else if( p.get(i).getLocalPart().length() > 0 )
+            else if( lp.length() > 0 )
             {
                 list.add( p.get(i) );
             }
@@ -520,7 +527,7 @@ public final class Path implements Comparable<Path>, Serializable
         return toString().compareTo( o.toString() );
     }
 
-    public Component[] getElements()
+    public final Component[] getElements()
     {
         return m_components;
     }
@@ -578,7 +585,7 @@ public final class Path implements Comparable<Path>, Serializable
         /**
          *  Returns the QName String representation of the Component, including the index.
          */
-        public String toString()
+        public final String toString()
         {
             if( m_cachedString == null )
             {
@@ -602,7 +609,7 @@ public final class Path implements Comparable<Path>, Serializable
          *  is that the first one will NOT return the index.  Sometimes this may be
          *  desireable.
          */
-        public String toString(NamespaceMapper ns) throws NamespaceException
+        public final String toString(NamespaceMapper ns) throws NamespaceException
         {
             return ns.fromQName( this ) + ((m_index != 1) ? "["+m_index+"]" : "");
         }
