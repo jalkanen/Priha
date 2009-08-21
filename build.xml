@@ -21,6 +21,7 @@
 		<pathelement path="tests/etc" /> 
 		<pathelement path="build" />
 		<pathelement path="etc" />
+		<pathelement path="src/java" />
 		     
 	</path>
 
@@ -211,7 +212,6 @@
 	
 	<target name="jcrtestsuite" depends="compile,compiletests">
 		<mkdir dir="tests/reports"/>
-	    <mkdir dir="/tmp/reports"/>
 		
 	    <junit printsummary="yes" haltonfailure="no" fork="yes">
 	        <classpath>
