@@ -216,6 +216,7 @@
 	    <junit printsummary="yes" haltonfailure="no" fork="yes">
 	        <classpath>
 	           <path refid="path.build" />
+	        	<pathelement location="tests/build"/>
 	        </classpath>
 	        <formatter type="plain" />
 	        <formatter type="xml" usefile="yes" />
