@@ -11,9 +11,7 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
 import javax.xml.namespace.QName;
 
-import org.apache.jackrabbit.test.api.nodetype.CanAddChildNodeCallWithNodeTypeTest;
 import org.priha.core.SessionImpl;
-import org.priha.core.values.QValue;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
 
