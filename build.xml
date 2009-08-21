@@ -111,7 +111,7 @@
 			   <dirset dir="tests/java"/>
 			   <dirset dir="tests/tck"/>
 		    </src>
-			<classpath refid="path.tests"/>
+			<classpath refid="path.build"/>
 		</javac>
 	</target>
 	
