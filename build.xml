@@ -8,19 +8,26 @@
             Priha build file.
     </description>
 
+	<path id="path.build">
+		<fileset dir="lib">
+		          <include name="*.jar" />
+		          <exclude name="jackrabbit*" />
+		</fileset>
+		      
+		<fileset dir="tests/lib">
+			<include name="*.jar" />
+		</fileset>
+	     
+		<pathelement path="tests/etc" /> 
+		<pathelement path="build" />
+		<pathelement path="etc" />
+		     
+	</path>
+
     <path id="path.tests">
        <!-- <pathelement location="${jarfile}" />
        <pathelement location="${testjarfile}" /> -->
-       <fileset dir="lib">
-          <include name="*.jar" />
-          <exclude name="jackrabbit*" />
-       </fileset>
-       <fileset dir="tests/lib">
-          <include name="*.jar" />
-       </fileset>
-       <pathelement path="tests/etc" />
-       <pathelement path="build" />
-       <pathelement path="etc" />
+    	<path refid="path.build"/>
      
        <fileset dir="${user.home}/.maven/repository/org.apache.jackrabbit/jars/">
           <include name="*-1.6.*.jar"/>
@@ -33,6 +40,7 @@
        </fileset>
     </path>
    
+
     <!-- ================================= 
           target: jar            
          ================================= -->
@@ -83,19 +91,30 @@
        
        <javac destdir="build"
               target="1.5"
-              debug="on">
+              debug="off"
+              optimize="on">
        	  <src>
        	     <dirset dir="src/java"/>
        	     <dirset dir="src/generated-sources"/>
        	  </src>
-          <classpath>
-             <fileset dir="lib">
-                <include name="*.jar"/>
-             </fileset>
-          </classpath>
+          <classpath refid="path.build"/>
        </javac>
     </target>
 
+	<target name="compiletests" depends="compile">
+		<mkdir dir="tests/build"/>
+		
+		<javac destdir="tests/build"
+			   target="1.5"
+			   debug="off">
+			<src>
+			   <dirset dir="tests/java"/>
+			   <dirset dir="tests/tck"/>
+		    </src>
+			<classpath refid="path.tests"/>
+		</javac>
+	</target>
+	
 	<!-- Looks like this creates an invalid JJT file.  It needs
 	     some manual editing, so we'll just generate it once
 	     and check it into SVN. -->
@@ -149,7 +168,7 @@
        </javadoc> 
     </target> 
  
-    <target name="perftests" depends="compile">
+    <target name="perftests" depends="compile,compiletests">
        <mkdir dir="tests/reports"/>
        <mkdir dir="/tmp/reports"/>
         
@@ -188,5 +207,28 @@
 			<zipfileset dir="." includes="ChangeLog README doc/**" prefix="priha-${version}"/>
 			<zipfileset dir="lib" includes="jcr-*.jar" prefix="priha-${version}"/>
 		</zip>
+	</target>
+	
+	<target name="jcrtestsuite" depends="compile,compiletests">
+		<mkdir dir="tests/reports"/>
+	    <mkdir dir="/tmp/reports"/>
+		
+	    <junit printsummary="yes" haltonfailure="no" fork="yes">
+	        <classpath>
+	           <path refid="path.tests" />
+	        </classpath>
+	        <formatter type="plain" />
+	        <formatter type="xml" usefile="yes" />
+	        <test todir="tests/reports" name="org.apache.jackrabbit.test.JCRTestSuite"/>
+	        <jvmarg line="-Xmx2048m"/>
+	       </junit>  
+	     
+
+	        <junitreport todir="tests/reports">
+	           <fileset dir="tests/reports">
+	              <include name="TEST-org.apache.jackrabbit.test.JCRTestSuite.xml" />
+	           </fileset>
+	           <report format="noframes" todir="tests/reports" />
+	        </junitreport>   
 	</target>
 </project>
