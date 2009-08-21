@@ -215,7 +215,7 @@
 		
 	    <junit printsummary="yes" haltonfailure="no" fork="yes">
 	        <classpath>
-	           <path refid="path.tests" />
+	           <path refid="path.build" />
 	        </classpath>
 	        <formatter type="plain" />
 	        <formatter type="xml" usefile="yes" />
