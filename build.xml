@@ -92,7 +92,7 @@
        
        <javac destdir="build"
               target="1.5"
-              debug="off"
+              debug="on"
               optimize="on">
        	  <src>
        	     <dirset dir="src/java"/>
