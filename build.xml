@@ -107,7 +107,7 @@
 		
 		<javac destdir="tests/build"
 			   target="1.5"
-			   debug="off">
+			   debug="on">
 			<src>
 			   <dirset dir="tests/java"/>
 			   <dirset dir="tests/tck"/>
