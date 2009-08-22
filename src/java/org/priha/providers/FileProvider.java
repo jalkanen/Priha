@@ -55,6 +55,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private static final int    BUFFER_SIZE         = 4096;
     
     private File m_root;
+    private File m_workspaceRoot;
     
     private Logger log = Logger.getLogger( getClass().getName() );
     
@@ -76,7 +77,12 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      */
     private File getWorkspaceRoot()
     {
-        return new File( m_root, "workspaces" );
+        if( m_workspaceRoot == null )
+        {
+            m_workspaceRoot = new File( m_root, "workspaces" );
+        }
+        
+        return m_workspaceRoot;
     }
     
     /**
@@ -237,11 +243,14 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         File[] dirs = getWorkspaceRoot().listFiles();
         
-        for( File f : dirs )
+        if( dirs != null )
         {
-            if( f.isDirectory() )
+            for( File f : dirs )
             {
-                list.add( f.getName() );
+                if( f.isDirectory() )
+                {
+                    list.add( f.getName() );
+                }
             }
         }
         
@@ -470,11 +479,10 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private void writeValue( File f, ValueImpl v ) throws IOException, IllegalStateException, RepositoryException
     {
         OutputStream out = null;
+        InputStream in   = null;      
         
         try
         {
-            InputStream in;
-            
             if( v instanceof QValue.QValueInner )
             {
                 byte[] ba = ((QValue.QValueInner)v).getQValue().getString().getBytes("UTF-8");
@@ -491,7 +499,20 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
         finally
         {
-            if( out != null ) out.close();
+            //
+            //  ...and close all the streams.
+            //
+            if( out != null ) 
+            {
+                try
+                {
+                    out.close();
+                }
+                finally
+                {
+                    if( in != null ) in.close();
+                }
+            }
         }
     }
     
@@ -1217,6 +1238,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 {
                     serialize();
                     m_journal.close();
+                    m_journal = null;
                 }
             }
             catch( IOException e )
@@ -1369,6 +1391,23 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             {
                 File fout = new File( m_root, m_name );
 
+                //
+                //  Close the old journal and create a new one.
+                //
+                if( m_journal != null )
+                {
+                    try
+                    {
+                        m_journal.close();
+                    }
+                    catch( Exception e )
+                    {
+                        // May happen, but we'll continue anyway.
+                        log.warning( "Unable to close journal: "+e.getMessage() );
+                    }
+                    m_journal = null;
+                }
+                
                 m_journal = new ObjectOutputStream( new BufferedOutputStream(new FileOutputStream(fout,false)) );
                 
                 for( Map.Entry<String, T> i : m_map.entrySet() )

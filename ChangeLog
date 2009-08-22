@@ -1,3 +1,9 @@
+2009-08-22  Janne Jalkanen <jalkanen@ecyrd.com>
+   
+        * 0.1.31
+        
+        * Fixed some leaking filehandles from FileProvider.
+
 2009-08-18  Janne Jalkanen <jalkanen@ecyrd.com>
    
         * 0.1.30
