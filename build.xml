@@ -22,7 +22,7 @@
 		<pathelement path="build" />
 		<pathelement path="etc" />
 		<pathelement path="src/java" />
-		     
+       		<pathelement path="tests/tck" />
 	</path>
 
     <path id="path.tests">
