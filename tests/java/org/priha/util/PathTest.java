@@ -136,6 +136,19 @@ public class PathTest extends TestCase
         
         TestUtil.printSpeed( "equals()", SPEED_ITERS, start, end );        
 
+        start = System.currentTimeMillis();
+        for( int i = 0; i < SPEED_ITERS-1; i++ )
+        {
+            boolean eq = paths[i].isParentOf( paths[i+1] );
+            assertFalse(eq);
+            
+            eq = paths[i].getParentPath().isParentOf( paths[i+1] );
+            assertTrue(eq);
+        }
+        end = System.currentTimeMillis();
+        
+        TestUtil.printSpeed( "isParentOf()", SPEED_ITERS, start, end );        
+
     }
     
     public static Test suite()

@@ -1,12 +1,11 @@
 package org.priha.core;
 
-import javax.xml.namespace.QName;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.priha.core.namespace.NamespaceRegistryImpl;
+import org.priha.util.QName;
 
 public class NamespaceRegistryImplTest extends TestCase
 {
