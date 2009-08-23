@@ -433,6 +433,13 @@ public final class Path implements Comparable<Path>, Serializable
      */
     public final Path resolve(NamespaceMapper ns, String relPath) throws NamespaceException, RepositoryException
     {
+        //
+        //  Speedup for the most common case.
+        //
+        if( relPath.indexOf('/') == -1 ) 
+            //return new Path(this, cleanComponent( ns, relPath ) );
+            return PathFactory.getPath( ns, toString(ns)+"/"+relPath );
+        
         ArrayList<Component> p    = new ArrayList<Component>();
         ArrayList<Component> list = new ArrayList<Component>();
 
