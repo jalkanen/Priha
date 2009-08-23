@@ -1,6 +1,6 @@
 package org.priha.core;
 
-import javax.xml.namespace.QName;
+import org.priha.util.QName;
 
 public final class JCRConstants
 {

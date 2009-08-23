@@ -18,7 +18,7 @@ package org.priha.query.aqt;
 
 import java.util.List;
 
-import javax.xml.namespace.QName;
+import org.priha.util.QName;
 
 /**
  * Default implementetation of a {@link QueryNodeFactory}.

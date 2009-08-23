@@ -21,9 +21,9 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
-import javax.xml.namespace.QName;
 
 import org.priha.core.SessionImpl;
+import org.priha.util.QName;
 
 public class QPropertyDefinition extends QItemDefinition
 {

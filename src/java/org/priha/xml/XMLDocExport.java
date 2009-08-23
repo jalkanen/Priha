@@ -1,12 +1,12 @@
 package org.priha.xml;
 
 import javax.jcr.*;
-import javax.xml.namespace.QName;
 
 import org.priha.core.JCRConstants;
 import org.priha.core.NodeImpl;
 import org.priha.core.PropertyImpl;
 import org.priha.core.SessionImpl;
+import org.priha.util.QName;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;

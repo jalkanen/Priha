@@ -20,7 +20,6 @@ package org.priha.providers;
 import java.util.*;
 
 import javax.jcr.*;
-import javax.xml.namespace.QName;
 
 import org.priha.core.JCRConstants;
 import org.priha.core.PropertyImpl;
@@ -30,6 +29,7 @@ import org.priha.core.values.QValue;
 import org.priha.core.values.ValueImpl;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
+import org.priha.util.QName;
 
 /**
  *  Holds the contents in memory only.   It's very fast, though creation

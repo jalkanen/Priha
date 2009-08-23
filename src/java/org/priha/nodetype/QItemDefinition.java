@@ -20,9 +20,9 @@ package org.priha.nodetype;
 import javax.jcr.nodetype.ItemDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.OnParentVersionAction;
-import javax.xml.namespace.QName;
 
 import org.priha.core.SessionImpl;
+import org.priha.util.QName;
 
 public class QItemDefinition
 {

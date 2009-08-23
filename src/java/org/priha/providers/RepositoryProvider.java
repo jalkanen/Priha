@@ -22,13 +22,13 @@ import java.util.List;
 import java.util.Properties;
 
 import javax.jcr.*;
-import javax.xml.namespace.QName;
 
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
+import org.priha.util.QName;
 
 /**
  *  A few ground rules:

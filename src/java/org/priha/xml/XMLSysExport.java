@@ -17,6 +17,10 @@
  */
 package org.priha.xml;
 
+import static org.priha.core.JCRConstants.Q_JCR_MIXINTYPES;
+import static org.priha.core.JCRConstants.Q_JCR_PRIMARYTYPE;
+import static org.priha.core.JCRConstants.Q_JCR_UUID;
+
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -25,12 +29,11 @@ import java.util.Comparator;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
-import javax.xml.namespace.QName;
 
-import static org.priha.core.JCRConstants.*;
 import org.priha.core.PropertyImpl;
 import org.priha.core.SessionImpl;
 import org.priha.util.Base64;
+import org.priha.util.QName;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;

@@ -28,7 +28,6 @@ import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.management.MBeanServer;
-import javax.xml.namespace.QName;
 
 import net.sf.ehcache.*;
 import net.sf.ehcache.constructs.blocking.LockTimeoutException;
@@ -42,6 +41,7 @@ import org.priha.core.values.QValue;
 import org.priha.core.values.ValueImpl;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
+import org.priha.util.QName;
 
 /**
  *  Uses EHCache for an intermediate level cache.  It lies on top of a real provider,

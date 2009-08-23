@@ -25,7 +25,6 @@ import java.util.Arrays;
 
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
-import javax.xml.namespace.QName;
 
 import org.priha.core.namespace.NamespaceMapper;
 
@@ -567,12 +566,7 @@ public final class Path implements Comparable<Path>, Serializable
         {
             super( namespaceURI, localpart );
         }
-        
-        public Component(String namespaceURI, String localPart, String prefix )
-        {
-            super( namespaceURI, localPart, prefix );
-        }
-        
+
         public Component(QName name)
         {
             super( name.getNamespaceURI(), name.getLocalPart(), name.getPrefix() );
@@ -619,6 +613,20 @@ public final class Path implements Comparable<Path>, Serializable
         public final String toString(NamespaceMapper ns) throws NamespaceException
         {
             return ns.fromQName( this ) + ((m_index != 1) ? "["+m_index+"]" : "");
+        }
+        
+        public final boolean equals(Object o)
+        {
+            if( super.equals(o) )
+            {
+                if( o instanceof Component ) 
+                    return ((Component)o).m_index == m_index;
+                
+                // A Component equals a QName if the index is one.
+                return m_index == 1;
+            }
+            
+            return false;
         }
     }
 }

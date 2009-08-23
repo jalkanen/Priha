@@ -19,10 +19,10 @@ package org.priha.query.aqt;
 import java.util.Date;
 
 import javax.jcr.RepositoryException;
-import javax.xml.namespace.QName;
 
 import org.priha.RepositoryManager;
 import org.priha.util.Path;
+import org.priha.util.QName;
 
 /**
  * Implements a query node that defines property value relation.

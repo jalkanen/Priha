@@ -17,7 +17,8 @@
 package org.priha.query.aqt;
 
 import javax.jcr.RepositoryException;
-import javax.xml.namespace.QName;
+
+import org.priha.util.QName;
 
 /**
  * Defines a location step for querying the path of a node.

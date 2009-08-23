@@ -25,7 +25,6 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
-import javax.xml.namespace.QName;
 
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
@@ -34,10 +33,7 @@ import org.priha.core.binary.FileBinarySource;
 import org.priha.core.values.QValue;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
-import org.priha.util.ConfigurationException;
-import org.priha.util.InvalidPathException;
-import org.priha.util.Path;
-import org.priha.util.PathFactory;
+import org.priha.util.*;
 
 /**
  *  A simple file system -based provider.  This is not particularly optimized.
@@ -371,14 +367,14 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             {
                 for( File propertyFile : files )
                 {
-                    Properties props = new Properties();
+                    Properties props;
                     InputStream in = null;
                     
                     try
                     {
                         in = new FileInputStream(propertyFile);
                 
-                        props.load(in);
+                        props = FastPropertyStore.load(in);
         
                         String qname = props.getProperty(PROP_PATH);
                 
@@ -589,7 +585,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
             out = new FileOutputStream(inf);
             
-            props.store( out, null );
+            FastPropertyStore.store( out, props );
         }
         catch (FileNotFoundException e)
         {
@@ -700,13 +696,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         {
             throw new PathNotFoundException("The property metadata file was not found: "+inf.getAbsolutePath());
         }
-        Properties props = new Properties();
+        Properties props;
         InputStream in = null;
         
         try
         {
             in = new FileInputStream( inf );
-            props.load(in);
+            props = FastPropertyStore.load(in);
         }
         finally
         {

@@ -17,9 +17,9 @@
 package org.priha.query.aqt;
 
 import javax.jcr.RepositoryException;
-import javax.xml.namespace.QName;
 
 import org.priha.util.Path;
+import org.priha.util.QName;
 
 /**
  * Implements a query node that defines a textsearch clause.

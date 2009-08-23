@@ -6,11 +6,11 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import javax.jcr.*;
-import javax.xml.namespace.QName;
 
 import org.priha.RepositoryManager;
 import org.priha.core.JCRConstants;
 import org.priha.util.PathFactory;
+import org.priha.util.QName;
 import org.xml.sax.helpers.NamespaceSupport;
 
 public class NamespaceRegistryImpl implements NamespaceRegistry, NamespaceMapper

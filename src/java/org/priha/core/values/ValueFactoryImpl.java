@@ -22,12 +22,12 @@ import java.io.InputStream;
 import java.util.Calendar;
 
 import javax.jcr.*;
-import javax.xml.namespace.QName;
 
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
 import org.priha.core.binary.BinarySource;
 import org.priha.util.FileUtil;
+import org.priha.util.QName;
 
 /**
  *  This is a session-specific holder of things.

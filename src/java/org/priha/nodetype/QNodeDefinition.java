@@ -19,9 +19,9 @@ package org.priha.nodetype;
 
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
-import javax.xml.namespace.QName;
 
 import org.priha.core.SessionImpl;
+import org.priha.util.QName;
 
 public class QNodeDefinition extends QItemDefinition
 {

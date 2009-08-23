@@ -23,9 +23,9 @@ import javax.jcr.PropertyType;
 import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.ValueFormatException;
-import javax.xml.namespace.QName;
 
 import org.priha.core.namespace.NamespaceMapper;
+import org.priha.util.QName;
 
 public class QNameValue extends QValue implements Serializable
 {

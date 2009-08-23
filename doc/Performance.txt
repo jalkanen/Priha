@@ -1,0 +1,26 @@
+This file contains some sample test runs.
+
+CPU: 8x E5310  @ 1.60GHz
+Ubuntu 8.04
+Java HotSpot(TM) Server VM (build 14.0-b16, mixed mode)
+
+LARGE REPOSITORY
+================
+
+Testsuite: org.priha.core.PerformanceTest
+Tests run: 7, Failures: 0, Errors: 0, Time elapsed: 27,554.529 sec
+------------- Standard Output ---------------
+Test results.  The number is operations/seconds - larger means faster.
+Blob size 10 kB
+Repository size 10000 nodes
+Priha version 0.1.32
+Jackrabbit version 1.6.0
+                                 FirstSess   LargeRead LargeRemove   LargeSave  NewSession    RandRead      Remove        Save     SeqRead        UUID      Update     getItem getProperty    propUUID
+MemoryProvider, no cache              0.86       42226          28        1726       34339       43752           9        1187       21681       29960        4135     4075699     1052318      552493
+FileProvider, no cache                2410        5433          85         380       12897        4777          33         273        1584        3291         476     5762550     1160431     1062556
+FileProvider, with Ehcache            3674        4202          79         508       11598        2491          32         292        1219        1378         463     6610291     1171581      993581
+JdbcProvider, no cache                  40        6940          57         155       18311       11610          71         143        7952         535         223     5865707     1169224      904838
+JdbcProvider, with Ehcache             274        4682          52         155       30321        3355          62         152        2399         350         219     6608281     1182648      761772
+Jackrabbit                            0.26       12836         200         268        0.43       23954         706         356        6038       38407         472      510608     1833296      555645
+------------- ---------------- ---------------
+

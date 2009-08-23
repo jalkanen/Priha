@@ -1,15 +1,16 @@
 package org.priha.xml;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -18,13 +19,10 @@ import org.priha.core.JCRConstants;
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
 import org.priha.core.namespace.NamespaceRegistryImpl;
-import org.priha.nodetype.QNodeType;
-import org.priha.nodetype.QNodeTypeManager;
 import org.priha.nodetype.QPropertyDefinition;
 import org.priha.util.Base64;
-import org.priha.util.FileUtil;
-import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
+import org.priha.util.QName;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;

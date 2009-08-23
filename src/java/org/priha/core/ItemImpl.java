@@ -22,11 +22,11 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
-import javax.xml.namespace.QName;
 
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
+import org.priha.util.QName;
 
 public abstract class ItemImpl implements Item
 {

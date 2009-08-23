@@ -27,7 +27,6 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.VersionException;
-import javax.xml.namespace.QName;
 
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
@@ -38,6 +37,7 @@ import org.priha.providers.RepositoryProvider;
 import org.priha.util.ConfigurationException;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
+import org.priha.util.QName;
 
 /**
  *  This is a front-end class for managing multiple providers

@@ -27,17 +27,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
-import javax.xml.namespace.QName;
 
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.binary.MemoryBinarySource;
 import org.priha.core.values.ValueImpl;
-import org.priha.util.ConfigurationException;
-import org.priha.util.FileUtil;
-import org.priha.util.Path;
-import org.priha.util.PathFactory;
+import org.priha.util.*;
 
 /**
  *  A basic implementation of a Provider which stores the contents to a database.

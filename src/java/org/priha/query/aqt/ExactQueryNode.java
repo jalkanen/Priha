@@ -17,7 +17,8 @@
 package org.priha.query.aqt;
 
 import javax.jcr.RepositoryException;
-import javax.xml.namespace.QName;
+
+import org.priha.util.QName;
 
 /**
  * Implements a query node that defines an exact match of a property and a

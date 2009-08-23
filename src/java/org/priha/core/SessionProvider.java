@@ -24,11 +24,11 @@ import java.util.Map.Entry;
 
 import javax.jcr.*;
 import javax.jcr.nodetype.ConstraintViolationException;
-import javax.xml.namespace.QName;
 
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
+import org.priha.util.QName;
 
 /**
  *  This is a special provider which stores the state of the Session.
@@ -205,9 +205,9 @@ public class SessionProvider
         return ls;
     }
 
-    public Set<Path> listNodes(Path parentpath) throws RepositoryException
+    public List<Path> listNodes(Path parentpath) throws RepositoryException
     {
-        TreeSet<Path> res = new TreeSet<Path>();
+        List<Path> res = new ArrayList<Path>();
         
         for( ItemImpl ni : m_changedItems.values() )
         {
@@ -219,7 +219,12 @@ public class SessionProvider
         
         try
         {
-            res.addAll( m_source.listNodes(m_workspace, parentpath) );
+            List<? extends Path> existingNodes = m_source.listNodes(m_workspace, parentpath);
+            
+            for( Path p : existingNodes )
+            {
+                if( !res.contains( p ) ) res.add( p );
+            }
         }
         catch( PathNotFoundException e )
         {

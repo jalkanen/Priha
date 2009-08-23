@@ -16,7 +16,8 @@
  */
 package org.priha.query.aqt;
 
-import javax.xml.namespace.QName;
+import org.priha.util.QName;
+
 
 /**
  * A factory for {@link QueryNode}s.

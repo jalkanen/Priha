@@ -20,7 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.jcr.RepositoryException;
-import javax.xml.namespace.QName;
+
+import org.priha.util.QName;
 
 
 /**

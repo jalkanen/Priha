@@ -9,11 +9,11 @@ import javax.jcr.Value;
 import javax.jcr.nodetype.NodeDefinition;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.nodetype.PropertyDefinition;
-import javax.xml.namespace.QName;
 
 import org.priha.core.SessionImpl;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
+import org.priha.util.QName;
 
 /**
  *  QNodeType provides non-Session -specific things of NodeTypes.

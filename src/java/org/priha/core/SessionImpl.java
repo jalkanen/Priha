@@ -30,7 +30,6 @@ import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
-import javax.xml.namespace.QName;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.priha.core.locks.LockImpl;
@@ -42,7 +41,7 @@ import org.priha.nodetype.QNodeType;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
-import org.priha.util.Path.Component;
+import org.priha.util.QName;
 import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
 import org.priha.xml.*;
@@ -119,7 +118,7 @@ public class SessionImpl implements Session, NamespaceMapper
         return m_isSuperSession;
     }
     
-    public Set<Path> listNodes( Path parentpath ) throws RepositoryException
+    public List<Path> listNodes( Path parentpath ) throws RepositoryException
     {
         return m_provider.listNodes(parentpath);
     }

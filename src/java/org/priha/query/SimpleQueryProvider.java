@@ -5,7 +5,6 @@ import java.util.*;
 
 import javax.jcr.*;
 import javax.jcr.query.QueryResult;
-import javax.xml.namespace.QName;
 
 import org.priha.core.*;
 import org.priha.nodetype.QNodeType;
@@ -15,6 +14,7 @@ import org.priha.query.aqt.*;
 import org.priha.query.aqt.OrderQueryNode.OrderSpec;
 import org.priha.util.NodeIteratorImpl;
 import org.priha.util.Path;
+import org.priha.util.QName;
 
 /**
  * This class provides a very simple query provider which does direct
@@ -527,9 +527,9 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
             }
             else if( currNode.hasNode( checkedName ) )
             {
-                for( NodeIteratorImpl iter = currNode.getNodes( currNode.getSession().fromQName( checkedName ) ); iter.hasNext(); )
+                for( NodeIterator iter = currNode.getNodes( currNode.getSession().fromQName( checkedName ) ); iter.hasNext(); )
                 {
-                    NodeImpl ni = iter.nextNode();
+                    NodeImpl ni = (NodeImpl)iter.nextNode();
 
                     c.setCurrentItem( ni );
 
@@ -547,9 +547,9 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
             //
             if( node.getIncludeDescendants() )
             {
-                for( NodeIteratorImpl iter = currNode.getNodes(); iter.hasNext(); )
+                for( NodeIterator iter = currNode.getNodes(); iter.hasNext(); )
                 {
-                    NodeImpl child = iter.nextNode();
+                    NodeImpl child = (NodeImpl)iter.nextNode();
 
                     c.setCurrentItem( child );
                     visit( node, c );
@@ -562,9 +562,9 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
             // It is required to match all of the children.
             //
 
-            for( NodeIteratorImpl iter = currNode.getNodes(); iter.hasNext(); )
+            for( NodeIterator iter = currNode.getNodes(); iter.hasNext(); )
             {
-                NodeImpl child = iter.nextNode();
+                NodeImpl child = (NodeImpl)iter.nextNode();
 
                 c.setCurrentItem( child );
 

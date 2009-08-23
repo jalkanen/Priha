@@ -17,7 +17,8 @@
 package org.priha.query.aqt;
 
 import javax.jcr.RepositoryException;
-import javax.xml.namespace.QName;
+
+import org.priha.util.QName;
 
 /**
  * Represents query node that dereferences a reference property into a node and

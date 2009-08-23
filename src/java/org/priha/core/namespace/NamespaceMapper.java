@@ -2,7 +2,8 @@ package org.priha.core.namespace;
 
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
-import javax.xml.namespace.QName;
+
+import org.priha.util.QName;
 
 public interface NamespaceMapper
 {

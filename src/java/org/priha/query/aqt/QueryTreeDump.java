@@ -19,9 +19,9 @@ package org.priha.query.aqt;
 import java.util.Arrays;
 
 import javax.jcr.RepositoryException;
-import javax.xml.namespace.QName;
 
 import org.priha.util.Path;
+import org.priha.util.QName;
 
 
 /**

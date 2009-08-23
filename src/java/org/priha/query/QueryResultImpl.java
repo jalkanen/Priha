@@ -9,10 +9,10 @@ import javax.jcr.*;
 import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
-import javax.xml.namespace.QName;
 
 import org.priha.core.NodeImpl;
 import org.priha.util.NodeIteratorImpl;
+import org.priha.util.QName;
 
 public class QueryResultImpl implements QueryResult
 {

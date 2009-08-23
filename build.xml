@@ -8,7 +8,7 @@
             Priha build file.
     </description>
 
-	<property name="perftest.iterations" value="10"/>
+	<property name="perftest.iterations" value="100"/>
 	<property name="perftest.blobsize" value="10"/>
 	
 	<path id="path.build">

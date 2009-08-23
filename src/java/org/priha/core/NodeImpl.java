@@ -37,11 +37,13 @@ import java.util.regex.Pattern;
 import javax.jcr.*;
 import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
-import javax.jcr.nodetype.*;
+import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
+import javax.jcr.nodetype.NodeDefinition;
+import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
-import javax.xml.namespace.QName;
 
 import org.priha.core.locks.LockImpl;
 import org.priha.core.locks.LockManager;
@@ -369,30 +371,22 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return getNode( m_path.resolve(name) );
     }
 
-    public NodeIteratorImpl getNodes() throws RepositoryException
+    public NodeIterator getNodes() throws RepositoryException
     {
         List<NodeImpl> ls = new ArrayList<NodeImpl>();
 
-        Set<Path> children = m_session.listNodes( m_path );
+        List<Path> children = m_session.listNodes( m_path );
         
-        for( Path p : children )
-        {
-            NodeImpl nd = getNode( p );
-            ls.add( nd );
-        }
-
-        NodeIteratorImpl it = new NodeIteratorImpl(ls);
-
-        return it;
+        return new LazyNodeIteratorImpl(m_session,children);
     }
 
-    public NodeIteratorImpl getNodes(String namePattern) throws RepositoryException
+    public NodeIterator getNodes(String namePattern) throws RepositoryException
     {
         Pattern p = TextUtil.parseJCRPattern(namePattern);
 
-        ArrayList<NodeImpl> matchedpaths = new ArrayList<NodeImpl>();
+        ArrayList<Path> matchedpaths = new ArrayList<Path>();
 
-        Set<Path> children = m_session.listNodes( m_path );
+        List<Path> children = m_session.listNodes( m_path );
         
         for( Path path : children )
         {
@@ -400,11 +394,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             if( match.matches() )
             {
-                matchedpaths.add( getNode(path) );
+                matchedpaths.add( path );
             }
         }
 
-        return new NodeIteratorImpl(matchedpaths);
+        return new LazyNodeIteratorImpl(m_session,matchedpaths);
     }
 
     public ItemImpl getPrimaryItem() throws ItemNotFoundException, RepositoryException

@@ -19,6 +19,7 @@ package org.priha.util;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 /**
  *  Provides a base class for the different Iterators that JCR defines.
@@ -38,6 +39,11 @@ public abstract class GenericIterator implements Iterator
         m_position = 0;
         m_size     = list.size();
         m_list     = list;
+    }
+
+    public GenericIterator( Set<?> set )
+    {
+        
     }
     
     public long getPosition()
