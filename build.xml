@@ -33,6 +33,7 @@
        <pathelement location="${testjarfile}" /> -->
     	<path refid="path.build"/>
      
+    	<pathelement path="tests/build" />
        <fileset dir="${user.home}/.maven/repository/org.apache.jackrabbit/jars/">
           <include name="*-1.6.*.jar"/>
        </fileset>
