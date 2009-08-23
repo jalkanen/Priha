@@ -93,7 +93,8 @@ public class QNodeTypeManager
     public static synchronized Impl getManager(WorkspaceImpl ws)
         throws RepositoryException
     {
-        return getInstance().new Impl(ws.getSession());
+        QNodeTypeManager mgr = getInstance();
+        return new Impl(mgr,ws.getSession());
     }
 
     private void initializeNodeTypeList() throws ParserConfigurationException, IOException
@@ -418,12 +419,14 @@ public class QNodeTypeManager
      *  Implements the actual NodeTypeManager class, which, again, is
      *  Session-specific.
      */
-    public class Impl implements NodeTypeManager
+    public static class Impl implements NodeTypeManager
     {
-        private SessionImpl m_mapper;
+        private SessionImpl      m_mapper;
+        private QNodeTypeManager m_mgr;
         
-        public Impl( SessionImpl nsm )
+        public Impl( QNodeTypeManager qm, SessionImpl nsm )
         {
+            m_mgr    = qm;
             m_mapper = nsm;
         }
         
@@ -448,7 +451,7 @@ public class QNodeTypeManager
         {
             List<NodeType> ls = new ArrayList<NodeType>();
 
-            for( QNodeType qnt : m_mixinTypes.values() )
+            for( QNodeType qnt : m_mgr.m_mixinTypes.values() )
             {
                 ls.add( qnt.new Impl(m_mapper) );
             }
@@ -460,7 +463,7 @@ public class QNodeTypeManager
         {
             QName qn = m_mapper.toQName( nodeTypeName );
             
-            QNodeType qnt = QNodeTypeManager.this.getNodeType(qn);
+            QNodeType qnt = m_mgr.getNodeType(qn);
             
             return qnt.new Impl(m_mapper);
             
@@ -470,7 +473,7 @@ public class QNodeTypeManager
         {
             List<NodeType> ls = new ArrayList<NodeType>();
 
-            for( QNodeType qnt : m_primaryTypes.values() )
+            for( QNodeType qnt : m_mgr.m_primaryTypes.values() )
             {
                 ls.add( qnt.new Impl(m_mapper) );
             }
