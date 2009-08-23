@@ -11,19 +11,31 @@ public class TestUtil
     {
         Session anonSession = repository.login();
      
-        String[] workspaces = anonSession.getWorkspace().getAccessibleWorkspaceNames();
-       
-        for( String ws : workspaces )
+        try
         {
-            //System.out.println("Emptying repo "+ws);
-            Session s = repository.login(new SimpleCredentials("username","password".toCharArray()),ws);
+            String[] workspaces = anonSession.getWorkspace().getAccessibleWorkspaceNames();
+       
+            for( String ws : workspaces )
+            {
+                //System.out.println("Emptying repo "+ws);
+                Session s = repository.login(new SimpleCredentials("username","password".toCharArray()),ws);
         
-            s.refresh(false);
-            deleteTree( s.getRootNode() );
-            s.save();
+                try
+                {
+                    s.refresh(false);
+                    deleteTree( s.getRootNode() );
+                    s.save();
+                }
+                finally
+                {
+                    s.logout();
+                }
+            }
         }
-        
-        anonSession.logout();
+        finally
+        {
+            anonSession.logout();
+        }
     }
 
     
