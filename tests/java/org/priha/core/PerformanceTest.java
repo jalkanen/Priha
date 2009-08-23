@@ -22,6 +22,7 @@ public class PerformanceTest extends TestCase
     private int m_iterations = DEFAULT_ITERATIONS;
     
     private static int BLOB_SIZE = 1024*100;
+    private int m_blobsize = BLOB_SIZE;
     
     private static int NODENAMELEN = 16;
     private static int PROPERTYLEN = 16;
@@ -32,6 +33,10 @@ public class PerformanceTest extends TestCase
     {
         String iters = System.getProperty("perftest.iterations");
         if( iters != null ) m_iterations = Integer.parseInt(iters);
+        
+        String blobsize = System.getProperty("perftest.blobsize");
+        if( blobsize != null ) m_blobsize = Integer.parseInt(blobsize)*1024;
+        
     }
     
     public void testMemoryProvider() throws Exception
@@ -59,7 +64,6 @@ public class PerformanceTest extends TestCase
         millionIterationsTest( rep, m_creds, m_iterations );
     }
 
-    
     public void testJdbcProvider() throws Exception
     {
         Perf.setProvider("JdbcProvider, no cache");
@@ -88,7 +92,7 @@ public class PerformanceTest extends TestCase
             return null;
         }
     }
-    
+
     public void testJackrabbit() throws Exception
     {
         Perf.setProvider("Jackrabbit");
@@ -110,7 +114,7 @@ public class PerformanceTest extends TestCase
      */
     public void testPrint()
     {
-        Perf.print();
+        Perf.print(this);
     }
     
     public static class TesterClass
@@ -119,16 +123,18 @@ public class PerformanceTest extends TestCase
         private Credentials m_creds;
         private int m_numNodes;
         private int m_readIters;
-
+        private byte[] m_blob;
+        
         ArrayList<String> propertyPaths = new ArrayList<String>();
         ArrayList<String> uuids = new ArrayList<String>();
 
-        public TesterClass(Repository rep, Credentials creds, int numIters)
+        public TesterClass(Repository rep, Credentials creds, int numIters, byte[] blob)
         {
             m_repository = rep;
             m_creds = creds;
             m_numNodes = numIters;
-            m_readIters = numIters * 100;
+            m_readIters = numIters * 10;
+            m_blob = blob;
         }
         
         public void testNewSession() throws LoginException, RepositoryException
@@ -218,7 +224,7 @@ public class PerformanceTest extends TestCase
                     }
                 
                     Node n = nd.addNode( hash+"/"+name );
-                    Property p = n.setProperty( "test", new ByteArrayInputStream(getBlob()) );
+                    Property p = n.setProperty( "test", new ByteArrayInputStream(m_blob) );
                     propertyPaths.add( p.getPath() );
                     
                     nd.save();
@@ -265,7 +271,7 @@ public class PerformanceTest extends TestCase
                         }
                     }
                 }
-                
+
                 Perf.stop(m_numNodes);
                 
             }
@@ -360,7 +366,7 @@ public class PerformanceTest extends TestCase
                     Item ii = s.getItem( propertyPaths.get(item) );
 
                     assertFalse( ii.getPath(), ii.isNode() );
-                    assertEquals( ii.getName(), BLOB_SIZE, ((Property)ii).getLength());
+                    assertEquals( ii.getName(), m_blob.length, ((Property)ii).getLength());
                 }
                 
                 Perf.stop(m_readIters);
@@ -471,7 +477,7 @@ public class PerformanceTest extends TestCase
     
     public void millionIterationsTest( Repository rep, Credentials creds, int numIters ) throws Exception
     {
-        TesterClass tc = new TesterClass( rep, creds, numIters );
+        TesterClass tc = new TesterClass( rep, creds, numIters, getBlob() );
         
         try
         {
@@ -484,6 +490,8 @@ public class PerformanceTest extends TestCase
         
             Perf.stop(1);
 
+            s.logout();
+            
             TestUtil.emptyRepo(rep);
 
             tc.testNewSession();
@@ -536,12 +544,12 @@ public class PerformanceTest extends TestCase
     }
 
     private static byte[] blob;
-    private static final byte[] getBlob()
+    private final byte[] getBlob()
     {
         if( blob == null)
         {
-            blob = new byte[BLOB_SIZE]; // 1 Meg
-            for( int i = 0; i < BLOB_SIZE; i++ )
+            blob = new byte[m_blobsize]; // 1 Meg
+            for( int i = 0; i < m_blobsize; i++ )
                 blob[i] = (byte) (i % 255);
         }
         
@@ -559,7 +567,7 @@ public class PerformanceTest extends TestCase
      */
     public static class Perf
     {
-        private static HashMap<String, HashMap<String, Double>> results = new HashMap<String,HashMap<String,Double>>();
+        private static HashMap<String, HashMap<String, Double>> results = new LinkedHashMap<String,HashMap<String,Double>>();
         
         private static long startTime;
         private static String currTest;
@@ -599,10 +607,11 @@ public class PerformanceTest extends TestCase
             //TestUtil.printSpeed(currProvider+": "+currTest, iters, startTime, stop);
         }
         
-        public static void print()
+        public static void print(PerformanceTest test)
         {
             System.out.println("Test results.  The number is operations/seconds - larger means faster.");
-            System.out.println("Blob size "+BLOB_SIZE/1024+" kB");
+            System.out.println("Blob size "+test.m_blobsize/1024+" kB");
+            System.out.println("Repository size "+test.m_iterations+" nodes");
             System.out.println("Priha version "+Release.VERSTR);
             
             Repository jr = getJackrabbitRepository();
@@ -628,7 +637,9 @@ public class PerformanceTest extends TestCase
                 for( String key : keys )
                 {
                     Double val = e.getValue().get(key);
-                    System.out.printf("%12.2f", val != null ? val : Double.NaN );
+                   
+                    if( val != null && val < 1 ) System.out.printf("%12.2f",val);
+                    else System.out.printf("%12.0f", val != null ? val : Double.NaN );
                 }
                 System.out.print("\n");
             }
