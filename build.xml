@@ -8,6 +8,9 @@
             Priha build file.
     </description>
 
+	<property name="perftest.iterations" value="10"/>
+	<property name="perftest.blobsize" value="10"/>
+	
 	<path id="path.build">
 		<fileset dir="lib">
 		          <include name="*.jar" />
@@ -169,12 +172,22 @@
        </javadoc> 
     </target> 
  
+	<!--
+	 	Runs some performance tests.  You may specify new values for the parameters via
+	 	
+	 	ant -Dperftest.iterations=[num] -Dperftest.blobsize=[num] perftests
+	 	
+	 	perftest.iterations=how large the repository should be (in Nodes)
+	 	perftest.blobsize=how large blobs should be stored into the store
+	-->
     <target name="perftests" depends="compile,compiletests">
        <mkdir dir="tests/reports"/>
        <mkdir dir="/tmp/reports"/>
         
        <delete dir="repository" />
         
+    	<echo message="Running performancetests on a repository size ${perftest.iterations} nodes and ${perftest.blobsize} kB blobs"/>
+    	
        <junit printsummary="yes" haltonfailure="no" fork="yes">
         <classpath>
            <path refid="path.tests" />
@@ -186,7 +199,7 @@
                 <include name="**/PerformanceTest.java" />
            </fileset>
         </batchtest>
-        <jvmarg line="-Xmx2048m"/>
+        <jvmarg line="-Xmx2048m -Dperftest.iterations=${perftest.iterations} -Dperftest.blobsize=${perftest.blobsize}"/>
        </junit>  
      
 

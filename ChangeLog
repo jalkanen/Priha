@@ -1,3 +1,14 @@
+2009-08-23  Janne Jalkanen <jalkanen@ecyrd.com>
+   
+        * 0.1.32
+        
+        * Path.resolve() is now optimized for the most common cases.
+        
+        * Workspace init sped up.
+        
+        * PerformanceTest improved to allow for command-line arguments.
+        Also removed Session leaks from emptyRepo();
+        
 2009-08-22  Janne Jalkanen <jalkanen@ecyrd.com>
    
         * 0.1.31
