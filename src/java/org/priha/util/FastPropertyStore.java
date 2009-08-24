@@ -11,6 +11,7 @@ import java.util.Properties;
  *  <li>The file encoding is UTF-8
  *  <li>Unicode entities (\\u) are not recognized
  *  <li>Line continuations are not supported (line ends with a backslash)
+ *  <li>Always uses \\n for ending the line, on all architectures.
  *  </ul>
  */
 public class FastPropertyStore
@@ -37,7 +38,16 @@ public class FastPropertyStore
     {
         Properties props = new Properties();
         
+        /*
         BufferedReader i = new BufferedReader(new InputStreamReader( in,"UTF-8" ));
+        */
+        
+        ByteArrayOutputStream ba = new ByteArrayOutputStream();
+        FileUtil.copyContents( in, ba );
+        
+        String c = new String( ba.toByteArray(), "UTF-8" );
+        
+        BufferedStringReader i = new BufferedStringReader(c);
         
         String line;
         
@@ -58,5 +68,43 @@ public class FastPropertyStore
         }
         
         return props;
+    }
+    
+    /**
+     *  This is a very fast String reader which implements the readLine()
+     *  method by returning substrings of the given string.  EOL is
+     *  determined by the \\n character.
+     */
+    private static class BufferedStringReader
+    {
+        String m_string;
+        int    m_pos;
+        
+        public BufferedStringReader( String s )
+        {
+            m_string = s;
+        }
+
+        public String readLine()
+        {
+            if( m_pos >= m_string.length() ) return null;
+            
+            String result;
+            
+            int newline = m_string.indexOf( '\n', m_pos );
+
+            if( newline >= 0 )
+            {
+                result = m_string.substring( m_pos, newline );
+                m_pos = newline+1;
+            }
+            else
+            {
+                result = m_string.substring( m_pos );
+                m_pos = m_string.length()+1;
+            }
+            
+            return result;
+        }
     }
 }
