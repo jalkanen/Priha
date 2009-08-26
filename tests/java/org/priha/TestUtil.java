@@ -53,9 +53,14 @@ public class TestUtil
     public static void printSpeed( String msg, int iters, long start, long end )
     {
         long time = end - start;
-        float itersSec = (iters*100)/((float)time/1000) / 100;
+        float itersSec = iters / ((float)time/1000);
         
-        System.out.println( msg + ":" + iters + " iterations in "+time+" ms ("+itersSec+" iterations/second)");
+        String itersSecString = "";
+        if( itersSec < 1000.0 )   itersSecString = String.format( "%.0f", itersSec );
+        else if( itersSec < 1e6 ) itersSecString = String.format( "%.2fk", itersSec/1000 );
+        else if( itersSec < 1e9 ) itersSecString = String.format( "%.2fM", itersSec/1e6 );
+        
+        System.out.println( msg + ":" + iters + " iterations in "+time+" ms ("+itersSecString+" iterations/second)");
     }
 
 
