@@ -167,9 +167,12 @@ public class LockManager
             //TODO Slightly unoptimal
             if( internalPath.isParentOf(p) ) 
             {
+                /*
                 LockImpl li = m_locks.get(p);
                 
-                if( li.getLockToken() == null ) return true;
+                if( li.getLockToken() == null && li.isSessionScoped() ) return true;
+                */
+                return true;
             }
         }
         

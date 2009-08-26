@@ -418,7 +418,7 @@ public class SessionProvider
                                 // Do not save internal names.
                                 if( pi.getName().equals(SessionImpl.MOVE_CONSTRAINT) )
                                 {
-                                    toberemoved.add(pi.getInternalPath());
+                                    //toberemoved.add(pi.getInternalPath());
                                     break;
                                 }
                                 // FALLTHROUGH ok.
