@@ -88,10 +88,14 @@ public class PathTest extends TestCase
     }
 
     private static final int SPEED_ITERS = 100000;
+    private static final int RUN_ITERS = 10;
     
     public void testSpeed() throws Exception
     {
         Path[] paths = new Path[SPEED_ITERS];
+        Path refpath = new Path( m_nsa, "/foo/bar/test/xxx/");
+        
+        // Path creation
         long start = System.currentTimeMillis();
         for( int i = 0; i < SPEED_ITERS; i++ )
         {
@@ -103,51 +107,74 @@ public class PathTest extends TestCase
 
         TestUtil.printSpeed( "Path creation", SPEED_ITERS, start, end );
         
+        // Resolve
         start = System.currentTimeMillis();
         for( int i = 0; i < SPEED_ITERS; i++ )
         {
             Path p = paths[i].resolve(m_nsa,"test");
             
-            paths[i] = p;
+            assertNotNull(p);
+            //paths[i] = p;
         }
         end = System.currentTimeMillis();
         
         TestUtil.printSpeed( "Basic resolve", SPEED_ITERS, start, end );
         
+        // getParentPath
         start = System.currentTimeMillis();
-        for( int i = 0; i < SPEED_ITERS; i++ )
+        for( int x = 0; x < RUN_ITERS; x++ )
         {
-            Path p = paths[i].getParentPath();
+            for( int i = 0; i < SPEED_ITERS; i++ )
+            {
+                Path p = paths[i].getParentPath();
             
-            paths[i] = p;
+                assertNotNull(p);
+                //paths[i] = p;
+            }
         }
         end = System.currentTimeMillis();
         
-        TestUtil.printSpeed( "getParentPath()", SPEED_ITERS, start, end );        
+        TestUtil.printSpeed( "getParentPath()", SPEED_ITERS*RUN_ITERS, start, end );        
 
+        // equals()
         start = System.currentTimeMillis();
-        for( int i = 0; i < SPEED_ITERS-1; i++ )
+        for( int x = 0; x < RUN_ITERS; x++ )
         {
-            boolean eq = paths[i].equals(paths[i+1]);
+            for( int i = 0; i < SPEED_ITERS-1; i++ )
+            {
+                boolean eq = paths[i].equals(paths[i+1]);
             
-            assertTrue(eq);
+                assertTrue(eq);
+                
+                eq = paths[i].equals(refpath);
+                
+                assertFalse(eq);
+                
+                eq = paths[i].equals( paths[i] );
+                
+                assertTrue(eq);
+            }
         }
         end = System.currentTimeMillis();
         
-        TestUtil.printSpeed( "equals()", SPEED_ITERS, start, end );        
+        TestUtil.printSpeed( "equals()", SPEED_ITERS*RUN_ITERS, start, end );        
 
+        // isParentOf()
         start = System.currentTimeMillis();
-        for( int i = 0; i < SPEED_ITERS-1; i++ )
+        for( int x = 0; x < RUN_ITERS; x++ )
         {
-            boolean eq = paths[i].isParentOf( paths[i+1] );
-            assertFalse(eq);
+            for( int i = 0; i < SPEED_ITERS-1; i++ )
+            {
+                boolean eq = paths[i].isParentOf( paths[i+1] );
+                assertFalse(eq);
             
-            eq = paths[i].getParentPath().isParentOf( paths[i+1] );
-            assertTrue(eq);
+                eq = paths[i].getParentPath().isParentOf( paths[i+1] );
+                assertTrue(eq);
+            }
         }
         end = System.currentTimeMillis();
         
-        TestUtil.printSpeed( "isParentOf()", SPEED_ITERS, start, end );        
+        TestUtil.printSpeed( "isParentOf()", SPEED_ITERS*RUN_ITERS, start, end );        
 
     }
     
