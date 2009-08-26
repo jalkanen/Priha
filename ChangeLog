@@ -1,5 +1,11 @@
 2009-08-24  Janne Jalkanen <jalkanen@ecyrd.com>
    
+        * 0.1.34
+        
+        * Fixed child lock tests; misunderstanding of JCR spec, oops :)
+        
+2009-08-24  Janne Jalkanen <jalkanen@ecyrd.com>
+   
         * 0.1.33
         
         * Fixed Path.Component.equals() - this unfortunately meant
