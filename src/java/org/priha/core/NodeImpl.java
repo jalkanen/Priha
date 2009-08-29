@@ -166,7 +166,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             throw new RepositoryException("Cannot add an indexed entry");
         }
         
-        Path absPath = m_path.resolve(m_session,relPath);
+        Path absPath = getInternalPath().resolve(m_session,relPath);
 
         NodeImpl ni = null;
         try
@@ -363,19 +363,19 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     
     public NodeImpl getNode(String relPath) throws PathNotFoundException, RepositoryException
     {
-        return getNode( m_path.resolve(m_session,relPath) );
+        return getNode( getInternalPath().resolve(m_session,relPath) );
     }
     
     public NodeImpl getNode(QName name) throws PathNotFoundException, RepositoryException
     {
-        return getNode( m_path.resolve(name) );
+        return getNode( getInternalPath().resolve(name) );
     }
 
     public NodeIterator getNodes() throws RepositoryException
     {
         List<NodeImpl> ls = new ArrayList<NodeImpl>();
 
-        List<Path> children = m_session.listNodes( m_path );
+        List<Path> children = m_session.listNodes( getInternalPath() );
         
         return new LazyNodeIteratorImpl(m_session,children);
     }
@@ -386,7 +386,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         ArrayList<Path> matchedpaths = new ArrayList<Path>();
 
-        List<Path> children = m_session.listNodes( m_path );
+        List<Path> children = m_session.listNodes( getInternalPath() );
         
         for( Path path : children )
         {
@@ -457,7 +457,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     public PropertyImpl getChildProperty( String name )
         throws RepositoryException
     {
-        ItemImpl ii = m_session.m_provider.getItem( m_path.resolve(m_session,name) );
+        ItemImpl ii = m_session.m_provider.getItem( getInternalPath().resolve(m_session,name) );
         
         if( ii.isNode() ) throw new ItemNotFoundException("Found a Node, not a Property");
         
@@ -466,7 +466,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public PropertyImpl getProperty( QName propName ) throws PathNotFoundException, RepositoryException
     {
-        Path abspath = m_path.resolve(propName);
+        Path abspath = getInternalPath().resolve(propName);
         
         Item item = m_session.getItem(abspath);
 
@@ -480,7 +480,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     
     public PropertyImpl getProperty(String relPath) throws PathNotFoundException, RepositoryException
     {
-        Path abspath = m_path.resolve(m_session,relPath);
+        Path abspath = getInternalPath().resolve(m_session,relPath);
 
         Item item = m_session.getItem(abspath);
 
@@ -532,7 +532,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             {
                 log.finest("Autocreating property "+pd.getQName());
 
-                Path p = m_path.resolve(pd.getQName());
+                Path p = getInternalPath().resolve(pd.getQName());
 
                 PropertyImpl pi = new PropertyImpl(m_session,
                                                    p,
@@ -543,7 +543,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 if( Q_JCR_UUID.equals(pi.getQName()) )
                 {
                     UUID uuid;
-                    if( m_path.isRoot() )
+                    if( getInternalPath().isRoot() )
                         uuid = ROOT_UUID;
                     else
                         uuid = UUID.randomUUID();
@@ -619,14 +619,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public boolean hasNode(String relPath) throws RepositoryException
     {
-        Path absPath = m_path.resolve(m_session,relPath);
+        Path absPath = getInternalPath().resolve(m_session,relPath);
         return m_session.hasNode(absPath);
     }
 
 
     public boolean hasNode(QName name) throws RepositoryException
     {
-        Path absPath = m_path.resolve(name);
+        Path absPath = getInternalPath().resolve(name);
         return m_session.hasNode(absPath);
     }
 
@@ -643,13 +643,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public boolean hasProperty( QName propName ) throws RepositoryException
     {
-        Path abspath = m_path.resolve(propName);
+        Path abspath = getInternalPath().resolve(propName);
         return m_session.hasProperty(abspath);
     }
     
     public boolean hasProperty(String relPath) throws RepositoryException
     {
-        Path abspath = m_path.resolve(m_session,relPath);
+        Path abspath = getInternalPath().resolve(m_session,relPath);
         
         return m_session.hasProperty( abspath );
     }
@@ -740,7 +740,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                                                          false);
 
             prop = new PropertyImpl( m_session,
-                                     m_path.resolve(name),
+                                     getInternalPath().resolve(name),
                                      primaryDef );
 
             addChildProperty( prop ); //  Again, a special case.  First add the property to the lists.
@@ -757,7 +757,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         if( prop == null )
         {
-            Path propertypath = m_path.resolve(name);
+            Path propertypath = getInternalPath().resolve(name);
 
             Path p = propertypath.getParentPath();
 
@@ -1132,7 +1132,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                RepositoryException
     {
         if( m_state == ItemState.NEW )
-            throw new InvalidItemStateException("Cannot call save on newly added node "+m_path);
+            throw new InvalidItemStateException("Cannot call save on newly added node "+getInternalPath());
 
         internalSave();
     }
@@ -1155,7 +1155,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //throw new ConstraintViolationException(getPath()+" has already been removed");
             return; // Die nicely
             
-        if( !m_session.m_provider.nodeExistsInRepository( m_path ) )
+        if( !m_session.m_provider.nodeExistsInRepository( getInternalPath() ) )
         {
             throw new InvalidItemStateException("Item has already been removed by another Session "+getPath());
         }
@@ -1228,7 +1228,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //  Fix same name siblings
         // 
         
-//        int myIndex = m_path.getLastComponent().getIndex();
+//        int myIndex = getInternalPath().getLastComponent().getIndex();
 //        
 //        for( NodeIteratorImpl ni = parent.getNodes( getName() ); ni.hasNext(); )
 //        {
@@ -1301,7 +1301,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      */
     public void sanitize() throws RepositoryException
     {
-        // log.finest("Sanitizing node "+m_path);
+        // log.finest("Sanitizing node "+getInternalPath());
 
         if( m_definition == null )
         {
@@ -1312,14 +1312,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             }
             catch( Exception e )
             {
-                if( m_path.isRoot() )
+                if( getInternalPath().isRoot() )
                 {
                     internalSetProperty( Q_JCR_PRIMARYTYPE, "nt:unstructured", PropertyType.NAME );
                 }
                 else
                 {
                     internalSetProperty( Q_JCR_PRIMARYTYPE,
-                                         assignChildType( m_path.getLastComponent() ).toString(),
+                                         assignChildType( getInternalPath().getLastComponent() ).toString(),
                                          PropertyType.NAME );
                 }
             }
@@ -1338,7 +1338,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             if( m_definition == null )
             {
-                throw new RepositoryException("Cannot assign a node definition for "+m_path);
+                throw new RepositoryException("Cannot assign a node definition for "+getInternalPath());
             }
 
         }
@@ -1395,9 +1395,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //  Check that parent still exists
         //
         
-        if( !m_path.isRoot() ) 
+        if( !getInternalPath().isRoot() ) 
         {
-            if( !ws.nodeExists(m_path.getParentPath()) )
+            if( !ws.nodeExists(getInternalPath().getParentPath()) )
             {
                 throw new InvalidItemStateException("No parent available.");
             }
@@ -1409,7 +1409,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         if( m_state != ItemState.NEW )
         {
-            if( !ws.nodeExists(m_path) )
+            if( !ws.nodeExists(getInternalPath()) )
             {
                 throw new InvalidItemStateException("Looks like this Node has been removed by another session.");
             }
@@ -1646,7 +1646,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                                                  RepositoryException
     {
         if( !hasMixinType("mix:lockable") )
-            throw new UnsupportedRepositoryOperationException("This node is not lockable: "+m_path);
+            throw new UnsupportedRepositoryOperationException("This node is not lockable: "+getInternalPath());
         
         if( m_state == ItemState.NEW )
             throw new LockException("This node has no persistent state");
@@ -1686,7 +1686,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         InvalidItemStateException,
         RepositoryException
     {
-        LockImpl lock = m_lockManager.getLock(m_path);
+        LockImpl lock = m_lockManager.getLock(getInternalPath());
         
         if( lock == null )
             throw new LockException("This Node has not been locked.");

@@ -198,7 +198,7 @@ public class RelationQueryNode extends NAryQueryNode implements QueryConstants {
         }
         else
         {
-            relPath = new Path( new QName[] { element }, false );
+            relPath = new Path( element, false );
         }
     }
 

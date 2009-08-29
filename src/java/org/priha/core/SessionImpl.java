@@ -38,10 +38,7 @@ import org.priha.core.namespace.NamespaceMapper;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
-import org.priha.util.InvalidPathException;
-import org.priha.util.Path;
-import org.priha.util.PathFactory;
-import org.priha.util.QName;
+import org.priha.util.*;
 import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
 import org.priha.xml.*;
@@ -746,4 +743,19 @@ public class SessionImpl implements Session, NamespaceMapper
         return "Session["+(isSuper()?"SUPER":"")+"]";
     }
 
+    /**
+     * Shortcut for getPathManager().getPath().
+     * @param p
+     * @return
+     * @throws PathNotFoundException
+     */
+    public Path getPath(PathRef p) throws PathNotFoundException
+    {
+        return m_provider.getPath( p );
+    }
+
+    public PathManager getPathManager()
+    {
+        return m_provider.getPathManager();
+    }
 }

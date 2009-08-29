@@ -528,7 +528,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         //
         if( getName().equals("jcr:primaryType") && 
             getParent().getState() != ItemState.REMOVED &&
-            m_path.getParentPath().isRoot() ) return;
+            getInternalPath().getParentPath().isRoot() ) return;
         		
         NodeImpl nd = getParent();
 

@@ -23,18 +23,15 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
 
-import org.priha.util.InvalidPathException;
-import org.priha.util.Path;
-import org.priha.util.PathFactory;
-import org.priha.util.QName;
+import org.priha.util.*;
 
 public abstract class ItemImpl implements Item
 {
 
-    protected Path        m_path;
-    protected SessionImpl m_session;
-    protected boolean     m_modified = false;
-    protected ItemState   m_state    = ItemState.NEW;
+    protected final PathRef     m_path;
+    protected final SessionImpl m_session;
+    protected boolean           m_modified = false;
+    protected ItemState         m_state    = ItemState.NEW;
     
     public ItemImpl( SessionImpl session, String path ) throws NamespaceException, RepositoryException
     {
@@ -44,7 +41,7 @@ public abstract class ItemImpl implements Item
     public ItemImpl(SessionImpl session, Path path)
     {
         m_session = session;
-        m_path = path;
+        m_path = session.getPathManager().getPathRef(path);
     }
 
     public ItemImpl(ItemImpl original, SessionImpl session)
@@ -54,6 +51,12 @@ public abstract class ItemImpl implements Item
         m_state    = original.m_state;
     }
 
+    public PathRef getPathReference()
+    {
+        if( m_path == null ) throw new RuntimeException("Path reference must not be null!");
+        return m_path;
+    }
+    
     public ItemState getState()
     {
         return m_state;
@@ -75,7 +78,7 @@ public abstract class ItemImpl implements Item
     {
         try
         {
-            Path ancestorPath = m_path.getAncestorPath(depth);
+            Path ancestorPath = getInternalPath().getAncestorPath(depth);
             
             return m_session.getItem(ancestorPath.toString());
         }
@@ -87,12 +90,12 @@ public abstract class ItemImpl implements Item
 
     public int getDepth() throws RepositoryException
     {
-        return m_path.depth();
+        return getInternalPath().depth();
     }
 
     public String getName() throws RepositoryException
     {
-        return m_session.fromQName( m_path.getLastComponent() );
+        return m_session.fromQName( getInternalPath().getLastComponent() );
     }
 
     /**
@@ -104,7 +107,7 @@ public abstract class ItemImpl implements Item
      */
     public QName getQName() throws NamespaceException, RepositoryException
     {
-        QName qname = m_path.getLastComponent();
+        QName qname = getInternalPath().getLastComponent();
         
         return qname;
     }
@@ -113,7 +116,7 @@ public abstract class ItemImpl implements Item
     {
         try
         {
-            Path parentPath = m_path.getParentPath();
+            Path parentPath = getInternalPath().getParentPath();
         
             NodeImpl parent = (NodeImpl)m_session.getItem(parentPath);
                             
@@ -127,12 +130,19 @@ public abstract class ItemImpl implements Item
 
     public Path getInternalPath()
     {
-        return m_path;
+        try
+        {
+            return m_session.getPath( m_path );
+        }
+        catch( PathNotFoundException e )
+        {
+            throw new RuntimeException("Invalid path received: "+m_path,e);
+        }
     }
     
     public String getPath() throws RepositoryException
     {
-        return m_path.toString(m_session);
+        return getInternalPath().toString(m_session);
     }
 
     public SessionImpl getSession() throws RepositoryException
@@ -179,10 +189,10 @@ public abstract class ItemImpl implements Item
 
     public void refresh(boolean keepChanges) throws InvalidItemStateException, RepositoryException
     {
-        if( !m_session.itemExists(m_path) ) 
+        if( !m_session.itemExists(getInternalPath()) ) 
             throw new InvalidItemStateException("You cannot refresh an Item which has been deleted!");
         
-        m_session.refresh( keepChanges, m_path );
+        m_session.refresh( keepChanges, getInternalPath() );
     }
 
     public abstract void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException;
@@ -203,7 +213,7 @@ public abstract class ItemImpl implements Item
 
     public String toString()
     {
-        return "Node["+m_session.getWorkspace().getName()+":"+m_path.toString()+"]";
+        return "Node["+m_session.getWorkspace().getName()+":"+getInternalPath().toString()+"]";
     }
 
     /** Marks this Node + its parent modified. 

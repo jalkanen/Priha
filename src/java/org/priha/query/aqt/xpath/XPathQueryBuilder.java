@@ -396,7 +396,7 @@ public class XPathQueryBuilder implements XPathVisitor, XPathTreeConstants {
                                 null, RelationQueryNode.OPERATION_NOT_NULL);
                         node.childrenAccept(this, tmp);
                         if (tmpRelPath == null) {
-                            tmpRelPath = new Path(new QName[0],false);
+                            tmpRelPath = Path.EMPTY_RELATIVE_PATH;
                         }
                         tmpRelPath = tmpRelPath.resolve(tmp.getRelativePath().getLastComponent());
                     }

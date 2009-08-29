@@ -108,7 +108,7 @@ public class TextsearchQueryNode extends QueryNode {
      * @deprecated Use {@link #setRelativePath(Path)} instead.
      */
     public void setPropertyName(QName property) {
-        relPath = new Path( new QName[] { property }, false );
+        relPath = new Path( property, false );
         propertyRef = true;
         
 //        PathBuilder builder = new PathBuilder();
@@ -161,7 +161,7 @@ public class TextsearchQueryNode extends QueryNode {
         }
         else
         {
-            relPath = new Path( new QName[] {element}, false );
+            relPath = new Path( element, false );
         }
     }
 

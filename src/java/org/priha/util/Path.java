@@ -44,6 +44,8 @@ public final class Path implements Comparable<Path>, Serializable
      */
     public static final Path         ROOT = new Path("/");
 
+    public static final Path EMPTY_RELATIVE_PATH = new Path( QName.valueOf(""),false );
+
     private final       Component[]  m_components;
 
     private boolean                  m_isAbsolute = false;
@@ -251,7 +253,7 @@ public final class Path implements Comparable<Path>, Serializable
         {
             return Component.ROOT_COMPONENT;
         }
-        return m_components[depth()-1];
+        return m_components[m_components.length-1];
     }
 
     /**
@@ -260,7 +262,7 @@ public final class Path implements Comparable<Path>, Serializable
      */
     public final boolean isRoot()
     {
-        return depth() == 0;
+        return m_components.length == 0;
     }
 
     /**
@@ -300,7 +302,7 @@ public final class Path implements Comparable<Path>, Serializable
         
         if( isRoot() ) throw new InvalidPathException("Root has no parent");
         
-        m_cachedParentPath = getSubpath( 0, depth()-1 );
+        m_cachedParentPath = getSubpath( 0, m_components.length-1 );
         
         return m_cachedParentPath;
     }
@@ -329,7 +331,7 @@ public final class Path implements Comparable<Path>, Serializable
     public final Path getSubpath( int startidx, int endidx )
         throws InvalidPathException
     {
-        if( startidx > depth() || endidx > depth() )
+        if( startidx > m_components.length || endidx > m_components.length )
         {
             throw new InvalidPathException("Supplied index deeper than the path");
         }
@@ -364,7 +366,7 @@ public final class Path implements Comparable<Path>, Serializable
             sb.append("/");
         }
 
-        if( depth() > 0 ) sb.deleteCharAt(sb.length()-1); // Remove final "/"
+        if( m_components.length > 0 ) sb.deleteCharAt(sb.length()-1); // Remove final "/"
 
         //
         //  TODO: In theory, some performance/memory gain could be received by
@@ -404,7 +406,7 @@ public final class Path implements Comparable<Path>, Serializable
             sb.append( '/' );
         }
         
-        if( depth() > 0 )
+        if( m_components.length > 0 )
             sb.deleteCharAt( sb.length() - 1 );
         
         return sb.toString();
@@ -494,7 +496,7 @@ public final class Path implements Comparable<Path>, Serializable
      */
     public final boolean isParentOf( Path p )
     {
-        if( p.depth() > depth() )
+        if( p.m_components.length > m_components.length )
         {
             for( int i = 0; i < m_components.length; i++ )
             {

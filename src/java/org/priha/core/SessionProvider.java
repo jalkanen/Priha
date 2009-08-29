@@ -25,10 +25,7 @@ import java.util.Map.Entry;
 import javax.jcr.*;
 import javax.jcr.nodetype.ConstraintViolationException;
 
-import org.priha.util.InvalidPathException;
-import org.priha.util.Path;
-import org.priha.util.PathFactory;
-import org.priha.util.QName;
+import org.priha.util.*;
 
 /**
  *  This is a special provider which stores the state of the Session.
@@ -42,7 +39,7 @@ public class SessionProvider
     
     private SortedMap<Path,ItemImpl> m_changedItems;
     
-    private Map<Path,ItemImpl> m_fetchedItems = new SizeLimitedHashMap<Path,ItemImpl>();
+    private Map<PathRef,ItemImpl> m_fetchedItems = new SizeLimitedHashMap<PathRef,ItemImpl>();
 
     private Map<String,NodeImpl> m_uuidMap    = new SizeLimitedHashMap<String,NodeImpl>();
     
@@ -59,25 +56,25 @@ public class SessionProvider
         m_changedItems = new TreeMap<Path,ItemImpl>( new PrimaryTypePreferringComparator() );
     }
     
-    private void clearSingleItem( final Path p, final String uuid )
+    private void clearSingleItem( final ItemImpl ii, final String uuid )
     {
-        if( p != null )    m_fetchedItems.remove( p );
+        if( ii != null )   m_fetchedItems.remove( ii.getPathReference() );
         if( uuid != null ) m_uuidMap.remove( uuid );        
     }
     
     /**
      *  Visits all Sessions from this particular Repository and clears local caches.
      *  
-     *  @param p
+     *  @param ii
      *  @param uuid
      */
-    private void clearAllCaches( final Path p, final String uuid )
+    private void clearAllCaches( final ItemImpl ii, final String uuid )
     {
         m_workspace.getSession().getRepository().visit( new RepositoryImpl.SessionVisitor() {
 
             public void visit( SessionImpl session )
             {
-                session.m_provider.clearSingleItem( p, uuid );
+                session.m_provider.clearSingleItem( ii, uuid );
             }
             
         });
@@ -102,14 +99,14 @@ public class SessionProvider
             return ii;
         }
         
-        ii = m_fetchedItems.get(path);
+        ii = m_fetchedItems.get( getPathManager().getPathRef( path ) );
         
         if( ii != null )
             return ii;
         
         ii = m_source.getItem(m_workspace, path);
         
-        if( ii != null ) m_fetchedItems.put( path, ii );
+        if( ii != null ) m_fetchedItems.put( ii.getPathReference(), ii );
         
         return ii;
     }
@@ -147,7 +144,7 @@ public class SessionProvider
             
             if( ii != null ) 
             {
-                m_fetchedItems.put( ii.getInternalPath(), ii );
+                m_fetchedItems.put( ii.getPathReference(), ii );
                 m_uuidMap.put( uuid, ii );
             }
         }
@@ -390,7 +387,7 @@ public class SessionProvider
                                 ni.preSave();
                                 m_source.addNode( m_workspace, ni );
                                 ni.postSave();
-                                m_fetchedItems.put( ni.getInternalPath(), ni );
+                                m_fetchedItems.put( ni.getPathReference(), ni );
                                 break;
                         
                             case REMOVED:
@@ -404,7 +401,7 @@ public class SessionProvider
                                     uuid = ni.getUUID();
                                 }
                                 toberemoved.add( ni.getInternalPath() );
-                                clearAllCaches( ni.getInternalPath(), uuid );
+                                clearAllCaches( ni, uuid );
                                 break;
                         }
                     }
@@ -426,12 +423,12 @@ public class SessionProvider
                                 pi.preSave();
                                 m_source.putProperty( m_workspace, pi );
                                 pi.postSave();
-                                m_fetchedItems.put( pi.getInternalPath(), pi );
+                                m_fetchedItems.put( pi.getPathReference(), pi );
                                 break;
                                 
                             case REMOVED:
                                 toberemoved.add(pi.getInternalPath());
-                                clearAllCaches( pi.getInternalPath(), null );
+                                clearAllCaches( pi, null );
                                 break;                     
                         }
                     }                
@@ -656,5 +653,17 @@ public class SessionProvider
         {
             return size() > m_maxSize;
         }
+    }
+
+    private PathManager m_sessionPathManager = new PathManager();
+    
+    public Path getPath( PathRef p ) throws PathNotFoundException
+    {
+        return m_sessionPathManager.getPath( p );
+    }
+
+    public PathManager getPathManager()
+    {
+        return m_sessionPathManager;
     }
 }
