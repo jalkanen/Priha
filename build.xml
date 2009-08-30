@@ -200,7 +200,7 @@
                 <include name="**/PerformanceTest.java" />
            </fileset>
         </batchtest>
-        <jvmarg line="-Xmx2048m -Dperftest.iterations=${perftest.iterations} -Dperftest.blobsize=${perftest.blobsize}"/>
+        <jvmarg line="-Xmx2048m -Dperftest.iterations=${perftest.iterations} -Dperftest.blobsize=${perftest.blobsize} -Dcom.sun.management.jmxremote"/>
        </junit>  
      
 
@@ -224,6 +224,9 @@
 		</zip>
 	</target>
 	
+	<!--
+	   Runs the entire JCR test suite.
+	-->
 	<target name="jcrtestsuite" depends="compile,compiletests">
 		<mkdir dir="tests/reports"/>
 		

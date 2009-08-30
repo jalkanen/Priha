@@ -24,3 +24,18 @@ JdbcProvider, with Ehcache             274        4682          52         155  
 Jackrabbit                            0.26       12836         200         268        0.43       23954         706         356        6038       38407         472      510608     1833296      555645
 ------------- ---------------- ---------------
 
+
+Tests run: 7, Failures: 0, Errors: 0, Time elapsed: 24,264.237 sec
+------------- Standard Output ---------------
+Test results.  The number is operations/seconds - larger means faster.
+Blob size 10 kB
+Repository size 10000 nodes
+Priha version 0.1.35
+Jackrabbit version 1.6.0
+                                 FirstSess   LargeRead LargeRemove   LargeSave  NewSession    RandRead      Remove        Save     SeqRead        UUID      Update     getItem getProperty    propUUID
+MemoryProvider, no cache              0.86       34041          21        1351       32458       36329           7        1022       15320       23344        3554     4147210      551582      813431
+FileProvider, no cache                  62        5300          47         366        5161        4633          22         250        1436        3302         368     4945679     1054289      736046
+FileProvider, with Ehcache            3269        3757          39         463       11544        2538          21         304        1794        1388         518     4111099      575475      860618
+JdbcProvider, no cache                  36        5925          35         139       17728       10815          49         132        5352         518         204     5845684     1055036      956811
+JdbcProvider, with Ehcache             274        4215          33         132       29858        3215          45         135        2646         355         211     4990868     1052285      937860
+Jackrabbit                            0.08       12458         205         274        0.54       24620         739         361        5990       47369         477      472575     1820003      527168

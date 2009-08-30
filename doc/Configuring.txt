@@ -95,9 +95,10 @@ Setting up caching
 ------------------
 
 Caches are just special RepositoryProviders, who sit between the main Priha
-content management, and on top of the real providers.  Your provider might
-then use some additional caching, but in most cases Priha caching should
-be more efficient.
+content management, and on top of the real providers.  Caching does provide
+some benefit, but it's recommended that you do your own benchmarking. For
+example, a good SQL database will probably be faster than adding another
+caching layer on top of it.
 
 The cache is set up per provider.  Here's how you configure Ehcache using
 the built-in EhCachingProvider and the built-in default provider:

@@ -17,6 +17,7 @@
  */
 package org.priha.providers;
 
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.Collection;
 import java.util.List;
@@ -38,6 +39,7 @@ import org.priha.core.ProviderManager;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.values.QValue;
+import org.priha.core.values.StreamValueImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
@@ -54,6 +56,7 @@ import org.priha.util.QName;
  *                           exists (e.g. from the ehcache configuration XML file),
  *                           it will be used.  If it does not exist, we create one.</li>
  *    <li><b>size</b> - The size of the cache (in items; default is 5000)</li>
+ *    <li><b>maxSize</b> - The maximum size of the objects which are cached.  Default is 10 kB.
  *  </ul>
  *  Priha creates a memory only cache.
  */
@@ -61,11 +64,19 @@ public class EhCachingProvider implements RepositoryProvider
 {
     private static final int    DEFAULT_CACHESIZE = 5000;
     private static final String DEFAULT_CACHENAME = "priha.ehCache";
+    private static final long   DEFAULT_MINCACHEABLESIZE = 10*1024;
+    
+    public static final String  PROP_MAXCACHEABLESIZE = "maxSize";
+    public static final String  PROP_SIZE             = "size";
+    public static final String  PROP_CACHENAME        = "cacheName";
+    public static final String  PROP_REALPROVIDER     = "realProvider";
     
     private Logger log = Logger.getLogger(EhCachingProvider.class.getName());
     private CacheManager m_cacheManager;
     private Ehcache      m_valueCache;
     private RepositoryProvider m_realProvider;
+    
+    private long         m_maxCacheableSize = DEFAULT_MINCACHEABLESIZE;
     
     public EhCachingProvider()
     {
@@ -75,7 +86,7 @@ public class EhCachingProvider implements RepositoryProvider
     {
         m_cacheManager = CacheManager.getInstance();
         
-        String realProviderNick = properties.getProperty("realProvider");
+        String realProviderNick = properties.getProperty(PROP_REALPROVIDER);
         
         Properties props = ProviderManager.filterProperties(repository, realProviderNick);
         
@@ -86,9 +97,17 @@ public class EhCachingProvider implements RepositoryProvider
         
         m_realProvider = ProviderManager.instantiateProvider(repository, className, props);
 
-        String cacheName = props.getProperty("cacheName", DEFAULT_CACHENAME);
+        String cacheName = props.getProperty(PROP_CACHENAME, DEFAULT_CACHENAME);
         
-        int size = Integer.parseInt( props.getProperty("size", Integer.toString(DEFAULT_CACHESIZE) ) );
+        int size = Integer.parseInt( props.getProperty(PROP_SIZE, 
+                                                       Integer.toString(DEFAULT_CACHESIZE) ) );
+        
+        // Since we store multiple objects per a single cache item (UUIDs/etc), we double the size
+        // of the cache here.
+        size = size * 2; 
+        
+        m_maxCacheableSize = Long.parseLong( props.getProperty(PROP_MAXCACHEABLESIZE,
+                                                               Long.toString( DEFAULT_MINCACHEABLESIZE ) ) );
         
         Ehcache myCache = m_cacheManager.getEhcache( cacheName );
         
@@ -163,7 +182,7 @@ public class EhCachingProvider implements RepositoryProvider
     /** For UUIDs */
     private final String getUid(WorkspaceImpl ws, String uuid)
     {
-        return uuid; // UUIDs are unique enough
+        return ws.getName()+";"+uuid; // UUIDs are unique enough
     }
 
     /** For Reverse UUIDs */
@@ -247,15 +266,26 @@ public class EhCachingProvider implements RepositoryProvider
     }
     
     //
-    //  Binary objects are not cached.  In the future, it would make sense to cache
-    //  them based on their size.
+    //  Binary objects are not cached, unless they are smaller than the max cacheable size.
     //
     private boolean isCacheable(Object o)
     {
         if( o instanceof ValueImpl )
         {
-            if( ((ValueImpl) o).getType() == PropertyType.BINARY )
+            ValueImpl v = (ValueImpl)o;
+            
+            if( v.getType() == PropertyType.BINARY )
             {
+                if( v instanceof StreamValueImpl )
+                {
+                    StreamValueImpl svi = (StreamValueImpl)v;
+                    
+                    try
+                    {
+                        return svi.getLength() <= m_maxCacheableSize;
+                    }
+                    catch( IOException e ) {} // Fine, can be ignored.
+                }
                 return false;
             }
         }
