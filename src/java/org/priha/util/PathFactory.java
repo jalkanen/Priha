@@ -37,6 +37,7 @@ import org.priha.core.namespace.NamespaceMapper;
 public class PathFactory
 {
     private static WeakHashMap<String,WeakReference<Path>> c_map = new WeakHashMap<String,WeakReference<Path>>();
+    private static WeakHashMap<Path,String> c_reverseMap = new WeakHashMap<Path,String>();
     
     /**
      *  This method clears up the PathFactory cache maps.  It is mandatory that this
@@ -46,6 +47,7 @@ public class PathFactory
     public static void reset()
     {
         c_map.clear();
+        c_reverseMap.clear();
     }
     
     /**
@@ -71,11 +73,27 @@ public class PathFactory
             result = new Path(ns,path);
     
             c_map.put( path, new WeakReference<Path>(result) );
+            c_reverseMap.put( result, path );
         }
 
         return result;
     }
 
+    public static String getMappedPath(NamespaceMapper ns, Path path) throws NamespaceException, RepositoryException
+    {
+        String p = c_reverseMap.get( path );
+        
+        if( p == null )
+        {
+            p = path.toString(ns);
+            
+            c_reverseMap.put( path, p );
+            c_map.put( p, new WeakReference<Path>(path) );
+        }
+            
+        return p;
+    }
+    
     /**
      *  Turns a FQN-representation of a Path into a real Path.
      *  

@@ -28,6 +28,18 @@ public class PerformanceTest extends TestCase
     private static int PROPERTYLEN = 16;
     
     private Credentials m_creds = new SimpleCredentials("username","password".toCharArray());
+    private boolean m_memoryProviderTest = true;
+    
+    private boolean m_jackrabbitTest     = true;
+    
+    private boolean m_jdbcProviderTest   = true;
+    private boolean m_jdbcProviderEhTest = true;
+
+    private boolean m_fileProviderTest   = true;
+    private boolean m_fileProviderEhTest = true;
+    
+    private boolean m_largeTests         = true;
+    
     
     public void setUp()
     {
@@ -41,6 +53,7 @@ public class PerformanceTest extends TestCase
     
     public void testMemoryProvider() throws Exception
     {
+        if( !m_memoryProviderTest ) return;
         Perf.setProvider("MemoryProvider, no cache");
         RepositoryImpl rep = RepositoryManager.getRepository("memorynocache.properties");
         
@@ -49,6 +62,7 @@ public class PerformanceTest extends TestCase
     
     public void testFileProvider() throws Exception
     {
+        if( !m_fileProviderTest ) return;
         Perf.setProvider("FileProvider, no cache");
         RepositoryImpl rep = RepositoryManager.getRepository("filenocache.properties");
 
@@ -57,6 +71,7 @@ public class PerformanceTest extends TestCase
 
     public void testFileEhcacheProvider() throws Exception
     {
+        if( !m_fileProviderEhTest ) return;
         Perf.setProvider("FileProvider, with Ehcache");
 
         RepositoryImpl rep = RepositoryManager.getRepository("fileehcache.properties");
@@ -66,6 +81,7 @@ public class PerformanceTest extends TestCase
 
     public void testJdbcProvider() throws Exception
     {
+        if( !m_jdbcProviderTest ) return;
         Perf.setProvider("JdbcProvider, no cache");
         RepositoryImpl rep = RepositoryManager.getRepository("jdbcnocache.properties");
         
@@ -74,6 +90,8 @@ public class PerformanceTest extends TestCase
 
     public void testJdbcEhcacheProvider() throws Exception
     {
+        if( !m_jdbcProviderEhTest ) return;
+        
         Perf.setProvider("JdbcProvider, with Ehcache");
         RepositoryImpl rep = RepositoryManager.getRepository("jdbcehcache.properties");
         
@@ -95,6 +113,8 @@ public class PerformanceTest extends TestCase
 
     public void testJackrabbit() throws Exception
     {
+        if( !m_jackrabbitTest ) return;
+
         Perf.setProvider("Jackrabbit");
 
         Repository rep = getJackrabbitRepository();
@@ -127,18 +147,27 @@ public class PerformanceTest extends TestCase
         
         ArrayList<String> propertyPaths = new ArrayList<String>();
         ArrayList<String> uuids = new ArrayList<String>();
+        private boolean m_testNewSession = true;
+        private boolean m_testSeqRead    = true;
+        private boolean m_testRandRead   = true;
+        private boolean m_testUUIDRead   = true;
+        private boolean m_testLargeRead  = true;
+        private boolean m_testCachedNode = true;
+        private boolean m_testUpdate     = true;
 
         public TesterClass(Repository rep, Credentials creds, int numIters, byte[] blob)
         {
             m_repository = rep;
             m_creds = creds;
             m_numNodes = numIters;
-            m_readIters = numIters * 10;
+            m_readIters = numIters * 100;
             m_blob = blob;
         }
         
         public void testNewSession() throws LoginException, RepositoryException
         {
+            if( !m_testNewSession ) return;
+
             //
             //  Test how quickly subsequent sessions can be acquired.
             //
@@ -243,6 +272,8 @@ public class PerformanceTest extends TestCase
 
         public void testSeqRead() throws LoginException, RepositoryException
         {
+            if( !m_testSeqRead ) return;
+
             Session s = m_repository.login(m_creds);
             
             try
@@ -284,6 +315,8 @@ public class PerformanceTest extends TestCase
         
         public void testRandRead() throws LoginException, RepositoryException
         {
+            if( !m_testRandRead ) return;
+
             Session s = m_repository.login(m_creds);
             
             try
@@ -316,6 +349,8 @@ public class PerformanceTest extends TestCase
 
         public void testUUIDRead() throws LoginException, RepositoryException
         {
+            if( !m_testUUIDRead ) return;
+
             Session s = m_repository.login(m_creds);
             
             try
@@ -347,6 +382,7 @@ public class PerformanceTest extends TestCase
         
         public void testLargeRead() throws LoginException, RepositoryException
         {
+            if( !m_testLargeRead ) return;
             Session s = m_repository.login(m_creds);
             
             try
@@ -383,6 +419,7 @@ public class PerformanceTest extends TestCase
          */
         public void testCachedNode() throws RepositoryException
         {
+            if( !m_testCachedNode ) return;
             Session s = m_repository.login(m_creds);
             
             try
@@ -442,6 +479,8 @@ public class PerformanceTest extends TestCase
         
         public void testUpdate() throws RepositoryException
         {
+            if( !m_testUpdate ) return;
+
             Session s = m_repository.login(m_creds);
             
             try
@@ -518,19 +557,22 @@ public class PerformanceTest extends TestCase
         
             Perf.stop(numIters);
         
-            //
-            //  Large objects
-            //
-            getBlob();
-            tc.testLargeSave();
-            tc.testLargeRead();
+            if( m_largeTests )
+            {
+                //
+                //  Large objects
+                //
+                getBlob();
+                tc.testLargeSave();
+                tc.testLargeRead();
         
-            Perf.start("LargeRemove");
+                Perf.start("LargeRemove");
         
-            TestUtil.emptyRepo(rep);
-            tc.propertyPaths.clear();
+                TestUtil.emptyRepo(rep);
+                tc.propertyPaths.clear();
         
-            Perf.stop(numIters);
+                Perf.stop(numIters);
+            }
         }
         catch( Exception t )
         {

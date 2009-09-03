@@ -28,7 +28,7 @@ import org.priha.util.*;
 public abstract class ItemImpl implements Item
 {
 
-    protected PathRef     m_path;
+    protected PathRef           m_path;
     protected final SessionImpl m_session;
     protected boolean           m_modified = false;
     protected ItemState         m_state    = ItemState.NEW;
@@ -142,7 +142,8 @@ public abstract class ItemImpl implements Item
     
     public String getPath() throws RepositoryException
     {
-        return getInternalPath().toString(m_session);
+        return PathFactory.getMappedPath( m_session, getInternalPath() );
+//        return getInternalPath().toString(m_session);
     }
 
     public SessionImpl getSession() throws RepositoryException
