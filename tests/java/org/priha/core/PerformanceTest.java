@@ -160,7 +160,7 @@ public class PerformanceTest extends TestCase
             m_repository = rep;
             m_creds = creds;
             m_numNodes = numIters;
-            m_readIters = numIters * 100;
+            m_readIters = numIters * 10;
             m_blob = blob;
         }
         
@@ -168,17 +168,28 @@ public class PerformanceTest extends TestCase
         {
             if( !m_testNewSession ) return;
 
-            //
-            //  Test how quickly subsequent sessions can be acquired.
-            //
-            Perf.start("NewSession");
-            for( int i = 0; i < m_numNodes; i++ )
-            {
-                Session s2 = m_repository.login(m_creds);
-                s2.logout();
-            }
+            // We want to make sure that we don't get the penalty of the first
+            // session here.
+            Session prime = m_repository.login(m_creds);
             
-            Perf.stop(m_numNodes);
+            try
+            {
+                //
+                //  Test how quickly subsequent sessions can be acquired.
+                //
+                Perf.start("NewSession");
+                for( int i = 0; i < m_numNodes; i++ )
+                {
+                    Session s2 = m_repository.login(m_creds);
+                    s2.logout();
+                }
+            
+                Perf.stop(m_numNodes);
+            }
+            finally
+            {
+                prime.logout();
+            }
         }
         
         public void testSave() throws LoginException, RepositoryException
