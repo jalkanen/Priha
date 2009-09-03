@@ -277,6 +277,7 @@ public class SessionProvider
         m_changedItems.clear();
     }
 
+    @SuppressWarnings("fallthrough")
     public void save(Path path) throws RepositoryException
     {
         //
@@ -403,6 +404,14 @@ public class SessionProvider
                                 toberemoved.add( ni.getInternalPath() );
                                 clearAllCaches( ni, uuid );
                                 break;
+                                
+                            case MOVED:
+                                Path oldPath = PathFactory.getPath( ni.getSession(),
+                                                                    ni.getProperty(SessionImpl.PRIHA_OLD_PATH).getString() );
+                                
+                                toberemoved.add( oldPath );
+                                clearAllCaches( ni, null );
+                                break;
                         }
                     }
                     else
@@ -412,10 +421,9 @@ public class SessionProvider
                         switch( pi.getState() )
                         {
                             case NEW:
-                                // Do not save internal names.
-                                if( pi.getName().equals(SessionImpl.MOVE_CONSTRAINT) )
+                                // Do not save transient properties.
+                                if( pi.isTransient() )
                                 {
-                                    //toberemoved.add(pi.getInternalPath());
                                     break;
                                 }
                                 // FALLTHROUGH ok.
@@ -429,7 +437,10 @@ public class SessionProvider
                             case REMOVED:
                                 toberemoved.add(pi.getInternalPath());
                                 clearAllCaches( pi, null );
-                                break;                     
+                                break;   
+                                
+                            case MOVED:
+                                throw new RepositoryException("Properties should never be marked as MOVED!");
                         }
                     }                
                 }

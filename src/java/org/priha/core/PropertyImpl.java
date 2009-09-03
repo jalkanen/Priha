@@ -44,6 +44,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     private Multi              m_multi = Multi.UNDEFINED;
     PropertyDefinition         m_definition;
     int                        m_type = PropertyType.UNDEFINED;
+    private boolean            m_transient = false;
     
     public PropertyImpl( SessionImpl session, Path path, QPropertyDefinition propDef )
     {
@@ -588,5 +589,25 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         }
         
         return res;
+    }
+
+    /**
+     *  Transient properties are never saved - they just live within the Session.
+     *  
+     *  @param b True, if you want to turn this property into a transient property.
+     */
+    public void setTransient( boolean b )
+    {
+        m_transient = true;
+    }
+    
+    /**
+     *  Returns true, if this property is transient.
+     *  
+     *  @return True or false.
+     */
+    public boolean isTransient()
+    {
+        return m_transient;
     }
 }

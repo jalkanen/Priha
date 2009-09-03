@@ -28,7 +28,7 @@ import org.priha.util.*;
 public abstract class ItemImpl implements Item
 {
 
-    protected final PathRef     m_path;
+    protected PathRef     m_path;
     protected final SessionImpl m_session;
     protected boolean           m_modified = false;
     protected ItemState         m_state    = ItemState.NEW;

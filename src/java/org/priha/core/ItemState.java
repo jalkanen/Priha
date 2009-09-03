@@ -19,11 +19,17 @@ package org.priha.core;
 
 /**
  *  The ItemState enumeration tracks the state of a Node.
- *
+ *  <ul>
+ *   <li>NEW = The Item is new, and has never been saved.
+ *   <li>EXISTS = Item was loaded from the repository.
+ *   <li>REMOVED = Item has been removed and cannot be addressed any more.
+ *   <li>MOVED = Item was moved
+ *  </ul>
  */
 enum ItemState 
 { 
     NEW, 
     EXISTS, 
-    REMOVED 
+    REMOVED,
+    MOVED
 }

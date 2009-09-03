@@ -51,6 +51,8 @@ import org.xml.sax.SAXException;
  */
 public class SessionImpl implements Session, NamespaceMapper
 {
+    static final String PRIHA_OLD_PATH = "priha:oldPath";
+
     private static final String JCR_SYSTEM = "jcr:system";
     
     /**
@@ -323,6 +325,16 @@ public class SessionImpl implements Session, NamespaceMapper
         }
     }
 
+    /**
+     *  Moves work as follows:
+     *  <ol>
+     *  <li>We add a new Node to the destAbsPath
+     *  <li>We copy all properties from the old Node to the new Node
+     *  <li>The old Node gets tagged with a property "priha:oldPath" which contains the current path
+     *  <li>The Path of the old Node (and all other Nodes which refer to it) is changed to point at the new location
+     *  <li>The Node is marked as being MOVED instead of REMOVED.
+     *  </ol>
+     */
     public void move(String srcAbsPath, String destAbsPath) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException
     {
         checkLive();
@@ -349,7 +361,7 @@ public class SessionImpl implements Session, NamespaceMapper
             String newDestPath = destAbsPath;
 
             LockManager lm = LockManager.getInstance( m_workspace );
-            if( lm.findLock( srcnode.getInternalPath().getParentPath() ) != null )
+            if( lm.findLock( srcnode.getParent().getInternalPath() ) != null )
                 throw new LockException( "Lock on source path prevents move" );
 
             LockImpl lock = lm.findLock( srcnode.getInternalPath() );
@@ -357,6 +369,8 @@ public class SessionImpl implements Session, NamespaceMapper
                 lm.moveLock( lock, PathFactory.getPath(newDestPath) );
             
             NodeImpl destnode = getRootNode().addNode( newDestPath, srcnode.getPrimaryNodeType().getName() );
+
+            srcnode.tag( PRIHA_OLD_PATH, srcnode.getPath() );
 
             for( NodeIterator ni = srcnode.getNodes(); ni.hasNext(); )
             {
@@ -378,6 +392,8 @@ public class SessionImpl implements Session, NamespaceMapper
                 // System.out.println(" property "+p.getPath()+" ==> "+newDestPath
                 // );
             
+                // Primary type has already been set, so we won't move that.
+                
                 if( !p.getName().equals( "jcr:primaryType" ) )
                 {
                     if( p.getDefinition().isMultiple() )
@@ -391,10 +407,25 @@ public class SessionImpl implements Session, NamespaceMapper
                 }
             }
 
-            srcnode.getParent().setProperty( MOVE_CONSTRAINT, destnode.getParent().getPath() );
-            destnode.getParent().setProperty( MOVE_CONSTRAINT, srcnode.getParent().getPath() );
+            // Set up move constraints (that is, making sure the user can only save
+            // a top node, and not just moved bits).
             
-            srcnode.remove();
+            srcnode.getParent().tag( MOVE_CONSTRAINT, destnode.getParent().getPath() );
+            destnode.getParent().tag( MOVE_CONSTRAINT, srcnode.getParent().getPath() );
+            
+            // Since this is a move op, we want to make sure that the old path
+            // does not change.
+            
+            //srcnode.freezePath();
+            
+            // Finally, remove the source node.
+            
+            //srcnode.remove();
+            srcnode.m_state = ItemState.MOVED;
+            srcnode.markModified(true);
+            m_provider.remove( srcnode ); // FIXME: Make sure this is ok
+            
+            getPathManager().move( srcnode.getInternalPath(), destnode.getInternalPath() );
         }
         finally
         {

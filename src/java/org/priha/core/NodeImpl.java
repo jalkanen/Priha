@@ -948,6 +948,69 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return prop;
     }
 
+    /**
+     *  Tag a Node with the given transient property.  Priha uses this internally
+     *  to store metadata (or a property) which is never saved. Transient properties
+     *  are never saved.
+     *  
+     *  @see PropertyImpl#isTransient()
+     *  
+     *  @param name
+     *  @throws ValueFormatException
+     *  @throws VersionException
+     *  @throws LockException
+     *  @throws ConstraintViolationException
+     *  @throws RepositoryException
+     */
+    public void tag(String name) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
+    {
+        PropertyImpl p = setProperty(name, Boolean.TRUE);
+        p.setTransient(true);
+    }
+    
+    /**
+     *  Tags a Node with a given transient property with a String value. In practice,
+     *  this sets a String property and marks it transient (i.e. never saved).
+     *  
+     *  @see PropertyImpl#isTransient()
+     *  @param name Name of the property to set
+     *  @param value Value for the property
+     *  @throws ValueFormatException
+     *  @throws VersionException
+     *  @throws LockException
+     *  @throws ConstraintViolationException
+     *  @throws RepositoryException
+     */
+    public void tag(String name, String value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
+    {
+        PropertyImpl p = setProperty(name, value);
+        p.setTransient(true);        
+    }
+    
+    /**
+     *  Returns true, if this Node has the named tag (i.e. it has a transient
+     *  Property by this name).
+     *  
+     *  @param name Tag to check for
+     *  @return True, if the tag exists. False otherwise.
+     *  @throws RepositoryException If the Repository is b0rken.
+     *  @see PropertyImpl#isTransient()
+     */
+    public boolean hasTag(String name) throws RepositoryException
+    {
+        try
+        {
+            if( hasProperty( name ) )
+            {
+                return getProperty(name).isTransient();
+            }
+        }
+        catch( PathNotFoundException e )
+        {}
+        
+        return false;
+    }
+    
     public PropertyImpl setProperty(String name, String value)
                                                           throws ValueFormatException,
                                                               VersionException,
@@ -1686,7 +1749,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         InvalidItemStateException,
         RepositoryException
     {
-        LockImpl lock = m_lockManager.getLock(getInternalPath());
+        LockImpl lock = m_lockManager.getLock( getInternalPath() );
         
         if( lock == null )
             throw new LockException("This Node has not been locked.");
@@ -2042,6 +2105,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         // TODO Auto-generated method stub
         throw new UnsupportedRepositoryOperationException();
+    }
+
+    public void freezePath() throws PathNotFoundException
+    {
+        m_path = m_session.getPathManager().getUniquePathRef( m_path );
     }
 
 }
