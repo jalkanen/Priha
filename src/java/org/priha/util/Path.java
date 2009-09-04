@@ -519,15 +519,33 @@ public final class Path implements Comparable<Path>, Serializable
         if( obj == this ) return true;
         if( obj instanceof Path )
         {
-            return ((Path)obj).toString().equals( toString() );
+            Path p = (Path)obj;
+            
+            // Check whether these are NOT the same path.
+            // Idea from http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6315064
+            // Since we'll be comparing quite a few items with similar beginnings, this
+            // is a sane optimization
+            if( p.m_hashCode != 0 && m_hashCode != 0 && p.m_hashCode != m_hashCode ) return false;
+                        
+            return p.toString().equals( toString() );
         }
         return false;
     }
 
+    private int m_hashCode = 0;
+    
     @Override
     public final int hashCode()
     {
-        return toString().hashCode() + 13;
+        if( m_hashCode == 0 )
+        {
+            int hash = 0;
+            for( int i = 0; i < m_components.length; i++ )
+                hash = hash * 17 + m_components[i].hashCode();
+            
+            m_hashCode = hash;
+        }
+        return m_hashCode;
     }
 
     public final int compareTo(Path o)

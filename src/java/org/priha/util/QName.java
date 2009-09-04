@@ -22,8 +22,8 @@ public class QName implements Serializable
     
     public QName( String uri, String name, String prefix )
     {
-        m_uri = (uri != null) ? uri : XMLConstants.NULL_NS_URI;
-        m_localName = name;
+        m_uri = (uri != null) ? uri.intern() : XMLConstants.NULL_NS_URI;
+        m_localName = name.intern();
         m_prefix = prefix;
     }
 
@@ -78,7 +78,7 @@ public class QName implements Serializable
         if( o != null && o instanceof QName )
         {
             QName q = (QName) o;
-            return q.m_uri.equals( m_uri ) && q.m_localName.equals(m_localName);
+            return q.m_localName.equals(m_localName) && q.m_uri.equals( m_uri );
         }
         
         return false;
@@ -93,7 +93,8 @@ public class QName implements Serializable
     {
         if( m_cachedString == null )
         {
-            if( m_uri.equals( XMLConstants.NULL_NS_URI ) ) m_cachedString = m_localName;
+            if( m_uri.equals( XMLConstants.NULL_NS_URI ) ) 
+                m_cachedString = m_localName;
             else
                 m_cachedString = "{"+m_uri+"}"+m_localName;
         }
