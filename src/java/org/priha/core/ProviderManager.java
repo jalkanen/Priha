@@ -28,6 +28,8 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.VersionException;
 
+import org.priha.core.values.QNameValue;
+import org.priha.core.values.QValue;
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
@@ -345,7 +347,8 @@ public class ProviderManager implements ItemStore
     
         primaryType.loadValue( v );
         
-        QName pt = ws.getSession().toQName(primaryType.getString()); // FIXME: Inoptimal
+        //QName pt = ws.getSession().toQName(primaryType.getString()); // FIXME: Inoptimal
+        QName pt = ((QNameValue.Impl)v).getQValue().getValue();
         QNodeTypeManager ntm = QNodeTypeManager.getInstance();
         QNodeType type = ntm.getNodeType( pt );
     
