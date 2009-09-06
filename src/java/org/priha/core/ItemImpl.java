@@ -80,7 +80,7 @@ public abstract class ItemImpl implements Item
         {
             Path ancestorPath = getInternalPath().getAncestorPath(depth);
             
-            return m_session.getItem(ancestorPath.toString());
+            return m_session.getItem(ancestorPath);
         }
         catch( InvalidPathException e )
         {
