@@ -73,6 +73,8 @@ public class JdbcProvider implements RepositoryProvider
             ps.setString(2, path.toString());
             if( !path.isRoot() )
                 ps.setInt( 3, getNodeId(ws, path.getParentPath()) );
+            else
+                ps.setNull( 3, Types.INTEGER );
             
             ps.execute();
         }
@@ -141,7 +143,7 @@ public class JdbcProvider implements RepositoryProvider
                                                  username,
                                                  password);
             
-            initialize();
+            initialize(driverClass);
         }
         catch (SQLException e)
         {
@@ -154,11 +156,13 @@ public class JdbcProvider implements RepositoryProvider
 
     }
 
-    private void initialize() throws IOException, SQLException
+    private void initialize(String driverClass) throws IOException, SQLException
     {
-        InputStream in = getClass().getResourceAsStream("/setup-jdbcprovider.sql");
+        String setupFile = "/jdbc/"+driverClass+"/setup.sql";
         
-        if( in == null ) throw new IOException("Setup script not found");
+        InputStream in = getClass().getResourceAsStream(setupFile);
+        
+        if( in == null ) throw new IOException("Setup script not found: "+setupFile);
         
         String sql = FileUtil.readContents(in, "UTF-8");
         

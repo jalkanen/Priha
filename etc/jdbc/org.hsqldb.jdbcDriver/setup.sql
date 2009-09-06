@@ -1,3 +1,5 @@
+-- HSQLDB setup script
+
 drop table propertyvalues if exists;
 drop table nodes if exists;
 drop table workspaces if exists;
@@ -13,9 +15,9 @@ create memory table workspaces (
 create table nodes (
 	id		bigint 			identity primary key,
 	workspace integer		not null,
-	path	varchar(255) 	not null,
+	path	varchar(2048) 	not null,
 	parent	bigint,
-	uuid	varchar(32),
+	uuid	varchar(36),
 
 	foreign key (workspace)	references workspaces (id),
 	foreign key (parent)	references nodes(id),
@@ -28,7 +30,7 @@ create index idx_nodes_id   on nodes(id,path);
 create table propertyvalues (
 	id		bigint			identity primary key,
 	parent	bigint 			not null,
-	name	varchar(64)		not null,
+	name	varchar(128)	not null,
 	type	tinyint			not null,
 	multi   boolean         not null,
 	len     bigint,

@@ -1,4 +1,13 @@
-2009-08-30  Janne Jalkanen <jalkanen@ecyrd.com>
+2009-09-06  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.1.39
+        
+        * JdbcProvider now has separate SQL setup scripts based on
+        the driver class.
+        
+        * Added support for H2 database
+        
+        * Replaced HSQLDB with H2 database in tests; seems more reliable.
    
    	    * 0.1.38
    	    
