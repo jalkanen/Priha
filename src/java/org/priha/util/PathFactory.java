@@ -36,8 +36,8 @@ import org.priha.core.namespace.NamespaceMapper;
  */
 public class PathFactory
 {
-    private static WeakHashMap<String,WeakReference<Path>> c_map = new WeakHashMap<String,WeakReference<Path>>();
-    private static WeakHashMap<Path,String> c_reverseMap = new WeakHashMap<Path,String>();
+    private static WeakHashMap<String,WeakReference<Path>> c_map = new WeakHashMap<String,WeakReference<Path>>(128);
+    private static WeakHashMap<Path,String> c_reverseMap = new WeakHashMap<Path,String>(128);
     
     /**
      *  This method clears up the PathFactory cache maps.  It is mandatory that this
