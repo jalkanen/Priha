@@ -56,8 +56,8 @@ import org.xml.sax.SAXException;
  */
 public class QNodeTypeManager
 {
-    private SortedMap<String,QNodeType> m_primaryTypes = new TreeMap<String,QNodeType>();
-    private SortedMap<String,QNodeType> m_mixinTypes   = new TreeMap<String,QNodeType>();
+    private SortedMap<QName,QNodeType> m_primaryTypes = new TreeMap<QName,QNodeType>();
+    private SortedMap<QName,QNodeType> m_mixinTypes   = new TreeMap<QName,QNodeType>();
 
     private Logger log = Logger.getLogger( getClass().getName() );
 
@@ -232,9 +232,9 @@ public class QNodeTypeManager
         //
 
         if( gnt.m_ismixin )
-            m_mixinTypes.put( nsm.toQName( name ).toString(), gnt );
+            m_mixinTypes.put( nsm.toQName( name ), gnt );
         else
-            m_primaryTypes.put( nsm.toQName( name ).toString(), gnt );
+            m_primaryTypes.put( nsm.toQName( name ), gnt );
     }
 
     private boolean getBooleanProperty( XPath xpath, String expression, Node node )
@@ -404,10 +404,10 @@ public class QNodeTypeManager
     {
         if( qn == null ) throw new NoSuchNodeTypeException("No null node type");
         
-        QNodeType n = m_primaryTypes.get(qn.toString());
+        QNodeType n = m_primaryTypes.get(qn);
         if( n == null )
         {
-            n = m_mixinTypes.get(qn.toString());
+            n = m_mixinTypes.get(qn);
         }
 
         if( n == null ) throw new NoSuchNodeTypeException("No such node type: "+qn);
