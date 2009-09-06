@@ -30,7 +30,13 @@ import org.priha.core.namespace.NamespaceMapper;
 
 /**
  *  Manages paths, which are a key ingredient in JCR.  A Path is an immutable
- *  object, so you can't change it once you create it. 
+ *  object, so you can't change it once you create it.
+ *  <p>
+ *  It should be noted that Path.toString() can become fairly expensive quickly,
+ *  since it'll create a StringBuilder to concatenate all the Components,
+ *  so it's better to avoid it, if possible.  The String is cached internally,
+ *  but still, it's better not to call it even once.  The equals(), compareTo()
+ *  and toString() methods avoid calling toString().
  */
 public final class Path implements Comparable<Path>, Serializable
 {
@@ -129,19 +135,8 @@ public final class Path implements Comparable<Path>, Serializable
         m_components = new Component[start.length+pathEnd.depth()];
         
         System.arraycopy( start, 0, m_components, 0, start.length );
-        /*
-        for( int i = 0; i < start.length; i++ )
-        {
-            m_components[i] = start[i];
-        }
-        */
+
         System.arraycopy( pathEnd.m_components, 0, m_components, start.length, pathEnd.depth() );
-        /*
-        for( int i = 0; i < pathEnd.depth(); i++ )
-        {
-            m_components[i+start.length] = pathEnd.m_components[i];
-        }
-        */
     }
 
     public Path(QName name, boolean b)
@@ -155,12 +150,7 @@ public final class Path implements Comparable<Path>, Serializable
         m_components = new Component[parentPath.getElements().length+1];
         
         System.arraycopy( parentPath.m_components, 0, m_components, 0, parentPath.m_components.length );
-        /*
-        for( int i = 0; i < parentPath.m_components.length; i++ )
-        {
-            m_components[i] = parentPath.m_components[i];
-        }
-        */
+
         m_components[m_components.length-1] = component;
     }
 
@@ -340,12 +330,7 @@ public final class Path implements Comparable<Path>, Serializable
         Component[] components = new Component[endidx-startidx];
         
         System.arraycopy( m_components, startidx, components, 0, endidx-startidx );
-        /*
-        for( int i = startidx; i < endidx; i++ )
-        {
-            components[i-startidx] = m_components[i];
-        }
-         */
+
         Path newpath = new Path( components, startidx == 0 ? m_isAbsolute : false );
 
         return newpath;
@@ -380,8 +365,8 @@ public final class Path implements Comparable<Path>, Serializable
     }
 
     /**
-     *  Returns the Path in String format.
-     *
+     *  Returns the Path in String format.  Note that the first time toString()
+     *  is called, it is a rather expensive operation.
      */
     public final String toString()
     {
@@ -525,9 +510,15 @@ public final class Path implements Comparable<Path>, Serializable
             // Idea from http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6315064
             // Since we'll be comparing quite a few items with similar beginnings, this
             // is a sane optimization
-            if( p.m_hashCode != 0 && m_hashCode != 0 && p.m_hashCode != m_hashCode ) return false;
-                        
-            return p.toString().equals( toString() );
+//            if( p.m_hashCode != 0 && m_hashCode != 0 && p.m_hashCode != m_hashCode ) return false;
+             
+            if( m_components.length != p.m_components.length ) return false;
+            for( int i = 0; i < m_components.length; i++ )
+            {
+                if( !m_components[i].equals(p.m_components[i]) ) return false;
+            }
+            return true;
+//            return p.toString().equals( toString() );
         }
         return false;
     }
@@ -550,7 +541,19 @@ public final class Path implements Comparable<Path>, Serializable
 
     public final int compareTo(Path o)
     {
-        return toString().compareTo( o.toString() );
+        for( int i = 0; i < m_components.length; i++ )
+        {
+            if( i >= o.m_components.length )
+            {
+                return 1;
+            }
+            
+            int res = m_components[i].compareTo( o.m_components[i] );
+            
+            if( res != 0 ) return res;
+        }
+        
+        return m_components.length - o.m_components.length;
     }
 
     public final Component[] getElements()
@@ -647,6 +650,19 @@ public final class Path implements Comparable<Path>, Serializable
             }
             
             return false;
+        }
+
+        @Override
+        public int compareTo( QName o )
+        {
+            int res = super.compareTo( o );
+            
+            if( res == 0 && o instanceof Component )
+            {
+                res = m_index - ((Component)o).m_index;
+            }
+            
+            return res;
         }
     }
 }
