@@ -1223,19 +1223,28 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         if( m_state == ItemState.REMOVED )
             //throw new ConstraintViolationException(getPath()+" has already been removed");
             return; // Die nicely
-            
-        if( !m_session.m_provider.nodeExistsInRepository( getInternalPath() ) )
+         
+        Path path = getInternalPath();
+        
+        if( !m_session.m_provider.nodeExistsInRepository( path ) )
         {
             throw new InvalidItemStateException("Item has already been removed by another Session "+getPath());
         }
         
-        if( getPath().equals("/") || getPath().equals("/jcr:system") ) return; // Refuse to remove
-
+        if( path.isRoot() )
+        {
+            return; // Refuse to remove
+        }
+        
         NodeImpl parent = getParent();
         NodeType parentType = parent.getPrimaryNodeType();
     
         if( !getSession().isSuper() )
         {
+            // Anything from under /jcr:system cannot be deleted by the user
+            if( JCRConstants.Q_JCR_SYSTEM_PATH.isParentOf( path )) 
+                return;
+            
             if( getParent().isLockedWithoutToken() )
                 throw new LockException("The parent is locked, so you cannot remove it.");
         
@@ -1250,7 +1259,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         markModified(true);
         m_state = ItemState.REMOVED;
 
-        LockImpl li = m_lockManager.getLock( getInternalPath() );
+        LockImpl li = m_lockManager.getLock( path );
         
         if( li != null )
             m_lockManager.removeLock( li );
