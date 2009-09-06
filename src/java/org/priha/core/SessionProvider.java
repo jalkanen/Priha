@@ -33,19 +33,19 @@ import org.priha.util.*;
  */
 public class SessionProvider
 {
-    //private SessionImpl        m_session;
     private ItemStore          m_source;
     private WorkspaceImpl      m_workspace;
     
     private SortedMap<Path,ItemImpl> m_changedItems;
     
-    private Map<PathRef,ItemImpl> m_fetchedItems = new SizeLimitedHashMap<PathRef,ItemImpl>();
+    private static final int   DEFAULT_CACHESIZE = 1000;
+    
+    private Map<PathRef,ItemImpl> m_fetchedItems = new SizeLimitedHashMap<PathRef,ItemImpl>(DEFAULT_CACHESIZE);
 
-    private Map<String,NodeImpl> m_uuidMap    = new SizeLimitedHashMap<String,NodeImpl>();
+    private Map<String,NodeImpl> m_uuidMap    = new SizeLimitedHashMap<String,NodeImpl>(DEFAULT_CACHESIZE);
     
     public SessionProvider( SessionImpl session, ItemStore source )
     {
-        //m_session = session;
         m_source  = source;
         m_workspace = session.getWorkspace();
         
@@ -127,7 +127,8 @@ public class SessionProvider
         {
             try
             {
-                if( ni.isNode() )
+                // NEW items don't yet have an UUID
+                if( ni.isNode() && ni.getState() != ItemState.NEW )
                 {
                     String pid = ((NodeImpl)ni).getUUID();
                     if( uuid.equals(pid) ) return (NodeImpl)ni;
@@ -602,7 +603,7 @@ public class SessionProvider
                 if( o1.getLastComponent().equals(Q_JCR_PRIMARYTYPE) && !o2.getLastComponent().equals(Q_JCR_PRIMARYTYPE) ) return -1;
                 if( o2.getLastComponent().equals(Q_JCR_PRIMARYTYPE) && !o1.getLastComponent().equals(Q_JCR_PRIMARYTYPE) ) return 1;
                 
-                res = o1.toString().compareTo( o2.toString() );
+                res = o1.compareTo( o2 );
             }
             
             return res;
