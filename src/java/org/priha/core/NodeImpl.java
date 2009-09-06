@@ -67,6 +67,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     
     private QNodeType            m_primaryType;
 
+    private String               m_cachedUUID;
+    
     static Logger log = Logger.getLogger( NodeImpl.class.getName() );
 
     /** 
@@ -584,13 +586,17 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public String getUUID() throws UnsupportedRepositoryOperationException, RepositoryException
     {
+        if( m_cachedUUID != null ) return m_cachedUUID;
+        
         if( isNodeType("mix:referenceable") )
         {
             try
             {
                 Property uuid = getProperty(JCR_UUID);
 
-                return uuid.getValue().getString();
+                String u = uuid.getValue().getString();
+                m_cachedUUID = u;
+                return u;
             }
             catch( PathNotFoundException e )
             {
