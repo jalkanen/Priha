@@ -140,7 +140,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      */
     private String getWorkspaceDir( String wsname )
     {
-        String wsDir = getWorkspaceRoot() + wsname;
+        String wsDir = getWorkspaceRoot() + "/" + wsname;
 
         return wsDir;
     }
