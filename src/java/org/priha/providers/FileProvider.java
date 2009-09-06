@@ -50,8 +50,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private static final String PROP_PATH           = "path";
     private static final int    BUFFER_SIZE         = 4096;
     
-    private File m_root;
-    private File m_workspaceRoot;
+    private String m_root;
+    private String m_workspaceRoot;
     
     private Logger log = Logger.getLogger( getClass().getName() );
     
@@ -71,11 +71,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      * Returns the File which houses all of the workspaces.
      * @return
      */
-    private File getWorkspaceRoot()
+    private String getWorkspaceRoot()
     {
         if( m_workspaceRoot == null )
         {
-            m_workspaceRoot = new File( m_root, "workspaces" );
+            m_workspaceRoot = m_root + "/workspaces";
         }
         
         return m_workspaceRoot;
@@ -138,9 +138,9 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  @param wsname
      *  @return
      */
-    private File getWorkspaceDir( String wsname )
+    private String getWorkspaceDir( String wsname )
     {
-        File wsDir = new File( getWorkspaceRoot(), wsname );
+        String wsDir = getWorkspaceRoot() + wsname;
 
         return wsDir;
     }
@@ -161,7 +161,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             return new File( m_root, getPathFilename(path) );
         }
         
-        File wsDir   = getWorkspaceDir( getWorkspaceFilename(ws) );
+        String wsDir = getWorkspaceDir( getWorkspaceFilename(ws) );
         File nodeDir = new File( wsDir, getPathFilename(path) );
         
         return nodeDir;
@@ -237,7 +237,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
         ArrayList<String> list = new ArrayList<String>();
         
-        File[] dirs = getWorkspaceRoot().listFiles();
+        File[] dirs = new File(getWorkspaceRoot()).listFiles();
         
         if( dirs != null )
         {
@@ -284,7 +284,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
 
         String wsList = props.getProperty("workspaces", "default");
-        m_root = new File(props.getProperty("directory"));
+        m_root = props.getProperty("directory");
         
         log.fine("Initializing FileProvider with root "+m_root);
         
@@ -292,7 +292,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         for( String wsname : workspaces )
         {
-            File wsroot = getWorkspaceDir(wsname);
+            File wsroot = new File(getWorkspaceDir(wsname));
         
             if( !wsroot.exists() )
             {
@@ -368,7 +368,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 for( File propertyFile : files )
                 {
                     Properties props;
-                    InputStream in = null;
+                    FileInputStream in = null;
                     
                     try
                     {
@@ -697,7 +697,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             throw new PathNotFoundException("The property metadata file was not found: "+inf.getAbsolutePath());
         }
         Properties props;
-        InputStream in = null;
+        FileInputStream in = null;
         
         try
         {
