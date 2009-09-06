@@ -39,9 +39,10 @@ import org.priha.util.QName;
  */
 public class MemoryProvider implements RepositoryProvider
 {
-    private Map<Path,Object> m_values    = new Hashtable<Path,Object>();
+    private static final int INITIAL_SIZE = 1024;
+    private Map<Path,Object> m_values    = new Hashtable<Path,Object>(INITIAL_SIZE);
     private Set<Path>        m_nodePaths = new TreeSet<Path>();
-    private Map<String,Path> m_uuids     = new Hashtable<String,Path>();
+    private Map<String,Path> m_uuids     = new Hashtable<String,Path>(INITIAL_SIZE);
     
     public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
     {
