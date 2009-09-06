@@ -1,6 +1,10 @@
 package org.priha.util;
 
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
 import java.util.Map;
 import java.util.Properties;
 
@@ -34,19 +38,28 @@ public class FastPropertyStore
         o.flush();
     }
     
-    public static Properties load(InputStream in) throws IOException
+    public static Properties load(FileInputStream in) throws IOException
     {
         Properties props = new Properties();
+        
+        FileChannel fc = in.getChannel();
+        
+        //MappedByteBuffer bb = fc.map(MapMode.READ_ONLY, 0, fc.size() );
+
+        ByteBuffer ba = ByteBuffer.allocate( (int) fc.size() );
+        fc.read( ba );
+        
+        String c = new String( ba.array(), "UTF-8" );
         
         /*
         BufferedReader i = new BufferedReader(new InputStreamReader( in,"UTF-8" ));
         */
-        
+        /*
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
         FileUtil.copyContents( in, ba );
         
         String c = new String( ba.toByteArray(), "UTF-8" );
-        
+        */
         BufferedStringReader i = new BufferedStringReader(c);
         
         String line;
