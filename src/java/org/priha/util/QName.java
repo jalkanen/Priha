@@ -10,7 +10,7 @@ import javax.xml.XMLConstants;
  *  <p>
  *  QNames are immutable, i.e. once they are created, they cannot be changed.
  */
-public class QName implements Serializable
+public class QName implements Serializable, Comparable<QName>
 {
     private String m_uri;
     private String m_localName;
@@ -100,4 +100,14 @@ public class QName implements Serializable
         }
         return m_cachedString;
     }
+    
+    public int compareTo( QName o )
+    {
+        int res = m_uri.compareTo( o.m_uri );
+        
+        if( res == 0 )
+            res = m_localName.compareTo( o.m_localName );
+        
+        return res;
+    }   
 }
