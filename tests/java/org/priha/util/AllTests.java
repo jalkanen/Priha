@@ -11,7 +11,7 @@ public class AllTests
     
         suite.addTest( PathTest.suite() );
         suite.addTest( PathUtilTest.suite() );
-    
+        suite.addTest( FastPropertyStoreTest.suite() );
         return suite;
     }
 }
