@@ -12,8 +12,8 @@ import javax.jcr.PathNotFoundException;
  */
 public class PathManager
 {
-    private WeakHashMap<PathRef,Path> m_pathMap = new WeakHashMap<PathRef,Path>();
-    private HashMap<Path,WeakPathRef> m_reversePathMap = new HashMap<Path,WeakPathRef>();
+    private WeakHashMap<PathRef,Path> m_pathMap = new WeakHashMap<PathRef,Path>(128);
+    private HashMap<Path,WeakPathRef> m_reversePathMap = new HashMap<Path,WeakPathRef>(128);
     private ReferenceQueue<PathRef> m_queue = new ReferenceQueue<PathRef>();
     
     public PathManager()
