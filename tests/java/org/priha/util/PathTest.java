@@ -1,5 +1,8 @@
 package org.priha.util;
 
+import javax.jcr.NamespaceException;
+import javax.jcr.RepositoryException;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -176,6 +179,52 @@ public class PathTest extends TestCase
         
         TestUtil.printSpeed( "isParentOf()", SPEED_ITERS*RUN_ITERS, start, end );        
 
+        // compareTo()
+        
+        start = System.currentTimeMillis();
+        for( int x = 0; x < RUN_ITERS; x++ )
+        {
+            for( int i = 0; i < SPEED_ITERS-1; i++ )
+            {
+                int res = paths[i].compareTo( paths[i+1] );
+                assertTrue( res == 0 );
+            }
+        }
+        end = System.currentTimeMillis();
+        
+        TestUtil.printSpeed( "compareTo()", SPEED_ITERS*RUN_ITERS, start, end );        
+        
+    }
+    
+    public void testCompareTo() throws NamespaceException, RepositoryException
+    {
+        Path root = new Path(m_nsa,"/");
+        Path a = new Path(m_nsa,"/a");
+        Path ab = new Path(m_nsa,"/a/b");
+        Path ac = new Path(m_nsa,"/a/c");
+        Path b = new Path(m_nsa,"/b");
+        Path x = new Path(m_nsa,"/priha:test");
+        Path y = new Path(m_nsa,"/priha:test/foo");
+        
+        assertTrue( "root==root", root.compareTo( root ) == 0 );
+        assertTrue( "root < a", root.compareTo(a) < 0 );
+        assertTrue( "root < ab", root.compareTo(ab) < 0 );
+        assertTrue( "a < b", a.compareTo(b) < 0 );
+        assertTrue( "b > a", b.compareTo(a) > 0 );
+
+        assertTrue( "a < ab", a.compareTo(ab) < 0 );
+        assertTrue( "ab > a", ab.compareTo(a) > 0 );
+
+        assertTrue( "a == a", a.compareTo(a) == 0 );
+        assertTrue( "ab == ab", ab.compareTo(ab) == 0 );
+
+        assertTrue( "ab < b", ab.compareTo(b) < 0 );
+        assertTrue( "b > ab", b.compareTo(ab) > 0 );
+        
+        assertTrue( "ab < ac", ab.compareTo(ac) < 0 );
+        assertTrue( "ac > ab", ac.compareTo(ab) > 0 );
+
+        assertTrue( "x < y", x.compareTo(y) < 0 );
     }
     
     public static Test suite()
