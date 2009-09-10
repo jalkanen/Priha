@@ -812,7 +812,6 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             super(p);
             
             m_conn = DriverManager.getConnection( m_connectionURL, m_userName, m_password );
-            System.out.println(p+" Created new connection");
         }
         
         public void clearWarnings() throws SQLException
@@ -831,7 +830,6 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
-            System.out.println(m_pool+" Closed connection");
         }
         
         public void close() throws SQLException
@@ -1010,6 +1008,84 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         public void setTypeMap( Map<String, Class<?>> map ) throws SQLException
         {
             m_conn.setTypeMap( map );
+        }
+
+        @Override
+        public Array createArrayOf( String typeName, Object[] elements ) throws SQLException
+        {
+            return m_conn.createArrayOf( typeName, elements );
+        }
+
+        @Override
+        public Blob createBlob() throws SQLException
+        {
+            return m_conn.createBlob();
+        }
+
+        @Override
+        public Clob createClob() throws SQLException
+        {
+            return m_conn.createClob();
+        }
+
+        @Override
+        public NClob createNClob() throws SQLException
+        {
+            return m_conn.createNClob();
+        }
+
+        @Override
+        public SQLXML createSQLXML() throws SQLException
+        {
+            return m_conn.createSQLXML();
+        }
+
+        @Override
+        public Struct createStruct( String typeName, Object[] attributes ) throws SQLException
+        {
+            return m_conn.createStruct( typeName, attributes );
+        }
+
+        @Override
+        public Properties getClientInfo() throws SQLException
+        {
+            return m_conn.getClientInfo();
+        }
+
+        @Override
+        public String getClientInfo( String name ) throws SQLException
+        {
+            return m_conn.getClientInfo( name );
+        }
+
+        @Override
+        public boolean isValid( int timeout ) throws SQLException
+        {
+            return m_conn.isValid( timeout );
+        }
+
+        @Override
+        public void setClientInfo( Properties properties ) throws SQLClientInfoException
+        {
+            m_conn.setClientInfo( properties );
+        }
+
+        @Override
+        public void setClientInfo( String name, String value ) throws SQLClientInfoException
+        {
+            m_conn.setClientInfo( name, value );
+        }
+
+        @Override
+        public boolean isWrapperFor( Class<?> iface ) throws SQLException
+        {
+            return m_conn.isWrapperFor( iface );
+        }
+
+        @Override
+        public <T> T unwrap( Class<T> iface ) throws SQLException
+        {
+            return m_conn.unwrap( iface );
         }
         
     }
