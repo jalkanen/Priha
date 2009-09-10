@@ -53,6 +53,7 @@ public class LockImpl implements Lock
         m_workspace       = orig.m_workspace;
         m_lockToken       = orig.m_lockToken;
         m_isSessionScoped = orig.m_isSessionScoped;
+        m_isDeep          = orig.m_isDeep;
         
         m_session         = session;
     }

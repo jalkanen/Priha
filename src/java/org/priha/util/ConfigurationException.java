@@ -39,6 +39,11 @@ public class ConfigurationException extends RepositoryException
     
     public ConfigurationException( String msg )
     {
-        this( msg, null );
+        this( msg, (String)null );
+    }
+
+    public ConfigurationException( String msg, Throwable e )
+    {
+        super( msg, e );
     }
 }

@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import javax.jcr.Workspace;
 
 import org.priha.core.SessionImpl;
+import org.priha.core.WorkspaceImpl;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 
@@ -42,10 +43,11 @@ public class LockManager
     private HashMap<Path,LockImpl> m_locks = new HashMap<Path,LockImpl>();
     //private String m_workspace;
     private Logger log = Logger.getLogger( LockManager.class.getName() );
+    private SessionImpl m_session;
     
-    private LockManager(Workspace ws)
+    private LockManager(WorkspaceImpl ws)
     {
-        //m_workspace = ws.getName();
+        m_session = ws.getSession();
     }
     
     public synchronized void addLock( LockImpl lock )
@@ -61,7 +63,12 @@ public class LockManager
      */
     public synchronized LockImpl getLock( Path path )
     {
-        return m_locks.get(path);
+        LockImpl lock = m_locks.get(path);
+        
+//        if( lock != null )
+//            lock = new LockImpl(lock,m_session);
+        
+        return lock;
     }
     
     /**
@@ -81,9 +88,9 @@ public class LockManager
             if( li != null )
             {
                 if( deepRequired && li.isDeep() )
-                    return li;
+                    return li; // new LockImpl(li,m_session);
                 else if( !deepRequired )
-                    return li;
+                    return li; // new LockImpl(li,m_session);
             }
             
             try
@@ -106,7 +113,7 @@ public class LockManager
      *  @param ws
      *  @return
      */
-    public static synchronized LockManager getInstance(Workspace ws)
+    public static synchronized LockManager getInstance(WorkspaceImpl ws)
     {
         LockManager lm = m_lockManagers.get(ws.getName());
         
