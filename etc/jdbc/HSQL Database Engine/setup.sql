@@ -26,6 +26,7 @@ create table nodes (
 
 create index idx_nodes_path on nodes(path);
 create index idx_nodes_id   on nodes(id,path);
+create index idx_uuid       on nodes(uuid);
 
 create table propertyvalues (
 	id		bigint			identity primary key,
@@ -36,7 +37,7 @@ create table propertyvalues (
 	len     bigint,
 	propval	binary,
 	
-	foreign key (parent)	references nodes (id),
+--	foreign key (parent)	references nodes (id),
 	constraint uniq_prop    unique(parent,name)
 );
 
