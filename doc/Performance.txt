@@ -39,3 +39,20 @@ FileProvider, with Ehcache            3269        3757          39         463  
 JdbcProvider, no cache                  36        5925          35         139       17728       10815          49         132        5352         518         204     5845684     1055036      956811
 JdbcProvider, with Ehcache             274        4215          33         132       29858        3215          45         135        2646         355         211     4990868     1052285      937860
 Jackrabbit                            0.08       12458         205         274        0.54       24620         739         361        5990       47369         477      472575     1820003      527168
+
+
+Testsuite: org.priha.core.PerformanceTest
+Tests run: 7, Failures: 0, Errors: 0, Time elapsed: 4,879.679 sec
+------------- Standard Output ---------------
+Test results.  The number is operations/seconds - larger means faster.
+Blob size 10 kB
+Repository size 10000 nodes
+Priha version 0.1.40
+Jackrabbit version 1.6.0
+                                 FirstSess   LargeRead LargeRemove   LargeSave  NewSession    RandRead      Remove        Save     SeqRead        UUID      Update     getItem getProperty    propUUID
+MemoryProvider, no cache              0.86       46771          24        1262       31864       50780           8        1041       16476       36392        3348     6116963      946805      828446
+FileProvider, no cache                2002        4831          53         391        3478        4799          24         299        1605        3317         522     3087284     1007580      932581
+FileProvider, with Ehcache            3129        4480          47         439        3266        5697          21         265        2425        4212         737     5227694     1019065      621266
+JdbcProvider, no cache                  35        7722          34         143       16346       10801          49         140        5883        6961         207     5145101     1011047      936684
+JdbcProvider, with Ehcache             170        6834          35         137        4071        9462          49         142        5815        5758         211     5151465      998437      633336
+Jackrabbit                            0.25        9219         197         279        2865       25218         667         368        5100       38029         508      363755     2108694      776265
