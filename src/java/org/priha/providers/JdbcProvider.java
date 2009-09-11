@@ -72,7 +72,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
     private Pool       m_connections = new Pool(this);
     private int        m_maxConnections;
     
-    private Connection getConnection() throws SQLException
+    private PoolableConnection getConnection() throws RepositoryException
     {
         PoolableConnection pc;
         try
@@ -81,7 +81,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         catch( Exception e )
         {
-            throw new SQLException("Connection trouble! "+e.getMessage());
+            throw new RepositoryException("Connection trouble! "+e.getMessage());
         }
         
         return pc;
@@ -90,12 +90,12 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
     // FIXME: Requires two selects and one insert; not very efficient.
     public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        Connection c         = null;
+        PoolableConnection pc = getConnection();
         PreparedStatement ps = null;
         
         try
         {
-            c = getConnection();
+            Connection c = pc.getConnection();
             ps = c.prepareStatement("INSERT INTO nodes (workspace,path,parent) "+
                                     "VALUES (?,?,?);");
             
@@ -115,16 +115,10 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
+            pc.close();
             try
             {
-                try
-                {
-                    if( ps != null ) ps.close();
-                }
-                finally
-                {
-                    if( c != null ) c.close();
-                }
+                if( ps != null ) ps.close();
             }
             catch( SQLException e )
             {
@@ -133,12 +127,13 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
     }
 
-    private int getNodeId(WorkspaceImpl ws, Path parentPath) throws SQLException, PathNotFoundException
+    private int getNodeId(WorkspaceImpl ws, Path parentPath) throws SQLException, RepositoryException
     {
-        Connection c = getConnection();
+        PoolableConnection pc = getConnection();
         
         try
         {
+            Connection c = pc.getConnection();
             PreparedStatement ps = c.prepareStatement("SELECT nodes.id AS id FROM workspaces,nodes WHERE nodes.path = ? "+
                                                       "AND nodes.workspace = workspaces.id "+
                                                       "AND workspaces.name = ?");
@@ -157,16 +152,17 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            c.close();
+            pc.close();
         }
     }
 
-    private int getWorkspaceId(WorkspaceImpl ws) throws SQLException, NoSuchWorkspaceException
+    private int getWorkspaceId(WorkspaceImpl ws) throws SQLException, RepositoryException
     {
-        Connection c = getConnection();
+        PoolableConnection pc = getConnection();
         
         try
         {
+            Connection c = pc.getConnection();
             PreparedStatement ps = c.prepareStatement("SELECT * FROM workspaces WHERE name = ?");
         
             ps.setString(1, ws.getName());
@@ -182,7 +178,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            c.close();
+            pc.close();
         }
     }
 
@@ -246,10 +242,11 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         if( m_dataSource == null && m_connectionURL == null )
             throw new ConfigurationException("No DataSource nor a connection URL found!");
 
-        Connection c = null;
+        PoolableConnection pc = null;
         try
         {
-            c = getConnection();
+            pc = getConnection(); 
+            Connection c = pc.getConnection();
         
             initialize(c);
         }
@@ -261,19 +258,16 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         {
             throw new ConfigurationException("Could not initialize the database: "+e.getMessage());            
         }
+        catch (RepositoryException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         finally
         {
-            if( c != null )
+            if( pc != null )
             {
-                try
-                {
-                    c.close();
-                }
-                catch( SQLException e )
-                {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+                pc.close();
             }
         }
 
@@ -294,7 +288,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         Statement s = null;
         try
         {
-            s= c.createStatement();
+            s = c.createStatement();
             s.execute(sql);
             c.commit();
         }
@@ -337,10 +331,10 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
     public Path findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
         PreparedStatement ps;
-        Connection c = null;
+        PoolableConnection pc = getConnection();
         try
         {
-            c = getConnection();
+            Connection c = pc.getConnection();
             ps = c.prepareStatement( "SELECT path FROM nodes where uuid = ?" );
             ps.setString(1, uuid);
             
@@ -359,14 +353,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            try
-            {
-                c.close();
-            }
-            catch( SQLException e )
-            {
-                throw new RepositoryException(e);
-            }
+            pc.close();
         }
     }
 
@@ -378,10 +365,11 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
 
     public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        Connection c = null;
+        PoolableConnection pc = getConnection();
+        
         try
         {
-            c = getConnection();
+            Connection c = pc.getConnection();
             PreparedStatement ps = c.prepareStatement("SELECT type,propval,multi FROM propertyvalues WHERE parent = ? AND name = ?");
             
             ps.setLong(1, getNodeId(ws, path.getParentPath()));
@@ -433,23 +421,17 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            try
-            {
-                c.close();
-            }
-            catch( SQLException e )
-            {
-                throw new RepositoryException(e);
-            }   
+            pc.close();
         }
     }
 
     public List<Path> listNodes(WorkspaceImpl ws, Path parentpath) throws RepositoryException
     {
-        Connection c = null;
+        PoolableConnection pc = getConnection();
+
         try
         {
-            c = getConnection();
+            Connection c = pc.getConnection();
             PreparedStatement ps = c.prepareStatement("SELECT N2.path AS path "+
                                                            "FROM workspaces,nodes AS N1 INNER JOIN nodes AS N2 ON "+
                                                            "workspaces.name = ? "+
@@ -476,24 +458,16 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            try
-            {
-                c.close();
-            }
-            catch( SQLException e )
-            {
-                throw new RepositoryException(e);
-            }
-
+            pc.close();
         }
     }
 
     public List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        Connection c = null;
+        PoolableConnection pc = getConnection();
         try
         {
-            c = getConnection();
+            Connection c = pc.getConnection();
             PreparedStatement ps = c.prepareStatement("SELECT propertyvalues.name AS name FROM workspaces,nodes,propertyvalues WHERE "+
                                                            "workspaces.name = ? "+
                                                            "AND workspaces.id = nodes.workspace "+
@@ -521,26 +495,19 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            try
-            {
-                c.close();
-            }
-            catch( SQLException e )
-            {
-                throw new RepositoryException(e);
-            }
-
+            pc.close();
         }
     }
 
-    public Collection<String> listWorkspaces()
+    public Collection<String> listWorkspaces() throws RepositoryException
     {
         ArrayList<String> workspaces = new ArrayList<String>();
-        Connection c = null;
+        PoolableConnection pc = getConnection();
+        
         try
         {
-            c = getConnection();
-            PreparedStatement ps = getConnection().prepareStatement("select * from workspaces");
+            Connection c = pc.getConnection();
+            PreparedStatement ps = c.prepareStatement("select * from workspaces");
             
             ResultSet rs = ps.executeQuery();
             
@@ -557,15 +524,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            try
-            {
-                c.close();
-            }
-            catch( SQLException e )
-            {
-                // FIXME
-            }
-
+            pc.close();
         }
         return workspaces;
     }
@@ -576,12 +535,12 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
 
     }
 
-    public boolean nodeExists(WorkspaceImpl ws, Path path)
+    public boolean nodeExists(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        Connection c = null;
+        PoolableConnection pc = getConnection();
         try
         {
-            c = getConnection();
+            Connection c = pc.getConnection();
             PreparedStatement ps = c.prepareStatement("SELECT COUNT(*) AS rowcount FROM workspaces,nodes WHERE "+
                                                            "nodes.workspace = workspaces.id " +
                                                            "AND workspaces.name = ? "+
@@ -606,14 +565,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            try
-            {
-                c.close();
-            }
-            catch( SQLException e )
-            {
-            }
-
+            pc.close();
         }
         return false;
     }
@@ -656,10 +608,11 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
     
     public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
     {
-        Connection c = null;
+        PoolableConnection pc = getConnection();
+        
         try
         {
-            c = getConnection();
+            Connection c = pc.getConnection();
             byte[] bytes = serialize(property);
             PreparedStatement ps;
             long id = getNodeId(ws,property.getInternalPath().getParentPath());
@@ -716,26 +669,18 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            try
-            {
-                c.close();
-            }
-            catch( SQLException e )
-            {
-                throw new RepositoryException(e);
-            }
-
+            pc.close();
         }
     }
 
     public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         PreparedStatement ps;
-        Connection c = null;
+        PoolableConnection pc = getConnection();
         
         try
         {
-            c = getConnection();
+            Connection c = pc.getConnection();
             ps = c.prepareStatement("DELETE FROM propertyvalues WHERE "+
                                     "parent = ? AND "+
                                     "name = ?");
@@ -767,17 +712,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            if( c != null ) 
-            {
-                try
-                {
-                    c.close();
-                }
-                catch( SQLException x )
-                {
-                    throw new RepositoryException("Unable to close ",x);
-                }
-            }
+            pc.close();
         }
     }
 
@@ -803,7 +738,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
     /**
      *  Wraps around a JDBC Connection.
      */
-    private class PoolableConnection extends Pool.Poolable implements Connection
+    private class PoolableConnection extends Pool.Poolable
     {
         Connection m_conn;
         
@@ -814,12 +749,17 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             m_conn = DriverManager.getConnection( m_connectionURL, m_userName, m_password );
         }
         
+        public Connection getConnection()
+        {
+            return m_conn;
+        }
+        
         public void clearWarnings() throws SQLException
         {
             m_conn.clearWarnings();
         }
 
-        public void dispose()
+        public void dispose() throws RepositoryException
         {
             try
             {
@@ -827,265 +767,13 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             }
             catch( SQLException e )
             {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                throw new RepositoryException(e);
             }
         }
         
-        public void close() throws SQLException
+        public void close()
         {
             release();
-        }
-
-        public void commit() throws SQLException
-        {
-            m_conn.commit();
-        }
-
-        public Statement createStatement() throws SQLException
-        {
-            return m_conn.createStatement();
-        }
-
-        public Statement createStatement( int resultSetType, int resultSetConcurrency ) throws SQLException
-        {
-            return m_conn.createStatement( resultSetType, resultSetConcurrency );
-        }
-
-        public Statement createStatement( int resultSetType, int resultSetConcurrency, int resultSetHoldability )
-                                                                                                                 throws SQLException
-        {
-            return m_conn.createStatement( resultSetType, resultSetConcurrency, resultSetHoldability );
-        }
-
-        public boolean getAutoCommit() throws SQLException
-        {
-            return m_conn.getAutoCommit();
-        }
-
-        public String getCatalog() throws SQLException
-        {
-            return m_conn.getCatalog();
-        }
-
-        public int getHoldability() throws SQLException
-        {
-            return m_conn.getHoldability();
-        }
-
-        public DatabaseMetaData getMetaData() throws SQLException
-        {
-            return m_conn.getMetaData();
-        }
-
-        public int getTransactionIsolation() throws SQLException
-        {
-            return m_conn.getTransactionIsolation();
-        }
-
-        public Map<String, Class<?>> getTypeMap() throws SQLException
-        {
-            return m_conn.getTypeMap();
-        }
-
-        public SQLWarning getWarnings() throws SQLException
-        {
-            return m_conn.getWarnings();
-        }
-
-        public boolean isClosed() throws SQLException
-        {
-            return m_conn.isClosed();
-        }
-
-        public boolean isReadOnly() throws SQLException
-        {
-            return m_conn.isReadOnly();
-        }
-
-        public String nativeSQL( String sql ) throws SQLException
-        {
-            return m_conn.nativeSQL( sql );
-        }
-
-        public CallableStatement prepareCall( String sql ) throws SQLException
-        {
-            return m_conn.prepareCall( sql );
-        }
-
-        public CallableStatement prepareCall( String sql, int resultSetType, int resultSetConcurrency ) throws SQLException
-        {
-            return m_conn.prepareCall( sql, resultSetType, resultSetConcurrency );
-        }
-
-        public CallableStatement prepareCall( String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability )
-                                                                                                                                 throws SQLException
-        {
-            return m_conn.prepareCall( sql, resultSetType, resultSetConcurrency, resultSetHoldability );
-        }
-
-        public PreparedStatement prepareStatement( String sql ) throws SQLException
-        {
-            return m_conn.prepareStatement( sql );
-        }
-
-        public PreparedStatement prepareStatement( String sql, int autoGeneratedKeys ) throws SQLException
-        {
-            return m_conn.prepareStatement( sql, autoGeneratedKeys );
-        }
-
-        public PreparedStatement prepareStatement( String sql, int[] columnIndexes ) throws SQLException
-        {
-            return m_conn.prepareStatement( sql, columnIndexes );
-        }
-
-        public PreparedStatement prepareStatement( String sql, String[] columnNames ) throws SQLException
-        {
-            return m_conn.prepareStatement( sql, columnNames );
-        }
-
-        public PreparedStatement prepareStatement( String sql, int resultSetType, int resultSetConcurrency ) throws SQLException
-        {
-            return m_conn.prepareStatement( sql, resultSetType, resultSetConcurrency );
-        }
-
-        public PreparedStatement prepareStatement( String sql, int resultSetType, int resultSetConcurrency, int resultSetHoldability )
-                                                                                                                                      throws SQLException
-        {
-            return m_conn.prepareStatement( sql, resultSetType, resultSetConcurrency, resultSetHoldability );
-        }
-
-        public void releaseSavepoint( Savepoint savepoint ) throws SQLException
-        {
-            m_conn.releaseSavepoint( savepoint );
-        }
-
-        public void rollback() throws SQLException
-        {
-            m_conn.rollback();
-        }
-
-        public void rollback( Savepoint savepoint ) throws SQLException
-        {
-            m_conn.rollback( savepoint );
-        }
-
-        public void setAutoCommit( boolean autoCommit ) throws SQLException
-        {
-            m_conn.setAutoCommit( autoCommit );
-        }
-
-        public void setCatalog( String catalog ) throws SQLException
-        {
-            m_conn.setCatalog( catalog );
-        }
-
-        public void setHoldability( int holdability ) throws SQLException
-        {
-            m_conn.setHoldability( holdability );
-        }
-
-        public void setReadOnly( boolean readOnly ) throws SQLException
-        {
-            m_conn.setReadOnly( readOnly );
-        }
-
-        public Savepoint setSavepoint() throws SQLException
-        {
-            return m_conn.setSavepoint();
-        }
-
-        public Savepoint setSavepoint( String name ) throws SQLException
-        {
-            return m_conn.setSavepoint( name );
-        }
-
-        public void setTransactionIsolation( int level ) throws SQLException
-        {
-            m_conn.setTransactionIsolation( level );
-        }
-
-        public void setTypeMap( Map<String, Class<?>> map ) throws SQLException
-        {
-            m_conn.setTypeMap( map );
-        }
-
-        @Override
-        public Array createArrayOf( String typeName, Object[] elements ) throws SQLException
-        {
-            return m_conn.createArrayOf( typeName, elements );
-        }
-
-        @Override
-        public Blob createBlob() throws SQLException
-        {
-            return m_conn.createBlob();
-        }
-
-        @Override
-        public Clob createClob() throws SQLException
-        {
-            return m_conn.createClob();
-        }
-
-        @Override
-        public NClob createNClob() throws SQLException
-        {
-            return m_conn.createNClob();
-        }
-
-        @Override
-        public SQLXML createSQLXML() throws SQLException
-        {
-            return m_conn.createSQLXML();
-        }
-
-        @Override
-        public Struct createStruct( String typeName, Object[] attributes ) throws SQLException
-        {
-            return m_conn.createStruct( typeName, attributes );
-        }
-
-        @Override
-        public Properties getClientInfo() throws SQLException
-        {
-            return m_conn.getClientInfo();
-        }
-
-        @Override
-        public String getClientInfo( String name ) throws SQLException
-        {
-            return m_conn.getClientInfo( name );
-        }
-
-        @Override
-        public boolean isValid( int timeout ) throws SQLException
-        {
-            return m_conn.isValid( timeout );
-        }
-
-        @Override
-        public void setClientInfo( Properties properties ) throws SQLClientInfoException
-        {
-            m_conn.setClientInfo( properties );
-        }
-
-        @Override
-        public void setClientInfo( String name, String value ) throws SQLClientInfoException
-        {
-            m_conn.setClientInfo( name, value );
-        }
-
-        @Override
-        public boolean isWrapperFor( Class<?> iface ) throws SQLException
-        {
-            return m_conn.isWrapperFor( iface );
-        }
-
-        @Override
-        public <T> T unwrap( Class<T> iface ) throws SQLException
-        {
-            return m_conn.unwrap( iface );
         }
         
     }

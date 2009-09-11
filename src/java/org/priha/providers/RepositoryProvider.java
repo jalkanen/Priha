@@ -138,8 +138,9 @@ public interface RepositoryProvider
      *  @param ws The workspace in which the existence of the Node is checked.
      *  @param path The path to the Node.
      *  @return True, if the node exists.  False otherwise (like when it's actually a Property)
+     * @throws RepositoryException 
      */
-    public boolean nodeExists( WorkspaceImpl ws, Path path );
+    public boolean nodeExists( WorkspaceImpl ws, Path path ) throws RepositoryException;
     
     /**
      *  Adds a new Node to the repository to the given Path.  The properties of the
@@ -200,8 +201,9 @@ public interface RepositoryProvider
      *  called after start() but before open().
      *  
      *  @return The workspace names.
+     * @throws RepositoryException 
      */
-    public Collection<String> listWorkspaces();
+    public Collection<String> listWorkspaces() throws RepositoryException;
 
     /**
      *  Removes a node or a property from the repository.  If the removed

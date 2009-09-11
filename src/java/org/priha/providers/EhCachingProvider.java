@@ -410,7 +410,7 @@ public class EhCachingProvider implements RepositoryProvider
 
     }
 
-    public Collection<String> listWorkspaces()
+    public Collection<String> listWorkspaces() throws RepositoryException
     {
         return m_realProvider.listWorkspaces();
     }
@@ -432,7 +432,7 @@ public class EhCachingProvider implements RepositoryProvider
         m_realProvider.move(ws, srcpath, destpath);
     }
 
-    public boolean nodeExists(WorkspaceImpl ws, Path path)
+    public boolean nodeExists(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         if( m_valueCache.isKeyInCache( getNid(ws,path) ) )
             return true;

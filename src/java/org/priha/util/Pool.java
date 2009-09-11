@@ -3,6 +3,8 @@ package org.priha.util;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import javax.jcr.RepositoryException;
+
 /**
  *  Simple object pool.
  */
@@ -75,8 +77,9 @@ public class Pool
         /**
          *  Default implementation does nothing. You should override this if your
          *  object needs special cleanup.
+         * @throws Exception 
          */
-        public void dispose()
+        public void dispose() throws Exception
         {}
     }
     
@@ -96,7 +99,15 @@ public class Pool
         Poolable p;
         while( (p = m_objects.poll()) != null)
         {
-            p.dispose();
+            try
+            {
+                p.dispose();
+            }
+            catch (Exception e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
     }
 }

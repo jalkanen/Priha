@@ -1,3 +1,15 @@
+2009-09-12  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.2.0
+        
+        * Rewrote JDBC Provider a bit to keep it compatible with JDK5 & 6.
+        For future reference: Implementing JDK interfaces is not a good idea.
+        
+        * Changed the signatures of some of the RepositoryProvider interfaces,
+        therefore causing a bump in version number.  The changes were just
+        some exceptions being added so that all methods can now throw
+        RepositoryExceptions. 
+        
 2009-09-11  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.1.40
