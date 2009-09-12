@@ -45,7 +45,7 @@ import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 
-import org.priha.core.locks.LockImpl;
+import org.priha.core.locks.QLock;
 import org.priha.core.locks.LockManager;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
@@ -1259,7 +1259,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         markModified(true);
         m_state = ItemState.REMOVED;
 
-        LockImpl li = m_lockManager.getLock( path );
+        QLock li = m_lockManager.getLock( path );
         
         if( li != null )
             m_lockManager.removeLock( li );
@@ -1742,10 +1742,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             throw new LockException("This Node is already locked.");
         }
         
-        LockImpl lock = new LockImpl( m_session,
-                                      getInternalPath(), 
-                                      isDeep,
-                                      isSessionScoped );
+        QLock lock = new QLock( this,
+                                isDeep,
+                                isSessionScoped );
       
         m_session.addLockToken( lock.getToken() );
         setProperty("jcr:lockOwner", lock.getLockOwner());
@@ -1755,7 +1754,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
       
         m_lockManager.addLock( lock );
         
-        return lock;
+        return lock.getLockInstance(m_session);
     }
 
     public void unlock() throws UnsupportedRepositoryOperationException,
@@ -1764,12 +1763,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         InvalidItemStateException,
         RepositoryException
     {
-        LockImpl lock = m_lockManager.getLock( getInternalPath() );
+        QLock lock = m_lockManager.getLock( getInternalPath() );
         
         if( lock == null )
             throw new LockException("This Node has not been locked.");
         
-        if( lock.getLockToken() == null )
+        if( lock.getLockToken(m_session) == null )
             throw new LockException("This Session does not own this Lock, so it cannot be unlocked.");
         
         if( isModified() )
@@ -1780,7 +1779,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         p = getProperty("jcr:lockIsDeep");
         p.remove();
         
-        m_session.removeLockToken( lock.getLockToken() );
+        m_session.removeLockToken( lock.getLockToken(m_session) );
         m_lockManager.removeLock( lock );
         lock.invalidate();
         
@@ -1788,24 +1787,24 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     }
 
 
-    public LockImpl getLock() throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException
+    public QLock.Impl getLock() throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException
     {
-        LockImpl li = m_lockManager.findLock( getInternalPath() );
+        QLock li = m_lockManager.findLock( getInternalPath() );
         
         //
         //  Must return a clone of the Lock which is particular to this session.
         //
         
         if( li != null )
-            li = new LockImpl( li, m_session );
+            return li.getLockInstance(m_session);
         
-        return li;
+        return null;
     }
 
 
     public boolean holdsLock() throws RepositoryException
     {
-        LockImpl li = m_lockManager.getLock( getInternalPath() );
+        QLock li = m_lockManager.getLock( getInternalPath() );
 
         return li != null;
     }
@@ -1813,7 +1812,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public boolean isLocked() throws RepositoryException
     {
-        LockImpl li = m_lockManager.findLock( getInternalPath() );
+        QLock li = m_lockManager.findLock( getInternalPath() );
 
         return li != null;
     }
@@ -1826,22 +1825,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      */
     protected boolean isLockedWithoutToken()
     {
-        try
+        if( !getInternalPath().isRoot() )
         {
-            if( !getInternalPath().isRoot() )
-            {
-                LockImpl li = getLock();
-            
-                if( li != null && li.getLockToken() == null )
-                {
-                    return true;
-                }
-            }
+            QLock li = m_lockManager.findLock(getInternalPath());
         
-        }
-        catch( RepositoryException e )
-        {
-            log.warning("Don't quite know what happened "+e.getMessage());
+            if( li != null && li.getLockToken(m_session) == null )
+            {
+                return true;
+            }
         }
         
         return false;

@@ -32,7 +32,7 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.priha.core.locks.LockImpl;
+import org.priha.core.locks.QLock;
 import org.priha.core.locks.LockManager;
 import org.priha.core.namespace.NamespaceMapper;
 import org.priha.core.values.ValueFactoryImpl;
@@ -364,7 +364,7 @@ public class SessionImpl implements Session, NamespaceMapper
             if( lm.findLock( srcnode.getParent().getInternalPath() ) != null )
                 throw new LockException( "Lock on source path prevents move" );
 
-            LockImpl lock = lm.findLock( srcnode.getInternalPath() );
+            QLock lock = lm.findLock( srcnode.getInternalPath() );
             if( lock != null )
                 lm.moveLock( lock, PathFactory.getPath(newDestPath) );
             

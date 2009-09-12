@@ -1,5 +1,11 @@
 2009-09-12  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.2.1
+        
+        * Rewrote Lock implementation, and introduced QLock.  This got
+        rid of some annoying lock errors relating to session expiration.
+        Only TCK tests failing at this point relate to same-name siblings.
+
         * 0.2.0
         
         * Rewrote JDBC Provider a bit to keep it compatible with JDK5 & 6.

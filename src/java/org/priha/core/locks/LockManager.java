@@ -40,7 +40,7 @@ public class LockManager
 {
     private static HashMap<String,LockManager> m_lockManagers = new HashMap<String,LockManager>();
     
-    private HashMap<Path,LockImpl> m_locks = new HashMap<Path,LockImpl>();
+    private HashMap<Path,QLock> m_locks = new HashMap<Path,QLock>();
     //private String m_workspace;
     private Logger log = Logger.getLogger( LockManager.class.getName() );
     private SessionImpl m_session;
@@ -50,7 +50,7 @@ public class LockManager
         m_session = ws.getSession();
     }
     
-    public synchronized void addLock( LockImpl lock )
+    public synchronized void addLock( QLock lock )
     {
         m_locks.put( lock.getPath(), lock );
     }
@@ -61,12 +61,9 @@ public class LockManager
      *  @param path
      *  @return
      */
-    public synchronized LockImpl getLock( Path path )
+    public synchronized QLock getLock( Path path )
     {
-        LockImpl lock = m_locks.get(path);
-        
-//        if( lock != null )
-//            lock = new LockImpl(lock,m_session);
+        QLock lock = m_locks.get(path);
         
         return lock;
     }
@@ -78,19 +75,19 @@ public class LockManager
      *  @param path
      *  @return
      */
-    public synchronized LockImpl findLock( Path path )
+    public synchronized QLock findLock( Path path )
     {
         boolean deepRequired = false;
         while( !path.isRoot() )
         {
-            LockImpl li = m_locks.get( path );
+            QLock li = m_locks.get( path );
         
             if( li != null )
             {
                 if( deepRequired && li.isDeep() )
-                    return li; // new LockImpl(li,m_session);
+                    return li; // new QLock(li,m_session);
                 else if( !deepRequired )
-                    return li; // new LockImpl(li,m_session);
+                    return li; // new QLock(li,m_session);
             }
             
             try
@@ -128,15 +125,15 @@ public class LockManager
 
     public synchronized void expireSessionLocks( SessionImpl session )
     {
-        for( Iterator<Map.Entry<Path,LockImpl>> i = m_locks.entrySet().iterator(); i.hasNext(); )
+        for( Iterator<Map.Entry<Path,QLock>> i = m_locks.entrySet().iterator(); i.hasNext(); )
         {
-            Map.Entry<Path,LockImpl> e = i.next();
+            Map.Entry<Path,QLock> e = i.next();
             
-            LockImpl li = e.getValue();
+            QLock li = e.getValue();
 
             if( li.expire(session) )
             {
-                i.remove();
+//                i.remove();
             }
         }
     }
@@ -147,7 +144,7 @@ public class LockManager
      *  @param lock Lock to change.
      *  @param destPath New path.
      */
-    public synchronized void moveLock(LockImpl lock, Path destPath)
+    public synchronized void moveLock(QLock lock, Path destPath)
     {
         System.out.println("Moving lock from "+lock.getPath()+" to "+destPath);
         removeLock(lock);
@@ -155,7 +152,7 @@ public class LockManager
         addLock(lock);
     }
     
-    public synchronized void removeLock(LockImpl lock)
+    public synchronized void removeLock(QLock lock)
     {
         m_locks.remove(lock.getPath());
     }
@@ -175,7 +172,7 @@ public class LockManager
             if( internalPath.isParentOf(p) ) 
             {
                 /*
-                LockImpl li = m_locks.get(p);
+                QLock li = m_locks.get(p);
                 
                 if( li.getLockToken() == null && li.isSessionScoped() ) return true;
                 */
