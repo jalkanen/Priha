@@ -1,5 +1,6 @@
 package org.priha.core;
 
+import org.priha.RepositoryManager;
 import org.priha.util.Path;
 import org.priha.util.PathFactory;
 import org.priha.util.QName;
@@ -45,6 +46,8 @@ public final class JCRConstants
     public static final QName  Q_JCR_SYSTEM        = QName.valueOf( JCR_SYSTEM );
     
     public static final Path   Q_JCR_SYSTEM_PATH   = new Path( Q_JCR_SYSTEM, true );
+
+    public static final QName  Q_PRIHA_CHILDNODEORDER = QName.valueOf("{"+RepositoryManager.NS_PRIHA+"}childNodeOrder");
     
     private static final String mk(String namespace, String name)
     {

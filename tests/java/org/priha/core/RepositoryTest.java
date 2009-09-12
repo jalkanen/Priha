@@ -59,7 +59,7 @@ public class RepositoryTest extends TestCase
         
         for( String p : paths )
         {
-            if( p.startsWith("jcr:") ) continue; // This is okay
+            if( p.startsWith("jcr:") || p.startsWith( "priha:") ) continue; // This is okay
         
             fail( "This was not removed: "+p );
         }

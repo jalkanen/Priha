@@ -385,7 +385,7 @@ public class SessionImpl implements Session, NamespaceMapper
         
             for( PropertyIterator pi = srcnode.getProperties(); pi.hasNext(); )
             {
-                Property p = pi.nextProperty();
+                PropertyImpl p = (PropertyImpl)pi.nextProperty();
 
                 // newDestPath = destAbsPath + "/" + nd.getName() + "/" +
                 // p.getName();
@@ -398,7 +398,7 @@ public class SessionImpl implements Session, NamespaceMapper
                 {
                     if( p.getDefinition().isMultiple() )
                     {
-                        destnode.setProperty( p.getName(), p.getValues() );
+                        destnode.internalSetProperty( p.getQName(), p.getValues(), p.getType() );
                     }
                     else
                     {

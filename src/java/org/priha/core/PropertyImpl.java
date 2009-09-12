@@ -50,7 +50,11 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     {
         super( session, path );
 
-        if( propDef != null ) setDefinition( propDef.new Impl(session) );
+        if( propDef != null ) 
+        {
+            setDefinition( propDef.new Impl(session) );
+            m_type = propDef.getRequiredType();
+        }
     }
 
     /**
@@ -288,14 +292,43 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             if( getParent().isLockedWithoutToken() )
                 throw new LockException("Parent node is locked");
         }
+        
+        if( values == null )
+        {
+            remove();
+            return;
+        }
 
+        values = compactValueArray( values );
+        
+        if( m_type == PropertyType.UNDEFINED )
+        {
+            if( values.length > 0 )
+            {
+                int type = values[0].getType();
+                
+                m_type = type;
+            }
+            else
+            {
+                //
+                // This is the difficult bit.  The system could not figure out an explicit
+                // node type for this Property (based on the parent node), and the
+                // values array is empty, so we can't use that one either.  So we do the
+                // only thing we can - tell the user that he's being stupid.
+                //
+                
+                //throw new ValueFormatException("Cannot add an empty Value array when there is no explicit type defined in the parent Node."+getInternalPath());
+            }
+        }
+        
         if( m_type != PropertyType.UNDEFINED && values != null && values.length >= 1 && values[0] != null && m_type != values[0].getType() )
         {
             throw new ValueFormatException("Attempt to set a different type value to this property");
         }        
         
         markModified( m_value != null );
-        loadValue(values);
+        loadValue(values, m_type);
     }
 
     /**
@@ -308,7 +341,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
      * @throws ConstraintViolationException
      * @throws RepositoryException
      */
-    public void loadValue(Value[] values)
+    public void loadValue(Value[] values, int propertyType)
                                           throws ValueFormatException,
                                               VersionException,
                                               LockException,
@@ -318,19 +351,35 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( m_multi == Multi.SINGLE )
             throw new ValueFormatException("Attempted to set a MULTI Value object to a SINGLE property "+m_path);
 
+        /*
+        if( propertyType == PropertyType.UNDEFINED )
+            throw new ValueFormatException("Cannot load an UNDEFINED value");
+        */
         if( values == null )
         {
             remove();
             return;
         }
+        m_value = values;
+       
+        m_multi = Multi.MULTI;
+        
+        m_type = propertyType;
+    }
 
-        // Clean away null values from the array
-        // and also check that the values are all of the same type
-        
+    /**
+     *  Compacts away the null values of the array.  It also ensures that all
+     *  the Values in the array are of the same type.
+     *  
+     *  @param values
+     *  @return
+     *  @throws ValueFormatException
+     */
+    private Value[] compactValueArray(Value[] values) throws ValueFormatException
+    {
         ArrayList<Value> ls = new ArrayList<Value>();
-        
+
         int type = PropertyType.UNDEFINED;
-        
         for( int i = 0; i < values.length; i++ )
         {
             if( values[i] != null )
@@ -343,13 +392,9 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                 ls.add( values[i] );
             }
         }
-        m_value = ls.toArray( new Value[ls.size()] );
-       
-        m_multi = Multi.MULTI;
-        
-        if( m_value.length > 0 ) m_type = m_value[0].getType();
+        return ls.toArray( new Value[ls.size()] );
     }
-
+    
     public void setValue(String value)
                                       throws ValueFormatException,
                                           VersionException,
@@ -518,7 +563,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
 
     public String toString()
     {
-        return "Property("+m_multi+")["+m_path+"="+((m_multi == Multi.SINGLE && m_value != null) ? m_value[0].toString() : m_value)+"]";
+        return "Property("+m_multi+")["+getInternalPath()+"="+((m_multi == Multi.SINGLE && m_value != null) ? m_value[0].toString() : m_value)+"]";
     }
 
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
@@ -610,4 +655,15 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     {
         return m_transient;
     }
+    
+    @Override
+    protected void preSave() throws RepositoryException
+    {
+        super.preSave();
+        
+        if( m_type == PropertyType.UNDEFINED && !m_definition.isMultiple() ) 
+            throw new ConstraintViolationException("Property must not be of type UNDEFINED, unless it's a multiproperty: "+getInternalPath());
+    }
+
+
 }

@@ -1,5 +1,10 @@
 2009-09-12  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.2.2
+        
+        * Enhanced RepositoryProvider.getPropertyValue() to also transmit
+        the type of the Value.  The API changed again.
+
         * 0.2.1
         
         * Rewrote Lock implementation, and introduced QLock.  This got

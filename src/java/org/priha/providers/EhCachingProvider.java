@@ -269,32 +269,27 @@ public class EhCachingProvider implements RepositoryProvider
     //
     //  Binary objects are not cached, unless they are smaller than the max cacheable size.
     //
-    private boolean isCacheable(Object o)
+    private boolean isCacheable(ValueContainer o)
     {
-        if( o instanceof ValueImpl )
+        if( o.getType() == PropertyType.BINARY )
         {
-            ValueImpl v = (ValueImpl)o;
-            
-            if( v.getType() == PropertyType.BINARY )
+            if( !o.isMultiple() && o.getValue() instanceof StreamValueImpl )
             {
-                if( v instanceof StreamValueImpl )
+                StreamValueImpl svi = (StreamValueImpl)o.getValue();
+                
+                try
                 {
-                    StreamValueImpl svi = (StreamValueImpl)v;
-                    
-                    try
-                    {
-                        return svi.getLength() <= m_maxCacheableSize;
-                    }
-                    catch( IOException e ) {} // Fine, can be ignored.
+                    return svi.getLength() <= m_maxCacheableSize;
                 }
-                return false;
+                catch( IOException e ) {} // Fine, can be ignored.
             }
+            return false;
         }
         
         return true;
     }
     
-    public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
+    public ValueContainer getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         String key = getVid(ws,path);
         
@@ -303,7 +298,7 @@ public class EhCachingProvider implements RepositoryProvider
             Element e = m_valueCache.get( key );
             if( e != null )
             {
-                Object o = e.getObjectValue();
+                ValueContainer o = (ValueContainer)e.getObjectValue();
                 
                 //
                 //  If this is a mapped instance, then we'll actually return
@@ -311,14 +306,11 @@ public class EhCachingProvider implements RepositoryProvider
                 //
                 //  FIXME: Optimize by checking the Session, if this comes from the same one, no need to clone.
                 //
-                if( o instanceof QValue.QValueInner )
-                {
-                    return ((QValue.QValueInner)o).getQValue().getValue(ws.getSession());
-                }
-                return e.getObjectValue();
+                
+                return o.sessionInstance( ws.getSession() );
             }
         
-            Object o = m_realProvider.getPropertyValue(ws, path);
+            ValueContainer o = m_realProvider.getPropertyValue(ws, path);
         
             if( isCacheable(o) )
             {
@@ -344,9 +336,6 @@ public class EhCachingProvider implements RepositoryProvider
     @SuppressWarnings("unchecked")
     public List<Path> listNodes(WorkspaceImpl ws, Path parentpath) throws RepositoryException
     {
-//        System.out.print ("listNodes: "+Thread.currentThread());
-//        long start = System.currentTimeMillis();
-
         try
         {
             Element e = m_valueCache.get( getNid(ws,parentpath) );
@@ -370,18 +359,12 @@ public class EhCachingProvider implements RepositoryProvider
             m_valueCache.put( new Element(getNid(ws,parentpath),null) );
             throw new RepositoryException("Error getting propery value", e);
         }
-        finally {
-//            System.out.println(" --- released: "+(System.currentTimeMillis() - start));
-        }
 
     }
 
     @SuppressWarnings("unchecked")
     public List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-//        System.out.print ("listProperties: "+Thread.currentThread());
-//        long start = System.currentTimeMillis();
-
         try
         {
             Element e = m_valueCache.get( getPid(ws,path) );
@@ -404,9 +387,6 @@ public class EhCachingProvider implements RepositoryProvider
             // Release lock
             m_valueCache.put( new Element(getPid(ws,path),null) );
             throw new RepositoryException("Error listing properties");
-        }
-        finally {
-//            System.out.println(" --- released: "+(System.currentTimeMillis() - start));
         }
 
     }
@@ -445,6 +425,18 @@ public class EhCachingProvider implements RepositoryProvider
     {
         m_valueCache.remove( getVid(ws,property.getInternalPath() ) );
         m_realProvider.putPropertyValue(ws, property);
+        
+        if( !property.getDefinition().isMultiple() )
+        {
+            ValueContainer vc;
+            vc = new ValueContainer( property.getValue() );
+            if( isCacheable( vc ) )
+            {
+                Element e = new Element( getVid( ws, property.getInternalPath() ), vc );
+                
+                m_valueCache.put( e );
+            }
+        }
     }
 
     public void remove(WorkspaceImpl ws, Path path) throws RepositoryException

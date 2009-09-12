@@ -367,7 +367,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         return null;
     }
 
-    public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
+    public ValueContainer getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         PoolableConnection pc = getConnection();
         
@@ -405,12 +405,12 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
                         v[i] = ws.getSession().getValueFactory().createValue( new MemoryBinarySource(ba).getStream(), type );
                     }
                     
-                    return v;
+                    return new ValueContainer(v, type);
                 }
                 
                 ValueImpl v = ws.getSession().getValueFactory().createValue( value.getBinaryStream(), type );
          
-                return v;
+                return new ValueContainer(v);
             }
             
             throw new PathNotFoundException("No such property "+path);

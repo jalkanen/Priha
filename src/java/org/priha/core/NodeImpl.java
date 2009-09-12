@@ -262,7 +262,27 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             {                    
                 throw new ConstraintViolationException("Parent node does not allow adding nodes of name "+absPath.getLastComponent());
             }
-
+/*
+            if( getPrimaryQNodeType().hasOrderableChildNodes() )
+            {
+                ValueFactoryImpl vfi = m_session.getValueFactory();
+                
+                Value newChild = vfi.createValue( absPath.getLastComponent(), 
+                                                  PropertyType.NAME );
+                try
+                {
+                    PropertyImpl order = getProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER );
+                
+                    order.setValue( vfi.addValue( order.getValues(), 
+                                                  newChild ) );
+                }
+                catch( PathNotFoundException e )
+                {
+                    Value[] v = { newChild };
+                    internalSetProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER, v, PropertyType.NAME );
+                }
+            }
+*/
             //
             //  Node type and definition are now okay, so we'll create the node
             //  and add it to our session.
@@ -272,6 +292,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             ni.sanitize();
 
             ni.markModified(false);
+            
             //m_session.addNode( ni ); // Already taken care of by markModified
         }
         catch( InvalidPathException e)
@@ -378,11 +399,44 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return getNode( getInternalPath().resolve(name) );
     }
 
+
+    private List<Path> sortChildren(List<Path> list) throws PathNotFoundException, RepositoryException
+    {
+        // FIXME: Currently only supports primary node type sorting
+        // FIXME: Fairly slow.
+        /*
+        if( getPrimaryQNodeType().hasOrderableChildNodes() )
+        {
+            PropertyImpl order = getProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER );
+            
+            Value[] paths = order.getValues();
+            
+            ArrayList<Path> result = new ArrayList<Path>(list.size());
+            
+            for( Value v : paths )
+            {
+                String p = v.getString();
+                
+                for( Path path : list )
+                {
+                    if( path.getLastComponent().toString().equals( p ) )
+                    {
+                        result.add( path );
+                    }
+                }
+            }
+            
+            return result;
+        }
+        */
+        return list;
+    }
+    
     public NodeIterator getNodes() throws RepositoryException
     {
-        List<NodeImpl> ls = new ArrayList<NodeImpl>();
-
         List<Path> children = m_session.listNodes( getInternalPath() );
+
+        children = sortChildren(children);
         
         return new LazyNodeIteratorImpl(m_session,children);
     }
@@ -394,7 +448,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         ArrayList<Path> matchedpaths = new ArrayList<Path>();
 
         List<Path> children = m_session.listNodes( getInternalPath() );
-        
+
+        children = sortChildren(children);
+
         for( Path path : children )
         {
             Matcher match = p.matcher( m_session.fromQName( path.getLastComponent() ) );
@@ -532,7 +588,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         {
             VersionManager.createVersionHistory( this );
         }
-        
+        /*
+        if( nt.hasOrderableChildNodes() && !hasProperty(JCRConstants.Q_PRIHA_CHILDNODEORDER) )
+        {
+            Value[] v = {};
+            internalSetProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER, v, PropertyType.NAME );
+        }
+        */
         for( QPropertyDefinition pd : nt.getQPropertyDefinitions() )
         {
             if( pd.isAutoCreated() && !hasProperty(pd.getQName()) )
@@ -876,12 +938,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return p;
     }
 
-    private PropertyImpl internalSetProperty(QName name, Value[] values, int type) throws PathNotFoundException, RepositoryException
+    PropertyImpl internalSetProperty(QName name, Value[] values, int type) throws PathNotFoundException, RepositoryException
     {
         PropertyImpl p = prepareProperty( name, values );
 
-        p.loadValue( values );
-
+        p.m_type = type;
+        p.loadValue( values, type );
+        
         return p;       
     }
 
@@ -955,6 +1018,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         PropertyImpl prop = prepareProperty(name,value);
         
         prop.loadValue( m_session.getValueFactory().createValue(value,type) );
+        prop.m_type = type;
         
         return prop;
     }
@@ -1306,7 +1370,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
           
             nd.remove();
         }
-        
+        /*
+        if( parent.hasProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER ) )
+        {
+            ValueFactoryImpl vfi = m_session.getValueFactory();
+            Property p = parent.getProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER );
+            
+            p.setValue( vfi.removeValue(p.getValues(), vfi.createValue( getQName(), 
+                                                                        PropertyType.NAME) ) );
+        }
+    */
         //
         //  Fix same name siblings
         // 

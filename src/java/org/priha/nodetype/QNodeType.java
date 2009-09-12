@@ -40,6 +40,11 @@ public class QNodeType
         m_name = name;
     }
 
+    public boolean hasOrderableChildNodes()
+    {
+        return m_hasOrderableChildNodes;
+    }
+    
     public QName getQName()
     {
         return m_name;

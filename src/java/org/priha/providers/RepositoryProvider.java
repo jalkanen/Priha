@@ -131,7 +131,7 @@ public interface RepositoryProvider
      *  @throws RepositoryException If something goes wrong.
      *  @throws PathNotFoundException If there is nothing at the end of this Path, i.e. the object could not be found.
      */
-    public abstract Object getPropertyValue( WorkspaceImpl ws, Path path ) 
+    public abstract ValueContainer getPropertyValue( WorkspaceImpl ws, Path path ) 
         throws PathNotFoundException, RepositoryException;
     
     /**

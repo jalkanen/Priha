@@ -43,6 +43,11 @@ public class QPropertyDefinition extends QItemDefinition
         return m_isMultiple;
     }
 
+    public int getRequiredType()
+    {
+        return m_requiredType;
+    }
+    
     /**
      *  Implements the PropertyDefinition with its Session-specific
      *  thingies.

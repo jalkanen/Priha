@@ -548,7 +548,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 {
                     try
                     {
-                        ValueImpl[] oldval = (ValueImpl[]) getPropertyValue( ws, property.getInternalPath() );
+                        ValueImpl[] oldval = getPropertyValue( ws, property.getInternalPath() ).getValues();
                     
                         for( ValueImpl vi : oldval )
                         {
@@ -565,7 +565,15 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                     saveRefShortcut( ws, property.getInternalPath(), (ValueImpl)values[i] );
                     writeValue( df, (ValueImpl)values[i] );
                 }
+                // Remove the rest of old values
                 
+                int i = values.length;
+                while(true)
+                {
+                    File df = new File( nodeDir, makeFilename( qname, "."+i+".data" ) );
+                    if( df.exists() ) df.delete();
+                    else break;
+                }
             }
             else
             {
@@ -573,7 +581,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 {
                     try
                     {
-                        ValueImpl oldval = (ValueImpl) getPropertyValue( ws, property.getInternalPath() );
+                        ValueImpl oldval = getPropertyValue( ws, property.getInternalPath() ).getValue();
                         cleanRefMapping( ws, property.getInternalPath(), oldval.getString() );
                     }
                     catch(PathNotFoundException e) {} // OK
@@ -713,7 +721,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return props;
     }
     
-    public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
+    public ValueContainer getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         m_hitCount[Count.GetPropertyValue.ordinal()]++;
 
@@ -738,13 +746,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                     result[i] = v;
                 }
                 
-                return result;
+                return new ValueContainer(result, PropertyType.valueFromName( propType ) );
             }
             
             File df = new File( nodeDir, makeFilename( path.getLastComponent(), ".data" ) );
             ValueImpl v = prepareValue(ws, df, propType);
 
-            return v;
+            return new ValueContainer(v);
         }
         catch( IOException e )
         {            

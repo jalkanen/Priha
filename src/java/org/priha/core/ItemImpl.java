@@ -252,7 +252,7 @@ public abstract class ItemImpl implements Item
      *  @throws RepositoryException
      */
     protected void preSave() throws RepositoryException
-    {
+    {  
     }
     
     /**

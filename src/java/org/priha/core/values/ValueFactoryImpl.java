@@ -332,11 +332,46 @@ public class ValueFactoryImpl implements ValueFactory
         return v;
     }
 
+    /**
+     *  Returns a new Value array with the new Value added in the last
+     *  position.
+     *  
+     *  @param orig Original Value array
+     *  @param add The value to be added.
+     *  @return A new Array with the add value in the last position.
+     */
+    public Value[] addValue( Value[] orig, Value add )
+    {
+        Value[] v = new Value[orig.length+1];
+        
+        System.arraycopy( orig, 0, v, 0, orig.length );
+        
+        v[orig.length] = add;
+        
+        return v;
+    }
+    
     public ValueImpl createValue( QName qn, int type ) throws ValueFormatException
     {
         if( type != PropertyType.NAME ) throw new ValueFormatException("Can only create NAME types from QNames");
         
         return new QNameValue(qn).new Impl(m_session);
+    }
+
+    public Value[] removeValue( Value[] orig, Value rem )
+    {
+        Value[] v = new Value[orig.length-1];
+        
+        int j = 0;
+        for( int i = 0; i < orig.length; i++ )
+        {
+            if( !orig[i].equals( rem ) )
+            {
+                v[j++] = orig[i];
+            }
+        }
+        
+        return v;
     }
 
 }

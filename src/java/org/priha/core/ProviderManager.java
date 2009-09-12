@@ -29,13 +29,13 @@ import javax.jcr.nodetype.NodeType;
 import javax.jcr.version.VersionException;
 
 import org.priha.core.values.QNameValue;
-import org.priha.core.values.QValue;
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QNodeTypeManager;
 import org.priha.nodetype.QPropertyDefinition;
 import org.priha.providers.RepositoryProvider;
+import org.priha.providers.ValueContainer;
 import org.priha.util.ConfigurationException;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
@@ -249,7 +249,7 @@ public class ProviderManager implements ItemStore
     }
 
 
-    private Object getPropertyValue(WorkspaceImpl impl, Path ptPath) throws RepositoryException
+    private ValueContainer getPropertyValue(WorkspaceImpl impl, Path ptPath) throws RepositoryException
     {
         ProviderInfo pi = getProviderInfo(impl,ptPath);
         
@@ -257,7 +257,7 @@ public class ProviderManager implements ItemStore
         {
             pi.lock.readLock().lock();
         
-            Object stored = pi.provider.getPropertyValue( impl, ptPath );
+            ValueContainer stored = pi.provider.getPropertyValue( impl, ptPath );
             
             return stored;
         }
@@ -340,15 +340,15 @@ public class ProviderManager implements ItemStore
         Path ptPath = path.resolve( JCRConstants.Q_JCR_PRIMARYTYPE );
         PropertyImpl primaryType = ws.createPropertyImpl( ptPath );
     
-        ValueImpl v = (ValueImpl)getPropertyValue( ws, ptPath );
+        ValueContainer v = getPropertyValue( ws, ptPath );
         
         if( v == null )
             throw new RepositoryException("Repository did not return a primary type for path "+path);
     
-        primaryType.loadValue( v );
+        primaryType.loadValue( v.getValue() );
         
         //QName pt = ws.getSession().toQName(primaryType.getString()); // FIXME: Inoptimal
-        QName pt = ((QNameValue.Impl)v).getQValue().getValue();
+        QName pt = ((QNameValue.Impl)v.getValue()).getQValue().getValue();
         QNodeTypeManager ntm = QNodeTypeManager.getInstance();
         QNodeType type = ntm.getNodeType( pt );
     
@@ -382,23 +382,21 @@ public class ProviderManager implements ItemStore
         LockException,
         ConstraintViolationException
     {
-        Object values = getPropertyValue( ws, ptPath );
+        ValueContainer values = getPropertyValue( ws, ptPath );
    
         PropertyImpl p = ws.createPropertyImpl( ptPath );
         p.m_state = ItemState.EXISTS;
-        
-        boolean multiple = values instanceof ValueImpl[];
-   
+           
         //
         //  Find the proper property definition.
         //
-        QPropertyDefinition pd = ni.getPrimaryQNodeType().findPropertyDefinition(name,multiple);
+        QPropertyDefinition pd = ni.getPrimaryQNodeType().findPropertyDefinition(name,values.isMultiple());
         
         if( pd == null )
         {
             for( NodeType mixin : ni.getMixinNodeTypes() )
             {
-                pd = ((QNodeType.Impl)mixin).getQNodeType().findPropertyDefinition( name, multiple );
+                pd = ((QNodeType.Impl)mixin).getQNodeType().findPropertyDefinition( name, values.isMultiple() );
                 
                 if( pd != null ) break;
             }
@@ -408,10 +406,10 @@ public class ProviderManager implements ItemStore
         
         p.setDefinition( pd.new Impl(ws.getSession()) ); // FIXME: Inoptimal
         
-        if( multiple )
-            p.loadValue( (ValueImpl[]) values );
+        if( values.isMultiple() )
+            p.loadValue( values.getValues(), values.getType() );
         else
-            p.loadValue( (ValueImpl) values );
+            p.loadValue( values.getValue() );
         
         return p;
     }

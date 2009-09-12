@@ -41,7 +41,7 @@ import org.priha.util.QName;
 public class MemoryProvider implements RepositoryProvider
 {
     private static final int INITIAL_SIZE = 1024;
-    private Map<Path,Object> m_values    = new Hashtable<Path,Object>(INITIAL_SIZE);
+    private Map<Path,ValueContainer> m_values    = new Hashtable<Path,ValueContainer>(INITIAL_SIZE);
     private Set<Path>        m_nodePaths = new TreeSet<Path>();
     private Map<String,Path> m_uuids     = new Hashtable<String,Path>(INITIAL_SIZE);
     
@@ -69,12 +69,12 @@ public class MemoryProvider implements RepositoryProvider
     {
         ArrayList<Path> res = new ArrayList<Path>();
         
-        for( Map.Entry<Path,Object> e : m_values.entrySet() )
+        for( Map.Entry<Path,ValueContainer> e : m_values.entrySet() )
         {
-            if( e.getValue() instanceof Value && 
+            if( !e.getValue().isMultiple() && 
                 e.getKey().getLastComponent().equals(JCRConstants.Q_JCR_UUID) )
             {
-                if( ((Value)e.getValue()).getString().equals(uuid) )
+                if( e.getValue().getValue().getString().equals(uuid) )
                 {
                     res.add( e.getKey() );
                 }
@@ -84,18 +84,13 @@ public class MemoryProvider implements RepositoryProvider
         return res;
     }
 
-    public Object getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
+    public ValueContainer getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        Object o = m_values.get(path);
+        ValueContainer o = m_values.get(path);
         
         if( o == null ) throw new PathNotFoundException(path.toString());
         
-        if( o instanceof QValue.QValueInner )
-        {
-            return ((QValue.QValueInner)o).getQValue().getValue(ws.getSession());
-        }
-        
-        return o;
+        return o.sessionInstance( ws.getSession() );
     }
 
     public List<Path> listNodes(WorkspaceImpl ws, Path parentpath) throws RepositoryException
@@ -161,17 +156,18 @@ public class MemoryProvider implements RepositoryProvider
             ValueImpl[] pseudovals = new ValueImpl[values.length];
             for( int i = 0; i < values.length; i++ ) pseudovals[i] = (ValueImpl)values[i];
             
-            m_values.put( property.getInternalPath(), pseudovals );
+            m_values.put( property.getInternalPath(), new ValueContainer(pseudovals,
+                                                                         property.getType()) );
         }
         else
         {
-            Value value = property.getValue();
+            ValueImpl value = property.getValue();
             if( property.getQName().equals(JCRConstants.Q_JCR_UUID) )
             {
                 m_uuids.put( value.getString(), property.getInternalPath().getParentPath() );
             }
             
-            m_values.put( property.getInternalPath(), value );    
+            m_values.put( property.getInternalPath(), new ValueContainer(value) );    
         }
         
         //System.out.println("Stored "+property.getInternalPath());
@@ -187,9 +183,9 @@ public class MemoryProvider implements RepositoryProvider
                 i.remove();
         }
         
-        for( Iterator<Map.Entry<Path,Object>> i = m_values.entrySet().iterator(); i.hasNext(); )
+        for( Iterator<Map.Entry<Path,ValueContainer>> i = m_values.entrySet().iterator(); i.hasNext(); )
         {
-            Map.Entry<Path, Object> e = i.next();
+            Map.Entry<Path, ValueContainer> e = i.next();
             
             if( path.isParentOf(e.getKey()) || path.equals(e.getKey()) )
                 i.remove();
