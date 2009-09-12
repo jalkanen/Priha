@@ -429,7 +429,7 @@ public class ProviderManager implements ItemStore
         {
             pi.lock.writeLock().lock();
         
-            pi.provider.addNode(ws, path);
+            pi.provider.addNode(ws, path, ni.getQDefinition());
         }
         finally
         {

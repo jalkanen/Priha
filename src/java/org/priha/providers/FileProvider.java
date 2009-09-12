@@ -33,6 +33,7 @@ import org.priha.core.binary.FileBinarySource;
 import org.priha.core.values.QValue;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
+import org.priha.nodetype.QNodeDefinition;
 import org.priha.util.*;
 
 /**
@@ -167,7 +168,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return nodeDir;
     }
     
-    public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
+    public void addNode(WorkspaceImpl ws, Path path, QNodeDefinition def) throws RepositoryException
     {
         m_hitCount[Count.AddNode.ordinal()]++;
 

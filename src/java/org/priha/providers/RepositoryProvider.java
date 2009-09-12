@@ -22,10 +22,12 @@ import java.util.List;
 import java.util.Properties;
 
 import javax.jcr.*;
+import javax.jcr.nodetype.NodeDefinition;
 
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
+import org.priha.nodetype.QNodeDefinition;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
 import org.priha.util.QName;
@@ -150,9 +152,11 @@ public interface RepositoryProvider
      * 
      *  @param ws The workspace.
      *  @param path Path to the node in this workspace.
+     *  @paran definition The definition of the Node which will be added. The provider
+     *                    may use this to optimize for particular types.
      *  @throws RepositoryException If the Node cannot be added.
      */
-    public void addNode( WorkspaceImpl ws, Path path ) throws RepositoryException;
+    public void addNode( WorkspaceImpl ws, Path path, QNodeDefinition definition ) throws RepositoryException;
     
     /**
      *  Sets or adds a new Property to the repository.  Note that

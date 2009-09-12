@@ -41,6 +41,7 @@ import org.priha.core.WorkspaceImpl;
 import org.priha.core.values.QValue;
 import org.priha.core.values.StreamValueImpl;
 import org.priha.core.values.ValueImpl;
+import org.priha.nodetype.QNodeDefinition;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
 import org.priha.util.QName;
@@ -207,12 +208,12 @@ public class EhCachingProvider implements RepositoryProvider
         m_valueCache.removeAll();
     }
 
-    public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
+    public void addNode(WorkspaceImpl ws, Path path, QNodeDefinition def) throws RepositoryException
     {
         if( !path.isRoot() )
             m_valueCache.remove( getNid(ws,path.getParentPath()) );
         
-        m_realProvider.addNode(ws, path);
+        m_realProvider.addNode(ws, path,def);
     }
 
     public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException

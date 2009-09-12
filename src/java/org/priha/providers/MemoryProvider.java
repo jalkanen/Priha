@@ -27,6 +27,7 @@ import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.values.QValue;
 import org.priha.core.values.ValueImpl;
+import org.priha.nodetype.QNodeDefinition;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
 import org.priha.util.QName;
@@ -44,7 +45,7 @@ public class MemoryProvider implements RepositoryProvider
     private Set<Path>        m_nodePaths = new TreeSet<Path>();
     private Map<String,Path> m_uuids     = new Hashtable<String,Path>(INITIAL_SIZE);
     
-    public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
+    public void addNode(WorkspaceImpl ws, Path path, QNodeDefinition def) throws RepositoryException
     {
         //System.out.println("Node++ "+path);
         m_nodePaths.add( path );

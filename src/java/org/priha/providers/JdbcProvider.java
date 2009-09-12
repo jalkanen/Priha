@@ -19,7 +19,10 @@ package org.priha.providers;
 
 import java.io.*;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,6 +36,7 @@ import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.binary.MemoryBinarySource;
 import org.priha.core.values.ValueImpl;
+import org.priha.nodetype.QNodeDefinition;
 import org.priha.util.*;
 import org.priha.util.Pool.Poolable;
 import org.priha.util.Pool.PoolableFactory;
@@ -88,7 +92,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
     }
     
     // FIXME: Requires two selects and one insert; not very efficient.
-    public void addNode(WorkspaceImpl ws, Path path) throws RepositoryException
+    public void addNode(WorkspaceImpl ws, Path path, QNodeDefinition def) throws RepositoryException
     {
         PoolableConnection pc = getConnection();
         PreparedStatement ps = null;

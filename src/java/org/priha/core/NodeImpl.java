@@ -345,6 +345,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return m_definition.new Impl(m_session);
     }
 
+    public QNodeDefinition getQDefinition()
+    {
+        return m_definition;
+    }
+    
     public int getIndex() throws RepositoryException
     {
         // Not supported, so always constant
