@@ -363,8 +363,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
 
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
-        // FIXME Auto-generated method stub
-        return null;
+        return new ArrayList<Path>(); // FIXME: Should do something useful
     }
 
     public ValueContainer getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
@@ -391,7 +390,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
                 {
                     ObjectInputStream in = new ObjectInputStream( value.getBinaryStream() );
                     
-                    int numObjects = in.readByte();
+                    int numObjects = in.readInt();
                     
                     ValueImpl[] v = new ValueImpl[numObjects];
                     
@@ -421,7 +420,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         catch (IOException e)
         {
-            throw new RepositoryException("Deserialization of value failed "+e.getMessage());
+            throw new RepositoryException("Deserialization of value failed for "+path,e);
         }
         finally
         {
@@ -577,7 +576,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
     //
     //  Serialization format:
     //  Single : just Value.getStream();
-    //  Multi  : <byte numValues> [ <int length> <byte... content> ]
+    //  Multi  : <int numValues> [ <int length> <byte... content> ]
     //
     
     private byte[] serialize( Property property ) throws ValueFormatException, IllegalStateException, RepositoryException, IOException
@@ -588,9 +587,9 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         {
             Value[] vals = property.getValues();
             
-            ObjectOutputStream    oo = new ObjectOutputStream(ba);
+            ObjectOutputStream oo = new ObjectOutputStream(ba);
             
-            oo.writeByte( vals.length );
+            oo.writeInt( vals.length );
             
             for( Value v : vals )
             {
@@ -601,6 +600,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
                 vba.writeTo( oo );
             }
             
+            oo.flush();
         }
         else
         {
