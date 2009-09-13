@@ -272,6 +272,19 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         loadValue( value );
     }
 
+    public void setValue(Value[] values, int propertyType) 
+       throws ValueFormatException, 
+              VersionException, 
+              LockException, 
+              ConstraintViolationException, 
+              RepositoryException
+    {
+        if( m_type == PropertyType.UNDEFINED )
+            m_type = propertyType;
+        
+        setValue( values );   
+    }
+    
     public void setValue(Value[] values)
                                         throws ValueFormatException,
                                             VersionException,

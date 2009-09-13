@@ -262,7 +262,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             {                    
                 throw new ConstraintViolationException("Parent node does not allow adding nodes of name "+absPath.getLastComponent());
             }
-/*
+
+            //
+            //  Add the internal order.
+            //
+            /*
             if( getPrimaryQNodeType().hasOrderableChildNodes() )
             {
                 ValueFactoryImpl vfi = m_session.getValueFactory();
@@ -274,7 +278,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                     PropertyImpl order = getProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER );
                 
                     order.setValue( vfi.addValue( order.getValues(), 
-                                                  newChild ) );
+                                                  newChild ),
+                                                  order.getType() );
                 }
                 catch( PathNotFoundException e )
                 {
@@ -803,7 +808,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         {
             if( hasProperty( Q_JCR_PRIMARYTYPE ) )
             {
-                throw new ConstraintViolationException("The object has already been assigned a primary type!");
+                throw new ConstraintViolationException( getInternalPath()+" has already been assigned a primary type!");
             }
 
             //  We know where this belongs to.
@@ -1366,7 +1371,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //
         for( NodeIterator ndi = getNodes(); ndi.hasNext(); )
         {
-            Node nd = ndi.nextNode();
+            NodeImpl nd = (NodeImpl)ndi.nextNode();
           
             nd.remove();
         }
@@ -1615,7 +1620,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         {
             if( pd.isMandatory() && !hasProperty(pd.getQName()) )
             {
-                throw new ConstraintViolationException("Node is missing property "+pd.getQName());
+                throw new ConstraintViolationException("Node "+getInternalPath()+" is missing property "+pd.getQName());
             }
         }
     }
