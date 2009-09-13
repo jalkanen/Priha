@@ -7,7 +7,6 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import org.priha.RepositoryManager;
-import org.priha.core.RepositoryImpl;
 
 public class NodeImplTest extends TestCase
 {
@@ -138,6 +137,39 @@ public class NodeImplTest extends TestCase
         
         assertNotNull( test );
         
+    }
+    
+    public void testGetNodes() throws Exception
+    {
+        Node root = m_session.getRootNode();
+        
+        if( root.hasNode( "getnodestest" ) )
+        {
+            fail("Repo not empty");
+        }
+        
+        Node x = root.addNode("getnodestest");
+        
+        x.addNode("foo");
+        x.addNode("bar");
+        x.addNode("gobble");
+        
+        root.save();
+        
+        NodeIterator i = x.getNodes();
+        
+        assertEquals("3", 3, i.getSize());
+        assertEquals("foo", "foo", i.nextNode().getName());
+        assertEquals("bar", "bar", i.nextNode().getName());
+        assertEquals("gobble", "gobble", i.nextNode().getName());
+        
+        try
+        {
+            i.nextNode();
+            fail("Got past node count");
+        }
+        catch( Exception e )
+        {}
     }
     
     public void testMixinLoadSave() throws Exception

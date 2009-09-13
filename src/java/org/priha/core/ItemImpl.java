@@ -264,4 +264,11 @@ public abstract class ItemImpl implements Item
         m_state = ItemState.EXISTS;
         m_modified = false;
     }
+    
+    private transient long           m_creationTime = System.currentTimeMillis();
+
+    public long getCreationTime()
+    {
+        return m_creationTime;
+    }
 }

@@ -146,6 +146,8 @@ public final class Path implements Comparable<Path>, Serializable
 
     public Path( Path parentPath, Component component )
     {
+        if( component.getLocalPart().length() == 0 ) throw new IllegalArgumentException("Component has zero length");
+        
         m_isAbsolute = parentPath.m_isAbsolute;
         m_components = new Component[parentPath.getElements().length+1];
         
@@ -153,7 +155,7 @@ public final class Path implements Comparable<Path>, Serializable
 
         m_components[m_components.length-1] = component;
     }
-
+    
     /**
      *  In Priha context, any path component ending with [1] is always
      *  treated as the component itself, as per JCR-170 4.3.1.
