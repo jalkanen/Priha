@@ -175,6 +175,19 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         File nodeDir = getNodeDir( ws, path );
 
         nodeDir.mkdirs();
+        
+        if( !path.isRoot() )
+        {
+            List<String> order = getOrder(ws,path.getParentPath());
+
+            if( !order.contains( path.getLastComponent().toString() ) )
+            {
+                order.add( path.getLastComponent().toString() );
+            
+                saveOrder( ws, path.getParentPath(), order );
+            }
+        }
+        
     }
 
     private void acquirePaths( Path startPath, File dir, List<Path> list, boolean recurse )
@@ -349,7 +362,15 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         if( !startPath.exists() ) throw new PathNotFoundException("No such path found: "+parentpath);
         
         acquirePaths( parentpath, startPath, list, false );
+        /*
+        List<String> orderArray = getOrder( ws, parentpath );
         
+        for( String s : orderArray )
+        {
+            Path childPath = parentpath.resolve( QName.valueOf( s ) );
+            list.add( childPath );
+        }
+        */
         return list;
     }
 
@@ -760,7 +781,79 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
     }
 
-    // FIXME: Does not remove UUID maps.
+    private List<String> getOrder( WorkspaceImpl ws, Path path )
+    {
+        File order;
+        ArrayList<String> result = new ArrayList<String>();
+        try
+        {
+            order = new File(getNodeDir(ws,path), ".order");
+            String o = FileUtil.readContents( new FileInputStream(order), "UTF-8" );
+            String[] oo = o.split( "\n" );
+            
+            //
+            //  Clean away any empty Strings.
+            //
+            List<String> res = Arrays.asList( oo );
+            for( String s : res )
+            {
+                if( s.length() > 0 ) result.add( s );
+            }
+            return result;
+        }
+        catch( IOException e )
+        {
+            
+        }
+        catch( NamespaceException e )
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        catch( RepositoryException e )
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return result;
+    }
+    
+    private void saveOrder( WorkspaceImpl ws, Path path, List<String> list)
+    {
+        FileOutputStream out = null;
+        try
+        {
+            File order = new File(getNodeDir(ws,path),".order");
+            
+            out = new FileOutputStream(order);
+            
+            for( String s : list )
+            {
+                out.write( s.getBytes("UTF-8") );
+                out.write( '\n' );
+            }
+        }
+        catch(Exception e)
+        {
+            e.printStackTrace();
+        }
+        finally
+        {
+            if( out != null ) 
+            {
+                try
+                {
+                    out.close();
+                }
+                catch( IOException e )
+                {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    
     public void remove(final WorkspaceImpl ws, final Path path) throws RepositoryException
     {
         m_hitCount[Count.Remove.ordinal()]++;
@@ -771,6 +864,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         {
             if( nodeFile.exists() )
             {
+                // OK, so this is a Node (i.e. a subdir) and we can just remove everything
+                // from underneath it
                 if( deleteContents( nodeFile ) )
                 {
                     if( !nodeFile.delete() )
@@ -782,6 +877,12 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 {
                     log.warning("Failed to delete contents of path "+path);
                 }
+                
+                List<String> order = getOrder(ws,path.getParentPath());
+               
+                order.remove( path.getLastComponent().toString() );
+                
+                saveOrder(ws, path.getParentPath(), order);
             }
             else
             {
