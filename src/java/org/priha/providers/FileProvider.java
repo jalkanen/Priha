@@ -50,6 +50,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private static final String PROP_TYPE           = "type";
     private static final String PROP_PATH           = "path";
     private static final int    BUFFER_SIZE         = 4096;
+    private static final String LOCKFILE            = ".prihalock";
     
     private String m_root;
     private String m_workspaceRoot;
@@ -299,7 +300,44 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
         String wsList = props.getProperty("workspaces", "default");
         m_root = props.getProperty("directory");
+
+        //
+        //  Make sure that root exists.
+        //
+        File root = new File(m_root);
+        root.mkdirs();
         
+        //
+        //  Make sure this instance is the only one using that root.
+        //
+        File lockFile = new File(m_root, LOCKFILE);
+        
+        if( lockFile.exists() )
+        {
+            String msg = "Cannot use the Priha FileProvider repository while another instance of Priha is using it. "+
+                         "If you are sure there are no other instances using this same repository, please "+
+                         "remove the '"+lockFile.getAbsolutePath()+"' file and restart.";
+            log.severe( msg );
+            throw new ConfigurationException(msg);
+        }
+        
+        //
+        //  Create the lock file; and make sure it gets cleaned up properly in 
+        //  most cases.
+        //
+        try
+        {
+            lockFile.createNewFile();
+            lockFile.deleteOnExit();
+        }
+        catch( IOException e )
+        {
+            throw new ConfigurationException("Cannot start Priha ",e);
+        }
+        
+        //
+        //  Initializing the workspaces.
+        //
         log.fine("Initializing FileProvider with root "+m_root);
         
         String[] workspaces = wsList.split("\\s");
@@ -342,6 +380,12 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         m_references.clear();
         m_uuids.clear();
+        
+        //
+        //  Clean up the lockfile, in case we're e.g. switching repos mid-flight.
+        //
+        File lockFile = new File(m_root, LOCKFILE);
+        lockFile.delete();
     }
 
     public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
@@ -361,8 +405,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         if( !startPath.exists() ) throw new PathNotFoundException("No such path found: "+parentpath);
         
-        acquirePaths( parentpath, startPath, list, false );
-        /*
+        //acquirePaths( parentpath, startPath, list, false );
+        
         List<String> orderArray = getOrder( ws, parentpath );
         
         for( String s : orderArray )
@@ -370,7 +414,16 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             Path childPath = parentpath.resolve( QName.valueOf( s ) );
             list.add( childPath );
         }
-        */
+        
+        //
+        //  The .order -file will probably not contain the system path for anyone else
+        //  except the workspace which was created first.
+        //
+        if( parentpath.isRoot() && !list.contains( m_systemPath ))
+        {
+            list.add( 0, m_systemPath );
+        }
+        
         return list;
     }
 
