@@ -36,7 +36,7 @@ public class SessionProvider
     private ItemStore          m_source;
     private WorkspaceImpl      m_workspace;
     
-    private SortedMap<Path,ItemImpl> m_changedItems;
+    private LinkedHashMap<Path,ItemImpl> m_changedItems;
     
     private static final int   DEFAULT_CACHESIZE = 1000;
     
@@ -53,7 +53,8 @@ public class SessionProvider
         //  The nodes are sorted according to their length to make
         //  sure when they are saved, we save the parent path first.
         //
-        m_changedItems = new TreeMap<Path,ItemImpl>( new PrimaryTypePreferringComparator() );
+        //m_changedItems = new TreeMap<Path,ItemImpl>( new PrimaryTypePreferringComparator() );
+        m_changedItems = new LinkedHashMap<Path, ItemImpl>();
     }
     
     private void clearSingleItem( final ItemImpl ii, final String uuid )
