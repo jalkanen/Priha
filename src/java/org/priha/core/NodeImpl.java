@@ -676,7 +676,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             }
         }
 
-        throw new UnsupportedRepositoryOperationException("No UUID defined for this node");
+        throw new UnsupportedRepositoryOperationException("No UUID defined for "+toString());
     }
 
     public VersionHistoryImpl getVersionHistory() throws UnsupportedRepositoryOperationException, RepositoryException
