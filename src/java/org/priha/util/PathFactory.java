@@ -81,7 +81,8 @@ public class PathFactory
 
     public static String getMappedPath(NamespaceMapper ns, Path path) throws NamespaceException, RepositoryException
     {
-        String p = c_reverseMap.get( path );
+//        String p = c_reverseMap.get( path );
+        String p = null;
         
         if( p == null )
         {
