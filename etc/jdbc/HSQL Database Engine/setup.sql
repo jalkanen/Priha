@@ -20,7 +20,7 @@ create table nodes (
 	uuid	varchar(36),
 
 	foreign key (workspace)	references workspaces (id),
-	foreign key (parent)	references nodes(id),
+--	foreign key (parent)	references nodes(id),
 	constraint uniq_path 	unique(workspace,path)
 );
 
@@ -43,15 +43,4 @@ create table propertyvalues (
 
 create index idx_propertyvalues_name on propertyvalues(name);
 
-insert into workspaces (
-	name
-) values (
-	'default'
-);
 
-
-insert into workspaces (
-	name
-) values (
-	'testworkspace'
-);

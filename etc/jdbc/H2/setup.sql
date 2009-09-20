@@ -44,15 +44,3 @@ create table propertyvalues (
 
 create index idx_propertyvalues_name on propertyvalues(name);
 
-insert into workspaces (
-	name
-) values (
-	'default'
-);
-
-
-insert into workspaces (
-	name
-) values (
-	'testworkspace'
-);
