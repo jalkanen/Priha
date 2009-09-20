@@ -126,8 +126,8 @@ public class CalendarValueImpl extends ValueImpl implements Value, Serializable
     @Override
     public InputStream getStream()
     {
-        checkValue();
-        String val = Long.toString( m_value.getTimeInMillis() );
+        checkStream();
+        String val = c_isoFormat.get().format( m_value.getTime() );
         return new ByteArrayInputStream(val.getBytes());
     }
     
