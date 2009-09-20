@@ -739,9 +739,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
         else if( propType.equals(PropertyType.TYPENAME_DATE) )
         {
-            Calendar c = Calendar.getInstance();
-            c.setTimeInMillis( Long.parseLong(readContentsAsString(propFile)) );
-            value = vf.createValue( c );
+            value = vf.createValue( readContentsAsString( propFile ), PropertyType.DATE );
         }
         else if( propType.equals(PropertyType.TYPENAME_NAME) )
         {
