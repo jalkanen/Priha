@@ -45,7 +45,7 @@ public class MemoryProvider implements RepositoryProvider
     private Set<Path>        m_nodePaths = new TreeSet<Path>();
     private Map<String,Path> m_uuids     = new Hashtable<String,Path>(INITIAL_SIZE);
     
-    public void addNode(WorkspaceImpl ws, Path path, QNodeDefinition def) throws RepositoryException
+    public void addNode(StoreTransaction tx, Path path, QNodeDefinition def) throws RepositoryException
     {
         //System.out.println("Node++ "+path);
         m_nodePaths.add( path );
@@ -144,7 +144,7 @@ public class MemoryProvider implements RepositoryProvider
         if( !workspaceName.equals("default") ) throw new NoSuchWorkspaceException();
     }
 
-    public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
+    public void putPropertyValue(StoreTransaction tx, PropertyImpl property) throws RepositoryException
     {
         if( property.getDefinition().isMultiple() )
         {
@@ -173,7 +173,7 @@ public class MemoryProvider implements RepositoryProvider
         //System.out.println("Stored "+property.getInternalPath());
     }
 
-    public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
+    public void remove(StoreTransaction tx, Path path) throws RepositoryException
     {
         for( Iterator<Path> i = m_nodePaths.iterator(); i.hasNext(); )
         {
@@ -209,11 +209,18 @@ public class MemoryProvider implements RepositoryProvider
     {
     }
 
-    public void storeFinished( WorkspaceImpl ws )
+    //  The MemoryProvider assumes it never fails.
+    
+    public void storeFinished( StoreTransaction tx )
     {
     }
 
-    public void storeStarted( WorkspaceImpl ws )
+    public StoreTransaction storeStarted( WorkspaceImpl ws )
+    {
+        return new BaseStoreTransaction(ws);
+    }
+
+    public void storeCancelled( StoreTransaction tx ) throws RepositoryException
     {
     }
 

@@ -1305,7 +1305,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             throw new InvalidItemStateException("Item has already been removed by another Session "+getPath());
         }
         
-        if( path.isRoot() )
+        if( path.isRoot() || path.equals( JCRConstants.Q_JCR_SYSTEM_PATH ) )
         {
             return; // Refuse to remove
         }

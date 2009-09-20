@@ -24,6 +24,7 @@ import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 
+import org.priha.providers.StoreTransaction;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.QName;
@@ -49,11 +50,11 @@ public interface ItemStore
     boolean nodeExists(WorkspaceImpl m_workspace, Path path) throws RepositoryException;
 
 
-    void remove(WorkspaceImpl m_workspace, Path path) throws RepositoryException;
+    void remove(StoreTransaction tx, Path path) throws RepositoryException;
 
-    void addNode(WorkspaceImpl m_workspace, NodeImpl ni) throws RepositoryException;
+    void addNode(StoreTransaction tx, NodeImpl ni) throws RepositoryException;
 
-    void putProperty(WorkspaceImpl m_workspace, PropertyImpl pi) throws RepositoryException;
+    void putProperty(StoreTransaction tx, PropertyImpl pi) throws RepositoryException;
 
     /**
      *  Locate all properties of type REFERENCE with the content of the particular UUID.
@@ -67,7 +68,9 @@ public interface ItemStore
 
     List<QName> listProperties(WorkspaceImpl ws, Path path) throws RepositoryException;
     
-    public void storeStarted(WorkspaceImpl ws);
+    public StoreTransaction storeStarted(WorkspaceImpl ws) throws RepositoryException;
     
-    public void storeFinished(WorkspaceImpl ws);
+    public void storeFinished(StoreTransaction tx) throws RepositoryException;
+
+    public void storeCancelled(StoreTransaction tx) throws RepositoryException;
 }

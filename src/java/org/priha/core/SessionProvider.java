@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import javax.jcr.*;
 import javax.jcr.nodetype.ConstraintViolationException;
 
+import org.priha.providers.StoreTransaction;
 import org.priha.util.*;
 
 /**
@@ -363,7 +364,8 @@ public class SessionProvider
         //  to the savequeue.
         //
         
-        m_source.storeStarted( m_workspace );
+        StoreTransaction tx = m_source.storeStarted( m_workspace );
+        boolean succeeded = false;
         
         try
         {
@@ -388,7 +390,7 @@ public class SessionProvider
                             
                             case NEW:
                                 ni.preSave();
-                                m_source.addNode( m_workspace, ni );
+                                m_source.addNode( tx, ni );
                                 ni.postSave();
                                 m_fetchedItems.put( ni.getPathReference(), ni );
                                 break;
@@ -431,7 +433,7 @@ public class SessionProvider
                                 // FALLTHROUGH ok.
                             case EXISTS:
                                 pi.preSave();
-                                m_source.putProperty( m_workspace, pi );
+                                m_source.putProperty( tx, pi );
                                 pi.postSave();
                                 m_fetchedItems.put( pi.getPathReference(), pi );
                                 break;
@@ -476,7 +478,7 @@ public class SessionProvider
             for( Path p : toberemoved )
             {
                 //System.out.println("Removing "+p);
-                m_source.remove(m_workspace, p);
+                m_source.remove(tx, p);
             }
             
             //
@@ -486,10 +488,12 @@ public class SessionProvider
             {
                 m_changedItems.put( ii.getInternalPath(), ii );
             }
+            m_source.storeFinished( tx );
+            succeeded = true;
         }
         finally
         {
-            m_source.storeFinished( m_workspace );
+            if(!succeeded) m_source.storeCancelled( tx );
         }
     }
 

@@ -92,14 +92,14 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
     }
     
     // FIXME: Requires two selects and one insert; not very efficient.
-    public void addNode(WorkspaceImpl ws, Path path, QNodeDefinition def) throws RepositoryException
+    public void addNode(StoreTransaction tx, Path path, QNodeDefinition def) throws RepositoryException
     {
-        PoolableConnection pc = getConnection();
+        Connection c = ((JDBCTransaction)tx).getConnection();
         PreparedStatement ps = null;
+        WorkspaceImpl ws = tx.getWorkspace();
         
         try
         {
-            Connection c = pc.getConnection();
             ps = c.prepareStatement("INSERT INTO nodes (workspace,path,parent) "+
                                     "VALUES (?,?,?);");
             
@@ -119,14 +119,13 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            pc.close();
             try
             {
                 if( ps != null ) ps.close();
             }
             catch( SQLException e )
             {
-                throw new RepositoryException("Unable to close JDBC connections",e);
+                throw new RepositoryException("Unable to close JDBC PreparedStatement",e);
             }
         }
     }
@@ -610,16 +609,15 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         return ba.toByteArray();
     }
     
-    public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
+    public void putPropertyValue(StoreTransaction tx, PropertyImpl property) throws RepositoryException
     {
-        PoolableConnection pc = getConnection();
-        
+        Connection c = ((JDBCTransaction)tx).getConnection();
+  
         try
         {
-            Connection c = pc.getConnection();
             byte[] bytes = serialize(property);
             PreparedStatement ps;
-            long id = getNodeId(ws,property.getInternalPath().getParentPath());
+            long id = getNodeId(tx.getWorkspace(),property.getInternalPath().getParentPath());
                         
             if( property.isNew() )
             {
@@ -671,25 +669,20 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         {
             throw new RepositoryException("Serialization failed "+e.getMessage());
         }
-        finally
-        {
-            pc.close();
-        }
     }
 
-    public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
+    public void remove(StoreTransaction tx, Path path) throws RepositoryException
     {
         PreparedStatement ps;
-        PoolableConnection pc = getConnection();
+        Connection c = ((JDBCTransaction)tx).getConnection();
         
         try
         {
-            Connection c = pc.getConnection();
             ps = c.prepareStatement("DELETE FROM propertyvalues WHERE "+
                                     "parent = ? AND "+
                                     "name = ?");
 
-            ps.setLong( 1, getNodeId(ws, path.getParentPath()));
+            ps.setLong( 1, getNodeId(tx.getWorkspace(), path.getParentPath()));
             ps.setString(2, path.getLastComponent().toString() );
             int numRows = ps.executeUpdate();
             
@@ -699,7 +692,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
                 //  There was no property value removed, so let's remove the parent.
                 //
                 ps = c.prepareStatement("DELETE from propertyvalues where parent = ?");
-                ps.setLong(1, getNodeId(ws,path) );
+                ps.setLong(1, getNodeId(tx.getWorkspace(),path) );
                 ps.executeUpdate();
                
                 ps = c.prepareStatement("DELETE FROM nodes WHERE path = ?");
@@ -714,22 +707,48 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             
             throw new RepositoryException("Did not delete "+path);
         }
+    }
+
+    public void storeFinished( StoreTransaction tx ) throws RepositoryException
+    {
+        JDBCTransaction jtx = (JDBCTransaction)tx;
+        
+        try
+        {
+            jtx.getConnection().commit();
+        }
+        catch( SQLException e )
+        {
+            throw new RepositoryException("Unable to commit transaction", e);
+        }
         finally
         {
-            pc.close();
+            jtx.close();
         }
     }
 
-    public void storeFinished( WorkspaceImpl ws )
+    public void storeCancelled( StoreTransaction tx ) throws RepositoryException
     {
-        // TODO Auto-generated method stub
+        JDBCTransaction jtx = (JDBCTransaction)tx;
         
+        try
+        {
+            jtx.getConnection().rollback();
+        }
+        catch( SQLException e )
+        {
+            throw new RepositoryException("Unable to commit transaction", e);
+        }
+        finally
+        {
+            jtx.close();
+        }
     }
 
-    public void storeStarted( WorkspaceImpl ws )
+    public StoreTransaction storeStarted( WorkspaceImpl ws ) throws RepositoryException
     {
-        // TODO Auto-generated method stub
-        
+        JDBCTransaction tx = new JDBCTransaction( ws, getConnection() );
+        return tx;
     }
 
     public Poolable newPoolable( Pool p ) throws SQLException
@@ -739,6 +758,46 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         return new PoolableConnection(p);
     }
 
+    /**
+     *  Provides rollback support.
+     */
+    private class JDBCTransaction extends BaseStoreTransaction
+    {
+        private PoolableConnection m_conn;
+        
+        public JDBCTransaction( WorkspaceImpl ws, PoolableConnection p ) throws RepositoryException
+        {
+            super( ws );
+            m_conn = p;
+            try
+            {
+                m_conn.getConnection().setAutoCommit( false );
+            }
+            catch( SQLException e )
+            {
+                throw new RepositoryException("Cannot set autocommit=false",e);
+            }
+        }
+        
+        public Connection getConnection()
+        {
+            return m_conn.getConnection();
+        }
+        
+        public void close() throws RepositoryException
+        {
+            try
+            {
+                m_conn.getConnection().setAutoCommit( true );
+            }
+            catch( SQLException e )
+            {
+                throw new RepositoryException( "Cannot set autocommit=true",e);
+            }
+            m_conn.close();
+        }
+    }
+    
     /**
      *  Wraps around a JDBC Connection.
      */

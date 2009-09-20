@@ -319,6 +319,7 @@ public class SessionImpl implements Session, NamespaceMapper
     {
         if( isLive() )
         {
+            m_repository.removeSession(this);
             LockManager.getInstance(m_workspace).expireSessionLocks( this );
             m_workspace.logout();
             m_workspace = null;

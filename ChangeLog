@@ -1,3 +1,14 @@
+2009-09-17  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.3.0
+        
+        * FileProvider now stores the order in which Nodes are stored to
+        support orderable child nodes.  JDBCProvider does not do so yet.
+        
+        * Bigger changes in the Provider API - introduced StoreTransaction
+        for making sure that changes can be rolled back in case there is
+        a failure (for those providers which support it).
+
 2009-09-12  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.2.2

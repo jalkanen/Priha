@@ -42,6 +42,9 @@ import org.priha.util.*;
  *  at every N writes and on shutdown.  If there is a power outage just
  *  in the middle of this process, it's possible that the file ends up
  *  being corrupted.  Currently there is no way to rebuild the UUIDs.
+ *  <p>
+ *  The FileProvider does not support failure recovery at the moment.  So it's probably not
+ *  the best provider for production systems.
  */
 public class FileProvider implements RepositoryProvider, PerformanceReporter
 {
@@ -169,10 +172,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return nodeDir;
     }
     
-    public void addNode(WorkspaceImpl ws, Path path, QNodeDefinition def) throws RepositoryException
+    public void addNode(StoreTransaction tx, Path path, QNodeDefinition def) throws RepositoryException
     {
         m_hitCount[Count.AddNode.ordinal()]++;
 
+        WorkspaceImpl ws = tx.getWorkspace();
         File nodeDir = getNodeDir( ws, path );
 
         nodeDir.mkdirs();
@@ -587,10 +591,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
     }
     
-    public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
+    public void putPropertyValue(StoreTransaction tx, PropertyImpl property) throws RepositoryException
     {
         m_hitCount[Count.PutPropertyValue.ordinal()]++;
 
+        WorkspaceImpl ws = tx.getWorkspace();
         File nodeDir = getNodeDir( ws, property.getInternalPath().getParentPath() );
 
         saveUuidShortcut(property);
@@ -907,10 +912,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
     }
     
-    public void remove(final WorkspaceImpl ws, final Path path) throws RepositoryException
+    public void remove(final StoreTransaction tx, final Path path) throws RepositoryException
     {
         m_hitCount[Count.Remove.ordinal()]++;
 
+        WorkspaceImpl ws = tx.getWorkspace();
         File nodeFile = getNodeDir( ws, path );
 
         if( nodeFile != null )
@@ -956,7 +962,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                             {
                                 String uuid = readContentsAsString( dataFile );
                                 //System.out.println("Removing refs "+uuid);
-                                cleanRefMapping( ws, p, uuid );
+                                cleanRefMapping( tx.getWorkspace(), p, uuid );
                             }
                         
                             if( p.getLastComponent().equals( Q_JCR_UUID ) )
@@ -966,7 +972,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                                     String uuid = readContentsAsString( dataFile );
                                     
                                     //System.out.println("Removing UUID "+uuid);
-                                    cleanUuidMapping( ws, uuid );
+                                    cleanUuidMapping( tx.getWorkspace(), uuid );
                                 }
                                 catch( IOException e )
                                 {
@@ -1286,13 +1292,18 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return sb.toString();
     }
 
-
-    public void storeFinished( WorkspaceImpl ws )
+    // FIXME: FileProvider does not support recovery.  Bummer.
+    public void storeFinished( StoreTransaction tx )
     {
     }
 
-    public void storeStarted( WorkspaceImpl ws )
+    public void storeCancelled( StoreTransaction tx )
     {
+    }
+
+    public StoreTransaction storeStarted( WorkspaceImpl ws )
+    {
+        return new BaseStoreTransaction(ws);
     }
 
     

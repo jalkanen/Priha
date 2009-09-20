@@ -29,6 +29,7 @@ public class LazyNodeIteratorImpl extends GenericIterator implements NodeIterato
         }
         catch( RepositoryException e )
         {
+            e.printStackTrace();
             return null;
         }
     }

@@ -38,9 +38,7 @@ import org.priha.core.PropertyImpl;
 import org.priha.core.ProviderManager;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
-import org.priha.core.values.QValue;
 import org.priha.core.values.StreamValueImpl;
-import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.util.ConfigurationException;
 import org.priha.util.Path;
@@ -208,19 +206,19 @@ public class EhCachingProvider implements RepositoryProvider
         m_valueCache.removeAll();
     }
 
-    public void addNode(WorkspaceImpl ws, Path path, QNodeDefinition def) throws RepositoryException
+    public void addNode(StoreTransaction tx, Path path, QNodeDefinition def) throws RepositoryException
     {
         if( !path.isRoot() )
-            m_valueCache.remove( getNid(ws,path.getParentPath()) );
+            m_valueCache.remove( getNid(tx.getWorkspace(),path.getParentPath()) );
         
-        m_realProvider.addNode(ws, path,def);
+        m_realProvider.addNode(tx, path,def);
     }
-
+/*
     public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
     {
         m_realProvider.copy(ws, srcpath, destpath);
     }
-
+*/
     /*
      *  UUIDs are fairly safe because even if the Node was deleted, SessionImpl will
      *  attempt to fetch the Node itself based on the Path, so that will fail then.
@@ -395,7 +393,7 @@ public class EhCachingProvider implements RepositoryProvider
     {
         return m_realProvider.listWorkspaces();
     }
-
+/*
     public void move(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
     {
         //
@@ -412,7 +410,7 @@ public class EhCachingProvider implements RepositoryProvider
         
         m_realProvider.move(ws, srcpath, destpath);
     }
-
+*/
     public boolean nodeExists(WorkspaceImpl ws, Path path) throws RepositoryException
     {
         if( m_valueCache.isKeyInCache( getNid(ws,path) ) )
@@ -421,10 +419,11 @@ public class EhCachingProvider implements RepositoryProvider
         return m_realProvider.nodeExists(ws, path);
     }
 
-    public void putPropertyValue(WorkspaceImpl ws, PropertyImpl property) throws RepositoryException
+    public void putPropertyValue(StoreTransaction tx, PropertyImpl property) throws RepositoryException
     {
+        WorkspaceImpl ws = tx.getWorkspace();
         m_valueCache.remove( getVid(ws,property.getInternalPath() ) );
-        m_realProvider.putPropertyValue(ws, property);
+        m_realProvider.putPropertyValue(tx, property);
         
         if( !property.getDefinition().isMultiple() )
         {
@@ -439,9 +438,11 @@ public class EhCachingProvider implements RepositoryProvider
         }
     }
 
-    public void remove(WorkspaceImpl ws, Path path) throws RepositoryException
+    public void remove(StoreTransaction tx, Path path) throws RepositoryException
     {
-        m_realProvider.remove(ws,path);
+        m_realProvider.remove(tx,path);
+        
+        WorkspaceImpl ws = tx.getWorkspace();
         m_valueCache.remove( getVid(ws,path) );
         m_valueCache.remove( getPid(ws,path) );
         m_valueCache.remove( getNid(ws,path) );
@@ -450,13 +451,22 @@ public class EhCachingProvider implements RepositoryProvider
             m_valueCache.remove( getNid(ws,path.getParentPath()) );
     }
 
-    public void storeFinished( WorkspaceImpl ws )
+    public void storeFinished( StoreTransaction tx ) throws RepositoryException
     {
-        m_realProvider.storeFinished( ws );
+        m_realProvider.storeFinished( tx );
     }
 
-    public void storeStarted( WorkspaceImpl ws )
+    public void storeCancelled( StoreTransaction tx ) throws RepositoryException
     {
-        m_realProvider.storeStarted( ws );
+        m_realProvider.storeCancelled( tx );
+        
+        // Something fairly hairy happened, so we hedge our bets by emptying the cache
+        // completely.
+        m_valueCache.removeAll();
+    }
+
+    public StoreTransaction storeStarted( WorkspaceImpl ws ) throws RepositoryException
+    {
+        return m_realProvider.storeStarted( ws );
     }
 }

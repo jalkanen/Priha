@@ -75,8 +75,6 @@ public class RepositoryImpl implements Repository
 
         m_properties.putAll( prefs );
 
-        m_providerManager = new ProviderManager( this );
-        
         Runtime.getRuntime().addShutdownHook( new ShutdownThread() );
         
         log.info( "G'day, Matilda!  Priha "+Release.VERSTR+" has been initialized." );
@@ -94,8 +92,14 @@ public class RepositoryImpl implements Repository
         return m_properties.getProperty(key,defValue);
     }
     
-    protected ProviderManager getProviderManager()
+    protected ProviderManager getProviderManager() throws ConfigurationException
     {
+        if( m_providerManager == null )
+        {
+            log.info( "Initializing providers..." );
+            m_providerManager = new ProviderManager(this);
+        }
+        
         return m_providerManager;
     }
     
@@ -141,9 +145,9 @@ public class RepositoryImpl implements Repository
         return keys;
     }
 
-    private String getDefaultWorkspace()
+    private String getDefaultWorkspace() throws ConfigurationException
     {
-        return m_providerManager.getDefaultWorkspace();
+        return getProviderManager().getDefaultWorkspace();
     }
     
     public SessionImpl login(Credentials credentials, String workspaceName)
@@ -153,7 +157,7 @@ public class RepositoryImpl implements Repository
     {
         if( workspaceName == null ) workspaceName = getDefaultWorkspace();
 
-        m_providerManager.open( credentials, workspaceName );
+        getProviderManager().open( credentials, workspaceName );
 
         SessionImpl session = m_sessionManager.openSession( credentials, workspaceName );
 
@@ -227,6 +231,11 @@ public class RepositoryImpl implements Repository
         }
     }
     
+    protected void removeSession(SessionImpl s)
+    {
+        m_sessionManager.closeSession(s);
+    }
+    
     /**
      *  The SessionManager holds a list of Sessions currently owned by this Repository.  This
      *  is used to manage the proper shutdown of the Sessions.
@@ -250,6 +259,28 @@ public class RepositoryImpl implements Repository
                 return session;
             }
         }
+        
+        public void closeSession( SessionImpl s )
+        {
+            synchronized(m_sessions)
+            {
+                for( Iterator<WeakReference<SessionImpl>> i = m_sessions.iterator(); i.hasNext(); )
+                {
+                    WeakReference<SessionImpl> wr = i.next();
+                    
+                    SessionImpl si = wr.get();
+                    
+                    if( si == null || si == s )
+                    {
+                        i.remove();
+                        break;
+                    }
+                }
+
+                // FIXME: Should really check if there is a Session for this workspace
+                //        so that we can call ProviderManager.close();
+            }
+        }
     }
     
     protected interface SessionVisitor
@@ -267,7 +298,7 @@ public class RepositoryImpl implements Repository
         public void run()
         {
             log.fine( "Running shutdown process..." );
-            m_providerManager.stop();
+            if( m_providerManager != null ) m_providerManager.stop();
         }
         
     }

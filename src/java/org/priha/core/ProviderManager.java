@@ -35,6 +35,7 @@ import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QNodeTypeManager;
 import org.priha.nodetype.QPropertyDefinition;
 import org.priha.providers.RepositoryProvider;
+import org.priha.providers.StoreTransaction;
 import org.priha.providers.ValueContainer;
 import org.priha.util.ConfigurationException;
 import org.priha.util.InvalidPathException;
@@ -308,15 +309,15 @@ public class ProviderManager implements ItemStore
      *  @param path
      *  @throws RepositoryException
      */
-    public void remove(WorkspaceImpl impl, Path path) throws RepositoryException
+    public void remove(StoreTransaction tx, Path path) throws RepositoryException
     {
-        ProviderInfo pi = getProviderInfo( impl, path );
+        ProviderInfo pi = getProviderInfo( tx.getWorkspace(), path );
         
         try
         {
             pi.lock.writeLock().lock();
         
-            pi.provider.remove( impl, path );
+            pi.provider.remove( tx, path );
         }
         finally
         {
@@ -414,20 +415,20 @@ public class ProviderManager implements ItemStore
         return p;
     }
 
-    public void addNode(WorkspaceImpl ws, NodeImpl ni) throws RepositoryException
+    public void addNode(StoreTransaction tx, NodeImpl ni) throws RepositoryException
     {
         Path path = ni.getInternalPath();
         
-        if( !path.isRoot() && !nodeExists(ws, path.getParentPath()) )
+        if( !path.isRoot() && !nodeExists(tx.getWorkspace(), path.getParentPath()) )
             throw new ConstraintViolationException("Parent path is missing");
         
-        ProviderInfo pi = getProviderInfo(ws,path);
+        ProviderInfo pi = getProviderInfo(tx.getWorkspace(),path);
         
         try
         {
             pi.lock.writeLock().lock();
         
-            pi.provider.addNode(ws, path, ni.getQDefinition());
+            pi.provider.addNode(tx, path, ni.getQDefinition());
         }
         finally
         {
@@ -497,15 +498,15 @@ public class ProviderManager implements ItemStore
         }
     }
 
-    public void putProperty(WorkspaceImpl ws, PropertyImpl prop ) throws RepositoryException
+    public void putProperty(StoreTransaction tx, PropertyImpl prop ) throws RepositoryException
     {
-        ProviderInfo pi = getProviderInfo( ws, prop.getInternalPath() );
+        ProviderInfo pi = getProviderInfo( tx.getWorkspace(), prop.getInternalPath() );
         
         try
         {
             pi.lock.writeLock().lock();
         
-            pi.provider.putPropertyValue( ws, prop );
+            pi.provider.putPropertyValue( tx, prop );
         }
         finally
         {
@@ -558,7 +559,7 @@ public class ProviderManager implements ItemStore
         }
     }
 
-    public void storeStarted(WorkspaceImpl ws)
+    public StoreTransaction storeStarted(WorkspaceImpl ws) throws RepositoryException
     {
         ProviderInfo pi = m_workspaceAccess.get( ws.getName() );
         
@@ -566,7 +567,7 @@ public class ProviderManager implements ItemStore
         {
             pi.lock.writeLock().lock();
         
-            pi.provider.storeStarted( ws );
+            return pi.provider.storeStarted( ws );
         }
         finally
         {
@@ -574,15 +575,15 @@ public class ProviderManager implements ItemStore
         }
     }
     
-    public void storeFinished(WorkspaceImpl ws)
+    public void storeFinished(StoreTransaction tx) throws RepositoryException
     {
-        ProviderInfo pi = m_workspaceAccess.get( ws.getName() );
+        ProviderInfo pi = m_workspaceAccess.get( tx.getWorkspace().getName() );
         
         try
         {
             pi.lock.writeLock().lock();
         
-            pi.provider.storeFinished( ws );
+            pi.provider.storeFinished( tx );
         }
         finally
         {
@@ -590,7 +591,24 @@ public class ProviderManager implements ItemStore
         }
 
     }
-    
+
+    public void storeCancelled(StoreTransaction tx) throws RepositoryException
+    {
+        ProviderInfo pi = m_workspaceAccess.get( tx.getWorkspace().getName() );
+        
+        try
+        {
+            pi.lock.writeLock().lock();
+        
+            pi.provider.storeCancelled( tx );
+        }
+        finally
+        {
+            pi.lock.writeLock().unlock();
+        }
+
+    }
+
     /**
      *  Stores information about a provider.
      */

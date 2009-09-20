@@ -64,6 +64,10 @@ import org.priha.util.QName;
  */
 public interface RepositoryProvider
 {
+    
+    //
+    //  REPOSITORY MANAGEMENT
+    //
     /**
      *  Opens a repository.  Called whenever a session login() is performed.
      *  
@@ -111,6 +115,19 @@ public interface RepositoryProvider
     public void close( WorkspaceImpl ws );
     
     /**
+     *  Lists all workspaces which are available in this Repository.  This method is
+     *  called after start() but before open().
+     *  
+     *  @return The workspace names.
+     * @throws RepositoryException 
+     */
+    public Collection<String> listWorkspaces() throws RepositoryException;
+
+
+    //
+    //  GETTING NODES AND VALUES
+    //
+    /**
      *  Returns a list of properties for a Node.
      *  
      *  @param ws The Workspace in which the properties should be located.
@@ -145,32 +162,6 @@ public interface RepositoryProvider
     public boolean nodeExists( WorkspaceImpl ws, Path path ) throws RepositoryException;
     
     /**
-     *  Adds a new Node to the repository to the given Path.  The properties of the
-     *  Node will be stored separately using successive putPropertyValue() calls.
-     *  This includes also system things like the jcr:primaryType, so this method
-     *  really exists just to ensure that the Node can be added to the repository.
-     * 
-     *  @param ws The workspace.
-     *  @param path Path to the node in this workspace.
-     *  @paran definition The definition of the Node which will be added. The provider
-     *                    may use this to optimize for particular types.
-     *  @throws RepositoryException If the Node cannot be added.
-     */
-    public void addNode( WorkspaceImpl ws, Path path, QNodeDefinition definition ) throws RepositoryException;
-    
-    /**
-     *  Sets or adds a new Property to the repository.  Note that
-     *  a Property may be multi-valued.  It is up to the provider to
-     *  decide how it serializes the data.
-     * 
-     *  @param ws The workspace
-     *  @param property The Property content to store.
-     *  @throws RepositoryException If the property cannot be stored.
-     */
-    
-    public void putPropertyValue( WorkspaceImpl ws, PropertyImpl property ) throws RepositoryException;
-    
-    /**
      * Copies content from one path to another path.
      * 
      * @param ws
@@ -178,7 +169,7 @@ public interface RepositoryProvider
      * @param destpath
      * @throws RepositoryException
      */
-    public void copy( WorkspaceImpl ws, Path srcpath, Path destpath ) throws RepositoryException;
+//    public void copy( WorkspaceImpl ws, Path srcpath, Path destpath ) throws RepositoryException;
     
     /**
      *  Moves the content at the end of one Path to the destpath.
@@ -188,7 +179,7 @@ public interface RepositoryProvider
      * @param destpath
      * @throws RepositoryException
      */
-    public void move( WorkspaceImpl ws, Path srcpath, Path destpath ) throws RepositoryException;
+//    public void move( WorkspaceImpl ws, Path srcpath, Path destpath ) throws RepositoryException;
 
     /**
      *  Lists all the Nodes from the repository which belong to this parent.
@@ -199,28 +190,6 @@ public interface RepositoryProvider
      *  @throws RepositoryException If the children cannot be found. 
      */
     public List<Path> listNodes(WorkspaceImpl ws, Path parentpath) throws RepositoryException;
-    
-    /**
-     *  Lists all workspaces which are available in this Repository.  This method is
-     *  called after start() but before open().
-     *  
-     *  @return The workspace names.
-     * @throws RepositoryException 
-     */
-    public Collection<String> listWorkspaces() throws RepositoryException;
-
-    /**
-     *  Removes a node or a property from the repository.  If the removed
-     *  entity is a Node, all of its children and properties MUST also be removed
-     *  from the repository.
-     *  <p>
-     *  In addition, it MUST NOT be an error if remove() is called on a path
-     *  which is already removed.  In such a case, remove() shall fail silently.
-     *  
-     *  @param ws
-     *  @param path
-     */
-    public void remove( WorkspaceImpl ws, Path path )  throws RepositoryException;
     
     /**
      *  If an item by this UUID exists, returns a Path.
@@ -242,20 +211,73 @@ public interface RepositoryProvider
      *  @throws RepositoryException 
      */
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException;
+
+    //
+    //  METHODS WHICH CHANGE THE REPOSITORY CONTENT
+    //
     
+    /**
+     *  Adds a new Node to the repository to the given Path.  The properties of the
+     *  Node will be stored separately using successive putPropertyValue() calls.
+     *  This includes also system things like the jcr:primaryType, so this method
+     *  really exists just to ensure that the Node can be added to the repository.
+     * 
+     *  @param ws The workspace.
+     *  @param path Path to the node in this workspace.
+     *  @paran definition The definition of the Node which will be added. The provider
+     *                    may use this to optimize for particular types.
+     *  @throws RepositoryException If the Node cannot be added.
+     */
+    public void addNode( StoreTransaction tx, Path path, QNodeDefinition definition ) throws RepositoryException;
+    
+    /**
+     *  Sets or adds a new Property to the repository.  Note that
+     *  a Property may be multi-valued.  It is up to the provider to
+     *  decide how it serializes the data.
+     * 
+     *  @param ws The workspace
+     *  @param property The Property content to store.
+     *  @throws RepositoryException If the property cannot be stored.
+     */
+    
+    public void putPropertyValue( StoreTransaction tx, PropertyImpl property ) throws RepositoryException;
+    
+
+    /**
+     *  Removes a node or a property from the repository.  If the removed
+     *  entity is a Node, all of its children and properties MUST also be removed
+     *  from the repository.
+     *  <p>
+     *  In addition, it MUST NOT be an error if remove() is called on a path
+     *  which is already removed.  In such a case, remove() shall fail silently.
+     *  
+     *  @param ws
+     *  @param path
+     */
+    public void remove( StoreTransaction tx, Path path )  throws RepositoryException;
+    
+
     /**
      *  This method is called whenever Priha starts a transaction which will save the
      *  contents of the repository.  You could, for example, use this to start a transaction.
      *  
      *  @param ws The workspace
+     *  @return An arbitrary StoreTransaction object. May be null.
      */
-    public void storeStarted(WorkspaceImpl ws);
+    public StoreTransaction storeStarted(WorkspaceImpl ws) throws RepositoryException;
     
     /**
      *  This method is called when the repository-changing operation is complete.  For example,
      *  you could close the transaction at this stage.
-     *  
-     *  @param ws Workspace.
+     * @param tx The same StoreTransaction object which was returned from storeStarted().
      */
-    public void storeFinished(WorkspaceImpl ws);
+    public void storeFinished(StoreTransaction tx) throws RepositoryException;
+    
+    /**
+     *  If the store has been cancelled and changes need to be rolled back.  A RepositoryProvider
+     *  should use this opportunity to make sure it is in a consistent state.
+     * @param tx The transaction from storeStarted().
+     */
+    public void storeCancelled(StoreTransaction tx) throws RepositoryException;
+    
 }

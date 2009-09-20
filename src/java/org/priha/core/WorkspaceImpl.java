@@ -491,11 +491,6 @@ public class WorkspaceImpl
         m_providerManager.close(this);
     }
 
-    public void removeItem(ItemImpl impl) throws RepositoryException
-    {
-        m_providerManager.remove( this, impl.getInternalPath() );
-    }
-
     /**
      *  Checks directly from the repository if an item exists.
      *  
