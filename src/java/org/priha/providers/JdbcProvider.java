@@ -19,10 +19,7 @@ package org.priha.providers;
 
 import java.io.*;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -30,6 +27,7 @@ import javax.jcr.*;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
+import javax.sql.rowset.serial.SerialBlob;
 
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
@@ -66,7 +64,9 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
     public static final String PROP_PASSWORD = "password";
     
     public static final String PROP_MAXCONNECTIONS = "maxConnections";
-    
+
+    public static final String PROP_WORKSPACES = "workspaces";
+
     private Logger log = Logger.getLogger(JdbcProvider.class.getName());
     
     private DataSource m_dataSource;
@@ -195,7 +195,8 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         m_password = properties.getProperty( PROP_PASSWORD );
         m_connectionURL = properties.getProperty( PROP_CONNECTIONURL );
         m_maxConnections = Integer.parseInt( properties.getProperty( PROP_MAXCONNECTIONS, "15" ) );
-        
+        String[] workspaces = properties.getProperty( PROP_WORKSPACES, "default" ).split( "\\s" ); 
+            
         if( dataSource != null )
         {
             try
@@ -252,6 +253,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             Connection c = pc.getConnection();
         
             initialize(c);
+            setupWorkspaces(c,workspaces);
         }
         catch (SQLException e)
         {
@@ -276,8 +278,50 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
 
     }
 
+    private void setupWorkspaces(Connection c, String[] workspaces) throws SQLException
+    {
+        PreparedStatement ps = c.prepareStatement( "SELECT * from workspaces" );
+        ResultSet rs = ps.executeQuery();
+        ArrayList<String> existingWorkspaces = new ArrayList<String>();
+        
+        while( rs.next() )
+        {
+            existingWorkspaces.add( rs.getString( "name" ) );
+        }
+        
+        ArrayList<String> wstoAdd = new ArrayList<String>();
+        wstoAdd.addAll( Arrays.asList( workspaces ) );
+        
+        wstoAdd.removeAll( existingWorkspaces );
+        
+        ps = c.prepareStatement( "INSERT INTO workspaces ( name ) VALUES ( ? )" );
+        
+        for( String ws : workspaces )
+        {
+            log.fine( "Adding new workspace "+ws );
+            ps.setString( 1, ws );
+            ps.execute();
+        }
+        
+        c.commit();
+    }
+    
     private void initialize(Connection c) throws IOException, SQLException
     {
+        try
+        {
+            ResultSet rs = c.createStatement().executeQuery("SELECT * FROM nodes");
+            if( rs.next() )
+                return;
+        }
+        catch( SQLException e )
+        {
+            // Either something is really screwed up, or the nodes don't exist.
+            // So we skip this and try to set up the database.
+        }
+        
+        log.info( "It appears that there are no entries in the nodes database, so recreating the tables." );
+        
         String productName = c.getMetaData().getDatabaseProductName();
         
         String setupFile = "/jdbc/"+productName+"/setup.sql";
@@ -360,9 +404,48 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
     }
 
+    //
+    //  FIXME: This is really slow because it's using a blob as a primary key...
+    //  FIXME: Does not peek into multireferences.
+    //
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
-        return new ArrayList<Path>(); // FIXME: Should do something useful
+        PoolableConnection pc = getConnection();
+        ArrayList<Path> result = new ArrayList<Path>();
+        
+        try
+        {
+            Connection c = pc.getConnection();
+            
+            PreparedStatement ps = c.prepareStatement( "SELECT path,name FROM nodes,propertyvalues WHERE propval = ? AND type = 9 AND propertyvalues.parent = nodes.id" );
+            ps.setBlob( 1, new SerialBlob(uuid.getBytes("UTF-8")) );
+            
+            ResultSet rs = ps.executeQuery();
+            
+            while( rs.next() )
+            {
+                String name = rs.getString( "name" );
+                String parentPath = rs.getString( "path" );
+                
+                Path p = PathFactory.getPath( ws.getSession(), parentPath+"/"+name );
+                
+                result.add( p );
+            }
+        }
+        catch( SQLException e )
+        {
+            throw new RepositoryException("Can't find refs", e);
+        }
+        catch( UnsupportedEncodingException e )
+        {
+            throw new RepositoryException("No UTF-8?", e);
+        }
+        finally
+        {
+            pc.close();
+        }
+        
+        return result;
     }
 
     public ValueContainer getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
