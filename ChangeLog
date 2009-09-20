@@ -9,6 +9,13 @@
         for making sure that changes can be rolled back in case there is
         a failure (for those providers which support it).
 
+        * JDBC supports now references
+        
+        * Fixed issues with JDBC startup (was recreating the database on every
+        single startup, oops)
+        
+        * Fixed Date format stream format.
+
 2009-09-12  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.2.2
