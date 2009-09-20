@@ -119,12 +119,12 @@ public class WorkspaceImpl
             
             if( removeExisting ) 
             {
-                System.out.println("Removing node due to UUID conflict "+n);
+//                System.out.println("Removing node due to UUID conflict "+n);
                 n.remove();
             }
             else
             {
-                throw new ItemExistsException("There already exists a Node by UUID "+uuid+" in the destination workspace!");
+                throw new ItemExistsException("There already exists a Node by UUID "+uuid+" in the destination workspace! "+n.getPath());
             }
         }
         catch( UnsupportedRepositoryOperationException e )

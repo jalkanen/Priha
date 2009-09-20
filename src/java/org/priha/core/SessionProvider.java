@@ -303,7 +303,13 @@ public class SessionProvider
                         for( PropertyImpl pi : refs )
                         {
                             if( pi.getState() != ItemState.REMOVED )
-                                throw new ReferentialIntegrityException("Attempted to remove a Node which still has references: "+pi.getPath());
+                            {
+                                throw new ReferentialIntegrityException("Attempted to remove a Node which still has references: "+
+                                                                        ii.getPath()+
+                                                                        " (the Property holding the reference is "+
+                                                                        pi.getPath()+
+                                                                        ")");
+                            }
                         }
                     }
                     catch( UnsupportedRepositoryOperationException e )
