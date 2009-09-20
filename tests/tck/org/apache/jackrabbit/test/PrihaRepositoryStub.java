@@ -9,6 +9,8 @@ import org.priha.core.RepositoryImpl;
 
 public class PrihaRepositoryStub extends RepositoryStub
 {
+    static RepositoryImpl c_repo;
+    
     public PrihaRepositoryStub(Properties env)
     {
         super(env);
@@ -16,10 +18,16 @@ public class PrihaRepositoryStub extends RepositoryStub
 
     public Repository getRepository() throws RepositoryStubException
     {
+        if( c_repo != null )
+            return c_repo;
+        
         try
         {
-            RepositoryImpl r = RepositoryManager.getRepository();
-
+//            RepositoryImpl r = RepositoryManager.getRepository("jdbcnocache.properties");
+            RepositoryImpl r = RepositoryManager.getRepository("filenocache.properties");
+            
+            c_repo = r;
+            
             Session s = r.login( getSuperuserCredentials() );
 
             String testroot = getProperty(PROP_PREFIX + "." + PROP_TESTROOT);
