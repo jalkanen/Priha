@@ -25,7 +25,6 @@ import org.priha.core.JCRConstants;
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
-import org.priha.core.values.QValue;
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.util.ConfigurationException;
@@ -36,45 +35,44 @@ import org.priha.util.QName;
  *  Holds the contents in memory only.   It's very fast, though creation
  *  of the initial Session may take a while.
  *  
- *  Missing: QNames
  */
 public class MemoryProvider implements RepositoryProvider
 {
     private static final int INITIAL_SIZE = 1024;
-    private Map<Path,ValueContainer> m_values    = new Hashtable<Path,ValueContainer>(INITIAL_SIZE);
-    private Set<Path>        m_nodePaths = new TreeSet<Path>();
-    private Map<String,Path> m_uuids     = new Hashtable<String,Path>(INITIAL_SIZE);
+    private Map<Path,TreeNode>       m_nodePaths = new HashMap<Path,TreeNode>();
+    private Map<String,Path>         m_uuids     = new Hashtable<String,Path>(INITIAL_SIZE);
     
     public void addNode(StoreTransaction tx, Path path, QNodeDefinition def) throws RepositoryException
     {
         //System.out.println("Node++ "+path);
-        m_nodePaths.add( path );
+        m_nodePaths.put( path, new TreeNode(path.isRoot() ? null : path.getParentPath(), null) );
     }
 
     public void close(WorkspaceImpl ws)
     {
     }
 
-    public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
-    {
-        throw new UnsupportedRepositoryOperationException();
-    }
-
     public Path findByUUID(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
-        return m_uuids.get( uuid );
+        Path p = m_uuids.get( uuid );
+        
+        if( p == null )
+            throw new ItemNotFoundException("No Node for uuid "+uuid);
+        
+        return p;
     }
 
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
         ArrayList<Path> res = new ArrayList<Path>();
         
-        for( Map.Entry<Path,ValueContainer> e : m_values.entrySet() )
+        for( Map.Entry<Path,TreeNode> e : m_nodePaths.entrySet() )
         {
-            if( !e.getValue().isMultiple() && 
-                e.getKey().getLastComponent().equals(JCRConstants.Q_JCR_UUID) )
+            ValueContainer vc = e.getValue().properties.get(JCRConstants.Q_JCR_UUID);
+            
+            if( vc != null )
             {
-                if( e.getValue().getValue().getString().equals(uuid) )
+                if( vc.getValue().getString().equals(uuid) )
                 {
                     res.add( e.getKey() );
                 }
@@ -86,25 +84,25 @@ public class MemoryProvider implements RepositoryProvider
 
     public ValueContainer getPropertyValue(WorkspaceImpl ws, Path path) throws RepositoryException
     {
-        ValueContainer o = m_values.get(path);
+        TreeNode o = m_nodePaths.get(path.getParentPath());
         
         if( o == null ) throw new PathNotFoundException(path.toString());
         
-        return o.sessionInstance( ws.getSession() );
+        ValueContainer vc = o.properties.get(path.getLastComponent());
+        
+        if( vc == null ) throw new PathNotFoundException(path.toString());
+        
+        return vc.sessionInstance( ws.getSession() );
     }
 
     public List<Path> listNodes(WorkspaceImpl ws, Path parentpath) throws RepositoryException
     {
         ArrayList<Path> res = new ArrayList<Path>();
         
-        for( Path p : m_nodePaths )
-        {
-            if( parentpath.isParentOf(p) && parentpath.depth() == p.depth()-1 ) // Only direct parents.
-            {
-                res.add(p);
-            }
-        }
+        TreeNode nd = m_nodePaths.get(parentpath);
         
+        if( nd != null && nd.children != null ) res.addAll(nd.children);
+                
         return res;
     }
 
@@ -112,12 +110,13 @@ public class MemoryProvider implements RepositoryProvider
     {
         ArrayList<QName> res = new ArrayList<QName>();
         
-        for( Path p : m_values.keySet() )
+        TreeNode tn = m_nodePaths.get(path);
+        
+        if( tn == null ) throw new ItemNotFoundException(path.toString(ws.getSession()));
+        
+        for( QName qn : tn.properties.keySet() )
         {
-            if( path.isParentOf(p) && path.depth() == p.depth()-1 )
-            {
-                res.add(p.getLastComponent());
-            }
+            res.add(qn);
         }
         
         return res;
@@ -128,14 +127,9 @@ public class MemoryProvider implements RepositoryProvider
         return Arrays.asList( new String[] { "default" } );
     }
 
-    public void move(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
-    {
-        throw new UnsupportedRepositoryOperationException();
-    }
-
     public boolean nodeExists(WorkspaceImpl ws, Path path)
     {
-        return m_nodePaths.contains(path);
+        return m_nodePaths.containsKey(path);
     }
 
     public void open(RepositoryImpl rep, Credentials credentials, String workspaceName)
@@ -146,6 +140,8 @@ public class MemoryProvider implements RepositoryProvider
 
     public void putPropertyValue(StoreTransaction tx, PropertyImpl property) throws RepositoryException
     {
+        ValueContainer vc;
+        
         if( property.getDefinition().isMultiple() )
         {
             //
@@ -156,8 +152,7 @@ public class MemoryProvider implements RepositoryProvider
             ValueImpl[] pseudovals = new ValueImpl[values.length];
             for( int i = 0; i < values.length; i++ ) pseudovals[i] = (ValueImpl)values[i];
             
-            m_values.put( property.getInternalPath(), new ValueContainer(pseudovals,
-                                                                         property.getType()) );
+            vc = new ValueContainer(pseudovals, property.getType());
         }
         else
         {
@@ -166,39 +161,39 @@ public class MemoryProvider implements RepositoryProvider
             {
                 m_uuids.put( value.getString(), property.getInternalPath().getParentPath() );
             }
-            
-            m_values.put( property.getInternalPath(), new ValueContainer(value) );    
+         
+            vc = new ValueContainer(value);
         }
+        
+        TreeNode parent = m_nodePaths.get(property.getInternalPath().getParentPath());
+        
+        if( parent == null ) throw new PathNotFoundException("Parent path not found "+property.getInternalPath().getParentPath());
+        
+        parent.properties.put(property.getQName(), vc);                                            
         
         //System.out.println("Stored "+property.getInternalPath());
     }
 
     public void remove(StoreTransaction tx, Path path) throws RepositoryException
     {
-        for( Iterator<Path> i = m_nodePaths.iterator(); i.hasNext(); )
+        TreeNode nd = m_nodePaths.get(path);
+        
+        if( nd == null ) return; // Already removed
+        
+        ValueContainer uuidvc = nd.properties.get(JCRConstants.Q_JCR_UUID);
+        
+        if( uuidvc != null )
         {
-            Path p = i.next();
-            
-            if( path.isParentOf(p) || path.equals( p ))
-                i.remove();
+            m_uuids.remove(uuidvc.getValue().getString());
         }
         
-        for( Iterator<Map.Entry<Path,ValueContainer>> i = m_values.entrySet().iterator(); i.hasNext(); )
+        for( Iterator<Path> i = nd.children.iterator(); i.hasNext(); )
         {
-            Map.Entry<Path, ValueContainer> e = i.next();
-            
-            if( path.isParentOf(e.getKey()) || path.equals(e.getKey()) )
-                i.remove();
+            Path child = i.next();
+            remove( tx, child );
         }
-        
-        for( Map.Entry<String,Path> e : m_uuids.entrySet() )
-        {
-            if( path.isParentOf(e.getValue()) || path.equals(e.getValue()))
-            {
-                m_uuids.remove(e.getKey());
-                break;
-            }
-        }
+
+        m_nodePaths.remove(path);
     }
 
     public void start(RepositoryImpl repository, Properties properties) throws ConfigurationException
@@ -224,4 +219,16 @@ public class MemoryProvider implements RepositoryProvider
     {
     }
 
+    private static class TreeNode
+    {
+        Path                          parent;
+        ArrayList<Path>               children;
+        HashMap<QName,ValueContainer> properties = new HashMap<QName,ValueContainer>();
+        
+        public TreeNode(Path p,ArrayList<Path> c)
+        {
+            parent   = p;
+            children = c;
+        }
+    }
 }

@@ -1,3 +1,11 @@
+2009-09-21  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.3.1
+        
+        * Vastly improved speeds for MemoryProvider by redesigning the 
+        memory structure.  For example, removal is no longer an O(N^2) 
+        operation, but O(log N).
+        
 2009-09-17  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.3.0
