@@ -34,7 +34,10 @@ import org.priha.util.QName;
 /**
  *  Holds the contents in memory only.   It's very fast, though creation
  *  of the initial Session may take a while.
- *  
+ *  <p>
+ *  The contents of this provider will disappear once you shut down the JVM.
+ *  <p>
+ *  Most of the operations in this provider are O(log N).
  */
 public class MemoryProvider implements RepositoryProvider
 {
@@ -62,6 +65,7 @@ public class MemoryProvider implements RepositoryProvider
         return p;
     }
 
+    // TODO: This is fairly slow, as it's O(N).
     public List<Path> findReferences(WorkspaceImpl ws, String uuid) throws RepositoryException
     {
         ArrayList<Path> res = new ArrayList<Path>();
