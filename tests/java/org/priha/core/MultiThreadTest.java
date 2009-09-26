@@ -26,7 +26,7 @@ public class MultiThreadTest extends TestCase
         //Perf.setProvider("FileProvider, no cache");
         RepositoryImpl rep = RepositoryManager.getRepository("filenocache.properties");
         
-        runRepoTest( rep );
+        runRepoTest( rep, "File" );
     }
 
     public void testEhFileProvider() throws Exception
@@ -34,10 +34,34 @@ public class MultiThreadTest extends TestCase
         //Perf.setProvider("FileProvider, no cache");
         RepositoryImpl rep = RepositoryManager.getRepository("fileehcache.properties");
         
-        runRepoTest( rep );
+        runRepoTest( rep, "FileEh" );
     }
 
-    private void runRepoTest( RepositoryImpl rep ) throws InterruptedException, LoginException, RepositoryException
+    public void testMemoryProvider() throws Exception
+    {
+        //Perf.setProvider("FileProvider, no cache");
+        RepositoryImpl rep = RepositoryManager.getRepository("memorynocache.properties");
+        
+        runRepoTest( rep, "Memory" );
+    }
+
+    public void testJdbcProvider() throws Exception
+    {
+        //Perf.setProvider("FileProvider, no cache");
+        RepositoryImpl rep = RepositoryManager.getRepository("jdbcnocache.properties");
+        
+        runRepoTest( rep, "Jdbc" );
+    }
+
+    public void testEhJdbcProvider() throws Exception
+    {
+        //Perf.setProvider("FileProvider, no cache");
+        RepositoryImpl rep = RepositoryManager.getRepository("jdbcehcache.properties");
+        
+        runRepoTest( rep, "JdbcEh" );
+    }
+
+    private void runRepoTest( RepositoryImpl rep, String prefix ) throws InterruptedException, LoginException, RepositoryException
     {
         try
         {
@@ -46,7 +70,7 @@ public class MultiThreadTest extends TestCase
             for( int i = 0; i < NUM_THREADS; i++ )
             {
                 threads[i] = new TestThread(rep);
-                threads[i].setName( "TestThread-"+i );
+                threads[i].setName( prefix+"-TestThread-"+i );
                 threads[i].start();
             }
         
@@ -54,7 +78,7 @@ public class MultiThreadTest extends TestCase
             while(someonestillalive)
             {
                 someonestillalive = false;
-                Thread.sleep( 2000 );
+                Thread.sleep( 1000 );
                 for( TestThread tt : threads )
                 {
                     if( !tt.isAlive() )
@@ -73,6 +97,7 @@ public class MultiThreadTest extends TestCase
         }
         finally
         {
+            System.out.println("\nAll threads done, now emptying repository...");
             TestUtil.emptyRepo( rep );
         }
     }
@@ -110,7 +135,7 @@ public class MultiThreadTest extends TestCase
         
         private void createRandomNode(Node nd) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException
         {
-            String name = TestUtil.getUniqueID(8);
+            String name = TestUtil.getUniqueID(16);
             
             String hash = "x-"+name.charAt(0);
         
@@ -139,7 +164,7 @@ public class MultiThreadTest extends TestCase
             
         }
         
-        public void readWriteRandomNodes() throws InterruptedException, PathNotFoundException, RepositoryException
+        public void readWriteRandomNodes() throws InterruptedException, RepositoryException
         {
             Random rand = new Random();
             
@@ -149,15 +174,19 @@ public class MultiThreadTest extends TestCase
                 
                 int item = rand.nextInt( propertyPaths.size() );
                 
-                Item ii = m_session.getItem( propertyPaths.get(item) );
-
-                assertFalse( ii.getPath(), ii.isNode() );
-                assertEquals( ii.getName(), 16, ((Property)ii).getString().length() );
-                
-                if( rand.nextDouble() > 0.95 )
+                try
                 {
-                    createRandomNode( m_session.getRootNode() );
+                    Item ii = m_session.getItem( propertyPaths.get(item) );
+
+                    assertFalse( ii.getPath(), ii.isNode() );
+                    assertEquals( ii.getName(), 16, ((Property)ii).getString().length() );
+                
+                    if( rand.nextDouble() > 0.95 )
+                    {
+                        createRandomNode( m_session.getRootNode() );
+                    }
                 }
+                catch( PathNotFoundException e ) { } // OK
             }
         }
 
@@ -171,10 +200,14 @@ public class MultiThreadTest extends TestCase
                 
                 int item = rand.nextInt( propertyPaths.size() );
                 
-                Item ii = m_session.getItem( propertyPaths.get(item) );
+                try
+                {
+                    Item ii = m_session.getItem( propertyPaths.get(item) );
 
-                assertFalse( ii.getPath(), ii.isNode() );
-                assertEquals( ii.getName(), 16, ((Property)ii).getString().length() );
+                    assertFalse( ii.getPath(), ii.isNode() );
+                    assertEquals( ii.getName(), 16, ((Property)ii).getString().length() );
+                }
+                catch( PathNotFoundException e ) {} // OK
             }
         }
 
@@ -186,7 +219,7 @@ public class MultiThreadTest extends TestCase
             {
                 Thread.sleep( rnd.nextInt( 1000 ) );
                 
-                m_session = m_repo.login();
+                m_session = m_repo.login(new SimpleCredentials("xxx",new char[0]));
                 
                 createRandomNodes();
 

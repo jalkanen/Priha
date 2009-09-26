@@ -198,12 +198,16 @@ public class EhCachingProvider implements RepositoryProvider
 
     public void close(WorkspaceImpl ws)
     {
-        Statistics s = m_valueCache.getStatistics();
+        if( m_valueCache.getStatus() == Status.STATUS_ALIVE )
+        {
+            Statistics s = m_valueCache.getStatistics();
         
-        log.fine("EHCache statistics right before close(): "+s.toString());
+            log.fine("EHCache statistics right before close(): "+s.toString());
+
+            m_valueCache.removeAll();
+        }
         
         m_realProvider.close(ws);
-        m_valueCache.removeAll();
     }
 
     public void addNode(StoreTransaction tx, Path path, QNodeDefinition def) throws RepositoryException
@@ -321,13 +325,11 @@ public class EhCachingProvider implements RepositoryProvider
         }
         catch( LockTimeoutException e )
         {
-            throw new RepositoryException("Lock timeout getting propery value");
+            throw new RepositoryException("Lock timeout getting propery value",e);
         }
         catch( RuntimeException e )
         {
-            // Release lock
-            m_valueCache.put( new Element(key,null) );
-            throw new RepositoryException("Error getting propery value");
+            throw new RepositoryException("Error getting propery value",e);
         }
     }
 

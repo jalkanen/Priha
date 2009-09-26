@@ -150,7 +150,7 @@ public class RepositoryImpl implements Repository
         return getProviderManager().getDefaultWorkspace();
     }
     
-    public SessionImpl login(Credentials credentials, String workspaceName)
+    public synchronized SessionImpl login(Credentials credentials, String workspaceName)
         throws LoginException,
                NoSuchWorkspaceException,
                RepositoryException

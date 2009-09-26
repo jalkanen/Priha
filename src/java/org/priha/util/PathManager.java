@@ -20,7 +20,7 @@ public class PathManager
     {   
     }
         
-    public Path getPath(PathRef p) throws PathNotFoundException
+    public synchronized Path getPath(PathRef p) throws PathNotFoundException
     {
         emptyStaleEntries();
         Path path = m_pathMap.get( p );
@@ -33,7 +33,7 @@ public class PathManager
         return path;
     }
     
-    public PathRef getPathRef( Path path )
+    public synchronized PathRef getPathRef( Path path )
     {
         emptyStaleEntries();
         PathRef ref;
@@ -54,7 +54,7 @@ public class PathManager
         return ref;
     }
 
-    public void move( Path oldPath, Path newPath )
+    public synchronized void move( Path oldPath, Path newPath )
     {
         PathRef pr = getPathRef( oldPath );
         if( pr != null )

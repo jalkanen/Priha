@@ -297,7 +297,16 @@ public class ProviderManager implements ItemStore
     {
         for( ProviderInfo pi : m_providers )
         {
-            pi.provider.close( impl );
+            try
+            {
+                pi.lock.writeLock().lock();
+            
+                pi.provider.close( impl );
+            }
+            finally
+            {
+                pi.lock.writeLock().unlock();
+            }
         }
     }
 
@@ -516,7 +525,15 @@ public class ProviderManager implements ItemStore
     {
         for( ProviderInfo pi : m_providers )
         {
-            pi.provider.stop(m_repository);
+            try
+            {
+                pi.lock.writeLock().lock();
+                pi.provider.stop(m_repository);
+            }
+            finally
+            {
+                pi.lock.writeLock().unlock();
+            }
         }
     }
 
@@ -528,7 +545,17 @@ public class ProviderManager implements ItemStore
         
         for( ProviderInfo pi : m_providers )
         {
-            paths.addAll(pi.provider.findReferences( ws, uuid ));
+            try
+            {
+                pi.lock.readLock().lock();
+            
+                paths.addAll(pi.provider.findReferences( ws, uuid ));
+            }
+            finally
+            {
+                pi.lock.readLock().unlock();
+            }
+                
         }
         
         for( Path path : paths )

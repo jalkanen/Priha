@@ -1,5 +1,10 @@
 2009-09-26  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.3.4
+        
+        * Made most of our providers really thread-safe by enabling
+        MultiThreadTest.
+
         * 0.3.3
         
         * PathManager is now a singleton; which solves quite a few

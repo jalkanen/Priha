@@ -1398,7 +1398,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
         }
         
-        public void shutdown()
+        public synchronized void shutdown()
         {
             try
             {
@@ -1416,18 +1416,18 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
         }
         
-        public String toString()
+        public synchronized String toString()
         {
             return "UUIDObjectStore["+m_name+", "+(m_map != null ? m_map.size() : "no")+" objs]";
         }
         
-        public T getObject( String uuid )
+        public synchronized T getObject( String uuid )
         {
             if( m_map == null ) unserialize();
             return m_map.get( uuid );
         }
         
-        public void setObject( String uuid, T object )
+        public synchronized void setObject( String uuid, T object )
         {
             if( m_map == null ) unserialize();
             
@@ -1476,7 +1476,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
         
         @SuppressWarnings("unchecked")
-        private void unserialize()
+        private synchronized void unserialize()
         {
             File objFile = new File(m_root, m_name);
             m_map = new HashMap<String,T>();

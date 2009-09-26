@@ -2,6 +2,7 @@ package org.priha.util;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import javax.jcr.RepositoryException;
 
@@ -24,7 +25,7 @@ public class Pool
         return m_size;
     }
 
-    public Poolable get() throws InterruptedException, PoolExhaustedException
+    public Poolable get(int milliseconds) throws InterruptedException, PoolExhaustedException
     {
         if( m_objects.isEmpty() )
         {
@@ -42,11 +43,12 @@ public class Pool
                 m_objects.offer( p );
                 m_size++;
             }
-            else throw new PoolExhaustedException("No more objects from the pool!");            
+            //else throw new PoolExhaustedException("No more objects from the pool!");            
         }
         
-        Poolable obj = m_objects.take();
+        Poolable obj = m_objects.poll(milliseconds,TimeUnit.MILLISECONDS);
         
+        if( obj == null ) throw new PoolExhaustedException("Could not get an object from pool in "+milliseconds+" ms, assuming pool is exhausted.");
         return obj;
     }
     

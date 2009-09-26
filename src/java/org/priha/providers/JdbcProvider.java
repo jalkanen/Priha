@@ -81,11 +81,11 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         PoolableConnection pc;
         try
         {
-            pc = (PoolableConnection) m_connections.get();
+            pc = (PoolableConnection) m_connections.get(5000);
         }
         catch( Exception e )
         {
-            throw new RepositoryException("Connection trouble! "+e.getMessage());
+            throw new RepositoryException("Connection trouble! "+e.getMessage(),e);
         }
         
         return pc;
@@ -100,6 +100,15 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         
         try
         {
+            try
+            {
+                // Check whether the Node exists. If it does not, then insert
+                // a new one.
+                long nodeId = getNodeId( c, ws, path );
+            }
+            catch( PathNotFoundException e )
+            {
+            
             ps = c.prepareStatement("INSERT INTO nodes (workspace,path,parent) "+
                                     "VALUES (?,?,?);");
             
@@ -107,15 +116,16 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             ps.setInt(1, getWorkspaceId(ws));
             ps.setString(2, path.toString());
             if( !path.isRoot() )
-                ps.setInt( 3, getNodeId(ws, path.getParentPath()) );
+                ps.setInt( 3, getNodeId(c, ws, path.getParentPath()) );
             else
                 ps.setNull( 3, Types.INTEGER );
             
             ps.execute();
+            }
         }
         catch (SQLException e)
         {
-            throw new RepositoryException("Cannot insert a new node: "+e.getMessage());
+            throw new RepositoryException("Cannot insert a new node: "+path,e);
         }
         finally
         {
@@ -130,16 +140,14 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
     }
 
-    private int getNodeId(WorkspaceImpl ws, Path parentPath) throws SQLException, RepositoryException
+    private int getNodeId(Connection c, WorkspaceImpl ws, Path parentPath) throws SQLException, RepositoryException
     {
-        PoolableConnection pc = getConnection();
-        
+        PreparedStatement ps = null;
         try
         {
-            Connection c = pc.getConnection();
-            PreparedStatement ps = c.prepareStatement("SELECT nodes.id AS id FROM workspaces,nodes WHERE nodes.path = ? "+
-                                                      "AND nodes.workspace = workspaces.id "+
-                                                      "AND workspaces.name = ?");
+            ps = c.prepareStatement("SELECT nodes.id AS id FROM workspaces,nodes WHERE nodes.path = ? "+
+                                    "AND nodes.workspace = workspaces.id "+
+                                    "AND workspaces.name = ?");
         
             ps.setString(1, parentPath.toString());
             ps.setString(2, ws.getName());
@@ -155,7 +163,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         finally
         {
-            pc.close();
+            if(ps != null) ps.close();
         }
     }
 
@@ -457,7 +465,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             Connection c = pc.getConnection();
             PreparedStatement ps = c.prepareStatement("SELECT type,propval,multi FROM propertyvalues WHERE parent = ? AND name = ?");
             
-            ps.setLong(1, getNodeId(ws, path.getParentPath()));
+            ps.setLong(1, getNodeId(c, ws, path.getParentPath()));
             ps.setString(2, path.getLastComponent().toString() );
             
             ResultSet rs = ps.executeQuery();
@@ -700,7 +708,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         {
             byte[] bytes = serialize(property);
             PreparedStatement ps;
-            long id = getNodeId(tx.getWorkspace(),property.getInternalPath().getParentPath());
+            long id = getNodeId(c,tx.getWorkspace(),property.getInternalPath().getParentPath());
                         
             if( property.isNew() )
             {
@@ -765,7 +773,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
                                     "parent = ? AND "+
                                     "name = ?");
 
-            ps.setLong( 1, getNodeId(tx.getWorkspace(), path.getParentPath()));
+            ps.setLong( 1, getNodeId(c,tx.getWorkspace(), path.getParentPath()));
             ps.setString(2, path.getLastComponent().toString() );
             int numRows = ps.executeUpdate();
             
@@ -775,7 +783,7 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
                 //  There was no property value removed, so let's remove the parent.
                 //
                 ps = c.prepareStatement("DELETE from propertyvalues where parent = ?");
-                ps.setLong(1, getNodeId(tx.getWorkspace(),path) );
+                ps.setLong(1, getNodeId(c,tx.getWorkspace(),path) );
                 ps.executeUpdate();
                
                 ps = c.prepareStatement("DELETE FROM nodes WHERE path = ?");
