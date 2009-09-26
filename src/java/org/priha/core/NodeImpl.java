@@ -67,7 +67,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     
     private QNodeType            m_primaryType;
 
-    private String               m_cachedUUID;
+    protected String             m_cachedUUID;
     
     static Logger log = Logger.getLogger( NodeImpl.class.getName() );
 
@@ -163,7 +163,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                            LockException,
                                            RepositoryException
     {
-        if( relPath.indexOf('[') != -1 )
+        if( relPath.endsWith("]") )
         {
             throw new RepositoryException("Cannot add an indexed entry");
         }

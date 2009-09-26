@@ -407,10 +407,12 @@ public class SessionProvider
                                     throw new InvalidItemStateException("The item has been removed by some other Session "+ii.getInternalPath());
                                 }
                                 String uuid = null;
-                                if( ni.isNodeType( "mix:referenceable" ) )
+                                try
                                 {
                                     uuid = ni.getUUID();
                                 }
+                                catch( UnsupportedRepositoryOperationException e ) {} // Fine, no uuid
+                                
                                 toberemoved.add( ni.getInternalPath() );
                                 clearAllCaches( ni, uuid );
                                 break;

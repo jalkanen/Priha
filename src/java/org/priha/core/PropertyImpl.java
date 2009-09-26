@@ -227,7 +227,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     public void loadValue( Value value ) throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         if( m_multi == Multi.MULTI )
-            throw new ValueFormatException("Attempted to set a SINGLE Value object to a MULTI property "+m_path);
+            throw new ValueFormatException("Attempted to set a SINGLE Value object to a MULTI property "+getPath());
 
         if( value == null )
         {

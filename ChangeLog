@@ -5,6 +5,10 @@
         * Workspace.copy() did not allow copying to nodes with same
         name siblings enabled.  Now fixed.
         
+        * Fixed addNode() to support adding to indexed nodes; it was
+        erroneusly thinking that /foo/bar[2]/blat is an illegal Node
+        name...
+        
 2009-09-21  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.3.1

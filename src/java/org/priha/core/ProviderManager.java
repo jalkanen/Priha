@@ -347,7 +347,6 @@ public class ProviderManager implements ItemStore
     
         primaryType.loadValue( v.getValue() );
         
-        //QName pt = ws.getSession().toQName(primaryType.getString()); // FIXME: Inoptimal
         QName pt = ((QNameValue.Impl)v.getValue()).getQValue().getValue();
         QNodeTypeManager ntm = QNodeTypeManager.getInstance();
         QNodeType type = ntm.getNodeType( pt );
@@ -357,7 +356,7 @@ public class ProviderManager implements ItemStore
         ni = ws.getSession().createNode( path, type, nd, false );
                 
         ni.m_state = ItemState.EXISTS;
-
+        
         return ni;
     }
 
