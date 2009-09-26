@@ -48,10 +48,9 @@ public class PathManager
         
         ref = makeReference(path);
         
-        //System.out.println("Adding "+ref+" = "+path);
         m_reversePathMap.put( path, new WeakPathRef(ref,path,m_queue) );
         m_pathMap.put( ref, path );
-        
+
         return ref;
     }
 
@@ -84,7 +83,7 @@ public class PathManager
             
             m_reversePathMap.remove( p );
             
-            //System.out.println("   Expunged "+p);
+//            System.out.println("   Expunged "+p);
         }
         /*
         System.out.println("pathMap.size() "+m_pathMap.size());
@@ -114,25 +113,5 @@ public class PathManager
         {
             return m_path;
         }
-    }
-
-    /**
-     *  Creates an unique reference to a Path, that is, a PathRef which is not
-     *  shared.  This is used in the case where you wish to retain an existing
-     *  reference and make sure it does not change if the underlying Path 
-     *  changes.  
-     *  
-     *  @param pathref A pathref to clone
-     *  @return A new PathRef which is not shared.
-     *  @throws PathNotFoundException If this pathref does not refer to a valid Path.
-     */
-    public PathRef getUniquePathRef( PathRef pathref ) throws PathNotFoundException
-    {
-        Path p = getPath( pathref );
-        
-        PathRef newRef = new PathRef(c_counter++);
-        m_pathMap.put( newRef, p );
-        
-        return newRef;
     }
 }
