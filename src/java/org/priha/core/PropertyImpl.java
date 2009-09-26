@@ -269,6 +269,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         }
         
         if( m_state != ItemState.NEW ) markModified( true );
+        else getParent().markModified(true,false);
         loadValue( value );
     }
 
@@ -340,7 +341,11 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             throw new ValueFormatException("Attempt to set a different type value to this property");
         }        
         
-        markModified( m_value != null );
+        if( m_value != null )
+            markModified( true );
+        else
+            getParent().markModified(true,false);
+
         loadValue(values, m_type);
     }
 
