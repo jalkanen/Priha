@@ -119,7 +119,7 @@ public class WorkspaceImpl
             
             if( removeExisting ) 
             {
-//                System.out.println("Removing node due to UUID conflict "+n);
+                 System.out.println("Removing node due to UUID conflict "+n);
                 n.remove();
             }
             else
@@ -159,7 +159,7 @@ public class WorkspaceImpl
         {
             if( removeExisting && getSession().itemExists( destAbsPath ) )
             {
-                getSession().getItem( destAbsPath ).remove();
+//                getSession().getItem( destAbsPath ).remove();
                 //getSession().save();
             }
 
@@ -181,7 +181,8 @@ public class WorkspaceImpl
      *  {@inheritDoc}
      */
     public void copy(String srcAbsPath, String destAbsPath) 
-        throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
+        throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, 
+               ItemExistsException, LockException, RepositoryException
     {
         copy( getName(), srcAbsPath, destAbsPath );
     }
@@ -202,7 +203,9 @@ public class WorkspaceImpl
     /**
      *  {@inheritDoc}
      */
-    public void copy(String srcWorkspace, String srcAbsPath, String destAbsPath) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
+    public void copy(String srcWorkspace, String srcAbsPath, String destAbsPath) 
+        throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, 
+               AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         SessionImpl srcSession = getSession().getRepository().login( srcWorkspace ); 
         
@@ -255,7 +258,9 @@ public class WorkspaceImpl
      *  @throws LockException
      *  @throws RepositoryException
      */
-    protected void copy(SessionImpl srcSession, String srcAbsPath, String destAbsPath, boolean preserveUUIDs ) throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
+    protected void copy(SessionImpl srcSession, String srcAbsPath, String destAbsPath, boolean preserveUUIDs ) 
+        throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, AccessDeniedException, 
+               PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         Path path = PathFactory.getPath( getSession(), destAbsPath );
 
@@ -264,7 +269,10 @@ public class WorkspaceImpl
 
         if( m_session.hasNode( destAbsPath ) ) 
         {
-            throw new ItemExistsException("Destination node already exists!");
+            NodeImpl nx = getSession().getRootNode().getNode(destAbsPath);
+            
+            if( !nx.getDefinition().allowsSameNameSiblings() )
+                throw new ItemExistsException("Destination node "+destAbsPath+" already exists, and does not allow same name siblings!");
         }
         
         NodeImpl srcnode = srcSession.getRootNode().getNode(srcAbsPath);
@@ -282,7 +290,7 @@ public class WorkspaceImpl
         
         if( isCheckedIn( destnode ) )
         {
-            throw new VersionException("Destination node (or one of its parent nodes) is checked in, and therefore unmodifiable.");
+            throw new VersionException("Destination node "+destnode.getPath()+" (or one of its parent nodes) is checked in, and therefore unmodifiable.");
         }
         
         for( NodeIterator ni = srcnode.getNodes(); ni.hasNext(); )

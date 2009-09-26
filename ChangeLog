@@ -1,3 +1,10 @@
+2009-09-26  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.3.2
+        
+        * Workspace.copy() did not allow copying to nodes with same
+        name siblings enabled.  Now fixed.
+        
 2009-09-21  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.3.1
