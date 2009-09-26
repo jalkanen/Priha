@@ -30,6 +30,8 @@ import org.priha.util.*;
 
 /**
  *  This is a special provider which stores the state of the Session.
+ *  <p>
+ *  At the moment this could be O(N) depending on the size of the unsaved items.
  *  
  */
 public class SessionProvider
@@ -41,23 +43,26 @@ public class SessionProvider
     
     private static final int   DEFAULT_CACHESIZE = 1000;
     
-    private Map<PathRef,ItemImpl> m_fetchedItems = new SizeLimitedHashMap<PathRef,ItemImpl>(DEFAULT_CACHESIZE);
-
-    private Map<String,NodeImpl> m_uuidMap    = new SizeLimitedHashMap<String,NodeImpl>(DEFAULT_CACHESIZE);
+    private Map<PathRef,ItemImpl> m_fetchedItems;
+    private Map<String,NodeImpl>  m_uuidMap;
     
     public SessionProvider( SessionImpl session, ItemStore source )
     {
         m_source  = source;
         m_workspace = session.getWorkspace();
         
-        //
-        //  The nodes are sorted according to their length to make
-        //  sure when they are saved, we save the parent path first.
-        //
-        //m_changedItems = new TreeMap<Path,ItemImpl>( new PrimaryTypePreferringComparator() );
         m_changedItems = new LinkedHashMap<Path, ItemImpl>();
+        
+        m_fetchedItems = new SizeLimitedHashMap<PathRef,ItemImpl>(DEFAULT_CACHESIZE);
+        m_uuidMap      = new SizeLimitedHashMap<String,NodeImpl>(DEFAULT_CACHESIZE);
     }
     
+    /**
+     *  Makes sure an item is cleared away from all internal session caches.
+     *  
+     *  @param ii Item to remove. May be null.
+     *  @param uuid UUID of an item to remove. May be null.
+     */
     private void clearSingleItem( final ItemImpl ii, final String uuid )
     {
         if( ii != null )   m_fetchedItems.remove( ii.getPathReference() );
@@ -67,8 +72,8 @@ public class SessionProvider
     /**
      *  Visits all Sessions from this particular Repository and clears local caches.
      *  
-     *  @param ii
-     *  @param uuid
+     *  @param ii Item to remove. May be null.
+     *  @param uuid UUID of an item to remove. May be null.
      */
     private void clearAllCaches( final ItemImpl ii, final String uuid )
     {
@@ -82,11 +87,22 @@ public class SessionProvider
         });
     }
     
+    /**
+     *  Saves everything starting from root node.
+     *  
+     *  @throws RepositoryException If something goes wrong.
+     */
     public void save() throws RepositoryException
     {
         save( Path.ROOT );
     }
     
+    /**
+     *  Call when you wish to add a new Node in this Session.
+     *  
+     *  @param ni Node to add
+     *  @throws RepositoryException If the Path cannot be determined.
+     */
     public void addNode( NodeImpl ni ) throws RepositoryException
     {
         m_changedItems.put( ni.getInternalPath(), ni );
@@ -645,8 +661,9 @@ public class SessionProvider
      *  @param <K> Type of the key.
      *  @param <V> Type of the value.
      */
-    private static class SizeLimitedHashMap<K,V> extends LinkedHashMap<K,V>
+    private class SizeLimitedHashMap<K,V> extends LinkedHashMap<K,V>
     {
+        private static final long serialVersionUID = 1L;
         private static final int MAX_SIZE = 100;
         private int m_maxSize = MAX_SIZE;
         
@@ -680,15 +697,17 @@ public class SessionProvider
         }
     }
 
-    private PathManager m_sessionPathManager = new PathManager();
+    
+    // FIXME: Should probably be elsewhere
+    private static PathManager c_sessionPathManager = new PathManager();
     
     public Path getPath( PathRef p ) throws PathNotFoundException
     {
-        return m_sessionPathManager.getPath( p );
+        return c_sessionPathManager.getPath( p );
     }
 
     public PathManager getPathManager()
     {
-        return m_sessionPathManager;
+        return c_sessionPathManager;
     }
 }
