@@ -1,5 +1,12 @@
 2009-09-26  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.3.3
+        
+        * PathManager is now a singleton; which solves quite a few
+        XML import problems - sharing Paths between multiple Sessions did
+        not work (I have no idea what I was thinking when I made PathManager
+        depend on a Session...)
+
         * 0.3.2
         
         * Workspace.copy() did not allow copying to nodes with same
