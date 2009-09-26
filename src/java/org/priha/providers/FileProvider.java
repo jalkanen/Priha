@@ -519,12 +519,12 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         if( wsnames.indexOf(workspaceName) == -1 )
             throw new NoSuchWorkspaceException(workspaceName);
         
-        log.fine("Workspace "+workspaceName+" has been opened.");
+        log.finer("Workspace "+workspaceName+" has been opened.");
     }
 
     public void close(WorkspaceImpl ws)
     {
-        log.fine( "Workspace "+ws.getName()+" closing..." );
+        log.finer( "Workspace "+ws.getName()+" closing..." );
         m_hitCount[Count.Close.ordinal()]++;
         
         try
