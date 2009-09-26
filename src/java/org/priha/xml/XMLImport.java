@@ -155,6 +155,7 @@ public class XMLImport extends DefaultHandler
             && uuid != null 
             && uuidNode != null )
         {
+            log.fine("Replacing node "+uuidNode.getPath()+" due to UUID_COLLISION_REPLACE_EXISTING");
             NodeImpl parent = uuidNode.getParent();
             uuidNode.remove();
 
@@ -186,13 +187,15 @@ public class XMLImport extends DefaultHandler
                 case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING:
                     if( uuidNode != null && uuidNode.getInternalPath().isParentOf( m_currentPath ) )
                     {
-                        throw new ConstraintViolationException("Importing this node ("+nd+") would result in one of its parents being removed - "+
+                        throw new ConstraintViolationException("Importing this node ("+nd.getPath()+") would result in one of its parents being removed - "+
                                                                "which, in general, is kinda like traveling back in time and shooting your "+
                                                                "grandparents.  Most time traveling guidelines strongly recommend against this, as "+
                                                                "it will lead to paradoxes.  This is also why it is not possible within JCR.  Not that "+
                                                                "this is exactly time travel technology, far from it, but it just keeps stuff neat "+
                                                                "and tidy, you know.");
                     }
+                    log.fine("Removing node "+uuidNode.getPath()+" due to UUID_COLLISION_REMOVE_EXISTING");
+                    log.fine("New node is "+nd);
                     uuidNode.remove();
                     nd.setProperty( "jcr:uuid", uuid );
                     break;
