@@ -432,20 +432,17 @@ public class WorkspaceImpl
         }
         catch (ParserConfigurationException e)
         {
-            log.log( Level.WARNING, "Could not get SAX parser", e );
-            throw new RepositoryException("Could not get SAX parser, please check logs.");
+            throw new RepositoryException("Could not get SAX parser!",e);
         }
         catch (SAXException e)
-        {
-            log.log( Level.WARNING, "Importing failed", e );
-            
+        {            
             if( e.getException() != null 
                 && (e.getException() instanceof RepositoryException) )
             {
                 throw (RepositoryException) e.getException();
             }
             
-            throw new InvalidSerializedDataException("Importing failed: "+e.getMessage());
+            throw new InvalidSerializedDataException("Importing failed",e);
         }
         finally
         {
