@@ -2196,9 +2196,4 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         throw new UnsupportedRepositoryOperationException();
     }
 
-    public void freezePath() throws PathNotFoundException
-    {
-        m_path = m_session.getPathManager().getUniquePathRef( m_path );
-    }
-
 }
