@@ -38,12 +38,22 @@ import org.priha.util.QName;
  *  The contents of this provider will disappear once you shut down the JVM.
  *  <p>
  *  Most of the operations in this provider are O(log N).
+ *  <p>
+ *  This providers supports a single workspace only.  You may set it up with e.g.
+ *  <pre>
+ *     priha.provider.memory.workspaces = myworkspace
+ *  </pre>
+ *  The property is aligned with other RepositoryProviders, even though it will only
+ *  support a single one.  By default, this workspace will be called "default".
  */
 public class MemoryProvider implements RepositoryProvider
 {
-    private static final int INITIAL_SIZE = 1024;
+    private static final int         INITIAL_SIZE = 1024;
+    private static final String      PROP_WORKSPACES = "workspaces";
+    
     private Map<Path,TreeNode>       m_nodePaths = new HashMap<Path,TreeNode>();
     private Map<String,Path>         m_uuids     = new Hashtable<String,Path>(INITIAL_SIZE);
+    private String                   m_workspace = "default";
     
     public void addNode(StoreTransaction tx, Path path, QNodeDefinition def) throws RepositoryException
     {
@@ -128,7 +138,7 @@ public class MemoryProvider implements RepositoryProvider
 
     public Collection<String> listWorkspaces()
     {
-        return Arrays.asList( new String[] { "default" } );
+        return Arrays.asList( new String[] { m_workspace } );
     }
 
     public boolean nodeExists(WorkspaceImpl ws, Path path)
@@ -139,7 +149,7 @@ public class MemoryProvider implements RepositoryProvider
     public void open(RepositoryImpl rep, Credentials credentials, String workspaceName)
         throws RepositoryException,NoSuchWorkspaceException
     {
-        if( !workspaceName.equals("default") ) throw new NoSuchWorkspaceException();
+        if( !workspaceName.equals(m_workspace) ) throw new NoSuchWorkspaceException();
     }
 
     public void putPropertyValue(StoreTransaction tx, PropertyImpl property) throws RepositoryException
@@ -174,7 +184,7 @@ public class MemoryProvider implements RepositoryProvider
         if( parent == null ) throw new PathNotFoundException("Parent path not found "+property.getInternalPath().getParentPath());
         
         parent.properties.put(property.getQName(), vc);                                            
-        
+       
         //System.out.println("Stored "+property.getInternalPath());
     }
 
@@ -191,10 +201,13 @@ public class MemoryProvider implements RepositoryProvider
             m_uuids.remove(uuidvc.getValue().getString());
         }
         
-        for( Iterator<Path> i = nd.children.iterator(); i.hasNext(); )
+        if( nd.children != null )
         {
-            Path child = i.next();
-            remove( tx, child );
+            for( Iterator<Path> i = nd.children.iterator(); i.hasNext(); )
+            {
+                Path child = i.next();
+                remove( tx, child );
+            }
         }
 
         m_nodePaths.remove(path);
@@ -202,6 +215,18 @@ public class MemoryProvider implements RepositoryProvider
 
     public void start(RepositoryImpl repository, Properties properties) throws ConfigurationException
     {
+        String wsnames = properties.getProperty( PROP_WORKSPACES, m_workspace );
+        String[] wsn = wsnames.split( "\\s" );
+        if( wsn.length == 0 )
+        {
+            throw new ConfigurationException("Empty "+PROP_WORKSPACES+" -property found!");
+        }
+        else if( wsn.length > 1 )
+        {
+            throw new ConfigurationException("MemoryProvider only supports a single workspace. If you need multiple workspaces, please set up a separate MemoryProvider for each.");
+        }
+        
+        m_workspace = wsn[0];
     }
 
     public void stop(RepositoryImpl rep)
@@ -223,6 +248,9 @@ public class MemoryProvider implements RepositoryProvider
     {
     }
 
+    /**
+     *  Stores a Node in the memory, including parent, all children and all properties.
+     */
     private static class TreeNode
     {
         Path                          parent;
