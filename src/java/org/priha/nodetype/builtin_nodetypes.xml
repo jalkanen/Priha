@@ -558,6 +558,28 @@
       </propertyDefinition>
    </nodetype>
 
+   <!-- nt:folder -->
+   
+   <nodetype>
+      <name>nt:folder</name>
+      <supertypes>nt:hierarchyNode</supertypes>
+      <isMixin>false</isMixin>
+      <hasOrderableChildNodes>false</hasOrderableChildNodes>
+      <primaryItemName></primaryItemName>
+
+      <childNodeDefinition>
+          <name>*</name>
+          <requiredPrimaryTypes>[nt:hierarchyNode]</requiredPrimaryTypes>
+          <defaultPrimaryType></defaultPrimaryType>
+          <autoCreated>false</autoCreated>
+          <mandatory>false</mandatory>
+          <onParentVersion>VERSION</onParentVersion>
+          <protected>false</protected>
+          <sameNameSiblings>false</sameNameSiblings>
+      </childNodeDefinition>
+
+   </nodetype>
+
    <!--==========================================================
                     PRIHA SPECIFIC NODETYPES
        ========================================================== -->
