@@ -763,9 +763,28 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                                                                 LockException,
                                                                                 RepositoryException
     {
-        // TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
+        if( !getPrimaryNodeType().hasOrderableChildNodes() )
+        {
+            throw new UnsupportedRepositoryOperationException("This Node does not support orderable child nodes.");
+        }
+        
+        if( !isCheckedOut() )
+            throw new VersionException("Node not checked out");
+        
+        if( isLockedWithoutToken() )
+            throw new LockException("Node is locked");
+        
+        if( srcChildRelPath.equals( destChildRelPath ) ) return;
+        
+        if( srcChildRelPath.indexOf( '/' ) != -1 || (destChildRelPath != null && destChildRelPath.indexOf( '/' ) != -1 )) 
+            throw new ConstraintViolationException("Child path depth must be 1");
+        
+        if( !hasNode(srcChildRelPath) ) throw new ItemNotFoundException("Source child does not exist");
+        if( destChildRelPath != null && !hasNode(destChildRelPath) ) throw new ItemNotFoundException("Dest child does not exist");
+        
+        NodeImpl srcChild = getNode( srcChildRelPath );
 
+        // FIXME: Here
     }
 
 

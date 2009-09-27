@@ -1,3 +1,11 @@
+2009-09-27  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.3.5
+        
+        * Added nt:folder nodetype, which was missing for some reason.
+        
+        * MemoryProvider now supports changing the workspace name.
+        
 2009-09-26  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.3.4
