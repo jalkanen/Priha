@@ -471,4 +471,9 @@ public class EhCachingProvider implements RepositoryProvider
     {
         return m_realProvider.storeStarted( ws );
     }
+
+    public void reorderNodes(StoreTransaction tx, Path internalPath, List<Path> childOrder) throws RepositoryException
+    {
+        m_realProvider.reorderNodes(tx, internalPath, childOrder);
+    }
 }

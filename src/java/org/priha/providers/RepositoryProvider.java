@@ -279,5 +279,7 @@ public interface RepositoryProvider
      * @param tx The transaction from storeStarted().
      */
     public void storeCancelled(StoreTransaction tx) throws RepositoryException;
+
+    public void reorderNodes(StoreTransaction tx, Path internalPath, List<Path> childOrder) throws RepositoryException;
     
 }

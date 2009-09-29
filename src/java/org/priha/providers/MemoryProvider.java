@@ -46,6 +46,7 @@ import org.priha.util.QName;
  *  The property is aligned with other RepositoryProviders, even though it will only
  *  support a single one.  By default, this workspace will be called "default".
  */
+// FIXME: Does not yet support orderable child nodes
 public class MemoryProvider implements RepositoryProvider
 {
     private static final int         INITIAL_SIZE = 1024;
@@ -262,5 +263,10 @@ public class MemoryProvider implements RepositoryProvider
             parent   = p;
             children = c;
         }
+    }
+
+    public void reorderNodes(StoreTransaction tx, Path internalPath, List<Path> childOrder) throws RepositoryException
+    {
+        throw new UnsupportedRepositoryOperationException();
     }
 }

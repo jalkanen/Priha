@@ -654,4 +654,20 @@ public class ProviderManager implements ItemStore
     {
         return m_defaultWorkspaceName;
     }
+
+    public void reorderNodes(StoreTransaction tx, Path internalPath, List<Path> childOrder) throws RepositoryException
+    {
+        ProviderInfo pi = m_workspaceAccess.get( tx.getWorkspace().getName() );
+        
+        try
+        {
+            pi.lock.writeLock().lock();
+        
+            pi.provider.reorderNodes( tx, internalPath, childOrder );
+        }
+        finally
+        {
+            pi.lock.writeLock().unlock();
+        }    
+    }
 }

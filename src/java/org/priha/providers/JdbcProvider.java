@@ -41,11 +41,8 @@ import org.priha.util.Pool.PoolableFactory;
 
 /**
  *  A basic implementation of a Provider which stores the contents to a database.
- *  <p>
- *  This particular implementation is designed for HSQLDB, and not yet tested
- *  with any other databases.
- *
  */
+//FIXME: Does not yet support orderable child nodes
 public class JdbcProvider implements RepositoryProvider, PoolableFactory
 {
     /** The FQN of the JDBC driver class. */
@@ -930,5 +927,10 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             release();
         }
         
+    }
+
+    public void reorderNodes(StoreTransaction tx, Path internalPath, List<Path> childOrder) throws RepositoryException
+    {
+        throw new UnsupportedRepositoryOperationException();
     }
 }

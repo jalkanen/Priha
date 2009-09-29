@@ -1593,4 +1593,15 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
         }
     }
+
+    public void reorderNodes(StoreTransaction tx, Path internalPath, List<Path> childOrder)
+    {
+        ArrayList<String> newOrder = new ArrayList<String>();
+        
+        for( Path p : childOrder )
+        {
+            newOrder.add( p.getLastComponent().toString() );
+        }
+        saveOrder(tx.getWorkspace(), internalPath, newOrder);
+    }
 }

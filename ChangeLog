@@ -1,5 +1,13 @@
 2009-09-27  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.4.0
+        
+        * Implemented orderable child nodes (though not yet for
+        same name siblings) with FileProvider. This caused some
+        minor changes in the Provider API.
+        
+2009-09-27  Janne Jalkanen <jalkanen@ecyrd.com>
+
         * 0.3.5
         
         * Added nt:folder nodetype, which was missing for some reason.

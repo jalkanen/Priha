@@ -406,7 +406,17 @@ public class SessionProvider
                         {
                             case EXISTS:
                                 ni.preSave();
-                                // Nodes which exist don't need to be added.
+                                // Nodes which exist don't need to be added, but they might need to be reordered.
+                                
+                                List<Path> childOrder = ni.getChildOrder();
+                                if( childOrder != null )
+                                {
+                                    System.out.println("Reordering children...");
+                                    
+                                    m_source.reorderNodes( tx, ni.getInternalPath(), childOrder );
+                                    ni.setChildOrder(null); // Rely again on the repository order.
+                                }
+                                
                                 ni.postSave();
                                 break;
                             
@@ -710,4 +720,5 @@ public class SessionProvider
     {
         return c_sessionPathManager;
     }
+
 }

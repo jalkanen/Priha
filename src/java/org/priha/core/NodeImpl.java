@@ -69,6 +69,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     protected String             m_cachedUUID;
     
+    private ArrayList<Path>      m_childOrder;
+    
     static Logger log = Logger.getLogger( NodeImpl.class.getName() );
 
     /** 
@@ -378,10 +380,27 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     
     public int getIndex() throws RepositoryException
     {
-        // Not supported, so always constant
-        return 1;
+        return getInternalPath().getLastComponent().getIndex();
     }
 
+    protected List<Path> getChildOrder()
+    {
+        if( m_childOrder != null )
+            return Collections.unmodifiableList(m_childOrder);
+        
+        return null;
+    }
+    
+    protected void setChildOrder(List<Path> list)
+    {
+        if( list == null ) m_childOrder = null;
+        else
+        {
+            m_childOrder = new ArrayList<Path>();
+            m_childOrder.addAll(list);
+        }
+    }
+    
     public NodeImpl getNode( Path absPath ) throws PathNotFoundException, RepositoryException
     {
         Item i = m_session.getItem(absPath);
@@ -404,36 +423,27 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return getNode( getInternalPath().resolve(name) );
     }
 
-
+    /**
+     *  Returns the children of this Node sorted according to the child order.  If there
+     *  is no child order, does nothing.
+     *  
+     *  @param list
+     *  @return
+     *  @throws PathNotFoundException
+     *  @throws RepositoryException
+     */
     private List<Path> sortChildren(List<Path> list) throws PathNotFoundException, RepositoryException
     {
-        // FIXME: Currently only supports primary node type sorting
-        // FIXME: Fairly slow.
-        /*
-        if( getPrimaryQNodeType().hasOrderableChildNodes() )
+        if( m_childOrder != null )
         {
-            PropertyImpl order = getProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER );
+            list.removeAll(m_childOrder);
             
-            Value[] paths = order.getValues();
-            
-            ArrayList<Path> result = new ArrayList<Path>(list.size());
-            
-            for( Value v : paths )
-            {
-                String p = v.getString();
-                
-                for( Path path : list )
-                {
-                    if( path.getLastComponent().toString().equals( p ) )
-                    {
-                        result.add( path );
-                    }
-                }
-            }
-            
-            return result;
+            ArrayList<Path> newOrder = new ArrayList<Path>();
+            newOrder.addAll(m_childOrder);
+            newOrder.addAll(list);
+            list = newOrder;
         }
-        */
+        
         return list;
     }
     
@@ -593,13 +603,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         {
             VersionManager.createVersionHistory( this );
         }
-        /*
-        if( nt.hasOrderableChildNodes() && !hasProperty(JCRConstants.Q_PRIHA_CHILDNODEORDER) )
-        {
-            Value[] v = {};
-            internalSetProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER, v, PropertyType.NAME );
-        }
-        */
+
         for( QPropertyDefinition pd : nt.getQPropertyDefinitions() )
         {
             if( pd.isAutoCreated() && !hasProperty(pd.getQName()) )
@@ -782,9 +786,43 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         if( !hasNode(srcChildRelPath) ) throw new ItemNotFoundException("Source child does not exist");
         if( destChildRelPath != null && !hasNode(destChildRelPath) ) throw new ItemNotFoundException("Dest child does not exist");
         
-        NodeImpl srcChild = getNode( srcChildRelPath );
+        Path srcPath = getInternalPath().resolve(m_session,srcChildRelPath);
+        Path dstPath = destChildRelPath != null ? getInternalPath().resolve(m_session,destChildRelPath) : null;
+        
+        List<Path> children;
+        
+        if( m_childOrder != null ) children = m_childOrder;
+        else children = m_session.listNodes( getInternalPath() );
+        
+        ArrayList<Path> newOrder = new ArrayList<Path>();
+        
+        //
+        //  Figure out the new order
+        //
+        newOrder.addAll(children);
+        int srcIndex = newOrder.indexOf( srcPath );
+        int dstIndex = newOrder.indexOf( dstPath );
 
-        // FIXME: Here
+        if( srcIndex == -1 ) throw new ItemNotFoundException("Cannot locate source child, WTF?");
+        
+        Path p = newOrder.remove(srcIndex);
+        if( dstIndex != -1 ) newOrder.add(dstIndex,p);
+        else newOrder.add(p);
+/*
+        System.out.println("Original order");
+        for( Path p2 : children )
+        {
+            System.out.println(p2);
+        }
+
+        System.out.println("New order");
+        for( Path p2 : newOrder )
+        {
+            System.out.println(p2);
+        }
+  */      
+        markModified(true,false);
+        m_childOrder = newOrder;
     }
 
 

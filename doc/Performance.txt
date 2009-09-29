@@ -1,4 +1,29 @@
-This file contains some sample test runs.
+PRIHA PERFORMANCE COOKBOOK
+==========================
+
+Priha is not the fastest JCR implementation around, but it can hold its own.  It's very good at small repository sizes,
+but some operations scale better than others.  To keep your implementation fast, there are some basic rules which
+are good to follow.
+
+1) Steer clear of same name siblings.  Renaming, moving, removing them will cause plenty of repository accesses,
+   since Priha uses Paths as the immutable object and unique item identifier.  Calling Node.orderBefore() whenever
+   you have same name siblings will probably be very slow.
+   
+2) Very large changesets in Session.  Some of the algorithms in SessionProvider are O(N) or worse, so they will become
+   slower as your unsaved changes grow.  Especially if you use references heavily.
+   
+3) Queries.  Unfortunately the default SimpleQueryProvider is very slow.  Looking for ways to make it faster...
+
+4) References in general are not that good an idea, since they mean that Priha needs to be checking for
+   referential integrity all day.
+   
+It's strongly recommended that you read and internalize David's Model, a guide to JCR content model design
+at http://wiki.apache.org/jackrabbit/DavidsModel.
+
+
+----------------------------------------------------------------------------------------------
+
+The rest of the file contains some sample test runs.
 
 CPU: 8x E5310  @ 1.60GHz
 Ubuntu 8.04

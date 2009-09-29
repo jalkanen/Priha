@@ -73,4 +73,6 @@ public interface ItemStore
     public void storeFinished(StoreTransaction tx) throws RepositoryException;
 
     public void storeCancelled(StoreTransaction tx) throws RepositoryException;
+
+    void reorderNodes(StoreTransaction tx, Path internalPath, List<Path> childOrder) throws RepositoryException;
 }
