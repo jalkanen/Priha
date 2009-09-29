@@ -6,6 +6,10 @@
         same name siblings) with FileProvider. This caused some
         minor changes in the Provider API.
         
+        * Fixed minor problem in XML import which was failing a number
+        of test cases.  We no longer import jcr:baseVersion as a reference
+        since we don't yet support importing version histories.
+        
 2009-09-27  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.3.5

@@ -227,6 +227,8 @@ public class XMLImport extends DefaultHandler
             // Already handled
             if( ps.m_propertyName.equals(JCRConstants.Q_JCR_UUID) ) continue;
             
+            // We don't yet support exporting version histories.
+            if( ps.m_propertyName.equals(JCRConstants.Q_JCR_BASEVERSION) ) continue;
             
             //
             //  Start the real unmarshalling
