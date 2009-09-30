@@ -81,3 +81,20 @@ FileProvider, with Ehcache            3129        4480          47         439  
 JdbcProvider, no cache                  35        7722          34         143       16346       10801          49         140        5883        6961         207     5145101     1011047      936684
 JdbcProvider, with Ehcache             170        6834          35         137        4071        9462          49         142        5815        5758         211     5151465      998437      633336
 Jackrabbit                            0.25        9219         197         279        2865       25218         667         368        5100       38029         508      363755     2108694      776265
+
+
+Testsuite: org.priha.core.PerformanceTest
+Tests run: 7, Failures: 0, Errors: 0, Time elapsed: 4,955.61 sec
+------------- Standard Output ---------------
+Test results.  The number is operations/seconds - larger means faster.
+Blob size 10 kB
+Repository size 10000 nodes
+Priha version 0.4.0
+Jackrabbit version 1.6.0
+                                 FirstSess   LargeRead LargeRemove   LargeSave  NewSession    RandRead      Remove        Save     SeqRead        UUID      Update     getItem getProperty    propUUID
+MemoryProvider, no cache              0.83       27763    18290029        1241       32585       35017     4761637        1030   206761088       33237        3965     3103776      737497      100399
+FileProvider, no cache                  93        5434          42         211       12487        4484          22         169        1463        3376         474     3732332      803352      600288
+FileProvider, with Ehcache              14        4804          43         221        3302        5660          23         185        2147        4089         437     3389755      509009      745610
+JdbcProvider, no cache                   1        4453          33         111       14830        5447          11         112        3142        3870         183     3290572      786117      747306
+JdbcProvider, with Ehcache             571        4421          35         107        4183        5619          11         109        3509        3921         195     3313538      786630      546656
+Jackrabbit                            0.26        3780         186         269        3584       22193         737         355        4958       40819         501      607558     2275791      849284
