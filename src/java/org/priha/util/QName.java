@@ -23,6 +23,8 @@ public class QName implements Serializable, Comparable<QName>
     public QName( String uri, String name, String prefix )
     {
         m_uri = (uri != null) ? uri.intern() : XMLConstants.NULL_NS_URI;
+        
+        if( name.indexOf( '[' ) != -1 ) throw new IllegalArgumentException("Must not have '['");
         m_localName = name.intern();
         m_prefix = prefix;
     }

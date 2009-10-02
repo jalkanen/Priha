@@ -527,6 +527,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
             }
             else if( currNode.hasNode( checkedName ) )
             {
+                System.out.println("XXX");
                 for( NodeIterator iter = currNode.getNodes( currNode.getSession().fromQName( checkedName ) ); iter.hasNext(); )
                 {
                     NodeImpl ni = (NodeImpl)iter.nextNode();

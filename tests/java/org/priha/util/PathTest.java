@@ -227,6 +227,23 @@ public class PathTest extends TestCase
         assertTrue( "x < y", x.compareTo(y) < 0 );
     }
     
+    public void testValueOf() throws Exception
+    {
+        Path.Component p = Path.Component.valueOf( "foo" );
+        
+        assertEquals("foo", "foo", p.toString());
+        
+        p = Path.Component.valueOf( "{http://priha.org}bar");
+        
+        assertEquals("bar", "{http://priha.org}bar", p.toString());        
+        assertEquals("bar index", 1, p.getIndex());
+
+        p = Path.Component.valueOf( "{http://priha.org}gobble[5]");
+        
+        assertEquals("gobble", "{http://priha.org}gobble[5]", p.toString());
+        assertEquals("gobble index", 5, p.getIndex());
+    }
+    
     public static Test suite()
     {
         return new TestSuite( PathTest.class );

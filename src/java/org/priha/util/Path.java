@@ -403,12 +403,24 @@ public final class Path implements Comparable<Path>, Serializable
      *  Adds a component to the path (since Components are not paths),
      *  and returns a new Path.
      *  
-     *  @param component Component to add at the end of the Path.
+     *  @param component QName to add at the end of the Path.
      *  @return A new Path with the component added.
      */
     public final Path resolve( QName component )
     {
         return new Path( this, new Component(component) );
+    }
+    
+    /**
+     *  Adds a new component to the path (since Components are not paths),
+     *  and returns a new Path.
+     *  
+     *  @param component A Compoment to add at the end of the Path.
+     *  @return A new Path.
+     */
+    public final Path resolve( Component component )
+    {
+        return new Path( this, component );
     }
     
     /**
@@ -606,6 +618,20 @@ public final class Path implements Comparable<Path>, Serializable
         public final int getIndex()
         {
             return m_index;
+        }
+        
+        public static Component valueOf(String s)
+        {
+            int idx = s.indexOf( '[' );
+            int index = 1;
+            
+            if( idx != -1 )
+            {
+                index = Integer.parseInt( s.substring( idx+1, s.length()-1 ) );
+                s = s.substring( 0, idx );
+            }
+            
+            return new Component( QName.valueOf(s), index );
         }
         
         /**

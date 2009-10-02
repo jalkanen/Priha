@@ -245,7 +245,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                     throw new ItemExistsException("Node "+absPath+" already exists, and the parent node does not allow same name siblings!");
                 }
                 
-                NodeIterator iter = parent.getNodes( absPath.getLastComponent().toString(m_session) );
+                NodeIterator iter = parent.getNodes( absPath.getLastComponent().toString( m_session ) );
                 
                 int newPos = ((int)iter.getSize())+1;
                 
@@ -468,7 +468,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         for( Path path : children )
         {
-            Matcher match = p.matcher( m_session.fromQName( path.getLastComponent() ) );
+            // This crummy code turns a Path.Component to a QName, i.e. drops
+            // the index, if it exists.
+            String s = m_session.fromQName( new QName(path.getLastComponent().getNamespaceURI(),
+                                                      path.getLastComponent().getLocalPart()) );
+            
+            Matcher match = p.matcher( s );
 
             if( match.matches() )
             {

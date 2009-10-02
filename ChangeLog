@@ -4,6 +4,9 @@
         
         * Orderable child nodes now implemented in JdbcProvider as well.
         
+        * Fixed issue with FileProvider accidentally losing the index
+        of the SNS.
+        
 2009-09-27  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.4.0

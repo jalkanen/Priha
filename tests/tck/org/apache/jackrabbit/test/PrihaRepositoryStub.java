@@ -23,8 +23,8 @@ public class PrihaRepositoryStub extends RepositoryStub
         
         try
         {
-            RepositoryImpl r = RepositoryManager.getRepository("jdbcnocache.properties");
-//            RepositoryImpl r = RepositoryManager.getRepository("filenocache.properties");
+//            RepositoryImpl r = RepositoryManager.getRepository("jdbcnocache.properties");
+            RepositoryImpl r = RepositoryManager.getRepository("filenocache.properties");
             
             c_repo = r;
             

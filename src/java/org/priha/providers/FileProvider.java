@@ -415,7 +415,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         for( String s : orderArray )
         {
-            Path childPath = parentpath.resolve( QName.valueOf( s ) );
+            Path childPath = parentpath.resolve( Path.Component.valueOf( s ) );
             list.add( childPath );
         }
         
