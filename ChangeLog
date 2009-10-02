@@ -1,3 +1,9 @@
+2009-10-02  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.4.1
+        
+        * Orderable child nodes now implemented in JdbcProvider as well.
+        
 2009-09-27  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.4.0

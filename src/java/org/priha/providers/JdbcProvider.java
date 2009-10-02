@@ -105,23 +105,43 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             }
             catch( PathNotFoundException e )
             {
+                int childOrder = 0;
+                
+                if( !path.isRoot() )
+                {
+                    long parentId = getNodeId( c, ws, path.getParentPath() );
+                    
+                    ps = c.prepareStatement("SELECT MAX(childOrder) AS childOrder FROM nodes WHERE nodes.id = ? ");
+                    
+                    ps.setLong( 1, parentId );
+                    ResultSet rs = ps.executeQuery();
+                    
+                    if( rs.next() )
+                    {
+                        // Should be the first one
+                        childOrder = rs.getInt( "childOrder" );
+//                        System.out.println("Got childorder "+childOrder);
+                    }
+                }
+                
+                ps = c.prepareStatement("INSERT INTO nodes (workspace,path,parent,childOrder) "+
+                                        "VALUES (?,?,?,?);");
             
-            ps = c.prepareStatement("INSERT INTO nodes (workspace,path,parent) "+
-                                    "VALUES (?,?,?);");
+                //System.out.println("Adding node "+path);
+                ps.setInt(1, getWorkspaceId(ws));
+                ps.setString(2, path.toString());
+                if( !path.isRoot() )
+                    ps.setInt( 3, getNodeId(c, ws, path.getParentPath()) );
+                else
+                    ps.setNull( 3, Types.INTEGER );
             
-            //System.out.println("Adding node "+path);
-            ps.setInt(1, getWorkspaceId(ws));
-            ps.setString(2, path.toString());
-            if( !path.isRoot() )
-                ps.setInt( 3, getNodeId(c, ws, path.getParentPath()) );
-            else
-                ps.setNull( 3, Types.INTEGER );
-            
-            ps.execute();
+                ps.setInt( 4, ++childOrder );
+                ps.execute();
             }
         }
         catch (SQLException e)
         {
+            e.printStackTrace();
             throw new RepositoryException("Cannot insert a new node: "+path,e);
         }
         finally
@@ -527,7 +547,8 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
                                                            "workspaces.name = ? "+
                                                            "AND workspaces.id = N1.workspace "+
                                                            "AND N1.path = ? "+
-                                                           "AND N1.id = N2.parent");
+                                                           "AND N1.id = N2.parent "+
+                                                           "ORDER BY N2.childOrder");
         
             ps.setString(1, ws.getName());
             ps.setString(2, parentpath.toString());
@@ -632,10 +653,10 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         {
             Connection c = pc.getConnection();
             PreparedStatement ps = c.prepareStatement("SELECT COUNT(*) AS rowcount FROM workspaces,nodes WHERE "+
-                                                           "nodes.workspace = workspaces.id " +
-                                                           "AND workspaces.name = ? "+
-                                                           "AND workspaces.id = nodes.workspace "+
-                                                           "AND path = ? ");
+                                                      "nodes.workspace = workspaces.id " +
+                                                      "AND workspaces.name = ? "+
+                                                      "AND workspaces.id = nodes.workspace "+
+                                                      "AND path = ? ");
         
             ps.setString(1, ws.getName());
             ps.setString(2, path.toString());
@@ -931,6 +952,30 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
 
     public void reorderNodes(StoreTransaction tx, Path internalPath, List<Path> childOrder) throws RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException();
+        Connection c = ((JDBCTransaction)tx).getConnection();
+        
+        try
+        {
+            int count = 0;
+
+            int wsId = getWorkspaceId( tx.getWorkspace() );
+            PreparedStatement ps = c.prepareStatement( "UPDATE nodes SET childOrder = ? "+
+                                                       "WHERE nodes.path = ? "+
+                                                       "AND nodes.workspace = ? ");
+            
+            for( Path p : childOrder )
+            {
+                ps.setInt( 1, ++count );
+                ps.setString( 2, p.toString() );
+                ps.setInt( 3, wsId );
+            
+                ps.executeUpdate();
+            }
+        }
+        catch( SQLException e )
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 }
