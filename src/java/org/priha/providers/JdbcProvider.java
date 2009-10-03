@@ -362,6 +362,11 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         
         String sql = FileUtil.readContents(in, "UTF-8");
         
+        //
+        //  We want to make sure there are no tabs in the file, since this WILL confuse e.g. MySQL.
+        //
+        sql = TextUtil.replaceString(sql, "\t", "    ");
+        
         Statement s = null;
         try
         {
