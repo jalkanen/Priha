@@ -18,9 +18,9 @@ create table nodes (
 	path	varchar(2048) 	not null,
 	parent	bigint,
 	uuid	varchar(36),
-
+    childOrder integer,
+    
 	foreign key (workspace)	references workspaces (id),
-	foreign key (parent)	references nodes(id),
 	constraint uniq_path 	unique(workspace,path)
 );
 
