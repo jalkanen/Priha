@@ -353,7 +353,12 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         
         InputStream in = getClass().getResourceAsStream(setupFile);
         
-        if( in == null ) throw new IOException("Setup script not found: "+setupFile);
+        if( in == null )
+        {
+            in = getClass().getResourceAsStream("/jdbc/setup.sql");
+            
+            log.info("Using generic database script at /jdbc/setup.sql because a database-particular one could not be found.");
+        }
         
         String sql = FileUtil.readContents(in, "UTF-8");
         
