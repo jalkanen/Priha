@@ -10,12 +10,12 @@ create memory table workspaces (
 	
 );
 
--- create unique index idx_workspaces_name on workspaces(name);
+create unique index idx_workspaces_name on workspaces(name);
 
 create table nodes (
 	id		bigint 			identity primary key,
 	workspace integer		not null,
-	path	varchar(2048) 	not null,
+	path	varchar(768) 	not null,
 	parent	bigint,
 	uuid	varchar(36),
 	childOrder integer      not null,
@@ -43,5 +43,6 @@ create table propertyvalues (
 );
 
 create index idx_propertyvalues_name on propertyvalues(name);
+
 
 
