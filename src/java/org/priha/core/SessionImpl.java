@@ -129,26 +129,6 @@ public class SessionImpl implements Session, NamespaceMapper
         else
             m_provider.putProperty( ii.getParent(), (PropertyImpl)ii );
     }
-    
-    
-    /**
-     * Adds a node to the internal checklists
-     *
-     * @param node
-     * @throws RepositoryException
-     */
-    void addNode( NodeImpl node )
-        throws RepositoryException
-    {
-        try
-        {   
-            m_provider.addNode( node );
-        }
-        catch (InvalidPathException e)
-        {
-            throw new ItemNotFoundException(e.getMessage());
-        }
-    }
 
     boolean hasNode( String absPath ) throws RepositoryException
     {
@@ -340,7 +320,10 @@ public class SessionImpl implements Session, NamespaceMapper
     {
         checkLive();
         checkWritePermission();
-        
+
+        if( !isSuper() && destAbsPath.endsWith("]") )
+            throw new ConstraintViolationException("Destination path must not have an index as its final component.");        
+
         boolean isSuper = setSuper( true );
                 
         try
@@ -371,7 +354,7 @@ public class SessionImpl implements Session, NamespaceMapper
             
             NodeImpl destnode = getRootNode().addNode( newDestPath, srcnode.getPrimaryNodeType().getName() );
 
-            srcnode.tag( PRIHA_OLD_PATH, srcnode.getPath() );
+            destnode.tag( PRIHA_OLD_PATH, srcnode.getPath() );
 
             for( NodeIterator ni = srcnode.getNodes(); ni.hasNext(); )
             {
@@ -399,13 +382,15 @@ public class SessionImpl implements Session, NamespaceMapper
                 {
                     if( p.getDefinition().isMultiple() )
                     {
-                        destnode.internalSetProperty( p.getQName(), p.getValues(), p.getType() );
+                        PropertyImpl pix = destnode.internalSetProperty( p.getQName(), p.getValues(), p.getType() );
+                        pix.setState( ItemState.NEW );
                     }
                     else
                     {
                         destnode.setProperty( p.getName(), p.getValue() );
                     }
                 }
+                p.remove();
             }
 
             // Set up move constraints (that is, making sure the user can only save
@@ -422,11 +407,10 @@ public class SessionImpl implements Session, NamespaceMapper
             // Finally, remove the source node.
             
             //srcnode.remove();
-            srcnode.m_state = ItemState.MOVED;
-            srcnode.markModified(true);
-            m_provider.remove( srcnode ); // FIXME: Make sure this is ok
+            srcnode.setState( ItemState.MOVED );
+//            m_provider.remove( srcnode ); // FIXME: Make sure this is ok
             
-            getPathManager().move( srcnode.getInternalPath(), destnode.getInternalPath() );
+            getPathManager().move( srcnode.getInternalPath(), destnode.getInternalPath() ); // FIXME: OK with new ChangeStore?
         }
         finally
         {
@@ -464,10 +448,10 @@ public class SessionImpl implements Session, NamespaceMapper
             QNodeDefinition nd = rootType.findNodeDefinition( QName.valueOf("*") );
             
             ni = new NodeImpl( this, "/", rootType, nd, true );
+            ni.setState( ItemState.NEW );
             ni.addMixin( "mix:referenceable" ); // Make referenceable.
             
             //m_provider.addNode( ni );
-            ni.markModified(true);
             
             ni.sanitize();
                             

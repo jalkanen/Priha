@@ -108,9 +108,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         if( populateDefaults )
         {
-            internalSetProperty( Q_JCR_PRIMARYTYPE, 
-                                 session.fromQName( m_primaryType.getQName() ), // FIXME: Not very efficient 
-                                 PropertyType.NAME );
+            setState(ItemState.NEW);
+            PropertyImpl pt =internalSetProperty( Q_JCR_PRIMARYTYPE, 
+                                                  session.fromQName( m_primaryType.getQName() ), // FIXME: Not very efficient 
+                                                  PropertyType.NAME );
+            pt.setState( ItemState.NEW );
         }
     }
 
@@ -165,9 +167,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                            LockException,
                                            RepositoryException
     {
-        if( relPath.endsWith("]") )
+        if( relPath.endsWith("]") && !m_session.isSuper() )
         {
-            throw new RepositoryException("Cannot add an indexed entry");
+            throw new RepositoryException("Cannot add an indexed entry unless using a superSession");
         }
         
         Path absPath = getInternalPath().resolve(m_session,relPath);
@@ -196,7 +198,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             NodeImpl parent = (NodeImpl) item;
 
-            if( parent.m_state == ItemState.REMOVED )
+            if( parent.getState() == ItemState.REMOVED )
             {
                 throw new ConstraintViolationException("Parent has been removed");
             }
@@ -251,7 +253,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 
                 absPath = new Path( absPath.getParentPath(), 
                                     new Path.Component(absPath.getLastComponent(),newPos) );
-                
+                throw new RepositoryException("TURNED OFF FOR NOW");
             }
 
             //
@@ -266,31 +268,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             }
 
             //
-            //  Add the internal order.
-            //
-            /*
-            if( getPrimaryQNodeType().hasOrderableChildNodes() )
-            {
-                ValueFactoryImpl vfi = m_session.getValueFactory();
-                
-                Value newChild = vfi.createValue( absPath.getLastComponent(), 
-                                                  PropertyType.NAME );
-                try
-                {
-                    PropertyImpl order = getProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER );
-                
-                    order.setValue( vfi.addValue( order.getValues(), 
-                                                  newChild ),
-                                                  order.getType() );
-                }
-                catch( PathNotFoundException e )
-                {
-                    Value[] v = { newChild };
-                    internalSetProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER, v, PropertyType.NAME );
-                }
-            }
-*/
-            //
             //  Node type and definition are now okay, so we'll create the node
             //  and add it to our session.
             //
@@ -298,9 +275,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             ni.sanitize();
 
-            ni.markModified(false);
-            
-            //m_session.addNode( ni ); // Already taken care of by markModified
+            ni.setState( ItemState.NEW );
         }
         catch( InvalidPathException e)
         {
@@ -551,9 +526,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         Path abspath = getInternalPath().resolve(propName);
         
-        Item item = m_session.getItem(abspath);
+        ItemImpl item = m_session.getItem(abspath);
 
-        if( item != null && !item.isNode() )
+        if( item != null && !item.isNode() && item.getState() != ItemState.REMOVED && item.getState() != ItemState.MOVED )
         {
             return (PropertyImpl) item;
         }
@@ -606,7 +581,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         if( nt.getQName().equals( Q_MIX_VERSIONABLE ) )
         {
-            VersionManager.createVersionHistory( this );
+//            VersionManager.createVersionHistory( this );
         }
 
         for( QPropertyDefinition pd : nt.getQPropertyDefinitions() )
@@ -650,9 +625,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 }
                 else
                 {
-                    throw new UnsupportedRepositoryOperationException("Automatic setting of property "+pi.getQName()+ " is not supported.");
+                    throw new UnsupportedRepositoryOperationException("Automatic setting of property "+pi.getPath()+ " is not supported.");
                 }
-                pi.markModified( true );
+                pi.setState( ItemState.NEW );
                 //addChildProperty( pi );
             }
         }
@@ -826,7 +801,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             System.out.println(p2);
         }
   */      
-        markModified(true,false);
+        setState( ItemState.UPDATED );
         m_childOrder = newOrder;
     }
 
@@ -838,7 +813,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     
     /**
      *  Finds a property and checks if we're supposed to remove it or not.  It also creates
-     *  the property if it does not exist.
+     *  the property if it does not exist.  The property value itself is empty until the
+     *  property is loaded with loadValue()
      *
      *  @param name
      *  @param value
@@ -883,8 +859,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                      getInternalPath().resolve(name),
                                      primaryDef );
 
-            addChildProperty( prop ); //  Again, a special case.  First add the property to the lists.
-            markModified(true,false); //  Then, mark this node modified, but don't mark the parent.
+//            prop.m_state = ItemState.NEW;
+//            addChildProperty( prop ); //  Again, a special case.  First add the property to the lists.
             return prop;
         }
 
@@ -914,7 +890,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 if( pd == null ) throw new RepositoryException("No propertydefinition found for "+parentType+" and "+name);
             
                 prop = new PropertyImpl( m_session, propertypath, pd );
-                prop.markModified(false); // New properties are not considered modified
+//                prop.setState( ItemState.NEW );
             }
             catch( PathNotFoundException e )
             {
@@ -923,7 +899,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         }
         else
         {
-            prop.markModified( true ); // But old properties are.
+            prop.setState( ItemState.UPDATED );
         }
         
         if( value == null )
@@ -944,8 +920,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      */
     protected void removeProperty(PropertyImpl prop) throws RepositoryException
     {
-        prop.m_state = ItemState.REMOVED;
-        markModified(true);
+        prop.setState( ItemState.REMOVED );
     }
 
     public PropertyImpl setProperty(String name, Value value)
@@ -1009,7 +984,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         PropertyImpl p = prepareProperty( name, values );
 
-        p.m_type = type;
         p.loadValue( values, type );
         
         return p;       
@@ -1035,7 +1009,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         PropertyImpl p = prepareProperty( name, values );
 
-        p.setValue( values );
+        p.setValue( values, type );
 
         return p;
     }
@@ -1075,8 +1049,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         p.setValue( values );
 
-        p.m_type = type;
-
         return p;
     }
 
@@ -1085,7 +1057,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         PropertyImpl prop = prepareProperty(name,value);
         
         prop.loadValue( m_session.getValueFactory().createValue(value,type) );
-        prop.m_type = type;
         
         return prop;
     }
@@ -1336,7 +1307,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                NoSuchNodeTypeException,
                RepositoryException
     {
-        if( m_state == ItemState.NEW )
+        if( getState() == ItemState.NEW )
             throw new InvalidItemStateException("Cannot call save on newly added node "+getInternalPath());
 
         internalSave();
@@ -1356,7 +1327,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        if( m_state == ItemState.REMOVED )
+        if( getState() == ItemState.REMOVED )
             //throw new ConstraintViolationException(getPath()+" has already been removed");
             return; // Die nicely
          
@@ -1391,10 +1362,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             }
         }
         
-        m_session.remove( this );
-        markModified(true);
-        m_state = ItemState.REMOVED;
-
         QLock li = m_lockManager.getLock( path );
         
         if( li != null )
@@ -1414,12 +1381,36 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             {
                 getVersionHistory().remove();
             }
+            catch( UnsupportedRepositoryOperationException e )
+            {
+                // This may happen if you've just created a Node, then hit remove() on it immediately, since
+                // in that case, we do not have an UUID yet.
+            }
             finally
             {
                 m_session.setSuper( isSuper );
             }
         }
         
+        //
+        //  Removal happens in a depth-first manner.
+        //
+        
+        //  This tells the children that it's okay to remove this.
+        m_state = ItemState.REMOVED;
+        
+        //
+        //  Remove children
+        //
+        for( NodeIterator ndi = getNodes(); ndi.hasNext(); )
+        {
+            NodeImpl nd = (NodeImpl)ndi.nextNode();
+
+//            System.out.println("REMOVING "+nd.getPath());
+            
+            nd.remove();
+        }
+
         //
         //  Remove properties
         //
@@ -1428,68 +1419,52 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             pit.nextProperty().remove();
         }
         
+        // This is a hack which just resets the state and then adds this to the remove queue. FIXME!
+        m_state = ItemState.UPDATED;
+        setState( ItemState.REMOVED );
+//        m_session.remove( this );
+
         //
-        //  Remove children
-        //
-        for( NodeIterator ndi = getNodes(); ndi.hasNext(); )
-        {
-            NodeImpl nd = (NodeImpl)ndi.nextNode();
-          
-            nd.remove();
-        }
-        /*
-        if( parent.hasProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER ) )
-        {
-            ValueFactoryImpl vfi = m_session.getValueFactory();
-            Property p = parent.getProperty( JCRConstants.Q_PRIHA_CHILDNODEORDER );
-            
-            p.setValue( vfi.removeValue(p.getValues(), vfi.createValue( getQName(), 
-                                                                        PropertyType.NAME) ) );
-        }
-    */
-        //
-        //  Fix same name siblings
+        //  Fix same name siblings, but don't bother if the parent is already removed.
+        //  Again, we go for the super session.
         // 
+       
+        boolean isSuper = m_session.setSuper(true);
         
-//        int myIndex = getInternalPath().getLastComponent().getIndex();
-//        
-//        for( NodeIteratorImpl ni = parent.getNodes( getName() ); ni.hasNext(); )
-//        {
-//            NodeImpl n = ni.nextNode();
-//            
-//            int siblingIndex = n.getInternalPath().getLastComponent().getIndex();
-//            
-//            if( myIndex >= siblingIndex ) continue;
-//            
-//            Path destPath = new Path(n.getParent().getInternalPath(),
-//                                     new Path.Component(getQName(),siblingIndex-1) );
-//            
-//            System.out.println("Moving "+n+" to "+destPath);
-//            getSession().move( n.getInternalPath().toString( m_session ), 
-//                               destPath.toString( m_session ) );
-//        }
+        try
+        {
+            int myIndex   = getInternalPath().getLastComponent().getIndex();
+
+            if( getParent().getState() != ItemState.REMOVED )
+            {
+                for( NodeIterator ni = getParent().getNodes( getName() ); ni.hasNext(); )
+                {
+                    NodeImpl n = (NodeImpl)ni.nextNode();
+            
+                    int siblingIndex = n.getInternalPath().getLastComponent().getIndex();
+            
+                    if( myIndex >= siblingIndex ) continue;
+            
+                    Path destPath = new Path(n.getParent().getInternalPath(),
+                                             new Path.Component(getQName(),siblingIndex-1) );
+            
+                    System.out.println("Moving "+n+" to "+destPath);
+                    m_session.m_provider.m_changedItems.dump();
+                    getSession().move( n.getInternalPath().toString( m_session ), 
+                                       destPath.toString( m_session ) );
+                }
+            }
+        }
+        finally
+        {
+            m_session.setSuper(isSuper);
+        }
         
         
         
         log.finer("Removed "+getPath());
     }
 
-    /**
-     *  This method is allowed to add to the property list.
-     *  This is not public.
-     *  
-     *  @param property
-     * @throws RepositoryException 
-     * @throws ValueFormatException 
-     */
-    public void addChildProperty(PropertyImpl property) throws ValueFormatException, RepositoryException
-    {
-        //
-        //  Add to the internal list.
-        //
-        m_session.m_provider.putProperty( this, property ); 
-    }
-    
     /**
      *  Locates a PropertyDefinition for the given property name from the array of
      *  the mixintypes and the primary type for this Node.
@@ -1537,13 +1512,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             {
                 if( getInternalPath().isRoot() )
                 {
-                    internalSetProperty( Q_JCR_PRIMARYTYPE, "nt:unstructured", PropertyType.NAME );
+                    PropertyImpl pix = internalSetProperty( Q_JCR_PRIMARYTYPE, "nt:unstructured", PropertyType.NAME );
+                    pix.setState(ItemState.NEW);
                 }
                 else
                 {
-                    internalSetProperty( Q_JCR_PRIMARYTYPE,
-                                         assignChildType( getInternalPath().getLastComponent() ).toString(),
-                                         PropertyType.NAME );
+                    PropertyImpl pix = internalSetProperty( Q_JCR_PRIMARYTYPE,
+                                                            assignChildType( getInternalPath().getLastComponent() ).toString(),
+                                                            PropertyType.NAME );
+                    pix.setState(ItemState.NEW);
                 }
             }
 
@@ -1610,63 +1587,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     @Override
     protected void preSave() throws RepositoryException
     {
-        WorkspaceImpl ws = m_session.getWorkspace();
-        
-        autoCreateProperties();
-        
-        //
-        //  Check that parent still exists
-        //
-        
-        if( !getInternalPath().isRoot() ) 
-        {
-            if( !ws.nodeExists(getInternalPath().getParentPath()) )
-            {
-                throw new InvalidItemStateException("No parent available.");
-            }
-        }
-        
-        //
-        //  Check if nobody has removed us if we were still supposed to exist.
-        //
-        
-        if( m_state != ItemState.NEW )
-        {
-            if( !ws.nodeExists(getInternalPath()) )
-            {
-                throw new InvalidItemStateException("Looks like this Node has been removed by another session.");
-            }
-            
-            try
-            {
-                String uuid = getUUID();
-                
-                NodeImpl currentNode = getSession().getNodeByUUID( uuid );
-                
-                if( !currentNode.getInternalPath().equals(getInternalPath()) )
-                    throw new InvalidItemStateException("Page has been moved");
-            }
-            catch( UnsupportedRepositoryOperationException e ){} // Not referenceable, so it's okay
-        }
-        
-        //
-        //  Check mandatory properties
-        //
-        checkMandatoryProperties( getPrimaryQNodeType() );
-
-        for( NodeType nt : getMixinNodeTypes() )
-        {
-            checkMandatoryProperties( ((QNodeType.Impl)nt).getQNodeType() );
-        }
-        
-        //
-        //  If this node is versionable, then make sure there is a VersionHistory as well.
-        //
-        
-        if( hasMixinType("mix:versionable") )
-        {
-            VersionManager.createVersionHistory( this );
-        }
+        super.preSave();
     }
 
     /**
@@ -1676,7 +1597,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      * @param nt
      * @throws RepositoryException 
      */
-    private void checkMandatoryProperties(QNodeType nt) throws RepositoryException
+    void checkMandatoryProperties(QNodeType nt) throws RepositoryException
     {
         for( QPropertyDefinition pd : nt.getQPropertyDefinitions() )
         {
@@ -1732,20 +1653,20 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             }
 
             newval[newval.length-1] = vf.createValue(mixinName,PropertyType.NAME);
-            internalSetProperty( Q_JCR_MIXINTYPES, newval, PropertyType.NAME );
+            PropertyImpl pi = internalSetProperty( Q_JCR_MIXINTYPES, newval, PropertyType.NAME );
+            pi.setState(ItemState.UPDATED);
         }
         catch( PathNotFoundException e )
         {
             Value[] values = new Value[] { vf.createValue(mixinName,PropertyType.NAME) };
-            internalSetProperty( Q_JCR_MIXINTYPES, values, PropertyType.NAME );
+            PropertyImpl pi = internalSetProperty( Q_JCR_MIXINTYPES, values, PropertyType.NAME );
+            pi.setState(ItemState.NEW);
         }
         finally
         {
             m_session.setSuper( oldsuper );
         }
         //autoCreateProperties();
-
-        markModified(true);
     }
 
     public boolean canAddMixin(String mixinName) throws NoSuchNodeTypeException, RepositoryException
@@ -1774,7 +1695,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return true;
     }
 
-    private boolean hasMixinType(String mixinType)
+    boolean hasMixinType(String mixinType)
     {
         try
         {

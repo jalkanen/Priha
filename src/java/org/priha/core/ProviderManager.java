@@ -427,7 +427,7 @@ public class ProviderManager implements ItemStore
         Path path = ni.getInternalPath();
         
         if( !path.isRoot() && !nodeExists(tx.getWorkspace(), path.getParentPath()) )
-            throw new ConstraintViolationException("Parent path is missing");
+            throw new ConstraintViolationException("Parent path is missing for path "+path);
         
         ProviderInfo pi = getProviderInfo(tx.getWorkspace(),path);
         
@@ -505,15 +505,16 @@ public class ProviderManager implements ItemStore
         }
     }
 
-    public void putProperty(StoreTransaction tx, PropertyImpl prop ) throws RepositoryException
+    public void putProperty(StoreTransaction tx, Path path, ValueContainer value ) throws RepositoryException
     {
-        ProviderInfo pi = getProviderInfo( tx.getWorkspace(), prop.getInternalPath() );
+        ProviderInfo pi = getProviderInfo( tx.getWorkspace(), path );
         
+        ValueContainer vc = value.deepClone(tx.getWorkspace().getSession());
         try
         {
             pi.lock.writeLock().lock();
         
-            pi.provider.putPropertyValue( tx, prop );
+            pi.provider.putPropertyValue( tx, path, vc );
         }
         finally
         {

@@ -34,16 +34,16 @@ import org.priha.core.values.StringValueImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QPropertyDefinition;
+import org.priha.providers.ValueContainer;
 import org.priha.util.Path;
 
 public class PropertyImpl extends ItemImpl implements Property, Comparable<PropertyImpl>
 {
     private enum Multi { UNDEFINED, SINGLE, MULTI }
 
-    private Value[]            m_value;
+    private ValueContainer     m_value = ValueContainer.UNDEFINED_CONTAINER;
     private Multi              m_multi = Multi.UNDEFINED;
     PropertyDefinition         m_definition;
-    int                        m_type = PropertyType.UNDEFINED;
     private boolean            m_transient = false;
     
     public PropertyImpl( SessionImpl session, Path path, QPropertyDefinition propDef )
@@ -53,27 +53,8 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( propDef != null ) 
         {
             setDefinition( propDef.new Impl(session) );
-            m_type = propDef.getRequiredType();
+//            m_type = propDef.getRequiredType();
         }
-    }
-
-    /**
-     *  Creates a  deep clone of a PropertyImpl, using the given session.
-     *  
-     * @param pi
-     * @param session
-     * @throws ValueFormatException
-     * @throws IllegalStateException
-     * @throws RepositoryException
-     */
-    public PropertyImpl(PropertyImpl pi, SessionImpl session) throws ValueFormatException, IllegalStateException, RepositoryException
-    {
-        super( pi, session );
-        
-        m_value = session.getValueFactory().cloneValues( pi.m_value );
-        m_multi = pi.m_multi;
-        m_definition = pi.m_definition;
-        m_type = pi.m_type;
     }
 
     public boolean getBoolean() throws ValueFormatException, RepositoryException
@@ -110,7 +91,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( m_multi != Multi.SINGLE )
             throw new ValueFormatException("Attempted to get a SINGLE length value from a MULTI property "+m_path);
 
-        return getLength( m_value[0] );
+        return getLength( m_value.getValue() );
     }
 
     /**
@@ -142,11 +123,11 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     {
         if( m_multi != Multi.MULTI ) throw new ValueFormatException();
 
-        long[] lengths = new long[m_value.length];
+        long[] lengths = new long[getValues().length];
 
-        for( int i = 0; i < m_value.length; i++ )
+        for( int i = 0; i < getValues().length; i++ )
         {
-            lengths[i] = getLength( m_value[i] );
+            lengths[i] = getLength( getValues()[i] );
         }
 
         return lengths;
@@ -190,7 +171,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
 
     public int getType() throws RepositoryException
     {
-        return m_type;
+        return m_value.getType();
     }
 
     public ValueImpl getValue() throws ValueFormatException, RepositoryException
@@ -204,7 +185,9 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         //
         //  Clones the value as per the Javadoc
         //
-        return getSession().getValueFactory().createValue( (ValueImpl)m_value[0] );
+        ValueContainer vc = m_value.deepClone(getSession());
+        
+        return vc.getValue();
     }
 
     public Value[] getValues() throws ValueFormatException, RepositoryException
@@ -212,7 +195,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         if( m_multi != Multi.MULTI )
             throw new ValueFormatException("Attempted to get a MULTI Value object from a SINGLE property "+m_path);
         
-        return m_session.getValueFactory().cloneValues(m_value);
+        return m_session.getValueFactory().cloneValues(m_value.getValues());
     }
 
     /**
@@ -224,7 +207,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
      * @throws ConstraintViolationException
      * @throws RepositoryException
      */
-    public void loadValue( Value value ) throws VersionException, LockException, ConstraintViolationException, RepositoryException
+    public void loadValue( ValueImpl value ) throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         if( m_multi == Multi.MULTI )
             throw new ValueFormatException("Attempted to set a SINGLE Value object to a MULTI property "+getPath());
@@ -235,10 +218,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             return;
         }
 
-        m_type = value.getType();
-        m_value = new Value[1];
-
-        m_value[0] = value;
+        m_value = new ValueContainer(value);
         m_multi = Multi.SINGLE;
     }
 
@@ -263,30 +243,66 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                 throw new LockException("Parent node is locked");
         }
 
-        if( m_type != PropertyType.UNDEFINED && value != null && m_type != value.getType() )
+        if( getType() != PropertyType.UNDEFINED && value != null && getType() != value.getType() )
         {
             throw new ValueFormatException("Attempt to set a different type value to this property");
         }
+
+        loadValue( (ValueImpl)value );
         
-        if( m_state != ItemState.NEW ) markModified( true );
-        else getParent().markModified(true,false);
-        loadValue( value );
+        if( !isNew() ) 
+        {
+            setState( ItemState.UPDATED );
+        }
+        else 
+        {
+            setState( ItemState.NEW );
+            getParent().setState( ItemState.UPDATED );
+        }
+        
     }
 
-    public void setValue(Value[] values, int propertyType) 
+    public void setValue(Value[] values) 
        throws ValueFormatException, 
               VersionException, 
               LockException, 
               ConstraintViolationException, 
               RepositoryException
     {
-        if( m_type == PropertyType.UNDEFINED )
-            m_type = propertyType;
+//        if( getType() == PropertyType.UNDEFINED )
+//            m_type = propertyType;
+        int propertyType = getType();
         
-        setValue( values );   
+        if( propertyType == PropertyType.UNDEFINED )
+        {
+            if( values.length > 0 && values[0] != null )
+            {
+                int type = values[0].getType();
+                
+                propertyType = type;
+            }
+            else
+            {
+                //
+                // This is the difficult bit.  The system could not figure out an explicit
+                // node type for this Property (based on the parent node), and the
+                // values array is empty, so we can't use that one either.  So we do the
+                // only thing we can - tell the user that he's being stupid.
+                //
+                
+                //throw new ValueFormatException("Cannot add an empty Value array when there is no explicit type defined in the parent Node."+getInternalPath());
+            }
+        }
+        
+        if( propertyType != PropertyType.UNDEFINED && values != null && values.length >= 1 && values[0] != null && propertyType != values[0].getType() )
+        {
+            throw new ValueFormatException("Attempt to set a different type value to this property");
+        }        
+        
+        setValue( values, propertyType );   
     }
     
-    public void setValue(Value[] values)
+    public void setValue(Value[] values, int propertyType)
                                         throws ValueFormatException,
                                             VersionException,
                                             LockException,
@@ -314,39 +330,23 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         }
 
         values = compactValueArray( values );
-        
-        if( m_type == PropertyType.UNDEFINED )
-        {
-            if( values.length > 0 )
-            {
-                int type = values[0].getType();
-                
-                m_type = type;
-            }
-            else
-            {
-                //
-                // This is the difficult bit.  The system could not figure out an explicit
-                // node type for this Property (based on the parent node), and the
-                // values array is empty, so we can't use that one either.  So we do the
-                // only thing we can - tell the user that he's being stupid.
-                //
-                
-                //throw new ValueFormatException("Cannot add an empty Value array when there is no explicit type defined in the parent Node."+getInternalPath());
-            }
-        }
-        
-        if( m_type != PropertyType.UNDEFINED && values != null && values.length >= 1 && values[0] != null && m_type != values[0].getType() )
-        {
-            throw new ValueFormatException("Attempt to set a different type value to this property");
-        }        
-        
-        if( m_value != null )
-            markModified( true );
-        else
-            getParent().markModified(true,false);
 
-        loadValue(values, m_type);
+        loadValue(values, propertyType);
+
+        if( m_value != null )
+        {
+            if( isNew() )
+            {
+                // The Property has just been added.
+                getParent().setState( ItemState.UPDATED );
+            }
+            
+            setState( ItemState.UPDATED );
+        }
+        else
+        {
+            getParent().setState( ItemState.UPDATED );
+        }
     }
 
     /**
@@ -378,11 +378,9 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             remove();
             return;
         }
-        m_value = values;
+        m_value = new ValueContainer(values, propertyType);
        
         m_multi = Multi.MULTI;
-        
-        m_type = propertyType;
     }
 
     /**
@@ -425,7 +423,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             remove();
             return;
         }
-        setValue( m_session.getValueFactory().createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.STRING : m_type ) );
+        setValue( m_session.getValueFactory().createValue(value, getType() == PropertyType.UNDEFINED ? PropertyType.STRING : getType() ) );
     }
 
     public void setValue(String[] values)
@@ -452,7 +450,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             return;
         }
 
-        if( m_type != PropertyType.UNDEFINED && m_type != PropertyType.STRING )
+        if( getType() != PropertyType.UNDEFINED && getType() != PropertyType.STRING )
         {
             throw new ValueFormatException("Attempt to set a different type value to this property");
         }  
@@ -463,8 +461,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             if( values[i] != null )
                 ls.add( m_session.getValueFactory().createValue( values[i] ));
         }
-        m_type = PropertyType.STRING;
-        setValue( ls.toArray( new Value[ls.size()] ) );
+        setValue( ls.toArray( new Value[ls.size()] ), PropertyType.STRING );
     }
 
     public void setValue(InputStream value)
@@ -480,7 +477,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             return;
         }
 
-        setValue( m_session.getValueFactory().createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.BINARY : m_type ) );
+        setValue( m_session.getValueFactory().createValue(value, getType() == PropertyType.UNDEFINED ? PropertyType.BINARY : getType() ) );
     }
 
     public void setValue(long value)
@@ -524,7 +521,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                                            ConstraintViolationException,
                                            RepositoryException
     {
-        setValue( m_session.getValueFactory().createValue(value, m_type == PropertyType.UNDEFINED ? PropertyType.BOOLEAN : m_type ) );
+        setValue( m_session.getValueFactory().createValue(value, getType() == PropertyType.UNDEFINED ? PropertyType.BOOLEAN : getType() ) );
     }
 
     public void setValue(Node value)
@@ -581,7 +578,27 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
 
     public String toString()
     {
-        return "Property("+m_multi+")["+getInternalPath()+"="+((m_multi == Multi.SINGLE && m_value != null) ? m_value[0].toString() : m_value)+"]";
+        String path;
+        
+        try
+        {
+            path = getInternalPath().toString(m_session);
+        }
+        catch( Exception e )
+        {
+            path = getInternalPath().toString();
+        }
+        
+        try
+        {
+            return "Property("+m_multi+")["+path+"="+((m_multi == Multi.SINGLE && m_value != null) ? getValue().toString() : (PropertyType.nameFromValue(getType())+"["+getValues().length+"]"))+"]";
+        }
+        catch (RepositoryException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return "Error?";
     }
 
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
@@ -598,8 +615,7 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
 
         nd.removeProperty(this);
         
-        m_state = ItemState.REMOVED;
-        markModified(true);
+        setState( ItemState.REMOVED );
     }
 
     public void setDefinition(PropertyDefinition pd)
@@ -631,14 +647,30 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         
         if( !pi.m_path.equals(m_path) ) return false;
         
-        if( m_value.length != pi.m_value.length ) return false;
-        
-        for( int i = 0; i < m_value.length; i++ )
+        try
         {
-            if( !m_value[i].equals(pi.m_value[i]) ) return false;
+            if( m_multi == Multi.SINGLE && pi.m_multi == Multi.SINGLE )
+            {
+                return getValue().equals(pi.getValue());
+            }
+            else if( m_multi == Multi.MULTI && pi.m_multi == Multi.MULTI )
+            {
+                if( getValues().length == pi.getValues().length )
+                {
+                    for( int i = 0; i < getValues().length; i++ )
+                    {
+                        if( !getValues()[i].equals(pi.getValues()[i]) ) return false;
+                    }
+                    return true;
+                }
+            }
+        }
+        catch( RepositoryException e )
+        {
+            // TODO: WHat to do here?
         }
         
-        return true;
+        return false;
     }
 
     // FIXME: Is not consistent with equals.
@@ -679,8 +711,13 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     {
         super.preSave();
         
-        if( m_type == PropertyType.UNDEFINED && !m_definition.isMultiple() ) 
+        if( getType() == PropertyType.UNDEFINED && !m_definition.isMultiple() ) 
             throw new ConstraintViolationException("Property must not be of type UNDEFINED, unless it's a multiproperty: "+getInternalPath());
+    }
+
+    public ValueContainer getValueContainer()
+    {
+        return m_value;
     }
 
 

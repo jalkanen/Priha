@@ -1,9 +1,5 @@
-use test;
-
 drop table if exists propertyvalues;
-
 drop table if exists nodes;
-
 drop table if exists workspaces;
 
 create table workspaces (
@@ -11,7 +7,7 @@ create table workspaces (
     name    varchar(100)    not null
 );
 
-create unique index idx_workspaces_name on workspaces(name);
+create index idx_workspaces_name on workspaces(name);
 
 create table nodes (
 	id		integer 		auto_increment primary key,
@@ -38,7 +34,7 @@ create table propertyvalues (
 	type	tinyint			not null,
 	multi   boolean         not null,
 	len     bigint,
-	propval	binary,
+	propval	longblob,
 	
 --	foreign key (parent)	references nodes (id),
 	constraint uniq_prop    unique(parent,name)

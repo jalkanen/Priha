@@ -17,16 +17,18 @@
  */
 package org.priha.core;
 
-import static org.priha.core.JCRConstants.Q_JCR_PRIMARYTYPE;
-
 import java.util.*;
-import java.util.Map.Entry;
+import java.util.logging.Logger;
 
 import javax.jcr.*;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NodeType;
 
+import org.priha.nodetype.QNodeType;
 import org.priha.providers.StoreTransaction;
 import org.priha.util.*;
+import org.priha.util.ChangeStore.Change;
+import org.priha.version.VersionManager;
 
 /**
  *  This is a special provider which stores the state of the Session.
@@ -39,19 +41,20 @@ public class SessionProvider
     private ItemStore          m_source;
     private WorkspaceImpl      m_workspace;
     
-    private LinkedHashMap<Path,ItemImpl> m_changedItems;
+    ChangeStore        m_changedItems; // TODO: Back to private
     
     private static final int   DEFAULT_CACHESIZE = 1000;
     
     private Map<PathRef,ItemImpl> m_fetchedItems;
     private Map<String,NodeImpl>  m_uuidMap;
+    private Logger             log = Logger.getLogger(SessionProvider.class.getName());
     
     public SessionProvider( SessionImpl session, ItemStore source )
     {
         m_source  = source;
         m_workspace = session.getWorkspace();
         
-        m_changedItems = new LinkedHashMap<Path, ItemImpl>();
+        m_changedItems = new ChangeStore();
         
         m_fetchedItems = new SizeLimitedHashMap<PathRef,ItemImpl>(DEFAULT_CACHESIZE);
         m_uuidMap      = new SizeLimitedHashMap<String,NodeImpl>(DEFAULT_CACHESIZE);
@@ -105,7 +108,7 @@ public class SessionProvider
      */
     public void addNode( NodeImpl ni ) throws RepositoryException
     {
-        m_changedItems.put( ni.getInternalPath(), ni );
+        m_changedItems.add( ni.getState(), ni );
     }
 
     public ItemImpl getItem( Path path ) throws InvalidPathException, RepositoryException
@@ -141,8 +144,9 @@ public class SessionProvider
 
     public NodeImpl findByUUID(String uuid) throws RepositoryException
     {
-        for( ItemImpl ni : m_changedItems.values() )
+        for( Change c : m_changedItems )
         {
+            ItemImpl ni = c.getItem();
             try
             {
                 // NEW items don't yet have an UUID
@@ -182,8 +186,9 @@ public class SessionProvider
     {
         TreeSet<PropertyImpl> response = new TreeSet<PropertyImpl>();
         
-        for (ItemImpl ii : m_changedItems.values())
+        for (Change c : m_changedItems )
         {
+            ItemImpl ii = c.getItem();
             if (!ii.isNode())
             {
                 PropertyImpl pi = (PropertyImpl) ii;
@@ -225,9 +230,10 @@ public class SessionProvider
     {
         List<Path> res = new ArrayList<Path>();
         
-        for( ItemImpl ni : m_changedItems.values() )
+        for( Change c : m_changedItems )
         {
-            if( parentpath.isParentOf(ni.getInternalPath()) && ni.isNode() )
+            ItemImpl ni = c.getItem();
+            if( parentpath.isParentOf(ni.getInternalPath()) && ni.isNode() && !res.contains(ni.getInternalPath()) )
             {
                 res.add( ni.getInternalPath() );
             }
@@ -258,11 +264,11 @@ public class SessionProvider
 
     public boolean nodeExists(Path path) throws RepositoryException
     {
-        ItemImpl ni = m_changedItems.get( path );
+        Change c = m_changedItems.getChange(path);
 
-        if( ni != null && ni.isNode() ) 
+        if( c != null && c.getItem().isNode() ) 
         {
-            if( ni.getState() == ItemState.REMOVED ) return false;
+            if( c.getState() == ItemState.REMOVED || c.getState() == ItemState.MOVED ) return false;
             return true;
         }
         
@@ -278,7 +284,7 @@ public class SessionProvider
 */
     public void remove(ItemImpl item) throws RepositoryException
     {
-        m_changedItems.put( item.getInternalPath(), item );
+        m_changedItems.add( item.getState(), item );
     }
 
     public void stop()
@@ -296,17 +302,248 @@ public class SessionProvider
         m_changedItems.clear();
     }
 
-    @SuppressWarnings("fallthrough")
+//    @SuppressWarnings("fallthrough")
     public void save(Path path) throws RepositoryException
+    {
+        checkReferentialIntegrity(path);
+        
+        checkMoveConstraint(path);        
+        
+//        m_changedItems.dump();
+        
+        List<Path> toberemoved = new ArrayList<Path>();
+        
+        ChangeStore unsaved = new ChangeStore();
+        
+        //
+        //  Do the actual save.  The way we do this is that we simply just take the
+        //  first one from the queue, and and attempt to save it.  This allows
+        //  e.g. preSave() to create some additional properties before saving - 
+        //  a basic Iterator over the Set would cause ConcurrentModificationExceptions.
+        //
+        //  All unsaved items are stored in a particular list, and then added back
+        //  to the savequeue.
+        //
+        
+        StoreTransaction tx = m_source.storeStarted( m_workspace );
+        boolean succeeded = false;
+        
+        try
+        {
+            Change change;
+            
+            while( (change = m_changedItems.peek()) != null )
+            {
+                ItemImpl ii = change.getItem();
+                    
+                if( path.isParentOf(ii.getInternalPath()) || path.equals( ii.getInternalPath() ))
+                {
+                    if( ii.isNode() )
+                    {
+                        NodeImpl ni = (NodeImpl) ii;
+                        checkSanity(change.getState(), ni);
+                    
+                        switch( change.getState() )
+                        {
+                            case EXISTS:
+                                // These guys shouldn't be here.
+                                break;
+                                
+                            case UPDATED:
+                                ni.preSave();
+                                // Nodes which exist don't need to be added, but they might need to be reordered.
+//                                toberemoved.remove( change.getPath() ); // In case it's there
+                                
+                                List<Path> childOrder = ni.getChildOrder();
+                                if( childOrder != null )
+                                {
+                                    System.out.println("Reordering children...");
+                                    
+                                    m_source.reorderNodes( tx, change.getPath(), childOrder );
+                                    ni.setChildOrder(null); // Rely again on the repository order.
+                                }
+                                
+                                ni.postSave();
+                                break;
+                            
+                            case NEW:
+                                ni.preSave();
+                                toberemoved.remove( change.getPath() ); // In case it's there
+                                m_source.addNode( tx, ni );
+                                ni.postSave();
+                                m_fetchedItems.put( ni.getPathReference(), ni );
+                                break;
+                        
+                            case REMOVED:
+                                if( !m_source.nodeExists( m_workspace, change.getPath() ) )
+                                {
+                                    throw new InvalidItemStateException("The item has been removed by some other Session "+ii.getInternalPath());
+                                }
+                                String uuid = null;
+                                try
+                                {
+                                    uuid = ni.getUUID();
+                                }
+                                catch( UnsupportedRepositoryOperationException e ) {} // Fine, no uuid
+                                
+                                toberemoved.add( change.getPath() );
+//                                m_source.remove(tx, change.getPath());
+                                clearAllCaches( ni, uuid );
+                                break;
+                                
+                            case MOVED:                                
+                                toberemoved.add( change.getPath() );
+//                                m_source.remove(tx, change.getPath());
+                                clearAllCaches( ni, null );
+                                break;
+                                
+                            case UNDEFINED:
+                                throw new IllegalStateException("Node should not at this stage be UNDEFINED "+change.getPath());
+                              
+                        }
+                    }
+                    else
+                    {
+                        PropertyImpl pi = (PropertyImpl)ii;
+                        
+                        switch( change.getState() )
+                        {
+                            case EXISTS:
+                                // These guys shouldn't be here.
+                                break;
+                                
+                            case NEW:
+                            case UPDATED:
+                                // Do not save transient properties.
+                                if( pi.isTransient() )
+                                {
+                                    break;
+                                }
+                                pi.preSave();
+                                m_source.putProperty( tx, change.getPath(), change.getValue() );
+                                pi.postSave();
+                                m_fetchedItems.put( pi.getPathReference(), pi );
+                                toberemoved.remove( change.getPath() ); // In case it's there
+                                break;
+                                
+                            case REMOVED:
+                                toberemoved.add(change.getPath());
+//                                m_source.remove(tx, change.getPath());
+
+                                clearAllCaches( pi, null );
+                                break;   
+                                
+                            case MOVED:
+                                throw new RepositoryException("Properties should never be marked as MOVED!");
+                                
+                            case UNDEFINED:
+                                throw new IllegalStateException("A Property should not at this stage be UNDEFINED! "+change.getPath());
+                        }
+                    }                
+                }
+                else
+                {
+                    unsaved.add( change );
+                }
+            
+                //
+                //  Remove from the queue so that we don't use it again.  This must
+                //  be done here so that there never is an Item missing if any of the
+                //  intermediate calls do e.g. hasProperty();
+                //
+                m_changedItems.remove();
+            }
+        
+            //
+            //  Finally, do the remove.  First, sort all in a reverse
+            //  depth order (longest first).
+            //
+            
+            Collections.sort( toberemoved, new Comparator<Path>() {
+
+                public int compare(Path o1, Path o2)
+                {
+                    return o2.depth() - o1.depth();
+                }
+            
+            });
+        
+            for( Path p : toberemoved )
+            {
+                log.finest("Removing "+p);
+                m_source.remove(tx, p);
+            }
+            
+            //
+            //  Put the unsaved ones back into the queue
+            //
+            for( Change c : unsaved )
+            {
+                m_changedItems.add( c );
+            }
+            m_source.storeFinished( tx );
+            succeeded = true;
+        }
+        finally
+        {
+            if(!succeeded) m_source.storeCancelled( tx );
+        }
+    }
+
+    private void checkMoveConstraint(Path path)
+                                               throws RepositoryException,
+                                                   ValueFormatException,
+                                                   PathNotFoundException,
+                                                   NamespaceException,
+                                                   ConstraintViolationException
+    {
+        //
+        //  Test MOVE_CONSTRAINT
+        //
+        
+        for( Iterator<Change> i = m_changedItems.iterator(); i.hasNext(); )
+        {
+            Change c = i.next();
+            
+            ItemImpl ii = c.getItem();
+            
+            if( path.isParentOf(c.getPath()) || path.equals( c.getPath() ))
+            {
+                if( ii.isNode() )
+                {
+                    NodeImpl ni = (NodeImpl)ii;
+                    
+                    if( ni.hasProperty(SessionImpl.MOVE_CONSTRAINT) )
+                    {
+                        String tgtPath = ni.getProperty(SessionImpl.MOVE_CONSTRAINT).getString();
+                        
+                        NodeImpl tgt = (NodeImpl)m_changedItems.get(PathFactory.getPath(m_workspace.getSession(),tgtPath));
+                        
+                        if( tgt != null &&
+                            path.isParentOf(tgt.getInternalPath()) )
+                        {
+                            // Is okay; as it should be.  We no longer need this.
+                        }
+                        else
+                        {
+                            throw new ConstraintViolationException("When moving, both source and target Nodes must be saved in one go.");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void checkReferentialIntegrity(Path path) throws RepositoryException, ReferentialIntegrityException
     {
         //
         //  Test referential integrity.
         //
-        for( Iterator<Entry<Path, ItemImpl>> i = m_changedItems.entrySet().iterator(); i.hasNext(); )
+        for( Iterator<Change> i = m_changedItems.iterator(); i.hasNext(); )
         {
-            Entry<Path, ItemImpl> entry = i.next();
+            Change c = i.next();
             
-            ItemImpl ii = entry.getValue();
+            ItemImpl ii = c.getItem();
             
             if( path.isParentOf(ii.getInternalPath()) || path.equals( ii.getInternalPath() ))
             {
@@ -335,203 +572,83 @@ public class SessionProvider
                 }
             }
         }
-        
-        //
-        //  Test MOVE_CONSTRAINT
-        //
-        
-        for( Iterator<Entry<Path, ItemImpl>> i = m_changedItems.entrySet().iterator(); i.hasNext(); )
-        {
-            Entry<Path, ItemImpl> entry = i.next();
-            
-            ItemImpl ii = entry.getValue();
-
-            if( path.isParentOf(ii.getInternalPath()) || path.equals( ii.getInternalPath() ))
-            {
-                if( ii.isNode() )
-                {
-                    NodeImpl ni = (NodeImpl)ii;
-                    
-                    if( ni.hasProperty(SessionImpl.MOVE_CONSTRAINT) )
-                    {
-                        String tgtPath = ni.getProperty(SessionImpl.MOVE_CONSTRAINT).getString();
-                        
-                        NodeImpl tgt = (NodeImpl)m_changedItems.get(PathFactory.getPath(m_workspace.getSession(),tgtPath));
-                        
-                        if( tgt != null &&
-                            path.isParentOf(tgt.getInternalPath()) )
-                        {
-                            // Is okay; as it should be.  We no longer need this.
-                        }
-                        else
-                        {
-                            throw new ConstraintViolationException("When moving, both source and target Nodes must be saved in one go.");
-                        }
-                    }
-                }
-            }
-        }        
-        
-        List<Path> toberemoved = new ArrayList<Path>();
-        
-        List<ItemImpl> unsaved = new ArrayList<ItemImpl>();
-        
-        //
-        //  Do the actual save.  The way we do this is that we simply just take the
-        //  first one from the queue, and and attempt to save it.  This allows
-        //  e.g. preSave() to create some additional properties before saving - 
-        //  a basic Iterator over the Set would cause ConcurrentModificationExceptions.
-        //
-        //  All unsaved items are stored in a particular list, and then added back
-        //  to the savequeue.
-        //
-        
-        StoreTransaction tx = m_source.storeStarted( m_workspace );
-        boolean succeeded = false;
-        
-        try
-        {
-            while( !m_changedItems.isEmpty() )
-            {
-                Entry<Path,ItemImpl> entry = m_changedItems.entrySet().iterator().next();
-                ItemImpl ii = entry.getValue();
-                    
-                if( path.isParentOf(ii.getInternalPath()) || path.equals( ii.getInternalPath() ))
-                {
-                    if( ii.isNode() )
-                    {
-                        NodeImpl ni = (NodeImpl) ii;
-                    
-                        switch( ni.getState() )
-                        {
-                            case EXISTS:
-                                ni.preSave();
-                                // Nodes which exist don't need to be added, but they might need to be reordered.
-                                
-                                List<Path> childOrder = ni.getChildOrder();
-                                if( childOrder != null )
-                                {
-                                    System.out.println("Reordering children...");
-                                    
-                                    m_source.reorderNodes( tx, ni.getInternalPath(), childOrder );
-                                    ni.setChildOrder(null); // Rely again on the repository order.
-                                }
-                                
-                                ni.postSave();
-                                break;
-                            
-                            case NEW:
-                                ni.preSave();
-                                m_source.addNode( tx, ni );
-                                ni.postSave();
-                                m_fetchedItems.put( ni.getPathReference(), ni );
-                                break;
-                        
-                            case REMOVED:
-                                if( !m_source.nodeExists( m_workspace, ii.getInternalPath() ) )
-                                {
-                                    throw new InvalidItemStateException("The item has been removed by some other Session "+ii.getInternalPath());
-                                }
-                                String uuid = null;
-                                try
-                                {
-                                    uuid = ni.getUUID();
-                                }
-                                catch( UnsupportedRepositoryOperationException e ) {} // Fine, no uuid
-                                
-                                toberemoved.add( ni.getInternalPath() );
-                                clearAllCaches( ni, uuid );
-                                break;
-                                
-                            case MOVED:
-                                Path oldPath = PathFactory.getPath( ni.getSession(),
-                                                                    ni.getProperty(SessionImpl.PRIHA_OLD_PATH).getString() );
-                                
-                                toberemoved.add( oldPath );
-                                clearAllCaches( ni, null );
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        PropertyImpl pi = (PropertyImpl)ii;
-                        
-                        switch( pi.getState() )
-                        {
-                            case NEW:
-                                // Do not save transient properties.
-                                if( pi.isTransient() )
-                                {
-                                    break;
-                                }
-                                // FALLTHROUGH ok.
-                            case EXISTS:
-                                pi.preSave();
-                                m_source.putProperty( tx, pi );
-                                pi.postSave();
-                                m_fetchedItems.put( pi.getPathReference(), pi );
-                                break;
-                                
-                            case REMOVED:
-                                toberemoved.add(pi.getInternalPath());
-                                clearAllCaches( pi, null );
-                                break;   
-                                
-                            case MOVED:
-                                throw new RepositoryException("Properties should never be marked as MOVED!");
-                        }
-                    }                
-                }
-                else
-                {
-                    unsaved.add( ii );
-                }
-            
-                //
-                //  Remove from the queue so that we don't use it again.  This must
-                //  be done here so that there never is an Item missing if any of the
-                //  intermediate calls do e.g. hasProperty();
-                //
-                m_changedItems.remove( entry.getKey() );
-            }
-        
-            //
-            //  Finally, do the remove.  First, sort all in a reverse
-            //  depth order (longest first).
-            //
-            
-            Collections.sort( toberemoved, new Comparator<Path>() {
-
-                public int compare(Path o1, Path o2)
-                {
-                    return o2.depth() - o1.depth();
-                }
-            
-            });
-        
-            for( Path p : toberemoved )
-            {
-                //System.out.println("Removing "+p);
-                m_source.remove(tx, p);
-            }
-            
-            //
-            //  Put the unsaved ones back into the queue
-            //
-            for( ItemImpl ii : unsaved )
-            {
-                m_changedItems.put( ii.getInternalPath(), ii );
-            }
-            m_source.storeFinished( tx );
-            succeeded = true;
-        }
-        finally
-        {
-            if(!succeeded) m_source.storeCancelled( tx );
-        }
     }
 
+    /**
+     *  State checks the sanity of a Node before saving.
+     *  
+     *  @param state
+     *  @param ni
+     *  @throws RepositoryException
+     */
+    private void checkSanity(ItemState state, NodeImpl ni) throws RepositoryException
+    {
+        WorkspaceImpl ws = ni.getSession().getWorkspace();
+        SessionImpl session = ni.getSession();
+        
+        if( state != ItemState.REMOVED && state != ItemState.MOVED && ni.getState() != ItemState.REMOVED )
+            ni.autoCreateProperties();
+        
+        //
+        //  Check that parent still exists
+        //
+        
+        if( !ni.getInternalPath().isRoot() ) 
+        {
+            if( !ws.nodeExists(ni.getInternalPath().getParentPath()) )
+            {
+                throw new InvalidItemStateException("No parent available.");
+            }
+        }
+        
+        //
+        //  Check if nobody has removed us if we were still supposed to exist.
+        //
+        
+        if( state != ItemState.NEW && state != ItemState.REMOVED && state != ItemState.MOVED )
+        {
+            if( !ws.nodeExists(ni.getInternalPath()) )
+            {
+                throw new InvalidItemStateException("Looks like this Node has been removed by another session: "+ni.getInternalPath().toString(session));
+            }
+            
+            try
+            {
+                String uuid = ni.getUUID();
+                
+                NodeImpl currentNode = session.getNodeByUUID( uuid );
+                
+                if( !currentNode.getInternalPath().equals(ni.getInternalPath()) )
+                    throw new InvalidItemStateException("Page has been moved");
+            }
+            catch( UnsupportedRepositoryOperationException e ){} // Not referenceable, so it's okay
+        }
+        
+        //
+        //  Check mandatory properties
+        //
+        if( state != ItemState.REMOVED && state != ItemState.MOVED && ni.getState() != ItemState.REMOVED )
+        {
+            //
+            //  If this node is versionable, then make sure there is a VersionHistory as well.
+            //
+            
+            if( ni.hasMixinType("mix:versionable") )
+            {
+                VersionManager.createVersionHistory( ni );
+            }
 
+            ni.checkMandatoryProperties( ni.getPrimaryQNodeType() );
+
+            for( NodeType nt : ni.getMixinNodeTypes() )
+            {
+                ni.checkMandatoryProperties( ((QNodeType.Impl)nt).getQNodeType() );
+            }
+
+        }
+        
+    }
+    
     public Collection<? extends PropertyImpl> getProperties(Path path) throws RepositoryException
     {
         HashMap<QName,PropertyImpl> result = new HashMap<QName,PropertyImpl>();
@@ -570,8 +687,9 @@ public class SessionProvider
         //  same hashmap and rely on the fact that there can't be two items with 
         //  the same key.
         //
-        for( ItemImpl ii : m_changedItems.values() )
+        for( Iterator<ItemImpl> i = m_changedItems.values(); i.hasNext(); )
         {
+            ItemImpl ii = i.next();
             if( ii.isNode() == false && ii.getInternalPath().getParentPath().equals(path) )
             {
                 result.put( ii.getInternalPath().getLastComponent(), (PropertyImpl) ii );
@@ -583,8 +701,8 @@ public class SessionProvider
 
     public void putProperty(NodeImpl impl, PropertyImpl property) throws RepositoryException
     {
-        addNode( impl );
-        m_changedItems.put( property.getInternalPath(), property );
+//        addNode( impl );
+        m_changedItems.add( property.getState(), property );
     }
 
     /**
@@ -608,46 +726,18 @@ public class SessionProvider
             return;
         }
         
-        for( Iterator<Entry<Path, ItemImpl>> i = m_changedItems.entrySet().iterator(); i.hasNext(); )
+        for( Iterator<Change> c = m_changedItems.iterator(); c.hasNext(); )
         {
-            Entry<Path, ItemImpl> entry = i.next();
-            
-            ItemImpl ii = entry.getValue();
-            
-            if( path.isParentOf(ii.getInternalPath()) )
+            Change change = c.next();
+                        
+            if( path.isParentOf(change.getItem().getInternalPath()) )
             {
-                i.remove();
+                c.remove();
             }
         }
  
     }
 
-    /**
-     *  A comparator which puts primarytypes first, and otherwise follows the
-     *  natural Path.toString() ordering.
-     */
-    private static final class PrimaryTypePreferringComparator implements Comparator<Path>
-    {
-        public int compare(Path o1, Path o2)
-        {
-            int res = o1.depth() - o2.depth();
-            
-            if( res == 0 )
-            {
-                //
-                //  OK, this is a bit kludgy.  We put the primaryType first so that
-                //  we make sure it's the first property to be saved.
-                //
-                
-                if( o1.getLastComponent().equals(Q_JCR_PRIMARYTYPE) && !o2.getLastComponent().equals(Q_JCR_PRIMARYTYPE) ) return -1;
-                if( o2.getLastComponent().equals(Q_JCR_PRIMARYTYPE) && !o1.getLastComponent().equals(Q_JCR_PRIMARYTYPE) ) return 1;
-                
-                res = o1.compareTo( o2 );
-            }
-            
-            return res;
-        }
-    }
 
     /**
      *  Goes directly into the repository, to find whether a Node exists currently.

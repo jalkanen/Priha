@@ -65,7 +65,7 @@ public class ValueFactoryImpl implements ValueFactory
                 return new ReferenceValueImpl( value.getString() );
                 
             case PropertyType.STRING:
-                return new StringValueImpl( value.getString() );
+                return new StringValueImpl( value.valueAsString() );
 
             case PropertyType.DATE:
                 return new CalendarValueImpl( value.getDate() );
@@ -331,6 +331,12 @@ public class ValueFactoryImpl implements ValueFactory
         
         return v;
     }
+
+    public ValueImpl cloneValue(ValueImpl value) throws ValueFormatException, IllegalStateException, RepositoryException
+    {
+        return createValue(value);
+    }
+
 
     /**
      *  Returns a new Value array with the new Value added in the last

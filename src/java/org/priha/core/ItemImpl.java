@@ -30,8 +30,7 @@ public abstract class ItemImpl implements Item
 
     protected PathRef           m_path;
     protected final SessionImpl m_session;
-    protected boolean           m_modified = false;
-    protected ItemState         m_state    = ItemState.NEW;
+    protected ItemState         m_state    = ItemState.UNDEFINED;
     
     public ItemImpl( SessionImpl session, String path ) throws NamespaceException, RepositoryException
     {
@@ -47,7 +46,6 @@ public abstract class ItemImpl implements Item
     public ItemImpl(ItemImpl original, SessionImpl session)
     {
         this( session, original.getInternalPath() );
-        m_modified = original.m_modified;
         m_state    = original.m_state;
     }
 
@@ -60,6 +58,47 @@ public abstract class ItemImpl implements Item
     public ItemState getState()
     {
         return m_state;
+    }
+    
+    public void setState( ItemState state ) throws RepositoryException
+    {
+        if( state != m_state )
+        {
+            switch( state )
+            {
+                case EXISTS:
+                    m_state = state;
+                    break;
+                    
+                case NEW:
+                case REMOVED:
+                case MOVED:
+                    //
+                    //  Additions and removals also affect the parent.
+                    //
+                    m_state = state;
+                    m_session.markDirty(this);
+                    if( !getInternalPath().isRoot() ) 
+                    {
+                        getParent().setState(ItemState.UPDATED);
+                    }
+                    break;
+                    
+                case UPDATED:
+                    //
+                    //  However, basic updates do not.
+                    //
+                    if( m_state == ItemState.REMOVED )
+                    {
+                        // Simple UPDATED does not override REMOVED.
+                        break;
+                    }
+                    m_state = state;
+                    m_session.markDirty(this);
+                    break;
+            }
+            
+        }
     }
     
     public void accept(ItemVisitor visitor) throws RepositoryException
@@ -153,12 +192,12 @@ public abstract class ItemImpl implements Item
 
     public boolean isModified()
     {
-        return m_modified;
+        return m_state != ItemState.EXISTS;
     }
 
     public boolean isNew()
     {
-        return m_state == ItemState.NEW;
+        return m_state == ItemState.NEW || m_state == ItemState.UNDEFINED;
     }
 
     public boolean isNode()
@@ -214,32 +253,40 @@ public abstract class ItemImpl implements Item
 
     public String toString()
     {
-        return "Node["+m_session.getWorkspace().getName()+":"+getInternalPath().toString()+"]";
+        try
+        {
+            return "Node["+m_session.getWorkspace().getName()+":"+getPath()+"]";
+        }
+        catch( RepositoryException e )
+        {
+            return "Node["+m_session.getWorkspace().getName()+":"+getInternalPath()+"]";            
+        }
     }
 
     /** Marks this Node + its parent modified. 
      * @throws RepositoryException */
-    protected void markModified(boolean isModified) throws RepositoryException
-    {
-        markModified( isModified, true );
-    }
-    
-    protected void markModified(boolean isModified, boolean parentToo) throws RepositoryException
-    {
-        m_modified = isModified;
-        m_session.markDirty(this);
-            
-        if( !getInternalPath().isRoot() && parentToo )
-        {
-            //
-            //  Regardless of the state of the current Item, the parent
-            //  shall always be marked as modified (since the state of this
-            //  child has changed.)
-            //
-            NodeImpl parent = getParent();
-            parent.markModified(true, false);
-        }
-    }
+//    protected void markModified(boolean isModified) throws RepositoryException
+//    {
+//        markModified( isModified, true );
+//    }
+//    
+//    protected void markModified(boolean isModified, boolean parentToo) throws RepositoryException
+//    {
+//        if( m_state == ItemState.EXISTS ) m_state = ItemState.UPDATED;
+//        
+//        m_session.markDirty(this);
+//            
+//        if( !getInternalPath().isRoot() && parentToo )
+//        {
+//            //
+//            //  Regardless of the state of the current Item, the parent
+//            //  shall always be marked as modified (since the state of this
+//            //  child has changed.)
+//            //
+//            NodeImpl parent = getParent();
+//            parent.markModified(true, false);
+//        }
+//    }
 
     @Override
     public int hashCode()
@@ -252,7 +299,11 @@ public abstract class ItemImpl implements Item
      *  @throws RepositoryException
      */
     protected void preSave() throws RepositoryException
-    {  
+    {
+        if( getState() == ItemState.UNDEFINED )
+        {
+            throw new IllegalStateException("Node "+getInternalPath()+" must not be in UNDEFINED state at this point (this is a bug in Priha, please report!)");
+        }
     }
     
     /**
@@ -262,7 +313,6 @@ public abstract class ItemImpl implements Item
     protected void postSave()
     {
         m_state = ItemState.EXISTS;
-        m_modified = false;
     }
     
     private transient long           m_creationTime = System.currentTimeMillis();

@@ -1,3 +1,16 @@
+2009-10-11  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.5.0
+        
+        * Rewrote changes handling since there were a couple of fairly serious
+        dataloss bugs in it.  It's now a bit more robust, and it uncovered
+        a number of other issues as well.  Unfortunately, the work is not yet
+        complete, and SNS support is disabled for now.  This commit is considerably
+        more unstable than 0.4.1, so upgrading not recommended.
+        
+        * RepositoryProvider.putProperyValue() signature changed; therefore
+        new minor version bump.
+        
 2009-10-02  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.4.1

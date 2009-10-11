@@ -25,6 +25,7 @@ import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 
 import org.priha.providers.StoreTransaction;
+import org.priha.providers.ValueContainer;
 import org.priha.util.InvalidPathException;
 import org.priha.util.Path;
 import org.priha.util.QName;
@@ -54,7 +55,7 @@ public interface ItemStore
 
     void addNode(StoreTransaction tx, NodeImpl ni) throws RepositoryException;
 
-    void putProperty(StoreTransaction tx, PropertyImpl pi) throws RepositoryException;
+    void putProperty(StoreTransaction tx, Path path, ValueContainer value) throws RepositoryException;
 
     /**
      *  Locate all properties of type REFERENCE with the content of the particular UUID.

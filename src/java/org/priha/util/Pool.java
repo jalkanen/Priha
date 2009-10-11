@@ -36,7 +36,7 @@ public class Pool
             }
             catch( Exception e )
             {
-                throw new PoolExhaustedException("No more objects available in the pool");
+                throw new PoolExhaustedException("New poolable object creation failed horrendously",e);
             }
             if( p != null ) 
             {
@@ -87,9 +87,15 @@ public class Pool
     
     public static class PoolExhaustedException extends Exception
     {
-        public PoolExhaustedException(String msg)
+        
+        public PoolExhaustedException(String msg, Throwable reason)
         {
-            super(msg);
+            super(msg,reason);
+        }
+
+        public PoolExhaustedException(String string)
+        {
+            super(string);
         }
     }
 

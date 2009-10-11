@@ -26,7 +26,6 @@ import java.util.logging.Logger;
 
 import javax.jcr.*;
 
-import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.binary.FileBinarySource;
@@ -591,48 +590,48 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         }
     }
     
-    public void putPropertyValue(StoreTransaction tx, PropertyImpl property) throws RepositoryException
+    public void putPropertyValue(StoreTransaction tx, Path path, ValueContainer vc) throws RepositoryException
     {
         m_hitCount[Count.PutPropertyValue.ordinal()]++;
 
         WorkspaceImpl ws = tx.getWorkspace();
-        File nodeDir = getNodeDir( ws, property.getInternalPath().getParentPath() );
+        File nodeDir = getNodeDir( ws, path.getParentPath() );
 
-        saveUuidShortcut(property);
+        saveUuidShortcut(ws,path,vc);
         
-        QName qname = property.getQName();
+        QName qname = path.getLastComponent();
         
         File inf = new File( nodeDir, makeFilename( qname, ".info" ) );
         
         Properties props = new Properties();
         
-        props.setProperty( PROP_PATH, property.getInternalPath().toString() );
-        props.setProperty( PROP_TYPE,  PropertyType.nameFromValue( property.getType() ) );
-        props.setProperty( PROP_MULTIPLE, property.getDefinition().isMultiple() ? "true" : "false" );
+        props.setProperty( PROP_PATH, path.toString() );
+        props.setProperty( PROP_TYPE,  PropertyType.nameFromValue( vc.getType() ) );
+        props.setProperty( PROP_MULTIPLE, vc.isMultiple() ? "true" : "false" );
 
         OutputStream out = null;
         
         try
         {
-            if( property.getDefinition().isMultiple() )
+            if( vc.isMultiple() )
             {
-                props.setProperty( PROP_NUM_PROPERTIES, Integer.toString(property.getValues().length) );
-                Value[] values = property.getValues();
+                props.setProperty( PROP_NUM_PROPERTIES, Integer.toString(vc.getValues().length) );
+                Value[] values = vc.getValues();
 
                 //
                 //  Let's clear previous references, if this is an attempt to save
                 //  a null value.
                 //
-                if( property.getType() == PropertyType.REFERENCE )
+                if( vc.getType() == PropertyType.REFERENCE )
                 {
                     try
                     {
-                        ValueImpl[] oldval = getPropertyValue( ws, property.getInternalPath() ).getValues();
+                        ValueImpl[] oldval = getPropertyValue( ws, path ).getValues();
                     
                         for( ValueImpl vi : oldval )
                         {
                             String uuid = vi.getString();
-                            cleanRefMapping( ws, property.getInternalPath(), uuid );
+                            cleanRefMapping( ws, path, uuid );
                         }
                     }
                     catch( PathNotFoundException e ){} // This is okay
@@ -641,7 +640,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 for( int i = 0; i < values.length; i++ )
                 {
                     File df = new File( nodeDir, makeFilename( qname, "."+i+".data" ) );
-                    saveRefShortcut( ws, property.getInternalPath(), (ValueImpl)values[i] );
+                    saveRefShortcut( ws, path, (ValueImpl)values[i] );
                     writeValue( df, (ValueImpl)values[i] );
                 }
                 // Remove the rest of old values
@@ -656,20 +655,20 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             }
             else
             {
-                if( property.getType() == PropertyType.REFERENCE )
+                if( vc.getType() == PropertyType.REFERENCE )
                 {
                     try
                     {
-                        ValueImpl oldval = getPropertyValue( ws, property.getInternalPath() ).getValue();
-                        cleanRefMapping( ws, property.getInternalPath(), oldval.getString() );
+                        ValueImpl oldval = getPropertyValue( ws, path ).getValue();
+                        cleanRefMapping( ws, path, oldval.getString() );
                     }
                     catch(PathNotFoundException e) {} // OK
 
-                    saveRefShortcut( ws, property.getInternalPath(), property.getValue() );
+                    saveRefShortcut( ws, path, vc.getValue() );
                 }
 
                 File df = new File( nodeDir, makeFilename( qname, ".data" ) );
-                writeValue( df, property.getValue() );
+                writeValue( df, vc.getValue() );
             }
             out = new FileOutputStream(inf);
             
@@ -706,12 +705,12 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  Saves a shortcut to an UUID.  The contents of the file are the path of the Node.
      *  
      */
-    private void saveUuidShortcut(PropertyImpl property) throws RepositoryException
+    private void saveUuidShortcut(WorkspaceImpl ws, Path path, ValueContainer vc) throws RepositoryException
     {
-        if( property.getQName().equals(Q_JCR_UUID) )
+        if( path.getLastComponent().equals(Q_JCR_UUID) )
         {
-            UUIDObjectStore<Path> uuids = m_uuids.get( property.getSession().getWorkspace().getName() );
-            uuids.setObject( property.getString(), property.getInternalPath().getParentPath() );
+            UUIDObjectStore<Path> uuids = m_uuids.get( ws.getName() );
+            uuids.setObject( vc.getValue().valueAsString(), path.getParentPath() );
         }
     }
     

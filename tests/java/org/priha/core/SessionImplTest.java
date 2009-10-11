@@ -8,20 +8,18 @@ import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
 
 import junit.framework.Test;
-import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import org.priha.RepositoryManager;
+import org.priha.AbstractTest;
 import org.priha.TestUtil;
 
-public class SessionImplTest extends TestCase
+public class SessionImplTest extends AbstractTest
 {
     private SessionImpl m_session;
-    private RepositoryImpl m_repository;
     
     public void setUp() throws Exception
     {
-        m_repository = RepositoryManager.getRepository();
+        super.setUp();
         TestUtil.emptyRepo(m_repository);
         
         m_session = m_repository.login(new SimpleCredentials("foo",new char[0]));
@@ -31,7 +29,7 @@ public class SessionImplTest extends TestCase
     {
         m_session.logout();
         
-        TestUtil.emptyRepo(m_repository);
+        super.tearDown();
     }
 
     /**
@@ -63,7 +61,7 @@ public class SessionImplTest extends TestCase
         
         String s = out.toString("UTF-8");
 
-        //System.out.println(s);
+        System.out.println(s);
         assertTrue("Barbapapa wrong", s.indexOf("Barba&lt;papa&gt;") != -1 );
         assertTrue("pim wrong", s.indexOf("pimpim&amp;") != -1 );
         assertTrue("pop wrong", s.indexOf("poppop&quot;") != -1 );

@@ -1,13 +1,13 @@
 package org.priha.core;
 
 import junit.framework.Test;
-import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.priha.AbstractTest;
 import org.priha.core.namespace.NamespaceRegistryImpl;
 import org.priha.util.QName;
 
-public class NamespaceRegistryImplTest extends TestCase
+public class NamespaceRegistryImplTest extends AbstractTest
 {
     NamespaceRegistryImpl m_reg = new NamespaceRegistryImpl();
     

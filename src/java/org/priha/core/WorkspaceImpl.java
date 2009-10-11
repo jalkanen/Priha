@@ -335,7 +335,8 @@ public class WorkspaceImpl
                 
                 if( p.getDefinition().isMultiple() )
                 {
-                    destnode.internalSetProperty( p.getQName(), p.getValues(), p.getType() );
+                    PropertyImpl pix = destnode.internalSetProperty( p.getQName(), p.getValues(), p.getType() );
+                    pix.setState( ItemState.NEW );
                 }
                 else
                 {

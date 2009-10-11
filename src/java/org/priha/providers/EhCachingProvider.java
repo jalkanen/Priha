@@ -24,10 +24,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import javax.jcr.Credentials;
-import javax.jcr.NoSuchWorkspaceException;
-import javax.jcr.PropertyType;
-import javax.jcr.RepositoryException;
+import javax.jcr.*;
 import javax.management.MBeanServer;
 
 import net.sf.ehcache.*;
@@ -271,7 +268,7 @@ public class EhCachingProvider implements RepositoryProvider
     //
     //  Binary objects are not cached, unless they are smaller than the max cacheable size.
     //
-    private boolean isCacheable(ValueContainer o)
+    private boolean isCacheable(ValueContainer o) throws ValueFormatException
     {
         if( o.getType() == PropertyType.BINARY )
         {
@@ -421,22 +418,17 @@ public class EhCachingProvider implements RepositoryProvider
         return m_realProvider.nodeExists(ws, path);
     }
 
-    public void putPropertyValue(StoreTransaction tx, PropertyImpl property) throws RepositoryException
+    public void putPropertyValue(StoreTransaction tx, Path path, ValueContainer vc ) throws RepositoryException
     {
         WorkspaceImpl ws = tx.getWorkspace();
-        m_valueCache.remove( getVid(ws,property.getInternalPath() ) );
-        m_realProvider.putPropertyValue(tx, property);
+        m_valueCache.remove( getVid(ws,path ) );
+        m_realProvider.putPropertyValue(tx, path, vc);
         
-        if( !property.getDefinition().isMultiple() )
+        if( isCacheable( vc ) )
         {
-            ValueContainer vc;
-            vc = new ValueContainer( property.getValue() );
-            if( isCacheable( vc ) )
-            {
-                Element e = new Element( getVid( ws, property.getInternalPath() ), vc );
-                
-                m_valueCache.put( e );
-            }
+            Element e = new Element( getVid( ws, path ), vc );
+            
+            m_valueCache.put( e );
         }
     }
 

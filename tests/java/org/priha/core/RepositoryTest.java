@@ -3,28 +3,28 @@ package org.priha.core;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
+import java.util.NoSuchElementException;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
 
 import junit.framework.Test;
-import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.priha.AbstractTest;
 import org.priha.RepositoryManager;
 import org.priha.TestUtil;
 
-public class RepositoryTest extends TestCase
+public class RepositoryTest extends AbstractTest
 {
     Logger log = Logger.getLogger(RepositoryTest.class.getName());
-    Repository m_repository;
     
     Session m_session;
     
     protected void setUp() throws Exception
     {
-        m_repository = RepositoryManager.getRepository();
-
+        super.setUp();
+        
         TestUtil.emptyRepo(m_repository);
         
         m_session = m_repository.login(new SimpleCredentials("foo",new char[0]));
@@ -33,7 +33,7 @@ public class RepositoryTest extends TestCase
     protected void tearDown() throws Exception
     {
         m_session.logout();
-        TestUtil.emptyRepo(m_repository);
+        super.tearDown();
     }
     
     public void testLogin() throws Exception
@@ -301,6 +301,19 @@ public class RepositoryTest extends TestCase
         
         nd22.remove();
         m_session.save();
+
+        nd = (Node) m_session.getItem("test");
+        NodeIterator ni = nd.getNodes();
+
+        assertEquals( "samename1", "/test/samename", ni.nextNode().getPath() );
+        assertEquals( "samename2", "/test/samename[2]", ni.nextNode().getPath() );
+        
+        try
+        {
+            ni.nextNode();
+            fail("Got third node!");
+        }
+        catch( NoSuchElementException e ) {}
         
         nd = (Node) m_session.getItem("/test/samename[1]");
         assertEquals( "one", 1, nd.getProperty( "order" ).getLong() );

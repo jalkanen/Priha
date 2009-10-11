@@ -32,7 +32,7 @@ import javax.jcr.ValueFormatException;
 public class CalendarValueImpl extends ValueImpl implements Value, Serializable
 {
     private static final long serialVersionUID = -8918655334999478605L;
-    private Calendar m_value;
+    private Calendar m_value = Calendar.getInstance();
     private static ThreadLocal<SimpleDateFormat> c_isoFormat = new ThreadLocal<SimpleDateFormat>() {
         protected synchronized SimpleDateFormat initialValue()
         {
@@ -133,6 +133,10 @@ public class CalendarValueImpl extends ValueImpl implements Value, Serializable
     
     public String toString()
     {
-        return c_isoFormat.get().format( m_value.getTime() );
+        if( m_value != null )
+            return c_isoFormat.get().format( m_value.getTime() );
+        
+        return "Null value";
+        
     }
 }

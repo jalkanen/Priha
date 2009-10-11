@@ -1,6 +1,7 @@
 package org.priha.util;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import javax.jcr.NodeIterator;
 import javax.jcr.PathNotFoundException;
@@ -30,7 +31,7 @@ public class LazyNodeIteratorImpl extends GenericIterator implements NodeIterato
         catch( RepositoryException e )
         {
             e.printStackTrace();
-            return null;
+            throw new NoSuchElementException("No next node is available: "+e.getMessage());
         }
     }
 

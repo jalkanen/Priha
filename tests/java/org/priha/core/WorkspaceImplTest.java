@@ -1,28 +1,22 @@
 package org.priha.core;
 
-import javax.jcr.Repository;
-
 import junit.framework.Test;
-import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import org.priha.RepositoryManager;
+import org.priha.AbstractTest;
 import org.priha.TestUtil;
 
-public class WorkspaceImplTest extends TestCase
+public class WorkspaceImplTest extends AbstractTest
 {
-    Repository m_repository;
-    
     protected void setUp() throws Exception
     {
-        m_repository = RepositoryManager.getRepository();
-
+        super.setUp();
         TestUtil.emptyRepo( m_repository );
     }
     
     protected void tearDown() throws Exception
     {
-        TestUtil.emptyRepo(m_repository);
+        super.tearDown();
     }
 
     public void testEmpty()

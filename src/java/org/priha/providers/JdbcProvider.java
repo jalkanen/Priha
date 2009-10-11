@@ -29,6 +29,7 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 import javax.sql.rowset.serial.SerialBlob;
 
+import org.priha.core.JCRConstants;
 import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
@@ -305,12 +306,13 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
 
     private void setupWorkspaces(Connection c, String[] workspaces) throws SQLException
     {
-        PreparedStatement ps = c.prepareStatement( "SELECT * from workspaces" );
+        PreparedStatement ps = c.prepareStatement( "SELECT * from workspaces;" );
         ResultSet rs = ps.executeQuery();
         ArrayList<String> existingWorkspaces = new ArrayList<String>();
         
         while( rs.next() )
         {
+            //log.info("Found old workspace "+rs.getString("name"));
             existingWorkspaces.add( rs.getString( "name" ) );
         }
         
@@ -321,14 +323,14 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         
         ps = c.prepareStatement( "INSERT INTO workspaces ( name ) VALUES ( ? )" );
         
-        for( String ws : workspaces )
+        for( String ws : wstoAdd )
         {
-            log.fine( "Adding new workspace "+ws );
+            log.info( "Adding new workspace "+ws );
             ps.setString( 1, ws );
             ps.execute();
         }
         
-        c.commit();
+//        c.commit();
     }
     
     private void initialize(Connection c) throws IOException, SQLException
@@ -362,22 +364,22 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         
         String sql = FileUtil.readContents(in, "UTF-8");
         
-        //
-        //  We want to make sure there are no tabs in the file, since this WILL confuse e.g. MySQL.
-        //
-        sql = TextUtil.replaceString(sql, "\t", "    ");
+        String[] statements = sql.split(";");
         
-        Statement s = null;
-        try
+        for( String statement : statements )
         {
-            s = c.createStatement();
-            s.execute(sql);
-            c.commit();
-        }
-        finally
-        {
-            if( s != null ) s.close();
-            in.close();
+            if( statement.trim().length() == 0 ) continue;
+            Statement s = null;
+            try
+            {
+                s = c.createStatement();
+                s.execute(statement+";");
+            }
+            finally
+            {
+                if( s != null ) s.close();
+                in.close();
+            }
         }
     }
     
@@ -525,7 +527,8 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
                 }
                 
                 ValueImpl v = ws.getSession().getValueFactory().createValue( value.getBinaryStream(), type );
-         
+
+                ps.close();
                 return new ValueContainer(v);
             }
             
@@ -553,8 +556,8 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         {
             Connection c = pc.getConnection();
             PreparedStatement ps = c.prepareStatement("SELECT N2.path AS path "+
-                                                           "FROM workspaces,nodes AS N1 INNER JOIN nodes AS N2 ON "+
-                                                           "workspaces.name = ? "+
+                                                           "FROM workspaces,nodes AS N2,nodes AS N1 "+
+                                                           "WHERE workspaces.name = ? "+
                                                            "AND workspaces.id = N1.workspace "+
                                                            "AND N1.path = ? "+
                                                            "AND N1.id = N2.parent "+
@@ -697,13 +700,13 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
     //  Multi  : <int numValues> [ <int length> <byte... content> ]
     //
     
-    private byte[] serialize( Property property ) throws ValueFormatException, IllegalStateException, RepositoryException, IOException
+    private byte[] serialize( ValueContainer vc ) throws ValueFormatException, IllegalStateException, RepositoryException, IOException
     {
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
 
-        if( property.getDefinition().isMultiple() )
+        if( vc.isMultiple() )
         {
-            Value[] vals = property.getValues();
+            Value[] vals = vc.getValues();
             
             ObjectOutputStream oo = new ObjectOutputStream(ba);
             
@@ -722,53 +725,58 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         }
         else
         {
-            FileUtil.copyContents( property.getStream(), ba );
+            FileUtil.copyContents( vc.getValue().getStream(), ba );
         }
         
         return ba.toByteArray();
     }
     
-    public void putPropertyValue(StoreTransaction tx, PropertyImpl property) throws RepositoryException
+    public void putPropertyValue(StoreTransaction tx, Path path, ValueContainer vc) throws RepositoryException
     {
         Connection c = ((JDBCTransaction)tx).getConnection();
   
         try
         {
-            byte[] bytes = serialize(property);
+            byte[] bytes = serialize(vc);
             PreparedStatement ps;
-            long id = getNodeId(c,tx.getWorkspace(),property.getInternalPath().getParentPath());
+            long id = getNodeId(c,tx.getWorkspace(),path.getParentPath());
                         
-            if( property.isNew() )
-            {
-                ps = c.prepareStatement("INSERT INTO propertyvalues "+
-                                             "(parent,name,type,len,propval,multi) "+
-                                             "VALUES (?,?,?,?,?,?)");
             
-                ps.setLong(1, id);
-                ps.setString(2, property.getQName().toString());
-                ps.setInt(3, property.getType());
-                ps.setInt(4, bytes.length);
-                ps.setBytes(5, bytes);
-                ps.setBoolean( 6, property.getDefinition().isMultiple() );
-            }            
-            else
+            try
             {
+                ValueContainer old = getPropertyValue(tx.getWorkspace(), path);
+
                 ps = c.prepareStatement("UPDATE propertyvalues SET len = ?, propval = ? WHERE parent = ? AND name = ?");
                 
                 ps.setInt(1, bytes.length);
                 ps.setBytes(2, bytes);
                 ps.setLong(3, id);
-                ps.setString(4, property.getQName().toString());
+                ps.setString(4, path.getLastComponent().toString());
             }
+            catch( PathNotFoundException e )
+            {
+                // So it does not exist; let's insert it.
+            
+                ps = c.prepareStatement("INSERT INTO propertyvalues "+
+                                             "(parent,name,type,len,propval,multi) "+
+                                             "VALUES (?,?,?,?,?,?)");
+            
+                ps.setLong(1, id);
+                ps.setString(2, path.getLastComponent().toString());
+                ps.setInt(3, vc.getType());
+                ps.setInt(4, bytes.length);
+                ps.setBytes(5, bytes);
+                ps.setBoolean( 6, vc.isMultiple() );
+            }            
             
             int result = ps.executeUpdate();
             
             if( result == 0 ) throw new RepositoryException("Update failed!?!");
             
-            if( property.getName().equals("jcr:uuid") )
+            if( path.getLastComponent().equals(JCRConstants.Q_JCR_UUID) )
             {
                 ps = c.prepareStatement("UPDATE nodes SET uuid = ? WHERE id = ?");
-                ps.setString(1, property.getString());
+                ps.setString(1, vc.getValue().valueAsString() );
                 ps.setLong(2,id);
                 
                 ps.executeUpdate();

@@ -59,7 +59,8 @@ public class MemoryProvider implements RepositoryProvider
     public void addNode(StoreTransaction tx, Path path, QNodeDefinition def) throws RepositoryException
     {
         //System.out.println("Node++ "+path);
-        m_nodePaths.put( path, new TreeNode(path.isRoot() ? null : path.getParentPath(), null) );
+        if( !m_nodePaths.containsKey(path) )
+            m_nodePaths.put( path, new TreeNode(path.isRoot() ? null : path.getParentPath(), null) );
     }
 
     public void close(WorkspaceImpl ws)
@@ -153,40 +154,34 @@ public class MemoryProvider implements RepositoryProvider
         if( !workspaceName.equals(m_workspace) ) throw new NoSuchWorkspaceException();
     }
 
-    public void putPropertyValue(StoreTransaction tx, PropertyImpl property) throws RepositoryException
+    public void putPropertyValue(StoreTransaction tx, Path path, ValueContainer vc) throws RepositoryException
     {
-        ValueContainer vc;
-        
-        if( property.getDefinition().isMultiple() )
+        if( vc.isMultiple() )
         {
             //
             //  Needed to fix a casting issue: ValueImpl[] is not a subtype of Value[], even though
             //  ValueImpl implements Value[].
             //
-            Value[] values = property.getValues();
-            ValueImpl[] pseudovals = new ValueImpl[values.length];
-            for( int i = 0; i < values.length; i++ ) pseudovals[i] = (ValueImpl)values[i];
-            
-            vc = new ValueContainer(pseudovals, property.getType());
+            vc = vc.deepClone(tx.getWorkspace().getSession());
         }
         else
         {
-            ValueImpl value = property.getValue();
-            if( property.getQName().equals(JCRConstants.Q_JCR_UUID) )
+            ValueImpl value = vc.getValue();
+            if( path.getLastComponent().equals(JCRConstants.Q_JCR_UUID) )
             {
-                m_uuids.put( value.getString(), property.getInternalPath().getParentPath() );
+                m_uuids.put( value.getString(), path.getParentPath() );
             }
          
-            vc = new ValueContainer(value);
+            vc = vc.deepClone(tx.getWorkspace().getSession());
         }
         
-        TreeNode parent = m_nodePaths.get(property.getInternalPath().getParentPath());
+        TreeNode parent = m_nodePaths.get(path.getParentPath());
         
-        if( parent == null ) throw new PathNotFoundException("Parent path not found "+property.getInternalPath().getParentPath());
+        if( parent == null ) throw new PathNotFoundException("Parent path not found "+path.getParentPath());
         
-        parent.properties.put(property.getQName(), vc);                                            
+        parent.properties.put(path.getLastComponent(), vc);                                            
        
-        //System.out.println("Stored "+property.getInternalPath());
+//        System.out.println("Stored "+path);
     }
 
     public void remove(StoreTransaction tx, Path path) throws RepositoryException

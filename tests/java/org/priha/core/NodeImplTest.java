@@ -3,15 +3,13 @@ package org.priha.core;
 import javax.jcr.*;
 
 import junit.framework.Test;
-import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import org.priha.AbstractTest;
 import org.priha.RepositoryManager;
 
-public class NodeImplTest extends TestCase
+public class NodeImplTest extends AbstractTest
 {
-
-    private RepositoryImpl m_repository;
     private Session m_session;
     private Session m_session2;
 
@@ -20,7 +18,6 @@ public class NodeImplTest extends TestCase
     {
         super.setUp();
         
-        m_repository = RepositoryManager.getRepository();
         m_session = m_repository.login(new SimpleCredentials("foo",new char[0]));
         Node nd = m_session.getRootNode().addNode("gobble");
         nd.addMixin("mix:referenceable");
@@ -34,11 +31,6 @@ public class NodeImplTest extends TestCase
     {
         super.tearDown();
         
-        Node nd = m_session.getRootNode();
-        
-        removeAll( nd.getNodes() );
-        m_session.save();
-        
         m_session.logout();
         m_session2.logout();
     }
@@ -46,17 +38,6 @@ public class NodeImplTest extends TestCase
     public static Test suite()
     {
         return new TestSuite( NodeImplTest.class );
-    }
-    
-    private void removeAll( NodeIterator ni ) throws RepositoryException
-    {
-        while( ni.hasNext() )
-        {
-            Node nd = ni.nextNode();
-            removeAll( nd.getNodes() );
-        
-            nd.remove();
-        }        
     }
     
     public void testUUID() throws Exception

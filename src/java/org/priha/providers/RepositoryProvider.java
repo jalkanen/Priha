@@ -240,7 +240,7 @@ public interface RepositoryProvider
      *  @throws RepositoryException If the property cannot be stored.
      */
     
-    public void putPropertyValue( StoreTransaction tx, PropertyImpl property ) throws RepositoryException;
+    public void putPropertyValue( StoreTransaction tx, Path path, ValueContainer property ) throws RepositoryException;
     
 
     /**

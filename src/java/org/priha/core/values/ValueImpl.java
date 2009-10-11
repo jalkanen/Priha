@@ -129,6 +129,20 @@ public abstract class ValueImpl implements Value, Cloneable, Comparable<ValueImp
     }
 
     /**
+     *  Allows getting the Value as a String without regard to the current Stream/Value format
+     *  setting.  This means that this method can be called at any time.
+     *   
+     *  @return The value as a String. However, may return null in case the conversion
+     *          cannot be made.  Default implementation returns null and subclasses are expected
+     *          to override this.
+     *  
+     */
+    public String valueAsString()
+    {
+        return null;
+    }
+    
+    /**
      *  By default, does String comparison, which means it may fail.  Subclasses are expected
      *  to override.
      */

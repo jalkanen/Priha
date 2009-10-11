@@ -118,4 +118,17 @@ public class StringValueImpl extends ValueImpl implements Value, Serializable
     {
         return m_value;
     }
+
+    @Override
+    public String valueAsString()
+    {
+        return m_value;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        // TODO Auto-generated method stub
+        return super.clone();
+    }
 }
