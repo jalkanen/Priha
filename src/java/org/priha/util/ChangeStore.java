@@ -9,6 +9,8 @@ import org.priha.core.ItemState;
 import org.priha.core.PropertyImpl;
 import org.priha.providers.ValueContainer;
 
+// FIXME: This could be a lot faster when doing get()s for example.
+
 public class ChangeStore implements Iterable<ChangeStore.Change>
 {
     private LinkedList<Change> m_changes = new LinkedList<Change>();

@@ -557,14 +557,14 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             Connection c = pc.getConnection();
             PreparedStatement ps = c.prepareStatement("SELECT N2.path AS path "+
                                                            "FROM workspaces,nodes AS N2,nodes AS N1 "+
-                                                           "WHERE workspaces.name = ? "+
+                                                           "WHERE N1.path = ? "+
                                                            "AND workspaces.id = N1.workspace "+
-                                                           "AND N1.path = ? "+
+                                                           "AND workspaces.name = ? "+
                                                            "AND N1.id = N2.parent "+
                                                            "ORDER BY N2.childOrder");
         
-            ps.setString(1, ws.getName());
-            ps.setString(2, parentpath.toString());
+            ps.setString(1, parentpath.toString());
+            ps.setString(2, ws.getName());
         
             ResultSet rs = ps.executeQuery();
         
