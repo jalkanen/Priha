@@ -23,6 +23,10 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
 
+import org.priha.path.InvalidPathException;
+import org.priha.path.Path;
+import org.priha.path.PathFactory;
+import org.priha.path.PathRef;
 import org.priha.util.*;
 
 public abstract class ItemImpl implements Item

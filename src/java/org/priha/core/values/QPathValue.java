@@ -22,9 +22,9 @@ import java.io.Serializable;
 import javax.jcr.*;
 
 import org.priha.core.namespace.NamespaceMapper;
-import org.priha.util.Path;
-import org.priha.util.PathFactory;
-import org.priha.util.PathUtil;
+import org.priha.path.Path;
+import org.priha.path.PathFactory;
+import org.priha.path.PathUtil;
 
 public class QPathValue extends QValue
 {

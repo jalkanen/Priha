@@ -36,6 +36,8 @@ import org.priha.core.WorkspaceImpl;
 import org.priha.core.binary.MemoryBinarySource;
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
+import org.priha.path.Path;
+import org.priha.path.PathFactory;
 import org.priha.util.*;
 import org.priha.util.Pool.Poolable;
 import org.priha.util.Pool.PoolableFactory;

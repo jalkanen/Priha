@@ -20,7 +20,7 @@ import java.util.Arrays;
 
 import javax.jcr.RepositoryException;
 
-import org.priha.util.Path;
+import org.priha.path.Path;
 import org.priha.util.QName;
 
 

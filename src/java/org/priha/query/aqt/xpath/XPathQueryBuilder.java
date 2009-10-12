@@ -28,9 +28,9 @@ import javax.jcr.query.InvalidQueryException;
 import org.priha.RepositoryManager;
 import org.priha.core.JCRConstants;
 import org.priha.core.namespace.NamespaceMapper;
+import org.priha.path.Path;
 import org.priha.query.aqt.*;
 import org.priha.util.ISO8601;
-import org.priha.util.Path;
 import org.priha.util.QName;
 import org.priha.xml.XMLUtils;
 

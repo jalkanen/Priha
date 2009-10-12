@@ -7,6 +7,7 @@ import java.util.ListIterator;
 import org.priha.core.ItemImpl;
 import org.priha.core.ItemState;
 import org.priha.core.PropertyImpl;
+import org.priha.path.Path;
 import org.priha.providers.ValueContainer;
 
 // FIXME: This could be a lot faster when doing get()s for example.

@@ -33,6 +33,9 @@ import org.priha.core.values.QValue;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
+import org.priha.path.InvalidPathException;
+import org.priha.path.Path;
+import org.priha.path.PathFactory;
 import org.priha.util.*;
 
 /**

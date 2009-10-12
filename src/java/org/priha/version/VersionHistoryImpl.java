@@ -34,7 +34,7 @@ import org.priha.core.SessionImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QNodeTypeManager;
-import org.priha.util.Path;
+import org.priha.path.Path;
 
 public class VersionHistoryImpl extends NodeImpl implements VersionHistory
 {

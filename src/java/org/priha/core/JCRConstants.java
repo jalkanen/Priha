@@ -1,8 +1,8 @@
 package org.priha.core;
 
 import org.priha.RepositoryManager;
-import org.priha.util.Path;
-import org.priha.util.PathFactory;
+import org.priha.path.Path;
+import org.priha.path.PathFactory;
 import org.priha.util.QName;
 
 public final class JCRConstants

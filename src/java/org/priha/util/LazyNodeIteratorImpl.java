@@ -9,6 +9,7 @@ import javax.jcr.RepositoryException;
 
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
+import org.priha.path.Path;
 
 public class LazyNodeIteratorImpl extends GenericIterator implements NodeIterator
 {

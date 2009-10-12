@@ -26,8 +26,8 @@ import javax.jcr.Workspace;
 
 import org.priha.core.SessionImpl;
 import org.priha.core.WorkspaceImpl;
-import org.priha.util.InvalidPathException;
-import org.priha.util.Path;
+import org.priha.path.InvalidPathException;
+import org.priha.path.Path;
 
 /**
  *  A LockManager exists per static workspace.  This means that it

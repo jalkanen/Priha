@@ -9,7 +9,7 @@ import javax.jcr.*;
 
 import org.priha.RepositoryManager;
 import org.priha.core.JCRConstants;
-import org.priha.util.PathFactory;
+import org.priha.path.PathFactory;
 import org.priha.util.QName;
 import org.xml.sax.helpers.NamespaceSupport;
 

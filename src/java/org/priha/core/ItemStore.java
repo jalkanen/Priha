@@ -24,10 +24,10 @@ import javax.jcr.Credentials;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 
+import org.priha.path.InvalidPathException;
+import org.priha.path.Path;
 import org.priha.providers.StoreTransaction;
 import org.priha.providers.ValueContainer;
-import org.priha.util.InvalidPathException;
-import org.priha.util.Path;
 import org.priha.util.QName;
 
 public interface ItemStore

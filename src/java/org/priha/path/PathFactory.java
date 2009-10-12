@@ -15,7 +15,7 @@
     See the License for the specific language governing permissions and 
     limitations under the License. 
  */
-package org.priha.util;
+package org.priha.path;
 
 import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;

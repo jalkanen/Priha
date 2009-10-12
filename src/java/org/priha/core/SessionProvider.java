@@ -25,6 +25,7 @@ import javax.jcr.nodetype.ConstraintViolationException;
 import javax.jcr.nodetype.NodeType;
 
 import org.priha.nodetype.QNodeType;
+import org.priha.path.*;
 import org.priha.providers.StoreTransaction;
 import org.priha.util.*;
 import org.priha.util.ChangeStore.Change;

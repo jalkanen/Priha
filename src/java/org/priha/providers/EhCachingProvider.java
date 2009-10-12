@@ -37,8 +37,8 @@ import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.values.StreamValueImpl;
 import org.priha.nodetype.QNodeDefinition;
+import org.priha.path.Path;
 import org.priha.util.ConfigurationException;
-import org.priha.util.Path;
 import org.priha.util.QName;
 
 /**

@@ -10,10 +10,10 @@ import org.priha.core.*;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QNodeTypeManager;
 import org.priha.nodetype.QPropertyDefinition;
+import org.priha.path.Path;
 import org.priha.query.aqt.*;
 import org.priha.query.aqt.OrderQueryNode.OrderSpec;
 import org.priha.util.NodeIteratorImpl;
-import org.priha.util.Path;
 import org.priha.util.QName;
 
 /**

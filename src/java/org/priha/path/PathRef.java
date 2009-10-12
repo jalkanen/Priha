@@ -1,4 +1,4 @@
-package org.priha.util;
+package org.priha.path;
 
 public class PathRef
 {

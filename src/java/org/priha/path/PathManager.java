@@ -1,4 +1,4 @@
-package org.priha.util;
+package org.priha.path;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.WeakHashMap;
 
 import javax.jcr.PathNotFoundException;
+
 
 /**
  *  PathManager stores all the Paths within a Session.

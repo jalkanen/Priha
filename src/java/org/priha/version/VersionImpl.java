@@ -30,7 +30,7 @@ import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
-import org.priha.util.Path;
+import org.priha.path.Path;
 
 /**
  *  Implements a JCR Version.  The JCR specification is slightly ambiguous on

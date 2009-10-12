@@ -11,8 +11,8 @@ import org.priha.core.JCRConstants;
 import org.priha.core.NodeImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.values.ValueImpl;
-import org.priha.util.Path;
-import org.priha.util.PathFactory;
+import org.priha.path.Path;
+import org.priha.path.PathFactory;
 
 public class VersionManager
 {

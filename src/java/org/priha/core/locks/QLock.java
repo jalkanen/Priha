@@ -27,7 +27,7 @@ import javax.jcr.lock.LockException;
 
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
-import org.priha.util.Path;
+import org.priha.path.Path;
 
 public class QLock
 {

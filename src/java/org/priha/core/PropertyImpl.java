@@ -34,8 +34,8 @@ import org.priha.core.values.StringValueImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QPropertyDefinition;
+import org.priha.path.Path;
 import org.priha.providers.ValueContainer;
-import org.priha.util.Path;
 
 public class PropertyImpl extends ItemImpl implements Property, Comparable<PropertyImpl>
 {

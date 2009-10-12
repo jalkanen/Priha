@@ -17,7 +17,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
-package org.priha.util;
+package org.priha.path;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -27,6 +27,7 @@ import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 
 import org.priha.core.namespace.NamespaceMapper;
+import org.priha.util.QName;
 
 /**
  *  Manages paths, which are a key ingredient in JCR.  A Path is an immutable

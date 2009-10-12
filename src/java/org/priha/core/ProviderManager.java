@@ -33,12 +33,12 @@ import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QNodeTypeManager;
 import org.priha.nodetype.QPropertyDefinition;
+import org.priha.path.InvalidPathException;
+import org.priha.path.Path;
 import org.priha.providers.RepositoryProvider;
 import org.priha.providers.StoreTransaction;
 import org.priha.providers.ValueContainer;
 import org.priha.util.ConfigurationException;
-import org.priha.util.InvalidPathException;
-import org.priha.util.Path;
 import org.priha.util.QName;
 
 /**
