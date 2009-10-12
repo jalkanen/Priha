@@ -196,7 +196,11 @@ public abstract class ItemImpl implements Item
 
     public boolean isModified()
     {
-        return m_state != ItemState.EXISTS;
+        //
+        //  An Item is not modified, if it's, well, not modified or it's been recently
+        //  added (then it's NEW).
+        //
+        return m_state != ItemState.EXISTS && m_state != ItemState.NEW;
     }
 
     public boolean isNew()

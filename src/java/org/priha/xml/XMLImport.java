@@ -187,6 +187,7 @@ public class XMLImport extends DefaultHandler
                 case ImportUUIDBehavior.IMPORT_UUID_COLLISION_REMOVE_EXISTING:
                     if( uuidNode != null )
                     {
+                        // Yes, there is a collision
                         if( uuidNode.getInternalPath().isParentOf( m_currentPath ) )
                         {
                             throw new ConstraintViolationException("Importing this node ("+nd.getPath()+") would result in one of its parents being removed - "+

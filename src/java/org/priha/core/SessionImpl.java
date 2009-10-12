@@ -325,7 +325,7 @@ public class SessionImpl implements Session, NamespaceMapper
         checkLive();
         checkWritePermission();
 
-        if( !isSuper() && destAbsPath.endsWith("]") )
+        if( destAbsPath.endsWith("]") )
             throw new ConstraintViolationException("Destination path must not have an index as its final component.");        
 
         boolean isSuper = setSuper( true );

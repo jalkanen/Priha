@@ -473,6 +473,11 @@ public class SessionProvider
             {
                 log.finest("Removing "+p);
                 m_source.remove(tx, p);
+                //
+                // Some accesses may trigger local cache hits, so we do remove any items at this
+                // stage as well.
+                //
+                m_fetchedItems.remove( m_workspace.getSession().getPathManager().getPathRef(p) );
             }
             
             //

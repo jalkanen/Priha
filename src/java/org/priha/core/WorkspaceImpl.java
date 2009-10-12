@@ -157,6 +157,13 @@ public class WorkspaceImpl
         
         try
         {
+            //
+            //  Do the check here, since once we're in super mode, addNode() will happily
+            //  allow adding to an indexed path.
+            //
+            if( destAbsPath.endsWith("]") )
+                throw new ConstraintViolationException("Cannot clone to a path which ends with an index.");
+            
             if( removeExisting && getSession().itemExists( destAbsPath ) )
             {
 //                getSession().getItem( destAbsPath ).remove();
@@ -207,6 +214,9 @@ public class WorkspaceImpl
         throws NoSuchWorkspaceException, ConstraintViolationException, VersionException, 
                AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
+        if( destAbsPath.endsWith("]") )
+            throw new ConstraintViolationException("Destination path must not end with an index.");
+        
         SessionImpl srcSession = getSession().getRepository().login( srcWorkspace ); 
         
         // Superuser does not care about locking, so we'll check it separately.
@@ -456,12 +466,10 @@ public class WorkspaceImpl
      *  Implemented simply by starting a new Session, which then performs the copy, 
      *  and then calling save() on it. 
      */
-    // TODO: This should really call the relevant methods in the provider which
-    //       would make moves a lot faster.
     public void move(String srcAbsPath, String destAbsPath) throws ConstraintViolationException, VersionException, AccessDeniedException, PathNotFoundException, ItemExistsException, LockException, RepositoryException
     {
         // Superuser does not care about locking, so we'll check it separately.
-        
+
         checkLock(destAbsPath);
         getSession().checkWritePermission();
 

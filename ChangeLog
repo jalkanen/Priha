@@ -1,3 +1,16 @@
+2009-10-12  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.5.2
+        
+        * Fixed a number of leftover problems; again down to 8 failures on TCK.
+        SNS support still disabled, but all failing tests are related to SNS...
+        This version should fix most of the problems introduced in 0.5.0.
+
+        * 0.5.1
+        
+        * Moved Path* classes to its own package: org.priha.path, since util-package
+        was perhaps growing a bit too much.
+        
 2009-10-11  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.5.0

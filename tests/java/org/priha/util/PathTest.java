@@ -10,6 +10,8 @@ import junit.framework.TestSuite;
 import org.priha.TestUtil;
 import org.priha.core.namespace.NamespaceMapper;
 import org.priha.core.namespace.NamespaceRegistryImpl;
+import org.priha.path.Path;
+import org.priha.path.PathFactory;
 
 public class PathTest extends TestCase
 {

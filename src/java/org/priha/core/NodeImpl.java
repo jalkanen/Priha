@@ -902,7 +902,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         }
         else
         {
-            prop.setState( ItemState.UPDATED );
+//            prop.setState( ItemState.UPDATED );
         }
         
         if( value == null )

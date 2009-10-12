@@ -1,6 +1,6 @@
 package org.priha.util;
 
-import org.priha.util.PathUtil;
+import org.priha.path.PathUtil;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
