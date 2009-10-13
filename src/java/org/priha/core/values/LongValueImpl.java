@@ -47,6 +47,11 @@ public class LongValueImpl extends ValueImpl implements Value, Serializable
         }
     }
 
+    public LongValueImpl(LongValueImpl value)
+    {
+        m_value = value.m_value;
+    }
+
     public int getType()
     {
         return PropertyType.LONG;

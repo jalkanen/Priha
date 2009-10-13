@@ -64,6 +64,11 @@ public class CalendarValueImpl extends ValueImpl implements Value, Serializable
         m_value = cal;
     }
 
+    public CalendarValueImpl(CalendarValueImpl value)
+    {
+        m_value = value.m_value;
+    }
+
     public int getType()
     {
         return PropertyType.DATE;

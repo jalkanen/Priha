@@ -42,6 +42,11 @@ public class BooleanValueImpl extends ValueImpl implements Value, Serializable
         m_value = Boolean.valueOf(value);
     }
 
+    public BooleanValueImpl(BooleanValueImpl value)
+    {
+        m_value = value.m_value;
+    }
+
     public int getType()
     {
         return PropertyType.BOOLEAN;

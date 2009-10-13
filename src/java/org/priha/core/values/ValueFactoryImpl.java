@@ -47,13 +47,13 @@ public class ValueFactoryImpl implements ValueFactory
         switch( value.getType() )
         {
             case PropertyType.BOOLEAN:
-                return new BooleanValueImpl( value.getBoolean() );
+                return new BooleanValueImpl( (BooleanValueImpl)value );
                 
             case PropertyType.DOUBLE:
-                return new DoubleValueImpl( value.getDouble() );
+                return new DoubleValueImpl( (DoubleValueImpl)value );
                 
             case PropertyType.LONG:
-                return new LongValueImpl( value.getLong() );
+                return new LongValueImpl( (LongValueImpl)value );
                 
             case PropertyType.NAME:
                 return new QNameValue( ((QNameValue.Impl)value).getQValue().getValue() ).new Impl(m_session);
@@ -62,13 +62,13 @@ public class ValueFactoryImpl implements ValueFactory
                 return new QPathValue( ((QPathValue.Impl)value).getQValue().getPath() ).new Impl(m_session);
                 
             case PropertyType.REFERENCE:
-                return new ReferenceValueImpl( value.getString() );
+                return new ReferenceValueImpl( value.valueAsString() );
                 
             case PropertyType.STRING:
                 return new StringValueImpl( value.valueAsString() );
 
             case PropertyType.DATE:
-                return new CalendarValueImpl( value.getDate() );
+                return new CalendarValueImpl( (CalendarValueImpl)value );
                 
             case PropertyType.BINARY:
                 return new StreamValueImpl( value );

@@ -1,5 +1,12 @@
 2009-10-12  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.5.3
+        
+        * Fixed ValueFactoryImpl.createValue(Value) to make proper clones
+        also for Calendar values.
+        
+2009-10-12  Janne Jalkanen <jalkanen@ecyrd.com>
+
         * 0.5.2
         
         * Fixed a number of leftover problems; again down to 8 failures on TCK.

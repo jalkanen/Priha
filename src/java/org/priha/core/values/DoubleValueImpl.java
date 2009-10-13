@@ -47,6 +47,11 @@ public class DoubleValueImpl extends ValueImpl implements Value, Serializable
         }
     }
 
+    public DoubleValueImpl(DoubleValueImpl value)
+    {
+        m_value = value.m_value;
+    }
+
     public int getType()
     {
         return PropertyType.DOUBLE;
