@@ -45,6 +45,7 @@ import javax.jcr.version.OnParentVersionAction;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 
+import org.priha.RepositoryManager;
 import org.priha.core.locks.QLock;
 import org.priha.core.locks.LockManager;
 import org.priha.core.values.ValueFactoryImpl;
@@ -256,7 +257,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 
                 absPath = new Path( absPath.getParentPath(), 
                                     new Path.Component(absPath.getLastComponent(),newPos) );
-                throw new RepositoryException("TURNED OFF FOR NOW");
+//                throw new RepositoryException("TURNED OFF FOR NOW");
             }
 
             //
@@ -750,6 +751,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                                                                 LockException,
                                                                                 RepositoryException
     {
+        //
+        //  The usual sanity checks.
+        //
         if( !getPrimaryNodeType().hasOrderableChildNodes() )
         {
             throw new UnsupportedRepositoryOperationException("This Node does not support orderable child nodes.");
@@ -769,6 +773,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         if( !hasNode(srcChildRelPath) ) throw new ItemNotFoundException("Source child does not exist");
         if( destChildRelPath != null && !hasNode(destChildRelPath) ) throw new ItemNotFoundException("Dest child does not exist");
         
+        //
+        //  Get the current order
+        //
         Path srcPath = getInternalPath().resolve(m_session,srcChildRelPath);
         Path dstPath = destChildRelPath != null ? getInternalPath().resolve(m_session,destChildRelPath) : null;
         
@@ -791,19 +798,70 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         Path p = newOrder.remove(srcIndex);
         if( dstIndex != -1 ) newOrder.add(dstIndex,p);
         else newOrder.add(p);
-/*
-        System.out.println("Original order");
-        for( Path p2 : children )
-        {
-            System.out.println(p2);
-        }
 
-        System.out.println("New order");
-        for( Path p2 : newOrder )
+        //
+        //  Make sure locks are also transferred.
+        //
+        QLock lock = m_lockManager.getLock( srcPath );
+        if( lock != null )
         {
-            System.out.println(p2);
+            m_lockManager.moveLock(lock, dstPath);
         }
-  */      
+        
+        //
+        //  Now the not-so-fun thing; we must make sure that also any SNS's are rearranged appropriately.
+        //
+        //  Case 1:  A[1], A[2], A[3] => orderBefore("A[3]","A[1]") => A[3], A[1], A[2].
+        //  Case 2:  A[1], A[2], A[3] => orderBefore("A[1]","A[3]") => A[2], A[1], A[3].
+        //
+
+        boolean isSuper = m_session.setSuper(true);
+        
+        try
+        {
+            int realidx = 1;
+            for( int i = 0; i < newOrder.size(); i++ )
+            {
+                Path.Component qn = newOrder.get(i).getLastComponent();
+            
+                // Is this the moved path or its SNS?  We check just the QName part, not the index.
+                if( qn.getNamespaceURI().equals(srcPath.getLastComponent().getNamespaceURI()) && 
+                    qn.getLocalPart().equals(srcPath.getLastComponent().getLocalPart()))
+                {
+                    if( qn.getIndex() != realidx )
+                    {
+                        System.out.println("Trying to reorder SNS... : "+qn);
+                        QName q = qn.getQName();
+                        Path newPath = getInternalPath().resolve( new Path.Component(q,realidx) );
+                    
+                        //
+                        // This is hairy and nasty.  Avert thy eyes.
+                        //
+                        String path1 = getPath()+"/"+qn.toString(m_session);
+                        String path2 = newPath.toString(m_session);
+                        String tmppath = getPath()+"/priha:tmpmove";
+                    
+                        m_session.move( path1, tmppath );
+                        m_session.move( path2, path1 );
+                        m_session.move( tmppath, path2 );
+                    
+                        int  oldI = newOrder.indexOf(newPath);
+                        Path oldP = newOrder.set(i,newPath);
+                    
+                        newOrder.set(oldI, oldP);
+                    
+                        realidx++;
+                    }
+                }
+            }
+        }
+        finally
+        {
+            m_session.setSuper(isSuper);
+        }
+        //
+        //  Finish.
+        //
         setState( ItemState.UPDATED );
         m_childOrder = newOrder;
     }
@@ -890,7 +948,20 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             
                 QPropertyDefinition pd = parentType.findPropertyDefinition(name,ismultiple);
             
-                if( pd == null ) throw new RepositoryException("No propertydefinition found for "+parentType+" and "+name);
+                if( pd == null ) 
+                {
+                    //
+                    //  Let's add one of our definitions
+                    //
+                    if( name.getNamespaceURI().equals(RepositoryManager.NS_PRIHA) )
+                    {
+                        pd = QPropertyDefinition.PRIHA_INTERNAL;
+                    }
+                    else
+                    {
+                        throw new RepositoryException("No propertydefinition found for "+parentType+" and "+name);
+                    }
+                }
             
                 prop = new PropertyImpl( m_session, propertypath, pd );
 //                prop.setState( ItemState.NEW );
@@ -1331,13 +1402,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         if( getState() == ItemState.REMOVED )
-            //throw new ConstraintViolationException(getPath()+" has already been removed");
+        {
+//            System.out.println(getPath()+" has already been removed");
             return; // Die nicely
-         
+        }
+        
         Path path = getInternalPath();
         
-        if( !m_session.m_provider.nodeExistsInRepository( path ) )
+        if( !m_session.m_provider.nodeExistsInRepository( path ) && m_session.m_provider.m_changedItems.get(path) == null )
         {
+            m_session.m_provider.m_changedItems.dump();
             throw new InvalidItemStateException("Item has already been removed by another Session "+getPath());
         }
         
@@ -1403,11 +1477,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         m_state = ItemState.REMOVED;
         
         //
-        //  Remove children
+        //  Remove children.  We do this in a reverse order in order
+        //  not to force annoying moves for same-name siblings.  It's just faster.
         //
-        for( NodeIterator ndi = getNodes(); ndi.hasNext(); )
+        LazyNodeIteratorImpl ndi = (LazyNodeIteratorImpl) getNodes();
+        ndi.skip( ndi.getSize() );
+        
+        while( ndi.hasPrevious() )
         {
-            NodeImpl nd = (NodeImpl)ndi.nextNode();
+            NodeImpl nd = (NodeImpl)ndi.previousNode();
 
 //            System.out.println("REMOVING "+nd.getPath());
             
@@ -1425,7 +1503,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         // This is a hack which just resets the state and then adds this to the remove queue. FIXME!
         m_state = ItemState.UPDATED;
         setState( ItemState.REMOVED );
-//        m_session.remove( this );
 
         //
         //  Fix same name siblings, but don't bother if the parent is already removed.
@@ -1451,7 +1528,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                     Path destPath = new Path(n.getParent().getInternalPath(),
                                              new Path.Component(getQName(),siblingIndex-1) );
             
-                    System.out.println("Moving "+n+" to "+destPath);
+//                    System.out.println("Moving "+n+" to "+destPath);
                     m_session.m_provider.m_changedItems.dump();
                     getSession().move( n.getInternalPath().toString( m_session ), 
                                        destPath.toString( m_session ) );

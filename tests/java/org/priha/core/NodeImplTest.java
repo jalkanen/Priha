@@ -51,6 +51,27 @@ public class NodeImplTest extends AbstractTest
         assertEquals( "wrong uuid", nd.getPath(), nd2.getPath() );
     }
 
+    public void testNew() throws Exception
+    {
+        Node nd = m_session.getRootNode().addNode("atari");
+        
+        assertTrue("start",nd.isNew());
+        
+        nd.addMixin("mix:referenceable");
+        
+        assertTrue("mixin",nd.isNew());
+
+        nd.addNode("bar");
+        
+        assertTrue("addnode",nd.isNew());
+
+        nd.setProperty("Garbage","out");
+        
+        assertTrue("setproperty",nd.isNew());
+
+        m_session.refresh(true);
+    }
+    
     public void testReferences() throws Exception
     {
         Node gobble = (Node)m_session.getItem("/gobble");

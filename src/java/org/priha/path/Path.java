@@ -681,6 +681,15 @@ public final class Path implements Comparable<Path>, Serializable
             return false;
         }
 
+        /**
+         *  Returns a plain QName of this Component (discarding the index).
+         *  @return
+         */
+        public QName getQName()
+        {
+            return new QName(getNamespaceURI(),getLocalPart(),getPrefix());
+        }
+        
         @Override
         public int compareTo( QName o )
         {

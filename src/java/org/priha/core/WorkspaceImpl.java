@@ -473,6 +473,9 @@ public class WorkspaceImpl
         checkLock(destAbsPath);
         getSession().checkWritePermission();
 
+        if( destAbsPath.endsWith("]") )
+            throw new ConstraintViolationException("Cannot move to a path with an index in the name");
+        
         SessionImpl s = m_session.getRepository().superUserLogin( getName() );
         
         try

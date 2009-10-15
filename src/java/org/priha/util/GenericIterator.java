@@ -19,6 +19,7 @@ package org.priha.util;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Set;
 
 /**
@@ -28,14 +29,14 @@ import java.util.Set;
  */
 public abstract class GenericIterator implements Iterator
 {
-    protected Iterator<?> m_iterator;
+    protected ListIterator<?> m_iterator;
     protected int m_position;
     protected int m_size;
     protected List<?> m_list;
 
     public GenericIterator( List<?> list )
     {
-        m_iterator = list.iterator();
+        m_iterator = list.listIterator();
         m_position = 0;
         m_size     = list.size();
         m_list     = list;
@@ -69,6 +70,11 @@ public abstract class GenericIterator implements Iterator
         return m_iterator.hasNext();
     }
 
+    public boolean hasPrevious()
+    {
+        return m_iterator.hasPrevious();
+    }
+    
     public Object next()
     {
         m_position++;
@@ -76,6 +82,13 @@ public abstract class GenericIterator implements Iterator
         return m_iterator.next();
     }
 
+    public Object previous()
+    {
+        m_position--;
+        
+        return m_iterator.previous();
+    }
+        
     public void remove()
     {
         m_iterator.remove();

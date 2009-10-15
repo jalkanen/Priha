@@ -68,6 +68,12 @@ public abstract class NodeValueImpl extends ValueImpl implements Value, Serializ
     }
 
     @Override
+    public String valueAsString()
+    {
+        return m_value;
+    }
+    
+    @Override
     public String toString()
     {
         return m_value.toString();

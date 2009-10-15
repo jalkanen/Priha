@@ -35,6 +35,7 @@ public abstract class ItemImpl implements Item
     protected PathRef           m_path;
     protected final SessionImpl m_session;
     protected ItemState         m_state    = ItemState.UNDEFINED;
+    protected boolean           m_isNew    = false;
     
     public ItemImpl( SessionImpl session, String path ) throws NamespaceException, RepositoryException
     {
@@ -75,6 +76,7 @@ public abstract class ItemImpl implements Item
                     break;
                     
                 case NEW:
+                    m_isNew = true;
                 case REMOVED:
                 case MOVED:
                     //
@@ -205,7 +207,7 @@ public abstract class ItemImpl implements Item
 
     public boolean isNew()
     {
-        return m_state == ItemState.NEW || m_state == ItemState.UNDEFINED;
+        return m_isNew || m_state == ItemState.UNDEFINED;
     }
 
     public boolean isNode()
@@ -239,6 +241,9 @@ public abstract class ItemImpl implements Item
     {
         if( !m_session.itemExists(getInternalPath()) ) 
             throw new InvalidItemStateException("You cannot refresh an Item which has been deleted!");
+        
+        if( getState() == ItemState.REMOVED || getState() == ItemState.MOVED )
+            throw new InvalidItemStateException("Node has been removed");
         
         m_session.refresh( keepChanges, getInternalPath() );
     }
@@ -321,6 +326,7 @@ public abstract class ItemImpl implements Item
     protected void postSave()
     {
         m_state = ItemState.EXISTS;
+        m_isNew = false;
     }
     
     private transient long           m_creationTime = System.currentTimeMillis();

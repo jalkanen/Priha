@@ -36,9 +36,29 @@ public class LazyNodeIteratorImpl extends GenericIterator implements NodeIterato
         }
     }
 
+    public NodeImpl previousNode()
+    {
+        Path p = (Path)super.previous();
+        
+        try
+        {
+            return (NodeImpl)m_session.getItem( p );
+        }
+        catch( RepositoryException e )
+        {
+            e.printStackTrace();
+            throw new NoSuchElementException("No next node is available: "+e.getMessage());
+        }
+    }
+    
     public NodeImpl next()
     {
         return nextNode();
+    }
+    
+    public NodeImpl previous()
+    {
+        return previousNode();
     }
     
     public NodeImpl get( int index ) throws PathNotFoundException, RepositoryException

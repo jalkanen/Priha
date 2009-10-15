@@ -428,9 +428,12 @@ public class SessionProvider
                                 break;
                                 
                             case REMOVED:
-                                toberemoved.add(change.getPath());
+                                if( !pi.isTransient() )
+                                {
+                                    toberemoved.add(change.getPath());
 //                                m_source.remove(tx, change.getPath());
-
+                                }
+                                
                                 clearAllCaches( pi, null );
                                 break;   
                                 

@@ -325,7 +325,10 @@ public class SessionImpl implements Session, NamespaceMapper
         checkLive();
         checkWritePermission();
 
-        if( destAbsPath.endsWith("]") )
+        System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
+
+
+        if( destAbsPath.endsWith("]") && !isSuper() )
             throw new ConstraintViolationException("Destination path must not have an index as its final component.");        
 
         boolean isSuper = setSuper( true );
@@ -339,13 +342,11 @@ public class SessionImpl implements Session, NamespaceMapper
 
             if( hasNode( path ) ) 
             {
-                throw new ItemExistsException("Destination node already exists!");
+                throw new ItemExistsException("Destination node "+getWorkspace().getName()+":"+path.toString(this)+" already exists!");
             }
         
             NodeImpl srcnode = getRootNode().getNode(srcAbsPath);
         
-            //System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
-
             String newDestPath = destAbsPath;
 
             LockManager lm = LockManager.getInstance( m_workspace );
@@ -364,10 +365,10 @@ public class SessionImpl implements Session, NamespaceMapper
             {
                 Node child = ni.nextNode();
 
-                String relPath = srcnode.getName();
+                String relPath = child.getName();
 
                 String newPath = destAbsPath + "/" + relPath;
-                
+                System.out.println("Child path move "+child.getPath()+" => "+newPath );
                 move( child.getPath(), newPath );
             }
         

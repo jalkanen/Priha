@@ -1,3 +1,13 @@
+2009-10-15  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.5.4
+        
+        * Bug fix: Item.isNew() was returning false when a mixin was added.
+        Reported by Andrew Jaquith.
+        
+        * Same-name-siblings added again; however, Node.orderBefore() does not
+        work at the moment. 
+        
 2009-10-12  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.5.3

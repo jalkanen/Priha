@@ -22,16 +22,26 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Value;
 import javax.jcr.nodetype.PropertyDefinition;
 
+import org.priha.RepositoryManager;
 import org.priha.core.SessionImpl;
 import org.priha.util.QName;
 
 public class QPropertyDefinition extends QItemDefinition
 {
+    public static final QPropertyDefinition PRIHA_INTERNAL;
+    
     protected String[] m_defaults   = new String[0];
-    protected boolean m_isMultiple = false;
+    protected boolean  m_isMultiple = false;
     protected String[] m_valueConstraints = new String[0];
     
-    protected int     m_requiredType = PropertyType.UNDEFINED;
+    protected int      m_requiredType = PropertyType.UNDEFINED;
+    
+    static
+    {
+        QNodeType inodetype = new QNodeType( new QName(RepositoryManager.NS_PRIHA,"internal") );
+        QPropertyDefinition ipd = new QPropertyDefinition(inodetype,QName.valueOf("*"));
+        PRIHA_INTERNAL = ipd;
+    }
     
     public QPropertyDefinition(QNodeType type, QName name)
     {
