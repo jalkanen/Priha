@@ -32,6 +32,10 @@ import org.priha.core.namespace.NamespaceRegistryImpl;
 import org.priha.util.ConfigurationException;
 import org.priha.util.FileUtil;
 
+/**
+ *  Provides the main Repository class for Priha. You may use this
+ *  by simply instantiating it with a suitable Properties object.
+ */
 public class RepositoryImpl implements Repository
 {
     public static final String   DEFAULT_WORKSPACE = "default";
@@ -54,6 +58,13 @@ public class RepositoryImpl implements Repository
     private SessionManager m_sessionManager = new SessionManager();
     private ProviderManager m_providerManager;
     
+    /**
+     *  Create a new Repository using the given properties.  Any property which is not
+     *  set will be read from the default properties (priha_default.properties).
+     *  
+     *  @param prefs Properties to use.  Must not be null.
+     *  @throws ConfigurationException If the properties are wrong.
+     */
     public RepositoryImpl( Properties prefs ) throws ConfigurationException
     {
         try
@@ -182,6 +193,19 @@ public class RepositoryImpl implements Repository
     }
 
     /**
+     *  Shuts down the entire repository, stops all providers and releases
+     *  resources.  After this call you can restart the repository by either
+     *  calling login(), or creating a new RepositoryImpl instance.
+     */
+    public void shutdown()
+    {
+        if( m_providerManager != null )
+        {
+            m_providerManager.stop();
+        }
+    }
+    
+    /**
      *  Returns a Session which has write permissions to the repository.  Normally, the
      *  user has no reason to use this method - it is used internally to sometimes modify
      *  the repo.
@@ -297,8 +321,8 @@ public class RepositoryImpl implements Repository
         @Override
         public void run()
         {
-            log.fine( "Running shutdown process..." );
-            if( m_providerManager != null ) m_providerManager.stop();
+            log.info( "Running shutdown process (repository closed due to JVM termination)" );
+            shutdown();
         }
         
     }
