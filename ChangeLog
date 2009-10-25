@@ -1,5 +1,11 @@
 2009-10-15  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.5.5
+        
+        * Added RepositoryImpl.shutdown() to facilitate repository restarts.
+        
+2009-10-15  Janne Jalkanen <jalkanen@ecyrd.com>
+
         * 0.5.4
         
         * Bug fix: Item.isNew() was returning false when a mixin was added.
