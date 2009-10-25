@@ -43,6 +43,29 @@ public class RepositoryTest extends AbstractTest
         assertEquals( 0, nd.getDepth() );
     }
 
+    public void testShutdown() throws Exception
+    {
+        RepositoryImpl r = RepositoryManager.getRepository("priha_shutdown.properties");
+        
+        Session s = r.login();
+        
+        assertTrue("session start",s.isLive());
+        
+        r.shutdown();
+        
+        assertFalse("session should be closed", s.isLive());
+        
+        try
+        {
+            r.login();
+            fail("Allowed login");
+        }
+        catch( RepositoryException e )
+        {
+            // Expected
+        }
+    }
+    
     public void testEmptyRepo() throws Exception
     {
         Node nd = m_session.getRootNode().addNode("testemptyrepo");
