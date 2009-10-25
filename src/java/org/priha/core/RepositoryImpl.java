@@ -42,6 +42,8 @@ public class RepositoryImpl implements Repository
 
     private static NamespaceRegistryImpl c_namespaceRegistry = new NamespaceRegistryImpl();
 
+    private RepositoryState m_state = RepositoryState.DEAD; 
+    
     /**
      *  Defines which paths are attempted to locate the default property file.
      */
@@ -55,7 +57,7 @@ public class RepositoryImpl implements Repository
 
     private Logger log = Logger.getLogger( getClass().getName() );
 
-    private SessionManager m_sessionManager = new SessionManager();
+    private SessionManager  m_sessionManager;
     private ProviderManager m_providerManager;
     
     /**
@@ -67,6 +69,8 @@ public class RepositoryImpl implements Repository
      */
     public RepositoryImpl( Properties prefs ) throws ConfigurationException
     {
+        m_state = RepositoryState.STARTING;
+        
         try
         {
             Properties defaultProperties = FileUtil.findProperties(DEFAULT_PROPERTIES);
@@ -90,6 +94,8 @@ public class RepositoryImpl implements Repository
         
         log.info( "G'day, Matilda!  Priha "+Release.VERSTR+" has been initialized." );
         log.fine( "Using configuration from "+prefs.toString() );
+        
+        m_state = RepositoryState.LIVE;
     }
 
     
@@ -112,6 +118,17 @@ public class RepositoryImpl implements Repository
         }
         
         return m_providerManager;
+    }
+    
+    protected SessionManager getSessionManager()
+    {
+        if( m_sessionManager == null )
+        {
+            log.info( "Initializing SessionManager..." );
+            m_sessionManager = new SessionManager();
+        }
+        
+        return m_sessionManager;
     }
     
     /**
@@ -166,11 +183,16 @@ public class RepositoryImpl implements Repository
                NoSuchWorkspaceException,
                RepositoryException
     {
+        if( m_state != RepositoryState.LIVE )
+        {
+            throw new RepositoryException("Repository is not alive.  It is "+m_state);
+        }
+        
         if( workspaceName == null ) workspaceName = getDefaultWorkspace();
 
         getProviderManager().open( credentials, workspaceName );
 
-        SessionImpl session = m_sessionManager.openSession( credentials, workspaceName );
+        SessionImpl session = getSessionManager().openSession( credentials, workspaceName );
 
         session.refresh(false);
 
@@ -199,10 +221,31 @@ public class RepositoryImpl implements Repository
      */
     public void shutdown()
     {
+        m_state = RepositoryState.SHUTTING;
+        
+        //
+        //  Close all open sessions.
+        //
+        visit( new SessionVisitor() 
+        {
+            public void visit(SessionImpl session)
+            {
+                session.logout();
+            }   
+        });
+        
+        //
+        //  Stop the ProviderManager and release providers.
+        //
         if( m_providerManager != null )
         {
             m_providerManager.stop();
         }
+        
+        m_providerManager = null;
+        m_sessionManager  = null;
+        
+        m_state = RepositoryState.DEAD;
     }
     
     /**
@@ -241,9 +284,9 @@ public class RepositoryImpl implements Repository
      */
     protected void visit( SessionVisitor v )
     {
-        synchronized( m_sessionManager.m_sessions )
+        synchronized( getSessionManager().m_sessions )
         {
-            for( Iterator<WeakReference<SessionImpl>> i = m_sessionManager.m_sessions.iterator(); i.hasNext(); )
+            for( Iterator<WeakReference<SessionImpl>> i = getSessionManager().m_sessions.iterator(); i.hasNext(); )
             {
                 WeakReference<SessionImpl> wr = i.next();
             
@@ -257,7 +300,7 @@ public class RepositoryImpl implements Repository
     
     protected void removeSession(SessionImpl s)
     {
-        m_sessionManager.closeSession(s);
+        getSessionManager().closeSession(s);
     }
     
     /**
@@ -286,6 +329,13 @@ public class RepositoryImpl implements Repository
         
         public void closeSession( SessionImpl s )
         {
+            //
+            //  Make sure that if we're in the midst of shutdown, these get removed
+            //  automatically.
+            //
+            if( m_state == RepositoryImpl.RepositoryState.SHUTTING )
+                return;
+            
             synchronized(m_sessions)
             {
                 for( Iterator<WeakReference<SessionImpl>> i = m_sessions.iterator(); i.hasNext(); )
@@ -326,4 +376,13 @@ public class RepositoryImpl implements Repository
         }
         
     }
+    
+    private enum RepositoryState {
+        LIVE,
+        SHUTTING,
+        STARTING,
+        DEAD
+    };
+    
+
 }
