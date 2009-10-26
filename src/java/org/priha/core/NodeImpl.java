@@ -57,6 +57,7 @@ import org.priha.nodetype.QPropertyDefinition;
 import org.priha.path.InvalidPathException;
 import org.priha.path.Path;
 import org.priha.path.PathFactory;
+import org.priha.path.Path.Component;
 import org.priha.util.*;
 import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
@@ -794,10 +795,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         int dstIndex = newOrder.indexOf( dstPath );
 
         if( srcIndex == -1 ) throw new ItemNotFoundException("Cannot locate source child, WTF?");
-        
+                
+        //
+        //  Removal of the node may cause a jump in the indices, so we need to subtract one sometimes.
+        //
         Path p = newOrder.remove(srcIndex);
-        if( dstIndex != -1 ) newOrder.add(dstIndex,p);
-        else newOrder.add(p);
+        if( dstIndex != -1 ) 
+            newOrder.add(dstIndex - (dstIndex > srcIndex ? 1 : 0),p);
+        else 
+            newOrder.add(p);
 
         //
         //  Make sure locks are also transferred.
@@ -832,18 +838,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                     {
                         System.out.println("Trying to reorder SNS... : "+qn);
                         QName q = qn.getQName();
-                        Path newPath = getInternalPath().resolve( new Path.Component(q,realidx) );
-                    
-                        //
-                        // This is hairy and nasty.  Avert thy eyes.
-                        //
-                        String path1 = getPath()+"/"+qn.toString(m_session);
-                        String path2 = newPath.toString(m_session);
-                        String tmppath = getPath()+"/priha:tmpmove";
-                    
-                        m_session.move( path1, tmppath );
-                        m_session.move( path2, path1 );
-                        m_session.move( tmppath, path2 );
+                        Component newName = new Component(q,realidx);
+                        
+                        Path path1   = getInternalPath().resolve(qn);
+                        Path tmppath = getInternalPath().resolve(m_session,"priha:tmpmove");
+                        Path newPath = getInternalPath().resolve(newName);
+                        
+                        m_session.rename( path1, tmppath.getLastComponent() );
+                        m_session.rename( newPath, path1.getLastComponent() );
+                        m_session.rename( tmppath, newName );
                     
                         int  oldI = newOrder.indexOf(newPath);
                         Path oldP = newOrder.set(i,newPath);

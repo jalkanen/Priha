@@ -239,4 +239,262 @@ public class NodeImplTest extends AbstractTest
         assertTrue( "property disappeared", n.hasProperty( "prop1" ) );
         assertEquals( "property value", "new value", n.getProperty( "prop1" ).getString());
     }
+    
+    public void testReorder1() throws Exception
+    {
+        Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
+        
+        Node n1 = root.addNode("Foo1");
+        Node n2 = root.addNode("Foo2");
+        Node n3 = root.addNode("Foo3");
+        Node n4 = root.addNode("Foo4");
+        Node n5 = root.addNode("Foo5");
+     
+        root.save();
+        
+        NodeIterator ni = root.getNodes();
+        assertEquals("Foo1",ni.nextNode().getName());
+        assertEquals("Foo2",ni.nextNode().getName());
+        assertEquals("Foo3",ni.nextNode().getName());
+        assertEquals("Foo4",ni.nextNode().getName());
+        assertEquals("Foo5",ni.nextNode().getName());
+        
+        root.orderBefore("Foo1", null);
+
+        // Works before save()
+        ni = root.getNodes();
+        assertEquals("Foo2",ni.nextNode().getName());
+        assertEquals("Foo3",ni.nextNode().getName());
+        assertEquals("Foo4",ni.nextNode().getName());
+        assertEquals("Foo5",ni.nextNode().getName());
+        assertEquals("Foo1",ni.nextNode().getName());
+
+        root.save();
+        
+        // works after save
+        ni = root.getNodes();
+        assertEquals("Foo2",ni.nextNode().getName());
+        assertEquals("Foo3",ni.nextNode().getName());
+        assertEquals("Foo4",ni.nextNode().getName());
+        assertEquals("Foo5",ni.nextNode().getName());
+        assertEquals("Foo1",ni.nextNode().getName());
+        
+    }
+    
+    public void testReorder2() throws Exception
+    {
+        Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
+        
+        Node n1 = root.addNode("Foo1");
+        Node n2 = root.addNode("Foo2");
+        Node n3 = root.addNode("Foo3");
+        Node n4 = root.addNode("Foo4");
+        Node n5 = root.addNode("Foo5");
+     
+        root.save();
+        
+        NodeIterator ni = root.getNodes();
+        assertEquals("Foo1",ni.nextNode().getName());
+        assertEquals("Foo2",ni.nextNode().getName());
+        assertEquals("Foo3",ni.nextNode().getName());
+        assertEquals("Foo4",ni.nextNode().getName());
+        assertEquals("Foo5",ni.nextNode().getName());
+        
+        root.orderBefore("Foo4", "Foo2");
+
+        // Works before save()
+        ni = root.getNodes();
+        assertEquals("Foo1",ni.nextNode().getName());
+        assertEquals("Foo4",ni.nextNode().getName());
+        assertEquals("Foo2",ni.nextNode().getName());
+        assertEquals("Foo3",ni.nextNode().getName());
+        assertEquals("Foo5",ni.nextNode().getName());
+
+        root.save();
+        
+        // works after save
+        ni = root.getNodes();
+        assertEquals("Foo1",ni.nextNode().getName());
+        assertEquals("Foo4",ni.nextNode().getName());
+        assertEquals("Foo2",ni.nextNode().getName());
+        assertEquals("Foo3",ni.nextNode().getName());
+        assertEquals("Foo5",ni.nextNode().getName());
+        
+    }
+    
+    public void testReorder3() throws Exception
+    {
+        Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
+        
+        Node n1 = root.addNode("Foo1");
+        Node n2 = root.addNode("Foo2");
+        Node n3 = root.addNode("Foo3");
+        Node n4 = root.addNode("Foo4");
+        Node n5 = root.addNode("Foo5");
+     
+        root.save();
+        
+        NodeIterator ni = root.getNodes();
+        assertEquals("Foo1",ni.nextNode().getName());
+        assertEquals("Foo2",ni.nextNode().getName());
+        assertEquals("Foo3",ni.nextNode().getName());
+        assertEquals("Foo4",ni.nextNode().getName());
+        assertEquals("Foo5",ni.nextNode().getName());
+        
+        root.orderBefore("Foo2", "Foo4");
+
+        // Works before save()
+        ni = root.getNodes();
+        assertEquals("Foo1",ni.nextNode().getName());
+        assertEquals("Foo3",ni.nextNode().getName());
+        assertEquals("Foo2",ni.nextNode().getName());
+        assertEquals("Foo4",ni.nextNode().getName());
+        assertEquals("Foo5",ni.nextNode().getName());
+
+        root.save();
+        
+        // works after save
+        ni = root.getNodes();
+        assertEquals("Foo1",ni.nextNode().getName());
+        assertEquals("Foo3",ni.nextNode().getName());
+        assertEquals("Foo2",ni.nextNode().getName());
+        assertEquals("Foo4",ni.nextNode().getName());
+        assertEquals("Foo5",ni.nextNode().getName());
+        
+    }
+    public void testReorderSNS1() throws Exception
+    {
+        Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
+        
+        Node n1 = root.addNode("Foo");
+        n1.setProperty("order", 1);
+        Node n2 = root.addNode("Foo");
+        n2.setProperty("order", 2);
+        Node n3 = root.addNode("Foo");
+        n3.setProperty("order", 3);
+        Node n4 = root.addNode("Foo");
+        n4.setProperty("order", 4);
+        Node n5 = root.addNode("Foo");
+        n5.setProperty("order", 5);
+     
+        root.save();
+        
+        NodeIterator ni = root.getNodes();
+        assertEquals(1,ni.nextNode().getProperty("order").getLong());
+        assertEquals(2,ni.nextNode().getProperty("order").getLong());
+        assertEquals(3,ni.nextNode().getProperty("order").getLong());
+        assertEquals(4,ni.nextNode().getProperty("order").getLong());
+        assertEquals(5,ni.nextNode().getProperty("order").getLong());
+        
+        root.orderBefore("Foo[1]", null);
+
+        // Works before save()
+        ni = root.getNodes();
+        assertEquals(2,ni.nextNode().getProperty("order").getLong());
+        assertEquals(3,ni.nextNode().getProperty("order").getLong());
+        assertEquals(4,ni.nextNode().getProperty("order").getLong());
+        assertEquals(5,ni.nextNode().getProperty("order").getLong());
+        assertEquals(1,ni.nextNode().getProperty("order").getLong());
+
+        root.save();
+        
+        // works after save
+        ni = root.getNodes();
+        assertEquals(2,ni.nextNode().getProperty("order").getLong());
+        assertEquals(3,ni.nextNode().getProperty("order").getLong());
+        assertEquals(4,ni.nextNode().getProperty("order").getLong());
+        assertEquals(5,ni.nextNode().getProperty("order").getLong());
+        assertEquals(1,ni.nextNode().getProperty("order").getLong());        
+    }
+    
+    public void testReorderSNS2() throws Exception
+    {
+        Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
+        
+        Node n1 = root.addNode("Foo");
+        n1.setProperty("order", 1);
+        Node n2 = root.addNode("Foo");
+        n2.setProperty("order", 2);
+        Node n3 = root.addNode("Foo");
+        n3.setProperty("order", 3);
+        Node n4 = root.addNode("Foo");
+        n4.setProperty("order", 4);
+        Node n5 = root.addNode("Foo");
+        n5.setProperty("order", 5);
+     
+        root.save();
+        
+        NodeIterator ni = root.getNodes();
+        assertEquals(1,ni.nextNode().getProperty("order").getLong());
+        assertEquals(2,ni.nextNode().getProperty("order").getLong());
+        assertEquals(3,ni.nextNode().getProperty("order").getLong());
+        assertEquals(4,ni.nextNode().getProperty("order").getLong());
+        assertEquals(5,ni.nextNode().getProperty("order").getLong());
+        
+        root.orderBefore("Foo[4]", "Foo[2]");
+
+        // Works before save()
+        ni = root.getNodes();
+        assertEquals(1,ni.nextNode().getProperty("order").getLong());
+        assertEquals(4,ni.nextNode().getProperty("order").getLong());
+        assertEquals(2,ni.nextNode().getProperty("order").getLong());
+        assertEquals(3,ni.nextNode().getProperty("order").getLong());
+        assertEquals(5,ni.nextNode().getProperty("order").getLong());
+
+        root.save();
+        
+        // works after save
+        ni = root.getNodes();
+        assertEquals(1,ni.nextNode().getProperty("order").getLong());
+        assertEquals(4,ni.nextNode().getProperty("order").getLong());
+        assertEquals(2,ni.nextNode().getProperty("order").getLong());
+        assertEquals(3,ni.nextNode().getProperty("order").getLong());
+        assertEquals(5,ni.nextNode().getProperty("order").getLong());        
+    }
+
+    public void testReorderSNS3() throws Exception
+    {
+        Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
+        
+        Node n1 = root.addNode("Foo");
+        n1.setProperty("order", 1);
+        Node n2 = root.addNode("Foo");
+        n2.setProperty("order", 2);
+        Node n3 = root.addNode("Foo");
+        n3.setProperty("order", 3);
+        Node n4 = root.addNode("Foo");
+        n4.setProperty("order", 4);
+        Node n5 = root.addNode("Foo");
+        n5.setProperty("order", 5);
+     
+        root.save();
+        
+        NodeIterator ni = root.getNodes();
+        assertEquals(1,ni.nextNode().getProperty("order").getLong());
+        assertEquals(2,ni.nextNode().getProperty("order").getLong());
+        assertEquals(3,ni.nextNode().getProperty("order").getLong());
+        assertEquals(4,ni.nextNode().getProperty("order").getLong());
+        assertEquals(5,ni.nextNode().getProperty("order").getLong());
+        
+        root.orderBefore("Foo[2]", "Foo[4]");
+
+        // Works before save()
+        ni = root.getNodes();
+        assertEquals(1,ni.nextNode().getProperty("order").getLong());
+        assertEquals(3,ni.nextNode().getProperty("order").getLong());
+        assertEquals(2,ni.nextNode().getProperty("order").getLong());
+        assertEquals(4,ni.nextNode().getProperty("order").getLong());
+        assertEquals(5,ni.nextNode().getProperty("order").getLong());
+
+        root.save();
+        
+        // works after save
+        ni = root.getNodes();
+        assertEquals(1,ni.nextNode().getProperty("order").getLong());
+        assertEquals(3,ni.nextNode().getProperty("order").getLong());
+        assertEquals(2,ni.nextNode().getProperty("order").getLong());
+        assertEquals(4,ni.nextNode().getProperty("order").getLong());
+        assertEquals(5,ni.nextNode().getProperty("order").getLong());        
+    }
+
 }

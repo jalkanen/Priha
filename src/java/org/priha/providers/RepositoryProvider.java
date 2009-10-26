@@ -276,10 +276,12 @@ public interface RepositoryProvider
     /**
      *  If the store has been cancelled and changes need to be rolled back.  A RepositoryProvider
      *  should use this opportunity to make sure it is in a consistent state.
-     * @param tx The transaction from storeStarted().
+     *  
+     *  @param tx The transaction from storeStarted().
      */
     public void storeCancelled(StoreTransaction tx) throws RepositoryException;
 
-    public void reorderNodes(StoreTransaction tx, Path internalPath, List<Path> childOrder) throws RepositoryException;
-    
+    public void reorderNodes(StoreTransaction tx, Path path, List<Path> childOrder) throws RepositoryException;
+
+    public void rename(StoreTransaction tx, Path path, Path.Component newName ) throws RepositoryException;
 }

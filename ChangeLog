@@ -1,4 +1,11 @@
-2009-10-15  Janne Jalkanen <jalkanen@ecyrd.com>
+2009-10-26  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.5.6
+        
+        * SessionProvider.checkSanity() was using the moved path for sanity
+        checks, not the originator path. Oops.
+
+2009-10-25  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.5.5
         

@@ -36,6 +36,7 @@ import org.priha.nodetype.QNodeDefinition;
 import org.priha.path.InvalidPathException;
 import org.priha.path.Path;
 import org.priha.path.PathFactory;
+import org.priha.path.Path.Component;
 import org.priha.util.*;
 
 /**
@@ -1605,5 +1606,10 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             newOrder.add( p.getLastComponent().toString() );
         }
         saveOrder(tx.getWorkspace(), internalPath, newOrder);
+    }
+
+    public void rename(StoreTransaction tx, Path path, Component newName) throws RepositoryException
+    {
+        throw new UnsupportedRepositoryOperationException();
     }
 }

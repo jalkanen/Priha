@@ -42,6 +42,7 @@ import org.priha.path.Path;
 import org.priha.path.PathFactory;
 import org.priha.path.PathManager;
 import org.priha.path.PathRef;
+import org.priha.path.Path.Component;
 import org.priha.util.*;
 import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
@@ -765,6 +766,16 @@ public class SessionImpl implements Session, NamespaceMapper
     }
 
     /**
+     *  This method provides debug information about the state of the Session.  Do not rely
+     *  it giving it in any particular format.  The dump will be done to the System.out stream.
+     */
+    public void dump()
+    {
+        System.out.println(this);
+        m_provider.m_changedItems.dump();
+    }
+    
+    /**
      * Shortcut for getPathManager().getPath().
      * @param p
      * @return
@@ -778,5 +789,10 @@ public class SessionImpl implements Session, NamespaceMapper
     public PathManager getPathManager()
     {
         return m_provider.getPathManager();
+    }
+
+    public void rename(Path path1, Component newName)
+    {
+        System.out.println("Renaming "+path1+" to "+newName);
     }
 }

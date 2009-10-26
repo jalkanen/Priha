@@ -28,6 +28,7 @@ import org.priha.core.WorkspaceImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.path.Path;
+import org.priha.path.Path.Component;
 import org.priha.util.ConfigurationException;
 import org.priha.util.QName;
 
@@ -264,4 +265,10 @@ public class MemoryProvider implements RepositoryProvider
     {
         throw new UnsupportedRepositoryOperationException();
     }
+    
+    public void rename(StoreTransaction tx, Path path, Component newName) throws RepositoryException
+    {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
 }

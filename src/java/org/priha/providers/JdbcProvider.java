@@ -38,6 +38,7 @@ import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.path.Path;
 import org.priha.path.PathFactory;
+import org.priha.path.Path.Component;
 import org.priha.util.*;
 import org.priha.util.Pool.Poolable;
 import org.priha.util.Pool.PoolableFactory;
@@ -998,4 +999,10 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
             e.printStackTrace();
         }
     }
+    
+    public void rename(StoreTransaction tx, Path path, Component newName) throws RepositoryException
+    {
+        throw new UnsupportedRepositoryOperationException();
+    }
+
 }

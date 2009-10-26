@@ -38,6 +38,7 @@ import org.priha.core.WorkspaceImpl;
 import org.priha.core.values.StreamValueImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.path.Path;
+import org.priha.path.Path.Component;
 import org.priha.util.ConfigurationException;
 import org.priha.util.QName;
 
@@ -468,4 +469,13 @@ public class EhCachingProvider implements RepositoryProvider
     {
         m_realProvider.reorderNodes(tx, internalPath, childOrder);
     }
+    
+    public void rename(StoreTransaction tx, Path path, Component newName) throws RepositoryException
+    {
+        m_realProvider.rename(tx, path, newName);
+        m_valueCache.remove( getNid(tx.getWorkspace(),path) );
+        m_valueCache.remove( getPid(tx.getWorkspace(),path) );
+        m_valueCache.remove( getVid(tx.getWorkspace(),path) );
+    }
+
 }

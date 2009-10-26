@@ -44,6 +44,9 @@ public class SessionProvider
     
     ChangeStore        m_changedItems; // TODO: Back to private
     
+    // FIXME: Should probably be elsewhere
+    private static PathManager c_sessionPathManager = new PathManager();
+ 
     private static final int   DEFAULT_CACHESIZE = 1000;
     
     private Map<PathRef,ItemImpl> m_fetchedItems;
@@ -342,7 +345,7 @@ public class SessionProvider
                     if( ii.isNode() )
                     {
                         NodeImpl ni = (NodeImpl) ii;
-                        checkSanity(change.getState(), ni);
+                        checkSanity(change.getState(), change.getPath(), ni);
                     
                         switch( change.getState() )
                         {
@@ -590,7 +593,7 @@ public class SessionProvider
      *  @param ni
      *  @throws RepositoryException
      */
-    private void checkSanity(ItemState state, NodeImpl ni) throws RepositoryException
+    private void checkSanity(ItemState state, Path path, NodeImpl ni) throws RepositoryException
     {
         WorkspaceImpl ws = ni.getSession().getWorkspace();
         SessionImpl session = ni.getSession();
@@ -616,7 +619,7 @@ public class SessionProvider
         
         if( state != ItemState.NEW && state != ItemState.REMOVED && state != ItemState.MOVED )
         {
-            if( !ws.nodeExists(ni.getInternalPath()) )
+            if( !ws.nodeExists(path) )
             {
                 throw new InvalidItemStateException("Looks like this Node has been removed by another session: "+ni.getInternalPath().toString(session));
             }
@@ -806,10 +809,7 @@ public class SessionProvider
         }
     }
 
-    
-    // FIXME: Should probably be elsewhere
-    private static PathManager c_sessionPathManager = new PathManager();
-    
+   
     public Path getPath( PathRef p ) throws PathNotFoundException
     {
         return c_sessionPathManager.getPath( p );
