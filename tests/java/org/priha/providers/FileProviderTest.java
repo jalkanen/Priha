@@ -113,7 +113,18 @@ public class FileProviderTest extends AbstractTest
         assertEquals("foo-b",ndb.getProperty("x").getString());
     }
     
-    
+    public void testPropertyCase1() throws Exception
+    {
+        Node nd = m_session.getRootNode().addNode("A");
+        nd.setProperty("x","foo-a");
+        nd.setProperty("X","foo-b");
+        
+        m_session.save();
+        
+        Node nda = (Node) m_session.getItem("/A");
+        assertEquals("foo-a",nda.getProperty("x").getString());
+        assertEquals("foo-b",nda.getProperty("X").getString());
+    }   
     public static Test suite()
     {
         return new TestSuite( FileProviderTest.class );
