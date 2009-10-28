@@ -1,8 +1,6 @@
 package org.priha;
 
-import javax.jcr.Node;
-import javax.jcr.NodeIterator;
-import javax.jcr.PropertyIterator;
+import javax.jcr.*;
 
 import junit.framework.TestCase;
 
@@ -22,6 +20,11 @@ public abstract class AbstractTest extends TestCase
         m_repository = RepositoryManager.getRepository();
     }
 
+    protected SessionImpl getNewSession() throws LoginException, RepositoryException
+    {
+        return m_repository.login( new SimpleCredentials("foo", new char[0]) );
+    }
+    
     protected void tearDown() throws Exception
     {
         super.tearDown();
