@@ -13,6 +13,7 @@ public class AllTests extends AbstractTest
         TestSuite suite = new TestSuite("Provider tests");
         
         suite.addTest( FileProviderTest.suite() );
+        suite.addTest( JdbcProviderTest.suite() );
         
         return suite;
     }

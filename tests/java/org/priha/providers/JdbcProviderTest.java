@@ -7,26 +7,31 @@ import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.VersionException;
 
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import org.priha.AbstractTest;
+import org.priha.RepositoryManager;
 import org.priha.TestUtil;
+import org.priha.core.RepositoryImpl;
 import org.priha.core.SessionImpl;
 
-public class FileProviderTest extends AbstractTest
+public class JdbcProviderTest extends TestCase
 {
     SessionImpl m_session;
     
     public void setUp() throws Exception
     {
         super.setUp();
-        m_session = getNewSession();
+        RepositoryImpl rep = RepositoryManager.getRepository("jdbcnocache.properties");
+        m_session = rep.login(new SimpleCredentials("foo",new char[0]));
     }
     
     public void tearDown() throws Exception
     {
-        TestUtil.emptyRepo(m_session.getRepository());
+        Repository rep = m_session.getRepository();
         m_session.logout();
+      
+        TestUtil.emptyRepo(rep);
         
         super.tearDown();
     }
@@ -130,7 +135,7 @@ public class FileProviderTest extends AbstractTest
     }   
     public static Test suite()
     {
-        return new TestSuite( FileProviderTest.class );
+        return new TestSuite( JdbcProviderTest.class );
     }
 
 }

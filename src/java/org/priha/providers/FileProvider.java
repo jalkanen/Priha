@@ -495,7 +495,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         try
         {
             nodeDir = getNodeDir( ws, path );
-            File propFile = new File( nodeDir, "jcr:primaryType.info" );
+            File propFile = new File( nodeDir, mangleName("jcr:primaryType.info") );
             
             return propFile.exists();
         }
@@ -1253,18 +1253,28 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9"
     };
 
-    private static final String APPROVED_PUNCTUATION = " ./_,-+:";
+    private static final String APPROVED_PUNCTUATION = " ./_,-+:[]";
 
     /**
-     *  This makes sure that the queried page name
-     *  is still readable by the file system.  For example, all XML entities
-     *  and slashes are encoded with the percent notation.
+     *  This makes sure that the name
+     *  is still readable by the file system.  The basic algorithm is
+     *  as follows: 
+     *  <ul>
+     *   <li>All lower-case ASCII characters and digits are passed as-is.
+     *   <li>All upper-case ASCII characters are preceded with '!'. This is
+     *       to make sure it all works on a case-insensitive file system such
+     *       as Windows or OSX.
+     *   <li>Approved punctuation characters are passed as-is.
+     *   <li>All other-characters are transformed into their unicode presentation formats
+     *       preceded with a '='.  E.g. =00e5.
+     *  </ul>
      *  
      *  @param pagename The name to mangle
      *  @return The mangled name.
      */
     
     // TODO: This method is extremely speed-critical
+    // TODO: Protect against windows special names (CON) etc.
     protected static String mangleName( String name )
     {
         StringBuilder sb = new StringBuilder(name.length()+32);
@@ -1274,10 +1284,15 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         {
             char ch = name.charAt( i );
             
-            if( (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z' ) || 
+            if( (ch >= 'a' && ch <= 'z') || 
                 (APPROVED_PUNCTUATION.indexOf(ch) != -1) ||
                 (ch >= '0' && ch <= '9') )
             {
+                sb.append( ch );
+            }
+            else if( ch >= 'A' && ch <= 'Z' )
+            {
+                sb.append( '!' );
                 sb.append( ch );
             }
             else

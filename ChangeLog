@@ -1,3 +1,10 @@
+2009-10-30  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.5.7
+        
+        * FileProvider is now case-sensitive even on case-insensitive file
+        systems. 
+        
 2009-10-26  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.5.6
