@@ -1253,7 +1253,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9"
     };
 
-    private static final String APPROVED_PUNCTUATION = " ./_,-+:[]";
+    private static final String APPROVED_PUNCTUATION = " ./_,-+[]";
 
     /**
      *  This makes sure that the name
@@ -1261,7 +1261,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  as follows: 
      *  <ul>
      *   <li>All lower-case ASCII characters and digits are passed as-is.
-     *   <li>All upper-case ASCII characters are preceded with '!'. This is
+     *   <li>All upper-case ASCII characters are postfixed with '^'. This is
      *       to make sure it all works on a case-insensitive file system such
      *       as Windows or OSX.
      *   <li>Approved punctuation characters are passed as-is.
@@ -1290,10 +1290,18 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             {
                 sb.append( ch );
             }
+            else if( ch == ':' )
+            {
+                // Colon is not allowed on NTFS or OSX.
+                sb.append( ';' );
+            }
             else if( ch >= 'A' && ch <= 'Z' )
             {
-                sb.append( '!' );
+                // JSR-170 is case sensitive, so we have to make
+                // sure our storage is too.
+                
                 sb.append( ch );
+                sb.append( '^' );
             }
             else
             {

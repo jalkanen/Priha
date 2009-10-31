@@ -155,7 +155,7 @@ public class QNodeTypeManager
         XPath xpath = XPathFactory.newInstance().newXPath();
         NamespaceMapper nsm = RepositoryImpl.getGlobalNamespaceRegistry();
         
-        String name = xpath.evaluate( "name", node );
+        String name = getStringProperty( xpath, "name", node );
         log.finest( "Loading nodetype "+name );
 
         QNodeType gnt = new QNodeType( nsm.toQName( name ) );
@@ -167,12 +167,12 @@ public class QNodeTypeManager
 
         gnt.m_hasOrderableChildNodes = getBooleanProperty(xpath, "hasOrderableChildNodes", node );
 
-        String primaryItemName = xpath.evaluate( "primaryItemName", node );
+        String primaryItemName = getStringProperty( xpath, "primaryItemName", node );
 
         if( primaryItemName != null && primaryItemName.length() > 0 )
             gnt.m_primaryItemName = nsm.toQName( primaryItemName );
 
-        String superNode = xpath.evaluate( "supertypes", node );
+        String superNode = getStringProperty( xpath, "supertypes", node );
 
         if( superNode != null && superNode.length() > 0 )
         {
@@ -240,16 +240,36 @@ public class QNodeTypeManager
     private boolean getBooleanProperty( XPath xpath, String expression, Node node )
         throws XPathExpressionException
     {
-        String res = xpath.evaluate( expression, node );
-
-        return "true".equals(res);
+        return "true".equals(getStringProperty(xpath,expression,node));
     }
 
+    private String getStringProperty( XPath xpath, String expression, Node node ) throws XPathExpressionException
+    {
+        //
+        //  For speed reasons, we use this iterator; XPath is really slow.  This should give
+        //  about 4x the performance for initial startup time overall.
+        //
+        if( true )
+        {
+            for( Node child = node.getFirstChild(); child != null; child = child.getNextSibling() )
+            {
+                if( child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equals(expression) )
+                    return child.getTextContent();
+            }
+        
+            return null;        
+        }
+        else
+        {
+            return xpath.evaluate(expression, node);
+        }
+    }
+    
     private QPropertyDefinition parsePropertyDefinition( QNodeType parent, Node node ) throws XPathExpressionException, RepositoryException
     {
         XPath xpath = XPathFactory.newInstance().newXPath();
 
-        String name = xpath.evaluate( "name", node );
+        String name = getStringProperty( xpath, "name", node );
         log.finest( "Loading propertyDefinition "+name );
 
         QPropertyDefinition pdi = new QPropertyDefinition(parent,
@@ -260,17 +280,17 @@ public class QNodeTypeManager
         pdi.m_isMultiple    = getBooleanProperty(xpath, "multiple",    node);
         pdi.m_isProtected   = getBooleanProperty(xpath, "protected",   node);
 
-        String requiredType = xpath.evaluate( "requiredType", node );
+        String requiredType = getStringProperty( xpath, "requiredType", node );
         pdi.m_requiredType  = PropertyType.valueFromName( requiredType );
 
-        String onParentVersion = xpath.evaluate( "onParentVersion", node );
+        String onParentVersion = getStringProperty( xpath, "onParentVersion", node );
         pdi.m_onParentVersion  = OnParentVersionAction.valueFromName( onParentVersion );
 
-        String valueConstraints = xpath.evaluate( "valueConstraints", node );
+        String valueConstraints = getStringProperty( xpath, "valueConstraints", node );
         
         pdi.m_valueConstraints = parseList( valueConstraints );
         
-        String defaultValue = xpath.evaluate( "defaultValues", node );
+        String defaultValue = getStringProperty( xpath, "defaultValues", node );
         
         pdi.m_defaults = parseList(defaultValue);
         
@@ -282,12 +302,12 @@ public class QNodeTypeManager
         NamespaceMapper nsm = RepositoryImpl.getGlobalNamespaceRegistry();
         XPath xpath = XPathFactory.newInstance().newXPath();
 
-        String name = xpath.evaluate( "name", node );
+        String name = getStringProperty( xpath, "name", node );
         log.finest("Loading node definition "+name);
 
         QNodeDefinition nd = new QNodeDefinition( parent, nsm.toQName( name ) );
 
-        String requiredType = xpath.evaluate( "requiredPrimaryTypes", node );
+        String requiredType = getStringProperty( xpath, "requiredPrimaryTypes", node );
 
         if( requiredType != null && requiredType.length() > 0 )
         {
@@ -315,7 +335,7 @@ public class QNodeTypeManager
             throw new ConfigurationException("Mandatory element 'requiredPrimaryTypes' is missing for "+name);
         }
         
-        String defaultType = xpath.evaluate( "defaultPrimaryType", node );
+        String defaultType = getStringProperty( xpath, "defaultPrimaryType", node );
 
         if( defaultType != null && defaultType.length() > 0 )
         {
@@ -331,7 +351,7 @@ public class QNodeTypeManager
         nd.m_isProtected   = getBooleanProperty(xpath, "protected", node);
         nd.m_allowsSameNameSiblings = getBooleanProperty(xpath, "sameNameSiblings", node);
 
-        String onParentVersion = xpath.evaluate( "onParentVersion", node );
+        String onParentVersion = getStringProperty( xpath, "onParentVersion", node );
         nd.m_onParentVersion  = OnParentVersionAction.valueFromName( onParentVersion );
 
         return nd;

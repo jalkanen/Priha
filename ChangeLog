@@ -1,5 +1,16 @@
 2009-10-30  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.6.0
+        
+        * Improved repository startup speed by a factor of four; replaced
+        XPath.evaluate() with custom code.
+        
+        * FileProvider storage format changed slightly to avoid colons
+        and non-letters as starting characters in file/dir names.  Need
+        someone to test this on Windows.
+        
+2009-10-30  Janne Jalkanen <jalkanen@ecyrd.com>
+
         * 0.5.7
         
         * FileProvider is now case-sensitive even on case-insensitive file

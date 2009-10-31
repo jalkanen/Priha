@@ -42,7 +42,7 @@ public class RepositoryTest extends AbstractTest
         
         assertEquals( 0, nd.getDepth() );
     }
-
+    
     public void testShutdown() throws Exception
     {
         RepositoryImpl r = RepositoryManager.getRepository("priha_shutdown.properties");

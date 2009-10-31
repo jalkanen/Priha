@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
@@ -114,7 +115,10 @@ public class RepositoryImpl implements Repository
         if( m_providerManager == null )
         {
             log.info( "Initializing providers..." );
+            long start = System.currentTimeMillis();
             m_providerManager = new ProviderManager(this);
+            long end = System.currentTimeMillis();
+            log.info( "Repository initialization took "+(end-start)+" ms." );
         }
         
         return m_providerManager;
@@ -187,6 +191,7 @@ public class RepositoryImpl implements Repository
         {
             throw new RepositoryException("Repository is not alive.  It is "+m_state);
         }
+        long start = System.currentTimeMillis();
         
         if( workspaceName == null ) workspaceName = getDefaultWorkspace();
 
@@ -196,6 +201,11 @@ public class RepositoryImpl implements Repository
 
         session.refresh(false);
 
+        long end = System.currentTimeMillis();
+        
+        if( log.isLoggable(Level.FINER) )
+            log.finer("Login completed and new Session created; took "+(end-start)+" ms.");
+        
         return session;
     }
 
