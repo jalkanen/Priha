@@ -19,6 +19,7 @@ import org.priha.core.JCRConstants;
 import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
 import org.priha.core.namespace.NamespaceRegistryImpl;
+import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QPropertyDefinition;
 import org.priha.path.Path;
 import org.priha.util.Base64;
@@ -44,13 +45,14 @@ public class XMLImport extends DefaultHandler
     private NodeStore m_currentStore;
     private PropertyStore m_currentProperty;
     private boolean m_readingValue = false;
+    private StringBuilder m_charContent;
     
     private static Logger log = Logger.getLogger(XMLImport.class.getName());
     
     public XMLImport( SessionImpl session, boolean immediateCommit, Path startPath, int uuidBehavior ) throws RepositoryException
     {
         if( !session.getRootNode().hasNode(startPath.toString()) )
-            throw new PathNotFoundException("The parent path does not exist, so cannot import to it!");
+            throw new PathNotFoundException("The parent path "+startPath+" does not exist, so cannot import to it!");
         
         m_session = session;
         m_immediateCommit = immediateCommit;
@@ -161,6 +163,8 @@ public class XMLImport extends DefaultHandler
 
             m_currentNode = parent;
         }
+        
+//        System.out.println("Adding "+m_currentStore.m_nodeName);
         
         nd = m_currentNode.addNode( m_currentStore.m_nodeName, primaryType );
 
@@ -308,7 +312,7 @@ public class XMLImport extends DefaultHandler
             {
                 nodeName = "/";
             }
-            
+                        
             m_currentStore.m_nodeName = nodeName;
             try
             {
@@ -346,6 +350,7 @@ public class XMLImport extends DefaultHandler
             checkSystem();
             
             m_readingValue = true;
+            m_charContent  = new StringBuilder();
             
             return;
         }
@@ -419,7 +424,35 @@ public class XMLImport extends DefaultHandler
         }
         else if( name.equals("sv:value") )
         {
-            m_readingValue = false;
+            if( m_readingValue )
+            {
+                ValueImpl v;
+            
+                try
+                {
+                    if( m_currentProperty.m_propertyType == PropertyType.BINARY )
+                    {
+                        InputStream in = new Base64.InputStream( new ByteArrayInputStream(m_charContent.toString().getBytes("UTF-8")) );
+                        v = m_session.getValueFactory().createValue( in );
+                    }
+                    else
+                    {
+                        v = m_session.getValueFactory().createValue( m_charContent.toString(), 
+                                                                     m_currentProperty.m_propertyType );
+                    }
+                    m_currentProperty.m_values.add( v );
+                }
+                catch (Exception e)
+                {
+                    log.log( Level.WARNING, "Node deserialization failed; unable to parse a variable value", e );
+                    throw new SAXException("Could not deserialize node",e);
+                }
+                finally
+                {
+                    m_readingValue = false;
+                    m_charContent  = null;
+                }
+            }
         }
         else if( name.equals("sv:property") )
         {
@@ -479,6 +512,7 @@ public class XMLImport extends DefaultHandler
             try
             {
                 String valueString = new String(ch,start,length);
+                // FIXME: Should not do this yet
                 NodeImpl xmlText = m_currentNode.addNode( "jcr:xmltext" );
                 xmlText.setProperty( "jcr:xmlcharacters", valueString );
             }
@@ -492,34 +526,11 @@ public class XMLImport extends DefaultHandler
         // System
         if( m_readingValue )
         {
-            try
-            {
-                Value v;
-                String valueString = new String(ch,start,length);
-                if( m_currentProperty.m_propertyType == PropertyType.BINARY )
-                {
-                    InputStream in = new Base64.InputStream( new ByteArrayInputStream(valueString.getBytes("UTF-8")) );
-                    v = m_session.getValueFactory().createValue( in );
-                }
-                else
-                {
-                    v = m_session.getValueFactory().createValue( valueString, 
-                                                                 m_currentProperty.m_propertyType );
-                }
-                m_currentProperty.m_values.add( v );
-            }
-            catch (ValueFormatException e)
-            {
-                throw new SAXException("Value creation failed",e);
-            }
-            catch (UnsupportedEncodingException e)
-            {
-                throw new SAXException("You can't be serious that your platform does not support UTF-8!?!");
-            }
-            catch( RepositoryException e )
-            {
-                throw new SAXException("Something horrible happened",e);
-            }
+            String valueString = new String(ch,start,length);
+                
+            if( m_charContent == null ) m_charContent = new StringBuilder();
+                
+            m_charContent.append(valueString);
         }
     }
     

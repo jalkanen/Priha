@@ -1,3 +1,14 @@
+2009-11-24  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.6.1
+        
+        * Slightly improved FileProvider serialization algorithm - the
+        garbage collection is only performed every 30 seconds, tops.
+        
+        * Bug fix: XML serialization in System view would generate
+        in some cases multi-valued properties when only single values
+        were serialized.
+
 2009-10-30  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.6.0

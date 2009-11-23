@@ -529,7 +529,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     {
         log.finer( "Workspace "+ws.getName()+" closing..." );
         m_hitCount[Count.Close.ordinal()]++;
-        
+        /*
         try
         {
             m_uuids.get( ws.getName() ).serialize();
@@ -552,6 +552,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         {
             log.info( "Unable to store UUID references upon workspace logout."+e.getMessage() );
         }
+        */
     }
     
     private void writeValue( File f, ValueImpl v ) throws IOException, IllegalStateException, RepositoryException
@@ -1400,9 +1401,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         private Map<String,T>    m_map;
         private ObjectOutputStream m_journal;
         private int              m_writeCount;
+        private long             m_lastWrite = System.currentTimeMillis();
         
         /* After this many writes the store is compacted. */
-        private static final int COMPACT_LIMIT = 100;
+        private static final int  COMPACT_LIMIT = 100;
+        
+        /* But compacting is not done more often than this limit (in ms) */
+        private static final long COMPACT_TIME_LIMIT = 30*1000L;
         
         public UUIDObjectStore( String name )
         {
@@ -1475,10 +1480,13 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
 
                 m_journal.flush();
                 
-                if( ++m_writeCount > COMPACT_LIMIT )
+                long now = System.currentTimeMillis();
+                if( ++m_writeCount > COMPACT_LIMIT && (now-m_lastWrite) > COMPACT_TIME_LIMIT )
                 {
+                    System.out.println( now-m_lastWrite );
                     serialize();
                     m_writeCount = 0;
+                    m_lastWrite  = now;
                 }
             }
             catch( IOException e )
@@ -1575,7 +1583,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         private synchronized void serialize() throws IOException
         {
-//            System.out.println("++++++ COMPACTING...");
+            System.out.println("++++++ COMPACTING...");
 
             long start = System.currentTimeMillis();
             
