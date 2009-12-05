@@ -34,15 +34,14 @@
     	<path refid="path.build"/>
      
     	<pathelement path="tests/build" />
-       <fileset dir="${user.home}/.maven/repository/org.apache.jackrabbit/jars/">
-          <include name="*-1.6.*.jar"/>
-       </fileset>
-     
-       <fileset dir="${user.home}/.m2/repository/">
-          <include name="commons-collections/**/*3.2.jar"/>
-          <include name="org/apache/lucene/lucene-core/2.2.0/*.jar"/>
-          <include name="org/apache/derby/derby/10.2.1.6/*.jar"/>
-       </fileset>
+
+    	<!-- Jackrabbit is only included if it has been installed with maven -->
+    	<fileset dir="${user.home}">
+        	<include name=".maven/repository/org.apache.jackrabbit/jars/*-1.6.*.jar"/>
+          	<include name=".m2/repository/commons-collections/**/*3.2.jar"/>
+        	<include name=".m2/repository/org/apache/lucene/lucene-core/2.2.0/*.jar"/>
+          	<include name=".m2/repository/org/apache/derby/derby/10.2.1.6/*.jar"/>
+       	</fileset>
     </path>
    
 
@@ -98,10 +97,8 @@
               target="1.5"
               debug="on"
               optimize="on">
-       	  <src>
-       	     <dirset dir="src/java"/>
-       	     <dirset dir="src/generated-sources"/>
-       	  </src>
+       	  <src path="src/java"/>
+       	  <src path="src/generated-sources"/>
           <classpath refid="path.build"/>
        </javac>
     </target>
@@ -112,10 +109,8 @@
 		<javac destdir="tests/build"
 			   target="1.5"
 			   debug="on">
-			<src>
-			   <dirset dir="tests/java"/>
-			   <dirset dir="tests/tck"/>
-		    </src>
+			<src path="tests/java"/>
+			<src path="tests/tck"/>
 			<classpath refid="path.build"/>
 		</javac>
 	</target>
@@ -152,7 +147,6 @@
     <target name="clean">
      
         <delete dir="build"/>
-    	<delete dir="src/generated-sources/org"/>
    
     </target>
  
