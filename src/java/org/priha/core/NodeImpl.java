@@ -63,11 +63,23 @@ import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
 import org.priha.version.VersionManager;
 
+/**
+ *  Implements a Node.  This is one of the most heavy classes in Priha, with a lot
+ *  of stuff happening.  The NodeImpl class does some basic caching for some state
+ *  objects, so keeping references can be faster in some cases.
+ */
 public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 {
     private static final String JCR_PREDECESSORS = "jcr:predecessors";
     private static final String JCR_SUCCESSORS   = "jcr:successors";
 
+    /** 
+     *  A compile-time flag for allowing/disallowing Same Name Sibling support. 
+     *  addNode() will throw an exception if you disallow these.  This is sometimes
+     *  useful for debugging. 
+     */
+    private static final boolean ALLOW_SNS = true;
+    
     private QNodeDefinition      m_definition;
     
     private QNodeType            m_primaryType;
@@ -258,7 +270,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 
                 absPath = new Path( absPath.getParentPath(), 
                                     new Path.Component(absPath.getLastComponent(),newPos) );
-//                throw new RepositoryException("TURNED OFF FOR NOW");
+                
+                if( !ALLOW_SNS ) throw new RepositoryException("TURNED OFF FOR NOW");
             }
 
             //
@@ -427,6 +440,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return list;
     }
     
+    /**
+     *  Returns a lazy iterator over the children of this Node.
+     */
     public NodeIterator getNodes() throws RepositoryException
     {
         List<Path> children = m_session.listNodes( getInternalPath() );
@@ -645,6 +661,10 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return new PropertyIteratorImpl(references);
     }
 
+    /**
+     *  Returns the UUID for this node.  Utilizes an internal cache for the UUID,
+     *  so is fast after the first call.
+     */
     public String getUUID() throws UnsupportedRepositoryOperationException, RepositoryException
     {
         if( m_cachedUUID != null ) return m_cachedUUID;
@@ -690,7 +710,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return m_session.hasNode(absPath);
     }
 
-
+    /**
+     *  Returns true, if this Node has a child with the given QName.
+     *  
+     *  @param name A QName.
+     *  @return True, if there is a child by this name.
+     *  @throws RepositoryException
+     */
     public boolean hasNode(QName name) throws RepositoryException
     {
         Path absPath = getInternalPath().resolve(name);
@@ -699,6 +725,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public boolean hasNodes() throws RepositoryException
     {
+        // FIXME: Slow.
         return getNodes().getSize() > 0;
     }
 

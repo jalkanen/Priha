@@ -1483,7 +1483,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
                 long now = System.currentTimeMillis();
                 if( ++m_writeCount > COMPACT_LIMIT && (now-m_lastWrite) > COMPACT_TIME_LIMIT )
                 {
-                    System.out.println( now-m_lastWrite );
+                    //System.out.println( now-m_lastWrite );
                     serialize();
                     m_writeCount = 0;
                     m_lastWrite  = now;
@@ -1583,7 +1583,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         
         private synchronized void serialize() throws IOException
         {
-            System.out.println("++++++ COMPACTING...");
+            // System.out.println("++++++ COMPACTING...");
 
             long start = System.currentTimeMillis();
             

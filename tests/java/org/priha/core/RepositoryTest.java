@@ -66,6 +66,12 @@ public class RepositoryTest extends AbstractTest
         }
     }
     
+    /**
+     *  Peek directly into the FileProvider repository to figure out if all the files
+     *  are properly removed. Weeds out files which are part of the system.
+     *  
+     *  @throws Exception
+     */
     public void testEmptyRepo() throws Exception
     {
         Node nd = m_session.getRootNode().addNode("testemptyrepo");
@@ -82,7 +88,7 @@ public class RepositoryTest extends AbstractTest
         
         for( String p : paths )
         {
-            if( p.startsWith("jcr:") || p.startsWith( "priha:") || p.startsWith( "." )) continue; // This is okay
+            if( p.startsWith("jcr;") || p.startsWith( "priha;") || p.startsWith( "." )) continue; // This is okay
         
             fail( "This was not removed: "+p );
         }

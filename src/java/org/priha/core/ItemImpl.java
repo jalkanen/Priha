@@ -29,6 +29,11 @@ import org.priha.path.PathFactory;
 import org.priha.path.PathRef;
 import org.priha.util.*;
 
+/**
+ *  Provides a basic implementation for Items.  An Item stores a reference
+ *  to its Path, the Session, and keeps a record of its ItemState.  Therefore
+ *  it's a fairly lightweight object.
+ */
 public abstract class ItemImpl implements Item
 {
 
@@ -37,10 +42,10 @@ public abstract class ItemImpl implements Item
     protected ItemState         m_state    = ItemState.UNDEFINED;
     protected boolean           m_isNew    = false;
     
-    public ItemImpl( SessionImpl session, String path ) throws NamespaceException, RepositoryException
-    {
-        this( session, PathFactory.getPath(session,path) );
-    }
+//    public ItemImpl( SessionImpl session, String path ) throws NamespaceException, RepositoryException
+//    {
+//        this( session, PathFactory.getPath(session,path) );
+//    }
     
     public ItemImpl(SessionImpl session, Path path)
     {
@@ -65,6 +70,7 @@ public abstract class ItemImpl implements Item
         return m_state;
     }
     
+    @SuppressWarnings("fallthrough")
     public void setState( ItemState state ) throws RepositoryException
     {
         if( state != m_state )
@@ -102,6 +108,9 @@ public abstract class ItemImpl implements Item
                     m_state = state;
                     m_session.markDirty(this);
                     break;
+                    
+                case UNDEFINED:
+                    throw new InvalidItemStateException("State cannot be set to UNDEFINED - that is the starting state of any Item only.");
             }
             
         }
