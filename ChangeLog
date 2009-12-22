@@ -1,3 +1,13 @@
+2009-12-22  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.6.2
+        
+        * Rewrote ItemState handling to clean up some cases where
+        ChangeStore got awfully confused as to when something was updated
+        or not.  This also fixes some problems with SNS handling, which
+        isn't still perfect though. It also changes reliability of
+        multiple move()s in a single Session.
+
 2009-12-05  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * Bug 7: Running perftest is now possible even when Jackrabbit

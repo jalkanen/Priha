@@ -39,7 +39,7 @@ public abstract class ItemImpl implements Item
 
     protected PathRef           m_path;
     protected final SessionImpl m_session;
-    protected ItemState         m_state    = ItemState.UNDEFINED;
+//    protected ItemState         m_state    = ItemState.UNDEFINED;
     protected boolean           m_isNew    = false;
     
 //    public ItemImpl( SessionImpl session, String path ) throws NamespaceException, RepositoryException
@@ -56,7 +56,6 @@ public abstract class ItemImpl implements Item
     public ItemImpl(ItemImpl original, SessionImpl session)
     {
         this( session, original.getInternalPath() );
-        m_state    = original.m_state;
     }
 
     public PathRef getPathReference()
@@ -67,52 +66,69 @@ public abstract class ItemImpl implements Item
     
     public ItemState getState()
     {
-        return m_state;
+        //
+        //  Check if the state exists in the change list.
+        //
+        ItemState state = ItemState.UNDEFINED;
+        try
+        {
+            state = m_session.m_provider.getState( m_path );
+        }
+        catch( PathNotFoundException e )
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        
+        // If this object exists, but is not in the change list, then it's just
+        // a simply existing object
+        return state != null ? state : ItemState.EXISTS;
     }
     
     @SuppressWarnings("fallthrough")
-    public void setState( ItemState state ) throws RepositoryException
+    public void enterState( ItemState state ) throws RepositoryException
     {
-        if( state != m_state )
+        ItemState oldState = getState();
+        SessionProvider sp = m_session.m_provider;
+        
+        switch( state )
         {
-            switch( state )
-            {
-                case EXISTS:
-                    m_state = state;
-                    break;
+            case EXISTS:
+                break;
                     
-                case NEW:
-                    m_isNew = true;
-                case REMOVED:
-                case MOVED:
-                    //
-                    //  Additions and removals also affect the parent.
-                    //
-                    m_state = state;
-                    m_session.markDirty(this);
-                    if( !getInternalPath().isRoot() ) 
-                    {
-                        getParent().setState(ItemState.UPDATED);
-                    }
+            case NEW:
+                if( oldState == ItemState.NEW ) 
                     break;
-                    
-                case UPDATED:
-                    //
-                    //  However, basic updates do not.
-                    //
-                    if( m_state == ItemState.REMOVED )
-                    {
-                        // Simple UPDATED does not override REMOVED.
-                        break;
-                    }
-                    m_state = state;
-                    m_session.markDirty(this);
+                
+                m_isNew = true;
+                /* FALLTHROUGH OK */
+            case REMOVED:
+                // FIXME: Slightly hacky, this.
+                if( state == ItemState.REMOVED && oldState == ItemState.REMOVED ) 
                     break;
+                
+            case MOVED:
+                //
+                //  Additions and removals also affect the parent.
+                //
+                sp.m_changedItems.add( state, this );
+                
+                if( !getInternalPath().isRoot() && !getParent().isModified() ) 
+                {
+                    getParent().enterState(ItemState.UPDATED);
+                }
+                break;
                     
-                case UNDEFINED:
-                    throw new InvalidItemStateException("State cannot be set to UNDEFINED - that is the starting state of any Item only.");
-            }
-            
+            case UPDATED:
+                if( oldState == ItemState.EXISTS || oldState == ItemState.UNDEFINED )
+                {
+                    // If we're already modified, no use repeating that information
+                    sp.m_changedItems.add( state, this );
+                }
+                break;
+                    
+            case UNDEFINED:
+                throw new InvalidItemStateException("State cannot be set to UNDEFINED - that is the starting state of any Item only.");
         }
     }
     
@@ -211,12 +227,13 @@ public abstract class ItemImpl implements Item
         //  An Item is not modified, if it's, well, not modified or it's been recently
         //  added (then it's NEW).
         //
-        return m_state != ItemState.EXISTS && m_state != ItemState.NEW;
+        ItemState state = getState();
+        return state != ItemState.EXISTS && state != ItemState.NEW;
     }
 
     public boolean isNew()
     {
-        return m_isNew || m_state == ItemState.UNDEFINED;
+        return m_isNew || getState() == ItemState.UNDEFINED;
     }
 
     public boolean isNode()
@@ -334,7 +351,6 @@ public abstract class ItemImpl implements Item
      */
     protected void postSave()
     {
-        m_state = ItemState.EXISTS;
         m_isNew = false;
     }
     

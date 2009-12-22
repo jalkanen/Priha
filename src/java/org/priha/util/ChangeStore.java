@@ -25,6 +25,12 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
         return null;
     }
     
+    /**
+     *  Finds the latest change.
+     *  
+     *  @param path
+     *  @return
+     */
     public Change getChange( Path path )
     {
         for( ListIterator<Change> i = m_changes.listIterator(m_changes.size()); i.hasPrevious(); )

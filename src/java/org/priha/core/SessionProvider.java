@@ -820,4 +820,10 @@ public class SessionProvider
         return c_sessionPathManager;
     }
 
+    public ItemState getState( PathRef m_path ) throws PathNotFoundException
+    {
+        Change c = m_changedItems.getChange( getPath(m_path) );
+        
+        return c != null ? c.getState() : null;
+    }
 }

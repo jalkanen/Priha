@@ -363,8 +363,6 @@ public class ProviderManager implements ItemStore
         QNodeDefinition nd = type.findNodeDefinition( pt );
     
         ni = ws.getSession().createNode( path, type, nd, false );
-                
-        ni.m_state = ItemState.EXISTS;
         
         return ni;
     }
@@ -393,7 +391,6 @@ public class ProviderManager implements ItemStore
         ValueContainer values = getPropertyValue( ws, ptPath );
    
         PropertyImpl p = ws.createPropertyImpl( ptPath );
-        p.m_state = ItemState.EXISTS;
            
         //
         //  Find the proper property definition.

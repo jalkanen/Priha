@@ -32,6 +32,10 @@ public class TestUtil
                 }
             }
         }
+        catch( Exception e )
+        {
+            e.printStackTrace( System.err );
+        }
         finally
         {
             anonSession.logout();

@@ -6,12 +6,11 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 import org.priha.AbstractTest;
-import org.priha.RepositoryManager;
 
 public class NodeImplTest extends AbstractTest
 {
-    private Session m_session;
-    private Session m_session2;
+    private SessionImpl m_session;
+    private SessionImpl m_session2;
 
     @Override
     protected void setUp() throws Exception
@@ -250,7 +249,7 @@ public class NodeImplTest extends AbstractTest
         Node n4 = root.addNode("Foo4");
         Node n5 = root.addNode("Foo5");
      
-        root.save();
+        m_session.save();
         
         NodeIterator ni = root.getNodes();
         assertEquals("Foo1",ni.nextNode().getName());
@@ -291,7 +290,7 @@ public class NodeImplTest extends AbstractTest
         Node n4 = root.addNode("Foo4");
         Node n5 = root.addNode("Foo5");
      
-        root.save();
+        m_session.save();
         
         NodeIterator ni = root.getNodes();
         assertEquals("Foo1",ni.nextNode().getName());
@@ -332,7 +331,7 @@ public class NodeImplTest extends AbstractTest
         Node n4 = root.addNode("Foo4");
         Node n5 = root.addNode("Foo5");
      
-        root.save();
+        m_session.save();
         
         NodeIterator ni = root.getNodes();
         assertEquals("Foo1",ni.nextNode().getName());
@@ -362,6 +361,43 @@ public class NodeImplTest extends AbstractTest
         assertEquals("Foo5",ni.nextNode().getName());
         
     }
+    
+    public void testSNS1() throws Exception
+    {
+        Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
+        
+        Node n1 = root.addNode("Foo");
+        n1.setProperty("order", 1);
+        Node n2 = root.addNode("Foo");
+        n2.setProperty("order", 2);
+
+        m_session.save();
+        
+        NodeIterator ni = root.getNodes();
+        assertEquals(1,ni.nextNode().getProperty("order").getLong());
+        assertEquals(2,ni.nextNode().getProperty("order").getLong());
+
+        assertTrue( m_session.itemExists( "/root/Foo/order" ) );
+        assertTrue( m_session.itemExists( "/root/Foo[1]/order" ) );
+        assertTrue( m_session.itemExists( "/root/Foo[2]/order" ) );
+        assertTrue( m_session.itemExists( "/root/Foo[2]" ) );
+        assertTrue( m_session.itemExists( "/root/Foo[1]" ) );
+
+        m_session.dump();
+        root.remove();
+        m_session.dump();
+        
+        m_session.save();
+        m_session.dump();
+        
+        assertFalse( "/root/Foo/order",    m_session.itemExists( "/root/Foo/order" ) );
+        assertFalse( "/root/Foo[1]/order", m_session.itemExists( "/root/Foo[1]/order" ) );
+        assertFalse( "/root/Foo[2]/order", m_session.itemExists( "/root/Foo[2]/order" ) );
+        assertFalse( "/root/Foo[2]",       m_session.itemExists( "/root/Foo[2]" ) );
+        assertFalse( "/root/Foo[1]",       m_session.itemExists( "/root/Foo[1]" ) );
+        assertFalse( "/root",              m_session.itemExists( "/root" ) );        
+    }
+    
     public void testReorderSNS1() throws Exception
     {
         Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
@@ -377,7 +413,7 @@ public class NodeImplTest extends AbstractTest
         Node n5 = root.addNode("Foo");
         n5.setProperty("order", 5);
      
-        root.save();
+        m_session.save();
         
         NodeIterator ni = root.getNodes();
         assertEquals(1,ni.nextNode().getProperty("order").getLong());
@@ -422,7 +458,7 @@ public class NodeImplTest extends AbstractTest
         Node n5 = root.addNode("Foo");
         n5.setProperty("order", 5);
      
-        root.save();
+        m_session.save();
         
         NodeIterator ni = root.getNodes();
         assertEquals(1,ni.nextNode().getProperty("order").getLong());
@@ -467,7 +503,7 @@ public class NodeImplTest extends AbstractTest
         Node n5 = root.addNode("Foo");
         n5.setProperty("order", 5);
      
-        root.save();
+        m_session.save();
         
         NodeIterator ni = root.getNodes();
         assertEquals(1,ni.nextNode().getProperty("order").getLong());

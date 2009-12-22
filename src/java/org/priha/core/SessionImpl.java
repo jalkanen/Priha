@@ -127,14 +127,6 @@ public class SessionImpl implements Session, NamespaceMapper
         return m_provider.listNodes(parentpath);
     }
     
-    protected void markDirty( ItemImpl ii ) throws RepositoryException
-    {
-        if( ii instanceof NodeImpl )
-            m_provider.addNode( (NodeImpl) ii );
-        else
-            m_provider.putProperty( ii.getParent(), (PropertyImpl)ii );
-    }
-
     boolean hasNode( String absPath ) throws RepositoryException
     {
         return hasNode( PathFactory.getPath(this,absPath) );
@@ -389,7 +381,7 @@ public class SessionImpl implements Session, NamespaceMapper
                     if( p.getDefinition().isMultiple() )
                     {
                         PropertyImpl pix = destnode.internalSetProperty( p.getQName(), p.getValues(), p.getType() );
-                        pix.setState( ItemState.NEW );
+                        pix.enterState( ItemState.NEW );
                     }
                     else
                     {
@@ -413,7 +405,7 @@ public class SessionImpl implements Session, NamespaceMapper
             // Finally, remove the source node.
             
             //srcnode.remove();
-            srcnode.setState( ItemState.MOVED );
+            srcnode.enterState( ItemState.MOVED );
 //            m_provider.remove( srcnode ); // FIXME: Make sure this is ok
             
             getPathManager().move( srcnode.getInternalPath(), destnode.getInternalPath() ); // FIXME: OK with new ChangeStore?
@@ -454,7 +446,7 @@ public class SessionImpl implements Session, NamespaceMapper
             QNodeDefinition nd = rootType.findNodeDefinition( QName.valueOf("*") );
             
             ni = new NodeImpl( this, "/", rootType, nd, true );
-            ni.setState( ItemState.NEW );
+            ni.enterState( ItemState.NEW );
             ni.addMixin( "mix:referenceable" ); // Make referenceable.
             
             //m_provider.addNode( ni );

@@ -40,7 +40,7 @@ public class JdbcProviderTest extends TestCase
     
     public void testUTF8_1() throws ItemExistsException, PathNotFoundException, NoSuchNodeTypeException, LockException, VersionException, ConstraintViolationException, RepositoryException
     {
-        Node nd = m_session.getRootNode().addNode(UTF8_NAME);
+        Node nd = m_session.getRootNode().addNode(UTF8_NAME, "priha:referenceable");
         nd.setProperty(UTF8_NAME, UTF8_NAME);
         
         m_session.save();

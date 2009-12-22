@@ -125,11 +125,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         if( populateDefaults )
         {
-            setState(ItemState.NEW);
+            enterState(ItemState.NEW);
             PropertyImpl pt =internalSetProperty( Q_JCR_PRIMARYTYPE, 
                                                   session.fromQName( m_primaryType.getQName() ), // FIXME: Not very efficient 
                                                   PropertyType.NAME );
-            pt.setState( ItemState.NEW );
+            pt.enterState( ItemState.NEW );
         }
     }
 
@@ -293,7 +293,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             ni.sanitize();
 
-            ni.setState( ItemState.NEW );
+            ni.enterState( ItemState.NEW );
         }
         catch( InvalidPathException e)
         {
@@ -648,7 +648,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 {
                     throw new UnsupportedRepositoryOperationException("Automatic setting of property "+pi.getPath()+ " is not supported.");
                 }
-                pi.setState( ItemState.NEW );
+                pi.enterState( ItemState.NEW );
                 //addChildProperty( pi );
             }
         }
@@ -892,7 +892,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //
         //  Finish.
         //
-        setState( ItemState.UPDATED );
+        enterState( ItemState.UPDATED );
         m_childOrder = newOrder;
     }
 
@@ -964,6 +964,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
         if( prop == null )
         {
+            //
+            //  Handle new property
+            //
             Path propertypath = getInternalPath().resolve(name);
 
             Path p = propertypath.getParentPath();
@@ -994,6 +997,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 }
             
                 prop = new PropertyImpl( m_session, propertypath, pd );
+                prop.m_isNew = true;
 //                prop.setState( ItemState.NEW );
             }
             catch( PathNotFoundException e )
@@ -1024,7 +1028,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      */
     protected void removeProperty(PropertyImpl prop) throws RepositoryException
     {
-        prop.setState( ItemState.REMOVED );
+        prop.enterState( ItemState.REMOVED );
     }
 
     public PropertyImpl setProperty(String name, Value value)
@@ -1428,8 +1432,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             return 0;
         } // FIXME: This should never occur
     }
-
+    
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
+    {
+        remove(false);
+    }
+    
+    /**
+     *  If isRemoving = true, will remove subnodes without question.
+     */
+    private void remove(boolean isRemoving) throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         if( getState() == ItemState.REMOVED )
         {
@@ -1463,7 +1475,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 throw new LockException("The parent is locked, so you cannot remove it.");
         
             if( !parentType.canRemoveItem(getName()) &&
-                getParent().getState() != ItemState.REMOVED )
+                getParent().getState() != ItemState.REMOVED && !isRemoving )
             {
                 throw new ConstraintViolationException("Attempted to delete a mandatory child node:"+getInternalPath());
             }
@@ -1503,9 +1515,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //  Removal happens in a depth-first manner.
         //
         
-        //  This tells the children that it's okay to remove this.
-        m_state = ItemState.REMOVED;
-        
         //
         //  Remove children.  We do this in a reverse order in order
         //  not to force annoying moves for same-name siblings.  It's just faster.
@@ -1515,12 +1524,15 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         while( ndi.hasPrevious() )
         {
-            NodeImpl nd = (NodeImpl)ndi.previousNode();
+            NodeImpl nd = ndi.previousNode();
 
 //            System.out.println("REMOVING "+nd.getPath());
             
-            nd.remove();
+            nd.remove(true);
         }
+
+        
+        boolean isSuper = m_session.setSuper(true);
 
         //
         //  Remove properties
@@ -1531,21 +1543,19 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         }
         
         // This is a hack which just resets the state and then adds this to the remove queue. FIXME!
-        m_state = ItemState.UPDATED;
-        setState( ItemState.REMOVED );
+//        m_state = ItemState.UPDATED;
+        enterState( ItemState.REMOVED );
 
         //
         //  Fix same name siblings, but don't bother if the parent is already removed.
         //  Again, we go for the super session.
         // 
-       
-        boolean isSuper = m_session.setSuper(true);
         
         try
         {
             int myIndex   = getInternalPath().getLastComponent().getIndex();
 
-            if( getParent().getState() != ItemState.REMOVED )
+            if( !isRemoving )
             {
                 for( NodeIterator ni = getParent().getNodes( getName() ); ni.hasNext(); )
                 {
@@ -1559,7 +1569,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                              new Path.Component(getQName(),siblingIndex-1) );
             
 //                    System.out.println("Moving "+n+" to "+destPath);
-                    m_session.m_provider.m_changedItems.dump();
+//                    m_session.m_provider.m_changedItems.dump();
                     getSession().move( n.getInternalPath().toString( m_session ), 
                                        destPath.toString( m_session ) );
                 }
@@ -1623,14 +1633,14 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 if( getInternalPath().isRoot() )
                 {
                     PropertyImpl pix = internalSetProperty( Q_JCR_PRIMARYTYPE, "nt:unstructured", PropertyType.NAME );
-                    pix.setState(ItemState.NEW);
+                    pix.enterState(ItemState.NEW);
                 }
                 else
                 {
                     PropertyImpl pix = internalSetProperty( Q_JCR_PRIMARYTYPE,
                                                             assignChildType( getInternalPath().getLastComponent() ).toString(),
                                                             PropertyType.NAME );
-                    pix.setState(ItemState.NEW);
+                    pix.enterState(ItemState.NEW);
                 }
             }
 
@@ -1764,13 +1774,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
             newval[newval.length-1] = vf.createValue(mixinName,PropertyType.NAME);
             PropertyImpl pi = internalSetProperty( Q_JCR_MIXINTYPES, newval, PropertyType.NAME );
-            pi.setState(ItemState.UPDATED);
+            pi.enterState(ItemState.UPDATED);
         }
         catch( PathNotFoundException e )
         {
             Value[] values = new Value[] { vf.createValue(mixinName,PropertyType.NAME) };
             PropertyImpl pi = internalSetProperty( Q_JCR_MIXINTYPES, values, PropertyType.NAME );
-            pi.setState(ItemState.NEW);
+            pi.enterState(ItemState.NEW);
         }
         finally
         {
@@ -1902,7 +1912,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         if( !hasMixinType("mix:lockable") )
             throw new UnsupportedRepositoryOperationException("This node is not lockable: "+getInternalPath());
         
-        if( m_state == ItemState.NEW )
+        if( getState() == ItemState.NEW )
             throw new LockException("This node has no persistent state");
         
         if( isModified() )

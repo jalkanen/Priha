@@ -252,12 +252,12 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
         
         if( !isNew() ) 
         {
-            setState( ItemState.UPDATED );
+            enterState( ItemState.UPDATED );
         }
         else 
         {
-            setState( ItemState.NEW );
-            getParent().setState( ItemState.UPDATED );
+            enterState( ItemState.NEW );
+            getParent().enterState( ItemState.UPDATED );
         }
         
     }
@@ -338,14 +338,14 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
             if( isNew() )
             {
                 // The Property has just been added.
-                getParent().setState( ItemState.UPDATED );
+                getParent().enterState( ItemState.UPDATED );
             }
             
-            setState( ItemState.UPDATED );
+            enterState( ItemState.UPDATED );
         }
         else
         {
-            getParent().setState( ItemState.UPDATED );
+            getParent().enterState( ItemState.UPDATED );
         }
     }
 
@@ -604,18 +604,17 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         //
-        // Sanity check - the primary type cannot be deleted unless the
-        // node itself is also deleted.
+        //  Sanity check - the primary type cannot be deleted unless this is a super session.
         //
-        if( getName().equals("jcr:primaryType") && 
-            getParent().getState() != ItemState.REMOVED &&
+        if( !getSession().isSuper() && 
+            getName().equals("jcr:primaryType") && 
             getInternalPath().getParentPath().isRoot() ) return;
         		
         NodeImpl nd = getParent();
 
         nd.removeProperty(this);
         
-        setState( ItemState.REMOVED );
+        enterState( ItemState.REMOVED );
     }
 
     public void setDefinition(PropertyDefinition pd)
