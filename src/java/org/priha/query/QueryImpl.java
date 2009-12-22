@@ -38,6 +38,8 @@ public abstract class QueryImpl implements Query
     {
         QueryProvider qp = m_session.getWorkspace().getQueryManager().getQueryProvider();
         
+        System.out.println( "Executing "+getStatement() );
+        
         return qp.query(m_session, m_root);
     }
 

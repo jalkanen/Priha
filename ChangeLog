@@ -1,3 +1,10 @@
+2009-12-23  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.6.3
+
+        * Solved a fairly hairy graph matching issue in SimpleQueryProvider,
+        and I think finally deep queries work as they are meant to work. Yay!
+        
 2009-12-22  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.6.2

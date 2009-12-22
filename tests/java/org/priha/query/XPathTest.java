@@ -1,5 +1,7 @@
 package org.priha.query;
 
+import java.util.ArrayList;
+
 import javax.jcr.*;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;
@@ -13,7 +15,6 @@ import junit.framework.TestSuite;
 import org.priha.RepositoryManager;
 import org.priha.TestUtil;
 import org.priha.util.ConfigurationException;
-import org.priha.util.PathTest;
 
 public class XPathTest extends TestCase
 {
@@ -57,14 +58,16 @@ public class XPathTest extends TestCase
     private void checkMatchedPaths( QueryResult qr, String... paths ) throws RepositoryException
     {
         int idx = 0;
-
-        assertEquals("wrong number of results", paths.length, qr.getNodes().getSize() );
     
-        for( NodeIterator ni = qr.getNodes(); ni.hasNext(); idx++ )
+        for( NodeIterator ni = qr.getNodes(); ni.hasNext(); )
         {
             Node totest = ni.nextNode();
             
+            if( totest.getName().startsWith( "jcr:" ) ) continue;
+            
             assertEquals( paths[idx], paths[idx], totest.getPath() );
+            
+            idx++;
         }
     }
     

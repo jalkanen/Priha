@@ -13,7 +13,6 @@ import org.priha.nodetype.QPropertyDefinition;
 import org.priha.path.Path;
 import org.priha.query.aqt.*;
 import org.priha.query.aqt.OrderQueryNode.OrderSpec;
-import org.priha.util.NodeIteratorImpl;
 import org.priha.util.QName;
 
 /**
@@ -137,12 +136,28 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
 
         try
         {
+            ArrayList<NodeImpl> nodesToBeChecked = new ArrayList<NodeImpl>();
+            
+            // Start with a single item
+            nodesToBeChecked.add( c.getCurrentItem() );
+            
             for( int i = 0; i < steps.length; i++ )
             {
                 if( i == steps.length - 1 )
                     c.setLast(true);
-                c = (QueryCollector) steps[i].accept( this, c );
+                
+                for( NodeImpl ni : nodesToBeChecked )
+                {
+                    c.setCurrentItem( ni );
+                
+                    c = (QueryCollector) steps[i].accept( this, c );
+                }
+                nodesToBeChecked.clear();
+                nodesToBeChecked.addAll( c.m_matches );
+                c.m_matches.clear();
             }
+            
+            c.m_matches = nodesToBeChecked; // Should be the final list of matches
         }
         catch( PathNotFoundException e )
         {
@@ -508,6 +523,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         NodeImpl currNode = c.getCurrentItem();
 
         System.out.println("LOC = "+currNode+", check="+checkedName);
+
         //
         // If there is a named path component, then check that one.
         // If there isn't, then check all children.
@@ -519,22 +535,19 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
             if( checkedName.getLocalPart().length() == 0 )
             {
                 // Root node
-                c.setCurrentItem( currNode );
-                if( c.isLast() && checkPredicates( node, c ) )
+                if( checkPredicates( node, c ) )
                 {
                     c.addMatch( currNode );
+                    System.out.println("   MATCH");
                 }
             }
             else if( currNode.hasNode( checkedName ) )
             {
-                System.out.println("XXX");
                 for( NodeIterator iter = currNode.getNodes( currNode.getSession().fromQName( checkedName ) ); iter.hasNext(); )
                 {
                     NodeImpl ni = (NodeImpl)iter.nextNode();
-
                     c.setCurrentItem( ni );
-
-                    if( c.isLast() && checkPredicates( node, c ) )
+                    if( checkPredicates( node, c ) )
                     {
                         c.addMatch( ni );
                         System.out.println("   MATCH");
@@ -569,7 +582,7 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
 
                 c.setCurrentItem( child );
 
-                if( c.isLast() && checkPredicates( node, c ) )
+                if( checkPredicates( node, c ) )
                     c.addMatch( child );
 
                 if( node.getIncludeDescendants() )
@@ -711,6 +724,31 @@ public class SimpleQueryProvider extends TraversingQueryNodeVisitor implements Q
         public final void addMatch( NodeImpl ii )
         {
             m_matches.add( ii );
+        }
+        
+        public final String toString()
+        {
+            StringBuilder sb = new StringBuilder();
+            
+            try
+            {
+                sb.append("Current: ");
+                sb.append( m_currentItem.getPath() );
+                sb.append(" matches=[");
+            
+                for( NodeImpl ni : m_matches )
+                {
+                    sb.append( ni.getPath() );
+                    sb.append( "," );
+                }
+                sb.append("]");
+                if( isLast() ) sb.append(" (last step processed)");
+            }
+            catch( Exception e )
+            {
+                sb.append( e.getMessage() );
+            }
+            return sb.toString();
         }
     }
 

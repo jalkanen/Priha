@@ -66,6 +66,11 @@ public class LocationStepQueryNode extends NAryQueryNode {
      */
     private int index = NONE;
 
+    public String toString()
+    {
+        return "LocationStep["+(nameTest!=null ? nameTest : "*")+(includeDescendants?", include descendants": "")+"]";
+    }
+    
     /**
      * Creates a new <code>LocationStepQueryNode</code> that matches only
      * the empty name (the repository root). The created location step

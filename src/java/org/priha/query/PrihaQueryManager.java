@@ -24,9 +24,6 @@ import javax.jcr.query.Query;
 import javax.jcr.query.QueryManager;
 
 import org.priha.core.SessionImpl;
-import org.priha.query.aqt.DefaultQueryNodeFactory;
-import org.priha.query.aqt.QueryRootNode;
-import org.priha.query.aqt.xpath.XPathQueryBuilder;
 
 
 /**
@@ -38,10 +35,6 @@ public class PrihaQueryManager implements QueryManager
 {
     private static final String[] SUPPORTEDLANGUAGES = { Query.XPATH };
     
-    private static final String   DEFAULT_QUERYPROVIDER = "org.priha.BasicQueryProvider";
-    
-    private QueryProvider m_queryProvider;
-
     private SessionImpl m_session;
     
     public PrihaQueryManager( SessionImpl session )
@@ -63,10 +56,11 @@ public class PrihaQueryManager implements QueryManager
     {
         if( language.equals( Query.XPATH ) )
         {
+            /*
             QueryRootNode root = XPathQueryBuilder.createQuery(statement, 
                                                                m_session, 
                                                                new DefaultQueryNodeFactory(null) );
-            
+            */
             return new XPathQueryImpl( m_session, statement );
         }
         
