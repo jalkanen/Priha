@@ -46,8 +46,8 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 
 import org.priha.RepositoryManager;
-import org.priha.core.locks.QLock;
 import org.priha.core.locks.LockManager;
+import org.priha.core.locks.QLock;
 import org.priha.core.values.ValueFactoryImpl;
 import org.priha.core.values.ValueImpl;
 import org.priha.nodetype.QNodeDefinition;
@@ -57,8 +57,10 @@ import org.priha.nodetype.QPropertyDefinition;
 import org.priha.path.InvalidPathException;
 import org.priha.path.Path;
 import org.priha.path.PathFactory;
-import org.priha.path.Path.Component;
-import org.priha.util.*;
+import org.priha.util.LazyNodeIteratorImpl;
+import org.priha.util.PropertyIteratorImpl;
+import org.priha.util.QName;
+import org.priha.util.TextUtil;
 import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
 import org.priha.version.VersionManager;
@@ -822,25 +824,17 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         int dstIndex = newOrder.indexOf( dstPath );
 
         if( srcIndex == -1 ) throw new ItemNotFoundException("Cannot locate source child, WTF?");
-                
-        //
-        //  Removal of the node may cause a jump in the indices, so we need to subtract one sometimes.
-        //
-        Path p = newOrder.remove(srcIndex);
-        if( dstIndex != -1 ) 
-            newOrder.add(dstIndex - (dstIndex > srcIndex ? 1 : 0),p);
-        else 
-            newOrder.add(p);
-
+          
         //
         //  Make sure locks are also transferred.
         //
         QLock lock = m_lockManager.getLock( srcPath );
         if( lock != null )
         {
-            m_lockManager.moveLock(lock, dstPath);
+            m_lockManager.removeLock( lock );
         }
         
+
         //
         //  Now the not-so-fun thing; we must make sure that also any SNS's are rearranged appropriately.
         //
@@ -852,43 +846,94 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         try
         {
-            int realidx = 1;
-            for( int i = 0; i < newOrder.size(); i++ )
+            if( srcChildRelPath.indexOf('[') != -1 || hasNode(srcChildRelPath+"[2]" ) )
             {
-                Path.Component qn = newOrder.get(i).getLastComponent();
-            
-                // Is this the moved path or its SNS?  We check just the QName part, not the index.
-                if( qn.getNamespaceURI().equals(srcPath.getLastComponent().getNamespaceURI()) && 
-                    qn.getLocalPart().equals(srcPath.getLastComponent().getLocalPart()))
+                // Yes, we are moving a SNS so this needs reordering.
+                Path tmpPath = getInternalPath().resolve( m_session, "priha:tmpmove" );
+                
+                // First, store the old version
+                m_session.internalMove( srcPath, 
+                                        tmpPath, 
+                                        false );
+
+                String childName = srcChildRelPath.replaceAll( "\\[\\d+\\]", "" );
+                
+                if( dstPath == null ) 
                 {
-                    if( qn.getIndex() != realidx )
-                    {
-                        System.out.println("Trying to reorder SNS... : "+qn);
-                        QName q = qn.getQName();
-                        Component newName = new Component(q,realidx);
-                        
-                        Path path1   = getInternalPath().resolve(qn);
-                        Path tmppath = getInternalPath().resolve(m_session,"priha:tmpmove");
-                        Path newPath = getInternalPath().resolve(newName);
-                        
-                        m_session.rename( path1, tmppath.getLastComponent() );
-                        m_session.rename( newPath, path1.getLastComponent() );
-                        m_session.rename( tmppath, newName );
-                    
-                        int  oldI = newOrder.indexOf(newPath);
-                        Path oldP = newOrder.set(i,newPath);
-                    
-                        newOrder.set(oldI, oldP);
-                    
-                        realidx++;
-                    }
+                    NodeIterator ni = getNodes(childName);
+                    dstPath = getInternalPath().resolve( m_session,
+                                                         childName+"["+ni.getSize()+"]" );
                 }
+                                
+                int dir;
+                int startIdx;
+                int endIdx;
+                if( srcPath.getLastComponent().getIndex() < dstPath.getLastComponent().getIndex() )
+                {
+                    // Moving stuff forwards
+                    dir = -1;
+                    startIdx = srcPath.getLastComponent().getIndex()+1;
+                    endIdx   = dstPath.getLastComponent().getIndex()+1;
+                }
+                else
+                {
+                    dir = 1;
+                    startIdx = srcPath.getLastComponent().getIndex()-1;
+                    endIdx   = dstPath.getLastComponent().getIndex()-1;
+                }
+                
+                for( int i = startIdx; i != endIdx; i -= dir )
+                {
+                    String oldName = childName + "[" + i + "]";
+                    String newName = childName + "[" + (i + dir) + "]";
+                    
+                    System.out.println("Reordering SNS : "+oldName+" to "+newName);
+                        
+                    Path path1   = getInternalPath().resolve(m_session,oldName);
+//                  Path tmppath = getInternalPath().resolve(m_session,"priha:tmpmove");
+                    Path newPath = getInternalPath().resolve(m_session,newName);
+                        
+                    m_session.internalMove( path1, newPath, false );
+                    
+//                    int  oldI = newOrder.indexOf(newPath);
+                  
+//                    Path oldP = newOrder.set(newOrder.indexOf(path1),newPath);
+                    
+//                    newOrder.set(oldI, oldP);
+                    
+                }
+                
+                m_session.internalMove( tmpPath, 
+                                        dstPath,
+                                        false );
+            }
+            else
+            {
+                //
+                //  Removal of the node may cause a jump in the indices, so we need to subtract one sometimes.
+                //
+                Path p = newOrder.remove(srcIndex);
+                if( dstIndex != -1 ) 
+                    newOrder.add(dstIndex - (dstIndex > srcIndex ? 1 : 0),p);
+                else 
+                    newOrder.add(p);
+
             }
         }
         finally
         {
             m_session.setSuper(isSuper);
         }
+        
+        //
+        //  Lock back up
+        //
+        
+        if( lock != null )
+        {
+            m_lockManager.moveLock( lock, dstPath );
+        }
+        
         //
         //  Finish.
         //

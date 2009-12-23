@@ -1,3 +1,12 @@
+2009-12-24  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.6.4
+        
+        * Fixed some more issues with SNS reordering. This version now
+        passes the JSR-170 TCK with zero errors or failures.
+        
+        * Merry Christmas!
+
 2009-12-23  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.6.3

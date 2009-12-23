@@ -152,6 +152,11 @@ public class LockManager
         addLock(lock);
     }
     
+    /**
+     *  Removes the lock, if it exists.
+     *  
+     *  @param lock Lock to remove.
+     */
     public synchronized void removeLock(QLock lock)
     {
         m_locks.remove(lock.getPath());

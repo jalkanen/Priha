@@ -304,6 +304,29 @@ public class SessionImpl implements Session, NamespaceMapper
     }
 
     /**
+     *  A convenience class to move stuff based on Paths instead of Strings.
+     */
+    public void move( Path srcPath, Path destPath ) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, NamespaceException, RepositoryException
+    {
+        // FIXME: This should really be the main routine
+        move( srcPath.toString( this ), destPath.toString(this) );
+    }
+    
+    public void move(String srcAbsPath, String destAbsPath) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException
+    {
+        checkLive();
+        checkWritePermission();
+
+        internalMove(srcAbsPath,destAbsPath,true);
+    }
+
+    public void internalMove( Path srcPath, Path destPath, boolean obeyConstraints ) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, NamespaceException, RepositoryException
+    {
+        // FIXME: This should really be the main routine
+        internalMove( srcPath.toString( this ), destPath.toString(this), obeyConstraints );
+    }
+
+    /**
      *  Moves work as follows:
      *  <ol>
      *  <li>We add a new Node to the destAbsPath
@@ -313,13 +336,9 @@ public class SessionImpl implements Session, NamespaceMapper
      *  <li>The Node is marked as being MOVED instead of REMOVED.
      *  </ol>
      */
-    public void move(String srcAbsPath, String destAbsPath) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException
+    public void internalMove(String srcAbsPath, String destAbsPath, boolean obeyConstraints) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException
     {
-        checkLive();
-        checkWritePermission();
-
         System.out.println("Moving "+srcAbsPath+" to "+destAbsPath);
-
 
         if( destAbsPath.endsWith("]") && !isSuper() )
             throw new ConstraintViolationException("Destination path must not have an index as its final component.");        
@@ -362,7 +381,7 @@ public class SessionImpl implements Session, NamespaceMapper
 
                 String newPath = destAbsPath + "/" + relPath;
                 System.out.println("Child path move "+child.getPath()+" => "+newPath );
-                move( child.getPath(), newPath );
+                internalMove( child.getPath(), newPath, obeyConstraints );
             }
         
             for( PropertyIterator pi = srcnode.getProperties(); pi.hasNext(); )
@@ -394,8 +413,11 @@ public class SessionImpl implements Session, NamespaceMapper
             // Set up move constraints (that is, making sure the user can only save
             // a top node, and not just moved bits).
             
-            srcnode.getParent().tag( MOVE_CONSTRAINT, destnode.getParent().getPath() );
-            destnode.getParent().tag( MOVE_CONSTRAINT, srcnode.getParent().getPath() );
+            if( obeyConstraints )
+            {
+                srcnode.getParent().tag( MOVE_CONSTRAINT, destnode.getParent().getPath() );
+                destnode.getParent().tag( MOVE_CONSTRAINT, srcnode.getParent().getPath() );
+            }
             
             // Since this is a move op, we want to make sure that the old path
             // does not change.
@@ -415,7 +437,7 @@ public class SessionImpl implements Session, NamespaceMapper
             setSuper( isSuper );
         }
     }
-
+    
     void refresh( boolean keepChanges, Path path ) throws RepositoryException
     {
         checkLive();
