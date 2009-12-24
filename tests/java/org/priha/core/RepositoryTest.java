@@ -227,7 +227,7 @@ public class RepositoryTest extends AbstractTest
         assertTrue( "test node not found", testFound );
     }
     
-
+    @SuppressWarnings("unused")
     public void testBinaryProperty() throws Exception
     {
         Node nd = m_session.getRootNode();

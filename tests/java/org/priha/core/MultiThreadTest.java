@@ -186,7 +186,7 @@ public class MultiThreadTest extends TestCase
                         createRandomNode( m_session.getRootNode() );
                     }
                 }
-                catch( PathNotFoundException e ) { } // OK
+                catch( PathNotFoundException e ) {} // OK
             }
         }
 

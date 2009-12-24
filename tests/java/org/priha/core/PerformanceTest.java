@@ -21,11 +21,11 @@ public class PerformanceTest extends TestCase
     private static final int DEFAULT_ITERATIONS = 100;
     private int m_iterations = DEFAULT_ITERATIONS;
     
-    private static int BLOB_SIZE = 1024*100;
+    private static final int BLOB_SIZE = 1024*100;
     private int m_blobsize = BLOB_SIZE;
     
-    private static int NODENAMELEN = 16;
-    private static int PROPERTYLEN = 16;
+    private static final int NODENAMELEN = 16;
+    private static final int PROPERTYLEN = 16;
     
     private Credentials m_creds = new SimpleCredentials("username","password".toCharArray());
     private boolean m_memoryProviderTest = true;
@@ -643,7 +643,7 @@ public class PerformanceTest extends TestCase
             
             long time = stop-startTime;
             
-            double itersSec = iters/((double)time/1e9);
+            double itersSec = iters/(time/1e9);
             
             HashMap<String,Double> hm;
             

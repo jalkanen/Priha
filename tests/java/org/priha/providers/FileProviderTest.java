@@ -51,6 +51,7 @@ public class FileProviderTest extends AbstractTest
     /**
      *  JCR names are case-sensitive, so let's check that all these work.
      */
+    @SuppressWarnings("unused")
     public void testCase1() throws Exception
     {
         Node nd = m_session.getRootNode().addNode("Test One");
@@ -74,6 +75,7 @@ public class FileProviderTest extends AbstractTest
         catch( PathNotFoundException e ) {}   
     }    
     
+    @SuppressWarnings("unused")
     public void testCase2() throws Exception
     {
         Node nd = m_session.getRootNode().addNode("A");

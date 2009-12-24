@@ -1,7 +1,5 @@
 package org.priha.query;
 
-import java.util.ArrayList;
-
 import javax.jcr.*;
 import javax.jcr.query.InvalidQueryException;
 import javax.jcr.query.Query;

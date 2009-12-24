@@ -191,7 +191,7 @@ public class NodeImplTest extends AbstractTest
         
         for( Value vv : v )
         {
-            if( vv.getString().equals("mix:referenceable") ) { found = true; };
+            if( vv.getString().equals("mix:referenceable") ) { found = true; }
         }
         
         assertTrue("mix:referenceable not found",found);
@@ -239,6 +239,7 @@ public class NodeImplTest extends AbstractTest
         assertEquals( "property value", "new value", n.getProperty( "prop1" ).getString());
     }
     
+    @SuppressWarnings("unused")
     public void testReorder1() throws Exception
     {
         Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
@@ -280,6 +281,7 @@ public class NodeImplTest extends AbstractTest
         
     }
     
+    @SuppressWarnings("unused")
     public void testReorder2() throws Exception
     {
         Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
@@ -321,6 +323,7 @@ public class NodeImplTest extends AbstractTest
         
     }
     
+    @SuppressWarnings("unused")
     public void testReorder3() throws Exception
     {
         Node root = m_session.getRootNode().addNode("root", "nt:unstructured");
