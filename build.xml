@@ -205,19 +205,7 @@
            <report format="noframes" todir="/tmp/reports" />
         </junitreport>   
     </target>  
-	
-	<target name="dist" depends="jar,javadoc">
-        <java classpath="build" outputproperty="version" classname="org.priha.Release" 
-              args="-versiononly">
-        </java>   
 
-		<zip zipfile="build/priha-${version}.zip">
-			<zipfileset dir="build" includes="*.jar" prefix="priha-${version}"/>
-			<zipfileset dir="." includes="ChangeLog README doc/**" prefix="priha-${version}"/>
-			<zipfileset dir="lib" includes="jcr-*.jar" prefix="priha-${version}"/>
-		</zip>
-	</target>
-	
 	<!--
 	   Runs the entire JCR test suite.
 	-->
@@ -243,4 +231,30 @@
 	           <report format="noframes" todir="tests/reports" />
 	        </junitreport>   
 	</target>
+	
+	<!-- ***************************************************************** -->
+	
+	<!--
+	
+	      Distribution package building.
+	      
+	      Use "ant dist" to build the distro package.
+	      
+	  -->
+
+	
+	<target name="dist" depends="jar,javadoc">
+        <java classpath="build" outputproperty="version" classname="org.priha.Release" 
+              args="-versiononly">
+        </java>   
+
+		<zip zipfile="build/priha-${version}.zip">
+			<zipfileset dir="build" includes="*.jar" prefix="priha-${version}"/>
+			<zipfileset dir="." includes="ChangeLog README LICENSE NOTICE doc/**" prefix="priha-${version}"/>
+			<zipfileset dir="lib" includes="jcr-*.jar" prefix="priha-${version}"/>
+			<zipfileset dir="lib" includes="ehcache-*.jar hsqldb-*.jar" prefix="priha-${version}/extras-lib"/>
+		</zip>
+	</target>
+	
+
 </project>
