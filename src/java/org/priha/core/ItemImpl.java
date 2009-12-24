@@ -1,7 +1,7 @@
 /*
     Priha - A JSR-170 implementation library.
 
-    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+    Copyright (C) 2007-2009 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
     Licensed under the Apache License, Version 2.0 (the "License"); 
     you may not use this file except in compliance with the License.
@@ -39,31 +39,36 @@ public abstract class ItemImpl implements Item
 
     protected PathRef           m_path;
     protected final SessionImpl m_session;
-//    protected ItemState         m_state    = ItemState.UNDEFINED;
-    protected boolean           m_isNew    = false;
+    protected boolean           m_isNew;
     
-//    public ItemImpl( SessionImpl session, String path ) throws NamespaceException, RepositoryException
-//    {
-//        this( session, PathFactory.getPath(session,path) );
-//    }
-    
+    /**
+     *  Create an Item for a particular session and path.
+     *  
+     *  @param session Session which owns this Item
+     *  @param path Path at which the Item is created.
+     */
     public ItemImpl(SessionImpl session, Path path)
     {
         m_session = session;
         m_path = session.getPathManager().getPathRef(path);
     }
 
-    public ItemImpl(ItemImpl original, SessionImpl session)
-    {
-        this( session, original.getInternalPath() );
-    }
-
+    /**
+     *  Returns the path reference object.
+     *  
+     *  @return The internal path reference.
+     */
     public PathRef getPathReference()
     {
         if( m_path == null ) throw new RuntimeException("Path reference must not be null!");
         return m_path;
     }
     
+    /**
+     *  Return the current state of this Item.
+     *  
+     *  @return An {@link ItemState} representing the state.
+     */
     public ItemState getState()
     {
         //
@@ -85,6 +90,13 @@ public abstract class ItemImpl implements Item
         return state != null ? state : ItemState.EXISTS;
     }
     
+    /**
+     *  Changes the {@link ItemState} of the Item, and places it in the appropriate
+     *  queues.
+     *  
+     *  @param state New state.
+     *  @throws RepositoryException If the state cannot be entered for some reason.
+     */
     @SuppressWarnings("fallthrough")
     public void enterState( ItemState state ) throws RepositoryException
     {
@@ -128,10 +140,14 @@ public abstract class ItemImpl implements Item
                 break;
                     
             case UNDEFINED:
+            default:
                 throw new InvalidItemStateException("State cannot be set to UNDEFINED - that is the starting state of any Item only.");
         }
     }
     
+    /**
+     *  {@inheritDoc}
+     */
     public void accept(ItemVisitor visitor) throws RepositoryException
     {
         if( isNode() )
@@ -144,6 +160,9 @@ public abstract class ItemImpl implements Item
         }
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public Item getAncestor(int depth) throws ItemNotFoundException, AccessDeniedException, RepositoryException
     {
         try
@@ -158,11 +177,17 @@ public abstract class ItemImpl implements Item
         }
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public int getDepth() throws RepositoryException
     {
         return getInternalPath().depth();
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public String getName() throws RepositoryException
     {
         return m_session.fromQName( getInternalPath().getLastComponent() );
@@ -182,6 +207,9 @@ public abstract class ItemImpl implements Item
         return qname;
     }
     
+    /**
+     *  {@inheritDoc}
+     */
     public NodeImpl getParent() throws ItemNotFoundException, AccessDeniedException, RepositoryException
     {
         try
@@ -198,6 +226,11 @@ public abstract class ItemImpl implements Item
         }
     }
 
+    /**
+     *  Get the internal path representation for this Item.
+     *  
+     *  @return The internal Path.
+     */
     public Path getInternalPath()
     {
         try
@@ -210,17 +243,25 @@ public abstract class ItemImpl implements Item
         }
     }
     
+    /**
+     *  {@inheritDoc}
+     */
     public String getPath() throws RepositoryException
     {
         return PathFactory.getMappedPath( m_session, getInternalPath() );
-//        return getInternalPath().toString(m_session);
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public SessionImpl getSession() throws RepositoryException
     {
         return m_session;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public boolean isModified()
     {
         //
@@ -231,17 +272,26 @@ public abstract class ItemImpl implements Item
         return state != ItemState.EXISTS && state != ItemState.NEW;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public boolean isNew()
     {
         return m_isNew || getState() == ItemState.UNDEFINED;
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public boolean isNode()
     {
         return false;
     }
 
-    public boolean isSame(Item otherItem) throws RepositoryException
+    /**
+     *  {@inheritDoc}
+     */
+   public boolean isSame(Item otherItem) throws RepositoryException
     {
         if( m_session.getRepository() == otherItem.getSession().getRepository() )
         {
@@ -263,6 +313,9 @@ public abstract class ItemImpl implements Item
         return false;
     }
 
+   /**
+    *  {@inheritDoc}
+    */
     public void refresh(boolean keepChanges) throws InvalidItemStateException, RepositoryException
     {
         if( !m_session.itemExists(getInternalPath()) ) 
@@ -274,8 +327,14 @@ public abstract class ItemImpl implements Item
         m_session.refresh( keepChanges, getInternalPath() );
     }
 
+    /**
+     *  {@inheritDoc}
+     */
     public abstract void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException;
 
+    /**
+     *  {@inheritDoc}
+     */
     public abstract void save()
                       throws AccessDeniedException,
                           ItemExistsException,
@@ -288,8 +347,13 @@ public abstract class ItemImpl implements Item
                           RepositoryException
     ;
 
-//    protected abstract void saveItemOnly() throws RepositoryException;
 
+    /**
+     *  Returns a human-readable description of the Item.
+     *  
+     *  @return Something readable.
+     */
+    @Override
     public String toString()
     {
         try
@@ -302,31 +366,9 @@ public abstract class ItemImpl implements Item
         }
     }
 
-    /** Marks this Node + its parent modified. 
-     * @throws RepositoryException */
-//    protected void markModified(boolean isModified) throws RepositoryException
-//    {
-//        markModified( isModified, true );
-//    }
-//    
-//    protected void markModified(boolean isModified, boolean parentToo) throws RepositoryException
-//    {
-//        if( m_state == ItemState.EXISTS ) m_state = ItemState.UPDATED;
-//        
-//        m_session.markDirty(this);
-//            
-//        if( !getInternalPath().isRoot() && parentToo )
-//        {
-//            //
-//            //  Regardless of the state of the current Item, the parent
-//            //  shall always be marked as modified (since the state of this
-//            //  child has changed.)
-//            //
-//            NodeImpl parent = getParent();
-//            parent.markModified(true, false);
-//        }
-//    }
-
+    /**
+     *  {@inheritDoc}
+     */
     @Override
     public int hashCode()
     {
@@ -335,7 +377,7 @@ public abstract class ItemImpl implements Item
     
     /**
      *  Performs mandatory housekeeping right before saving.
-     *  @throws RepositoryException
+     *  @throws RepositoryException If something goes wrong
      */
     protected void preSave() throws RepositoryException
     {
@@ -356,6 +398,11 @@ public abstract class ItemImpl implements Item
     
     private transient long           m_creationTime = System.currentTimeMillis();
 
+    /**
+     *  Returns the creation time of this Item instance.
+     *  
+     *  @return The creation time.
+     */
     public long getCreationTime()
     {
         return m_creationTime;

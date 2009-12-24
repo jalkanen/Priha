@@ -99,24 +99,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      *  The UUID is a standard Type 3 UUID, generated from the byte array [ 0x00 ].
      */
     private static final UUID ROOT_UUID      = UUID.nameUUIDFromBytes( new byte[] { 0x00 } );
-    
-    /**
-     *  Creates a clone of the NodeImpl, and places it to the given Session
-     *  
-     *  @param original
-     *  @param session
-     *  @throws RepositoryException 
-     *  @throws IllegalStateException 
-     *  @throws ValueFormatException 
-     */
-    protected NodeImpl( NodeImpl original, SessionImpl session ) throws ValueFormatException, IllegalStateException, RepositoryException
-    {
-        super( original, session );
         
-        m_primaryType = original.m_primaryType;
-        m_definition  = original.m_definition;
-    }
-    
     protected NodeImpl( SessionImpl session, Path path, QNodeType primaryType, QNodeDefinition nDef, boolean populateDefaults )
         throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException
     {

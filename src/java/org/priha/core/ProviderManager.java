@@ -668,20 +668,4 @@ public class ProviderManager implements ItemStore
             pi.lock.writeLock().unlock();
         }    
     }
-    
-    public void rename(StoreTransaction tx,Path path, Path.Component newName) throws RepositoryException
-    {
-        ProviderInfo pi = m_workspaceAccess.get( tx.getWorkspace().getName() );
-        
-        try
-        {
-            pi.lock.writeLock().lock();
-        
-            pi.provider.rename( tx, path, newName );
-        }
-        finally
-        {
-            pi.lock.writeLock().unlock();
-        }            
-    }
 }

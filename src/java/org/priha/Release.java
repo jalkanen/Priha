@@ -1,7 +1,7 @@
 /*
     Priha - A JSR-170 implementation library.
 
-    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+    Copyright (C) 2007-2009 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
     Licensed under the Apache License, Version 2.0 (the "License"); 
     you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import javax.jcr.Repository;
  *  </pre>
  *
  */
-public class Release
+public final class Release
 {
     /**
      *  The application name.  Value is {@value}.
@@ -78,10 +78,15 @@ public class Release
     private static final String  STR_FALSE = "false";
 
     /**
+     *  Prevent instantiation.
+     */
+    private Release() {}
+    
+    /**
      *  Contains the JCR Descriptors.  Essentially lists the different
      *  features that the repository supports.  Use {@link Repository#getDescriptor(String)}
      */
-    public static String[] DESCRIPTORS = {
+    public static final String[] DESCRIPTORS = {
         Repository.SPEC_NAME_DESC,                "Content Repository for Java Technology API",
         Repository.SPEC_VERSION_DESC,             "1.0",
         Repository.REP_NAME_DESC,                 APPNAME,
@@ -101,6 +106,9 @@ public class Release
 
     /**
      *  A static method which can be run to print the version information.
+     *  
+     *  @param argv Arguments.  Currently allowed argument is "-versiononly", which prints
+     *              just the version information.
      */
     public static final void main(String[] argv)
     {

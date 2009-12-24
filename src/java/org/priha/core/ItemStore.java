@@ -76,6 +76,4 @@ public interface ItemStore
     public void storeCancelled(StoreTransaction tx) throws RepositoryException;
 
     void reorderNodes(StoreTransaction tx, Path internalPath, List<Path> childOrder) throws RepositoryException;
-    
-    void rename(StoreTransaction tx,Path path, Path.Component newName) throws RepositoryException;
 }

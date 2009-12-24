@@ -1,7 +1,7 @@
 /*
     Priha - A JSR-170 implementation library.
 
-    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+    Copyright (C) 2007-2009 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
     Licensed under the Apache License, Version 2.0 (the "License"); 
     you may not use this file except in compliance with the License.
@@ -22,9 +22,7 @@ import java.util.List;
 import java.util.Properties;
 
 import javax.jcr.*;
-import javax.jcr.nodetype.NodeDefinition;
 
-import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.nodetype.QNodeDefinition;
@@ -75,7 +73,7 @@ public interface RepositoryProvider
      * @param credentials The Credentials object passed to the Session.open() call.  May be null,
      *                    if there were no credentials.
      * @param workspaceName The workspace which will be accessed.
-     * @throws NoSuchWorkspaceException, if no such workspace exists. 
+     * @throws NoSuchWorkspaceException if no such workspace exists. 
      */
     public void open( RepositoryImpl  rep, 
                       Credentials     credentials, 
@@ -161,26 +159,6 @@ public interface RepositoryProvider
      */
     public boolean nodeExists( WorkspaceImpl ws, Path path ) throws RepositoryException;
     
-    /**
-     * Copies content from one path to another path.
-     * 
-     * @param ws
-     * @param srcpath
-     * @param destpath
-     * @throws RepositoryException
-     */
-//    public void copy( WorkspaceImpl ws, Path srcpath, Path destpath ) throws RepositoryException;
-    
-    /**
-     *  Moves the content at the end of one Path to the destpath.
-     *  
-     * @param ws
-     * @param srcpath
-     * @param destpath
-     * @throws RepositoryException
-     */
-//    public void move( WorkspaceImpl ws, Path srcpath, Path destpath ) throws RepositoryException;
-
     /**
      *  Lists all the Nodes from the repository which belong to this parent.
      *  
@@ -282,6 +260,4 @@ public interface RepositoryProvider
     public void storeCancelled(StoreTransaction tx) throws RepositoryException;
 
     public void reorderNodes(StoreTransaction tx, Path path, List<Path> childOrder) throws RepositoryException;
-
-    public void rename(StoreTransaction tx, Path path, Path.Component newName ) throws RepositoryException;
 }

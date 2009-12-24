@@ -55,8 +55,8 @@ public class PathFactory
      *  
      *  @param path A String representing the Path
      *  @return A valid Path object.
-     * @throws RepositoryException 
-     * @throws NamespaceException 
+     *  @throws RepositoryException If there is a problem parsing the Path
+     *  @throws NamespaceException If the Path contains a prefix which could not be parsed.
      */
     public static Path getPath(NamespaceMapper ns, String path) throws NamespaceException, RepositoryException
     {
@@ -100,8 +100,6 @@ public class PathFactory
      *  
      *  @param property
      *  @return
-     * @throws NamespaceException, RepositoryException 
-     * @throws  
      * @throws NamespaceException 
      */
     public static Path getPath(String property) throws NamespaceException, RepositoryException

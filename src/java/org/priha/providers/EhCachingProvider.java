@@ -469,13 +469,5 @@ public class EhCachingProvider implements RepositoryProvider
     {
         m_realProvider.reorderNodes(tx, internalPath, childOrder);
     }
-    
-    public void rename(StoreTransaction tx, Path path, Component newName) throws RepositoryException
-    {
-        m_realProvider.rename(tx, path, newName);
-        m_valueCache.remove( getNid(tx.getWorkspace(),path) );
-        m_valueCache.remove( getPid(tx.getWorkspace(),path) );
-        m_valueCache.remove( getVid(tx.getWorkspace(),path) );
-    }
 
 }

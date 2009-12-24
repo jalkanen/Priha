@@ -1,7 +1,7 @@
 /*
     Priha - A JSR-170 implementation library.
 
-    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+    Copyright (C) 2007-2009 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
     Licensed under the Apache License, Version 2.0 (the "License"); 
     you may not use this file except in compliance with the License.
@@ -53,12 +53,12 @@ import org.priha.util.FileUtil;
  *  
  */
 // TODO: Add JNDI configuration somewhere here
-public class RepositoryManager
+public final class RepositoryManager
 {
     /**
      *  An instance of the default repository.
      */
-    private static RepositoryImpl m_repository = null;
+    private static RepositoryImpl c_repository;
      
     private static final String[] PROPERTYPATHS = 
     {
@@ -66,7 +66,15 @@ public class RepositoryManager
         "/WEB-INF/priha.properties"
     };
 
+    /**
+     *  The Priha Namespace.  Value is {@value}.
+     */
     public static final String NS_PRIHA = "http://www.priha.org/ns/1.0";
+    
+    /**
+     *  Prevent instantiation.
+     */
+    private RepositoryManager() {}
     
     /**
      *  Returns a default repository object for no-pain setup.  The Repository
@@ -78,19 +86,18 @@ public class RepositoryManager
      *  which almost certainly is not something you want - unless you just want
      *  to test Priha.
      *  
-     *  @return
-     *  @throws ClassNotFoundException
-     *  @throws InstantiationException
-     *  @throws IllegalAccessException
+     *  @return The default repository object.s
+     *  @throws ConfigurationException If there is a problem with the discovered
+     *          preferences.
      */
     public static RepositoryImpl getRepository() throws ConfigurationException
     {
         try
         {
-            if( m_repository == null ) 
-                m_repository = getRepository( FileUtil.findProperties(PROPERTYPATHS) );
+            if( c_repository == null ) 
+                c_repository = getRepository( FileUtil.findProperties(PROPERTYPATHS) );
             
-            return m_repository;
+            return c_repository;
         }
         catch (IOException e)
         {
@@ -107,9 +114,9 @@ public class RepositoryManager
      *  you will almost certainly hit some nasty race conditions with the repository
      *  itself.  So be very, very careful.
      *  
-     *  @param prefs
-     *  @return
-     *  @throws ConfigurationException
+     *  @param prefs A Properties object containing preferences in Priha format.
+     *  @return A new Repository.
+     *  @throws ConfigurationException If the preferences were incorrect in some way.
      */
     public static RepositoryImpl getRepository( Properties prefs ) throws ConfigurationException
     {

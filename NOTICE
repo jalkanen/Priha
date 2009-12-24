@@ -5,3 +5,5 @@ The Query Engine contains code developed by the Apache Software Foundation, used
 under the Apache Public License, v2.0.
 
 Contains the JCR TCK developed by the Apache Software Foundation.
+
+Contains Base64 code from Robert Harder, under Public Domain.

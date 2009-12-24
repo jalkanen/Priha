@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fileset-config file-format-version="1.2.0" simple-config="true">
+    <local-check-config name="Priha checkstyle configuration" location="internal_config__1261654928515.xml" type="internal" description=""/>
+    <fileset name="all" enabled="true" check-config-name="Priha checkstyle configuration" local="true">
+        <file-match-pattern match-pattern="." include-pattern="true"/>
+    </fileset>
+    <filter name="FilesFromPackage" enabled="true">
+        <filter-data value="src/java/org/priha/query/aqt"/>
+        <filter-data value="src/java/org/priha/query/aqt/xpath"/>
+        <filter-data value="tests/tck"/>
+        <filter-data value="tests/tck/org"/>
+        <filter-data value="tests/tck/org/apache"/>
+        <filter-data value="src/generated-sources"/>
+    </filter>
+</fileset-config>
