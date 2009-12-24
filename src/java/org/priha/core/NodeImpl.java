@@ -90,6 +90,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     
     private ArrayList<Path>      m_childOrder;
     
+    private static final String  NO_UUID = ""; // If there is no UUID for this Node.
+    
     static Logger log = Logger.getLogger( NodeImpl.class.getName() );
 
     /** 
@@ -612,7 +614,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                     else
                         uuid = UUID.randomUUID();
                     
-                    pi.loadValue( vfi.createValue( uuid.toString() ) );
+                    m_cachedUUID = uuid.toString();
+                    
+                    pi.loadValue( vfi.createValue( m_cachedUUID ) );
                 }
                 else if( Q_JCR_CREATED.equals(pi.getQName() ))
                 {
@@ -652,6 +656,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      */
     public String getUUID() throws UnsupportedRepositoryOperationException, RepositoryException
     {
+        if( NO_UUID.equals(m_cachedUUID) && !hasProperty(JCR_UUID) )
+            throw new UnsupportedRepositoryOperationException();
+        
         if( m_cachedUUID != null ) return m_cachedUUID;
         
         if( isNodeType("mix:referenceable") )
@@ -666,10 +673,12 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             }
             catch( PathNotFoundException e )
             {
-                // Fine, let's just fall through, and end up throwing an exception
+                // OK, so let's fallthrough to the exception throwing part.
             }
         }
 
+        m_cachedUUID = NO_UUID;
+        
         throw new UnsupportedRepositoryOperationException("No UUID defined for "+getPath());
     }
 
@@ -982,8 +991,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                      getInternalPath().resolve(name),
                                      primaryDef );
 
-//            prop.m_state = ItemState.NEW;
-//            addChildProperty( prop ); //  Again, a special case.  First add the property to the lists.
             return prop;
         }
 
@@ -1030,26 +1037,18 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             
                 prop = new PropertyImpl( m_session, propertypath, pd );
                 prop.m_isNew = true;
-//                prop.setState( ItemState.NEW );
             }
             catch( PathNotFoundException e )
             {
                 throw new InvalidItemStateException("Parent not located; the item is in indeterminate state.");
             }
         }
-        else
-        {
-//            prop.setState( ItemState.UPDATED );
-        }
         
         if( value == null )
         {
             removeProperty(prop);
         }
-        else
-        {
-            //addChildProperty( prop );
-        }
+
         return prop;
     }
 

@@ -5,6 +5,8 @@
         * Fixed an off-by-one problem with SNS reordering; all internal
         unit tests run now too!
         
+        * Speeded up NodeImpl.getUUID() in case the UUID didn't exist.
+        
         * 0.6.4
         
         * Fixed some more issues with SNS reordering. This version now
