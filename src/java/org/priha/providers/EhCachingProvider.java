@@ -1,7 +1,7 @@
 /*
     Priha - A JSR-170 implementation library.
 
-    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+    Copyright (C) 2007-2009 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
     Licensed under the Apache License, Version 2.0 (the "License"); 
     you may not use this file except in compliance with the License.
@@ -31,14 +31,12 @@ import net.sf.ehcache.*;
 import net.sf.ehcache.constructs.blocking.LockTimeoutException;
 import net.sf.ehcache.management.ManagementService;
 
-import org.priha.core.PropertyImpl;
 import org.priha.core.ProviderManager;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.values.StreamValueImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.path.Path;
-import org.priha.path.Path.Component;
 import org.priha.util.ConfigurationException;
 import org.priha.util.QName;
 

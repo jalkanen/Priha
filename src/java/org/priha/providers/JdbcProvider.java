@@ -1,7 +1,7 @@
 /*
     Priha - A JSR-170 implementation library.
 
-    Copyright (C) 2007 Janne Jalkanen (Janne.Jalkanen@iki.fi)
+    Copyright (C) 2007-2009 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
     Licensed under the Apache License, Version 2.0 (the "License"); 
     you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import javax.sql.DataSource;
 import javax.sql.rowset.serial.SerialBlob;
 
 import org.priha.core.JCRConstants;
-import org.priha.core.PropertyImpl;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.binary.MemoryBinarySource;
@@ -39,7 +38,10 @@ import org.priha.nodetype.QNodeDefinition;
 import org.priha.path.Path;
 import org.priha.path.PathFactory;
 import org.priha.path.Path.Component;
-import org.priha.util.*;
+import org.priha.util.ConfigurationException;
+import org.priha.util.FileUtil;
+import org.priha.util.Pool;
+import org.priha.util.QName;
 import org.priha.util.Pool.Poolable;
 import org.priha.util.Pool.PoolableFactory;
 

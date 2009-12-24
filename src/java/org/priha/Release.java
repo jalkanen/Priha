@@ -65,12 +65,12 @@ public final class Release
     /**
      *  The current minor revision.
      */
-    public static final int    MINORREVISION = 4;
+    public static final int    MINORREVISION = 5;
 
     /**
      *  E.g. "alpha" or "beta".
      */
-    public static final String POSTFIX       = "alpha";
+    public static final String POSTFIX       = "svn";
 
     /**
      *  The version string of the form version.revision.minorrevision.  At

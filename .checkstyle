@@ -7,6 +7,15 @@
     <filter name="FilesFromPackage" enabled="true">
         <filter-data value="src/java/org/priha/query/aqt"/>
         <filter-data value="src/java/org/priha/query/aqt/xpath"/>
+        <filter-data value="tests/java"/>
+        <filter-data value="tests/java/org"/>
+        <filter-data value="tests/java/org/priha"/>
+        <filter-data value="tests/java/org/priha/core"/>
+        <filter-data value="tests/java/org/priha/nodetype"/>
+        <filter-data value="tests/java/org/priha/providers"/>
+        <filter-data value="tests/java/org/priha/query"/>
+        <filter-data value="tests/java/org/priha/util"/>
+        <filter-data value="tests/java/org/priha/xml"/>
         <filter-data value="tests/tck"/>
         <filter-data value="tests/tck/org"/>
         <filter-data value="tests/tck/org/apache"/>
