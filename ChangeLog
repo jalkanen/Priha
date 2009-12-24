@@ -1,5 +1,10 @@
 2009-12-24  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.6.5
+        
+        * Fixed an off-by-one problem with SNS reordering; all internal
+        unit tests run now too!
+        
         * 0.6.4
         
         * Fixed some more issues with SNS reordering. This version now

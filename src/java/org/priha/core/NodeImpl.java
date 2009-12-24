@@ -841,18 +841,30 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
                 String childName = srcChildRelPath.replaceAll( "\\[\\d+\\]", "" );
                 
+                // FIXME: Hackish trick.
+                boolean last = false;
+                
                 if( dstPath == null ) 
                 {
                     NodeIterator ni = getNodes(childName);
                     dstPath = getInternalPath().resolve( m_session,
                                                          childName+"["+ni.getSize()+"]" );
+                    last = true;
                 }
-                                
+                
                 int dir;
                 int startIdx;
                 int endIdx;
                 if( srcPath.getLastComponent().getIndex() < dstPath.getLastComponent().getIndex() )
                 {
+                    // When moving forward, the dstPath is not actually the correct index;
+                    // we want to place it _before_ the given index.
+                    if( !last )
+                    {
+                        int idx = dstPath.getLastComponent().getIndex() - 1; // Real last one
+                        dstPath = dstPath.getParentPath().resolve( new Path.Component(dstPath.getLastComponent().getQName(),idx) );
+                    }
+                    
                     // Moving stuff forwards
                     dir = -1;
                     startIdx = srcPath.getLastComponent().getIndex()+1;
@@ -873,17 +885,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                     System.out.println("Reordering SNS : "+oldName+" to "+newName);
                         
                     Path path1   = getInternalPath().resolve(m_session,oldName);
-//                  Path tmppath = getInternalPath().resolve(m_session,"priha:tmpmove");
                     Path newPath = getInternalPath().resolve(m_session,newName);
                         
                     m_session.internalMove( path1, newPath, false );
-                    
-//                    int  oldI = newOrder.indexOf(newPath);
-                  
-//                    Path oldP = newOrder.set(newOrder.indexOf(path1),newPath);
-                    
-//                    newOrder.set(oldI, oldP);
-                    
                 }
                 
                 m_session.internalMove( tmpPath, 
