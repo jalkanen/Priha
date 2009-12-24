@@ -68,10 +68,16 @@ public final class Release
     public static final int    MINORREVISION = 4;
 
     /**
+     *  E.g. "alpha" or "beta".
+     */
+    public static final String POSTFIX       = "alpha";
+
+    /**
      *  The version string of the form version.revision.minorrevision.  At
      *  the time of the generation of this documentation, it was {@value}.
      */
-    public static final String VERSTR        = VERSION+"."+REVISION+"."+MINORREVISION;
+    public static final String VERSTR        = VERSION+"."+REVISION+"."+MINORREVISION+
+                                               ((POSTFIX.length() != 0 ) ? "-"+POSTFIX : "");
 
 
     private static final String  STR_TRUE  = "true";

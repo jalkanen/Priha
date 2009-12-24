@@ -147,7 +147,8 @@
     <target name="clean">
      
         <delete dir="build"/>
-   
+   		<delete dir="tests/build"/>
+    	
     </target>
  
     <target name="javadoc">
@@ -238,10 +239,22 @@
 	
 	      Distribution package building.
 	      
-	      Use "ant dist" to build the distro package.
+	      Use "ant dist" to build the distro package, and
+	      "ant srczip" to create a source tarball.
 	      
 	  -->
 
+	<target name="srczip" depends="compile">
+        <java classpath="build" outputproperty="version" classname="org.priha.Release" 
+              args="-versiononly">
+        </java>   
+
+		<zip zipfile="build/priha-${version}-src.zip">
+			<zipfileset dir="." 
+				excludes="build/** tests/build/** repository*/** tests/reports/** *.log doc/javadoc/**" 
+				prefix="priha-${version}"/>
+		</zip>
+	</target>
 	
 	<target name="dist" depends="jar,javadoc">
         <java classpath="build" outputproperty="version" classname="org.priha.Release" 
