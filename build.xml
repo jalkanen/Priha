@@ -277,7 +277,7 @@
               args="-versiononly">
         </java>   
 
-		<zip zipfile="build/priha-${version}.zip">
+		<zip zipfile="build/priha-${version}-bin.zip">
 			<zipfileset dir="build" includes="*.jar" prefix="priha-${version}"/>
 			<zipfileset dir="." includes="ChangeLog README LICENSE NOTICE doc/**" prefix="priha-${version}"/>
 			<zipfileset dir="lib" includes="jcr-*.jar" prefix="priha-${version}"/>
@@ -285,5 +285,80 @@
 		</zip>
 	</target>
 	
+	<!--
+	
+		Installs the distribution archives by checking out the SVN project.
+		
+		Needs svn and gpg binaries in the shell path.
+	
+	  -->
+	<target name="dist-install" depends="">
+        <java classpath="build" outputproperty="version" classname="org.priha.Release" 
+              args="-versiononly">
+        </java>   
+
+		<!-- Check out code -->
+		<exec executable="svn">
+			<arg value="co"/>
+			<arg value="https://svn.ecyrd.com/repos/priha/site"/>
+			<arg value="build/priha-site"/>	
+		</exec>
+		
+		<!-- Install archives -->
+		<property name="destdir" value="build/priha-site/WebContent/download/priha-${version}"/>
+		<delete dir="${destdir}"/>
+		<mkdir dir="${destdir}"/>
+		<copy file="build/priha-${version}-bin.zip" todir="${destdir}"/>
+		<copy file="build/priha-${version}-src.zip" todir="${destdir}"/>
+		
+		<exec executable="gpg">
+			<arg value="-sba"/>
+			<arg value="${destdir}/priha-${version}-src.zip"/>
+		</exec>
+
+		<exec executable="gpg">
+			<arg value="-sba"/>
+			<arg value="${destdir}/priha-${version}-bin.zip"/>
+		</exec>
+
+		<!-- Figure out file lengths. We need a bit of Javascript to build the
+		     sizes in megabytes -->
+		<length file="build/priha-${version}-bin.zip" property="binsize"/>
+		<length file="build/priha-${version}-src.zip" property="srcsize"/>
+		
+		<script language="javascript">
+			<![CDATA[
+				var binsize = project.getProperty("binsize");
+				var srcsize = project.getProperty("srcsize");
+				var binmegas = Math.round((binsize / (1024*1024)) * Math.pow(10,2)) / Math.pow(10,2);
+				var srcmegas = Math.round((srcsize / (1024*1024)) * Math.pow(10,2)) / Math.pow(10,2);
+				project.setNewProperty("binsizemegs", binmegas);
+				project.setNewProperty("srcsizemegs", srcmegas);
+			]]>
+		</script>
+
+		<!-- Modify page -->
+		<loadfile property="message" srcFile="build/priha-site/downloadmessage.html">
+			<filterchain>
+		    	<filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+		      		<param type="token" name="srcurl" value="download/priha-${version}/priha-${version}-src.zip"/>
+		      		<param type="token" name="binurl" value="download/priha-${version}/priha-${version}-bin.zip"/>
+		      		<param type="token" name="version" value="${version}"/>
+		      		<param type="token" name="srcsize" value="${srcsizemegs}"/>
+		      		<param type="token" name="binsize" value="${binsizemegs}"/>
+		    	</filterreader>
+		  	</filterchain>
+		</loadfile>
+		
+		<replaceregexp file="build/priha-site/WebContent/download.html"
+			flags="gs"
+			match="&lt;!-- STARTMAGIC -->(.*)&lt;!-- ENDMAGIC -->"
+			replace="&lt;!-- STARTMAGIC -->${message}&lt;!-- ENDMAGIC -->"/>
+		
+		<echo>
+			OK, I'm done.  Please examine the contents of build/priha-site/WebContent/download.html
+			prior to checking in the code with "svn commit".
+		</echo>
+	</target>
 
 </project>
