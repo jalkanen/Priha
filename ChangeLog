@@ -1,5 +1,15 @@
 2009-12-24  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.6.6
+        
+        * Added some speedups to ChangeStore, which now uses an internal
+        HashMap to find the latest change.  Also, changed the internal
+        implementation from LinkedList to ArrayList which speeds up
+        iteration performance.  This gives approx four times the speed
+        increase to very large remove() and save() operations.
+        
+2009-12-24  Janne Jalkanen <jalkanen@ecyrd.com>
+
         * 0.6.5
         
         * Fixed an off-by-one problem with SNS reordering; all internal

@@ -1482,7 +1482,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
         Path path = getInternalPath();
         
-        if( !m_session.m_provider.nodeExistsInRepository( path ) && m_session.m_provider.m_changedItems.get(path) == null )
+        if( !m_session.m_provider.nodeExistsInRepository( path ) && m_session.m_provider.m_changedItems.getLatestItem(path) == null )
         {
             m_session.m_provider.m_changedItems.dump();
             throw new InvalidItemStateException("Item has already been removed by another Session "+getPath());

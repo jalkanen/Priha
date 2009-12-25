@@ -35,7 +35,7 @@ public class PerformanceTest extends TestCase
 {
     /** The size of a million can be configured here. ;-) */
     
-    private static final int DEFAULT_ITERATIONS = 100;
+    private static final int DEFAULT_ITERATIONS = 200;
     private int m_iterations = DEFAULT_ITERATIONS;
     
     private static final int BLOB_SIZE = 1024*100;
@@ -71,7 +71,7 @@ public class PerformanceTest extends TestCase
     public void testMemoryProvider() throws Exception
     {
         if( !m_memoryProviderTest ) return;
-        Perf.setProvider("MemoryProvider, no cache");
+        Perf.setTestable("MemoryProvider, no cache");
         RepositoryImpl rep = RepositoryManager.getRepository("memorynocache.properties");
         
         millionIterationsTest( rep, m_creds , m_iterations );
@@ -80,7 +80,7 @@ public class PerformanceTest extends TestCase
     public void testFileProvider() throws Exception
     {
         if( !m_fileProviderTest ) return;
-        Perf.setProvider("FileProvider, no cache");
+        Perf.setTestable("FileProvider, no cache");
         RepositoryImpl rep = RepositoryManager.getRepository("filenocache.properties");
 
         millionIterationsTest( rep, m_creds, m_iterations );
@@ -89,7 +89,7 @@ public class PerformanceTest extends TestCase
     public void testFileEhcacheProvider() throws Exception
     {
         if( !m_fileProviderEhTest ) return;
-        Perf.setProvider("FileProvider, with Ehcache");
+        Perf.setTestable("FileProvider, with Ehcache");
 
         RepositoryImpl rep = RepositoryManager.getRepository("fileehcache.properties");
         
@@ -99,7 +99,7 @@ public class PerformanceTest extends TestCase
     public void testJdbcProvider() throws Exception
     {
         if( !m_jdbcProviderTest ) return;
-        Perf.setProvider("JdbcProvider, no cache");
+        Perf.setTestable("JdbcProvider, no cache");
         RepositoryImpl rep = RepositoryManager.getRepository("jdbcnocache.properties");
         
         millionIterationsTest( rep, m_creds, m_iterations );
@@ -109,7 +109,7 @@ public class PerformanceTest extends TestCase
     {
         if( !m_jdbcProviderEhTest ) return;
         
-        Perf.setProvider("JdbcProvider, with Ehcache");
+        Perf.setTestable("JdbcProvider, with Ehcache");
         RepositoryImpl rep = RepositoryManager.getRepository("jdbcehcache.properties");
         
         millionIterationsTest( rep, m_creds, m_iterations );
@@ -132,7 +132,7 @@ public class PerformanceTest extends TestCase
     {
         if( !m_jackrabbitTest ) return;
 
-        Perf.setProvider("Jackrabbit");
+        Perf.setTestable("Jackrabbit");
 
         Repository rep = getJackrabbitRepository();
         
@@ -641,11 +641,11 @@ public class PerformanceTest extends TestCase
         
         private static long startTime;
         private static String currTest;
-        private static String currProvider;
+        private static String currTestable;
         
-        public static void setProvider(String p)
+        public static void setTestable(String p)
         {
-            currProvider = p;
+            currTestable = p;
         }
         
         public static void start( String test )
@@ -664,12 +664,12 @@ public class PerformanceTest extends TestCase
             
             HashMap<String,Double> hm;
             
-            hm = results.get(currProvider);
+            hm = results.get(currTestable);
             
             if( hm == null )
             {
                 hm = new HashMap<String,Double>();
-                results.put(currProvider, hm);
+                results.put(currTestable, hm);
             }
             
             hm.put(currTest, itersSec);
@@ -687,7 +687,12 @@ public class PerformanceTest extends TestCase
             Repository jr = getJackrabbitRepository();
             if( jr != null )
                 System.out.println("Jackrabbit version "+jr.getDescriptor( Repository.REP_VERSION_DESC ));
-            
+          
+            print();
+        }
+
+        public static void print()
+        {
             ArrayList<String> keys = new ArrayList<String>();
             
             keys.addAll( results.values().iterator().next().keySet() );

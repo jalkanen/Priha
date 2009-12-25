@@ -58,7 +58,7 @@ public class SessionProvider
         m_source  = source;
         m_workspace = session.getWorkspace();
         
-        m_changedItems = new ChangeStore();
+        m_changedItems = new ChangeStore(true);
         
         m_fetchedItems = new SizeLimitedHashMap<PathRef,ItemImpl>(DEFAULT_CACHESIZE);
         m_uuidMap      = new SizeLimitedHashMap<String,NodeImpl>(DEFAULT_CACHESIZE);
@@ -117,7 +117,7 @@ public class SessionProvider
 
     public ItemImpl getItem( Path path ) throws InvalidPathException, RepositoryException
     {
-        ItemImpl ii = m_changedItems.get(path);
+        ItemImpl ii = m_changedItems.getLatestItem(path);
 
         if( ii != null ) 
         {
@@ -268,7 +268,7 @@ public class SessionProvider
 
     public boolean nodeExists(Path path) throws RepositoryException
     {
-        Change c = m_changedItems.getChange(path);
+        Change c = m_changedItems.getLatestChange(path);
 
         if( c != null && c.getItem().isNode() ) 
         {
@@ -529,7 +529,7 @@ public class SessionProvider
                     {
                         String tgtPath = ni.getProperty(SessionImpl.MOVE_CONSTRAINT).getString();
                         
-                        NodeImpl tgt = (NodeImpl)m_changedItems.get(PathFactory.getPath(m_workspace.getSession(),tgtPath));
+                        NodeImpl tgt = (NodeImpl)m_changedItems.getLatestItem(PathFactory.getPath(m_workspace.getSession(),tgtPath));
                         
                         if( tgt != null &&
                             path.isParentOf(tgt.getInternalPath()) )
@@ -683,7 +683,7 @@ public class SessionProvider
         }
         catch( RepositoryException e )
         {
-            ItemImpl ii = m_changedItems.get( path );
+            ItemImpl ii = m_changedItems.getLatestItem( path );
             
             if( ii != null && ii.isNode() ) ni = (NodeImpl)ii;
         }
@@ -822,7 +822,7 @@ public class SessionProvider
 
     public ItemState getState( PathRef m_path ) throws PathNotFoundException
     {
-        Change c = m_changedItems.getChange( getPath(m_path) );
+        Change c = m_changedItems.getLatestChange( getPath(m_path) );
         
         return c != null ? c.getState() : null;
     }
