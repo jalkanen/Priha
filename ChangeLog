@@ -8,6 +8,11 @@
         iteration performance.  This gives approx four times the speed
         increase to very large remove() and save() operations.
         
+        * Speeded up SessionProvider.listNodes(), causing a fairly nice
+        boost to JdbcProvider.
+        
+        * Added dist-install target to build.xml.
+        
 2009-12-24  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.6.5

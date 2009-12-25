@@ -232,7 +232,11 @@ public class SessionProvider
 
     public List<Path> listNodes(Path parentpath) throws RepositoryException
     {
-        List<Path> res = new ArrayList<Path>();
+        //
+        //  It's faster to use a TreeSet here, then copy to an ArrayList
+        //  when exiting.
+        //
+        TreeSet<Path> res = new TreeSet<Path>();
         
         for( Change c : m_changedItems )
         {
@@ -258,7 +262,9 @@ public class SessionProvider
             // been save()d.
         }
         
-        return res;
+        ArrayList<Path> ls = new ArrayList<Path>(res.size());
+        ls.addAll( res );
+        return ls;
     }
 
     public Collection<? extends String> listWorkspaces() throws RepositoryException
