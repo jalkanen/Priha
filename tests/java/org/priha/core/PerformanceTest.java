@@ -29,13 +29,12 @@ import junit.framework.TestSuite;
 import org.priha.Release;
 import org.priha.RepositoryManager;
 import org.priha.TestUtil;
-import org.priha.core.RepositoryImpl;
 
 public class PerformanceTest extends TestCase
 {
     /** The size of a million can be configured here. ;-) */
     
-    private static final int DEFAULT_ITERATIONS = 200;
+    private static final int DEFAULT_ITERATIONS = 100;
     private int m_iterations = DEFAULT_ITERATIONS;
     
     private static final int BLOB_SIZE = 1024*100;
@@ -171,7 +170,8 @@ public class PerformanceTest extends TestCase
         private boolean m_testLargeRead  = true;
         private boolean m_testCachedNode = true;
         private boolean m_testUpdate     = true;
-
+        private boolean m_testExists     = true;
+        
         public TesterClass(Repository rep, Credentials creds, int numIters, byte[] blob)
         {
             m_repository = rep;
@@ -375,6 +375,46 @@ public class PerformanceTest extends TestCase
             }
         }
 
+        /**
+         *  Tests existing/non-existing nodes in a 50:50 ratio.
+         * 
+         *  @throws Exception
+         */
+        public void testExists() throws Exception
+        {
+            if( !m_testExists ) return;
+            
+            Session s = m_repository.login(m_creds);
+            
+            try
+            {
+                Random rand = new Random();
+                
+                Perf.start("exists");
+                
+                for( int i = 0; i < m_readIters*10; i++ )
+                {
+                    if( i % 2 == 0 )
+                    {
+                        int item = rand.nextInt(propertyPaths.size());
+                        
+                        String p = propertyPaths.get( item );
+                        assertTrue( p, s.itemExists( p ) );
+                    }
+                    else
+                    {
+                        String p = "/nonexisting/path";
+                        assertFalse( p, s.itemExists(p) );
+                    }
+                }
+                
+                Perf.stop(m_readIters*10);
+            }
+            finally
+            {
+                s.logout();
+            }
+        }
         public void testUUIDRead() throws LoginException, RepositoryException
         {
             if( !m_testUUIDRead ) return;
@@ -569,6 +609,8 @@ public class PerformanceTest extends TestCase
  
             tc.testRandRead();
         
+            tc.testExists();
+            
             tc.testUUIDRead();
             
             tc.testUpdate();
@@ -697,26 +739,43 @@ public class PerformanceTest extends TestCase
             
             keys.addAll( results.values().iterator().next().keySet() );
             Collections.sort(keys);
-            
-            System.out.printf("%-30s","");
-            for( String key : keys )
+
+            Map.Entry<String, HashMap<String,Double>>[] array = new Map.Entry[0];
+                        
+            array = results.entrySet().toArray(array);
+
+            int startIdx = 0;
+            int numColumns = 8;
+            while( startIdx < keys.size() )
             {
-                System.out.printf("%12s",key);
-            }
-            System.out.print("\n");
-            
-            for( Map.Entry<String,HashMap<String,Double>> e : results.entrySet() )
-            {
-                System.out.printf( "%-30s", e.getKey() );
+                System.out.printf("%-30s","");
                 
-                for( String key : keys )
+                // Column titles
+                for( int i = startIdx; i < keys.size() && i < startIdx+numColumns; i++ )
                 {
-                    Double val = e.getValue().get(key);
-                   
-                    if( val != null && val < 1 ) System.out.printf("%12.2f",val);
-                    else System.out.printf("%12.0f", val != null ? val : Double.NaN );
+                    System.out.printf("%12s",keys.get( i ));
                 }
                 System.out.print("\n");
+                
+                // Values for a single test
+                for( int j = 0; j < array.length; j++ )
+                {
+                    System.out.printf( "%-30s", array[j].getKey() );
+                
+                    for( int i = startIdx; i < keys.size() && i < startIdx+numColumns; i++ )
+                    {
+                        String key = keys.get( i );
+                        Double val = array[j].getValue().get(key);
+                   
+                        if( val != null && val < 1 ) System.out.printf("%12.2f",val);
+                        else System.out.printf("%12.0f", val != null ? val : Double.NaN );
+                    }
+                    System.out.print("\n");
+                }
+                
+                startIdx += numColumns;
+                
+                System.out.print( "\n\n" );
             }
         }
     }
