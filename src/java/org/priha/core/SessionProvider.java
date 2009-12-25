@@ -233,10 +233,10 @@ public class SessionProvider
     public List<Path> listNodes(Path parentpath) throws RepositoryException
     {
         //
-        //  It's faster to use a TreeSet here, then copy to an ArrayList
+        //  It's faster to use a LinkedHashSet here, then copy to an ArrayList
         //  when exiting.
         //
-        TreeSet<Path> res = new TreeSet<Path>();
+        Set<Path> res = new LinkedHashSet<Path>();
         
         for( Change c : m_changedItems )
         {
