@@ -609,7 +609,7 @@ public class SessionProvider
         {
             if( !ws.nodeExists(ni.getInternalPath().getParentPath()) )
             {
-                throw new InvalidItemStateException("No parent available.");
+                throw new InvalidItemStateException("No parent available for "+ni.getPath());
             }
         }
         
