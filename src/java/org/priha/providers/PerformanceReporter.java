@@ -27,7 +27,7 @@ public interface PerformanceReporter
         Stop,
         ListProperties,
         GetPropertyValue,
-        NodeExists,
+        ItemExists,
         AddNode,
         PutPropertyValue,
         Copy,

@@ -135,23 +135,14 @@ public class SessionImpl implements Session, NamespaceMapper
     public boolean hasNode( Path absPath ) throws RepositoryException
     {
         checkLive();
-        return m_provider.nodeExists( absPath );
+        return m_provider.itemExists( absPath, ItemType.NODE );
     }
 
     boolean hasProperty( Path absPath ) throws RepositoryException
     {
         checkLive();
-        try
-        {
-            ItemImpl ii = m_provider.getItem(absPath);
-            
-            if( ii.getState() == ItemState.REMOVED ) return false;
-            if( !ii.isNode() ) return true;
-        }
-        catch( PathNotFoundException e) {}
-        catch( ItemNotFoundException e) {}
         
-        return false;
+        return m_provider.itemExists( absPath, ItemType.PROPERTY );
     }
     
     public void addLockToken(String lt)

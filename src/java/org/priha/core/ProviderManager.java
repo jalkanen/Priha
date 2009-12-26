@@ -423,7 +423,7 @@ public class ProviderManager implements ItemStore
     {
         Path path = ni.getInternalPath();
         
-        if( !path.isRoot() && !nodeExists(tx.getWorkspace(), path.getParentPath()) )
+        if( !path.isRoot() && !itemExists(tx.getWorkspace(), path.getParentPath(), ItemType.NODE) )
             throw new ConstraintViolationException("Parent path is missing for path "+path);
         
         ProviderInfo pi = getProviderInfo(tx.getWorkspace(),path);
@@ -486,7 +486,7 @@ public class ProviderManager implements ItemStore
         }
     }
 
-    public boolean nodeExists(WorkspaceImpl ws, Path path) throws RepositoryException
+    public boolean itemExists(WorkspaceImpl ws, Path path, ItemType type) throws RepositoryException
     {
         ProviderInfo pi = getProviderInfo( ws, path );
         
@@ -494,7 +494,7 @@ public class ProviderManager implements ItemStore
         {
             pi.lock.readLock().lock();
         
-            return pi.provider.nodeExists(ws, path);
+            return pi.provider.itemExists(ws, path, type);
         }
         finally
         {

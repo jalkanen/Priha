@@ -118,11 +118,8 @@ public class ChangeStoreTest extends AbstractTest
     
     public void testGetSpeed() throws Exception
     {
-        Perf.setTestable( "noHashMap" );
-        speedTest( new ChangeStore(false) );
-        
         Perf.setTestable( "HashMap" );
-        speedTest( new ChangeStore(true) );
+        speedTest( new ChangeStore() );
         
         Perf.print();
     }

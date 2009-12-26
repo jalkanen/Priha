@@ -17,14 +17,12 @@
  */
 package org.priha.util;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.ListIterator;
+import java.util.*;
 
 import org.priha.core.ItemImpl;
 import org.priha.core.ItemState;
 import org.priha.core.PropertyImpl;
+import org.priha.path.InvalidPathException;
 import org.priha.path.Path;
 import org.priha.providers.ValueContainer;
 
@@ -36,23 +34,16 @@ import org.priha.providers.ValueContainer;
  *  as well as a HashMap pointing at the latest change.  It can be
  *  iterated both forwards (using peek() and remove() and iterator()) as well
  *  as backwards (using values()).
+ *  <p>
+ *  In addition, it stores a separate reference to all the changes relating
+ *  to a particular parent path (making it fairly fast to filter based on a path).
  */
 public class ChangeStore implements Iterable<ChangeStore.Change>
 {
-    private ArrayList<Change>   m_changes = new ArrayList<Change>();
-    private boolean              m_useHashMap;
+    private ArrayList<Change>    m_changes = new ArrayList<Change>();
     private HashMap<Path,Change> m_latest = new HashMap<Path,Change>();
-    
-    /**
-     *  Create a ChangeStore.
-     *  
-     *  @param useHashMap If true, uses a HashMap to speed things up internally.
-     */
-    public ChangeStore(boolean useHashMap)
-    {
-        m_useHashMap = useHashMap;
-    }
-    
+    private HashMap<Path,List<Change>> m_childChanges = new HashMap<Path,List<Change>>();
+        
     /**
      *  Create a ChangeStore without the HashMap.
      */
@@ -82,20 +73,40 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
      */
     public Change getLatestChange( Path path )
     {
-        if( m_useHashMap )
-        {
-            Change c = m_latest.get( path );
-            return c;
-        }
+        Change c = m_latest.get( path );
+        return c;
+    }
+    
+    /**
+     *  Get all the latest changes, ignoring any duplicate changes.
+     *  
+     *  @return A list of latest changes.
+     */
+    public List<Change> getLatestChanges()
+    {
+        ArrayList<Change> changes = new ArrayList<Change>();
         
-        for( ListIterator<Change> i = m_changes.listIterator(m_changes.size()); i.hasPrevious(); )
-        {
-            Change c = i.previous();
-            
-            if( c.getPath().equals(path) ) return c;
-        }
+        changes.addAll( m_latest.values() );
         
-        return null;        
+        return changes;
+    }
+    
+    /**
+     *  Returns a list of Changes filtered by a parent path.
+     *  
+     *  @param parent The path to filter against
+     *  @return A list of Changes.
+     */
+    public List<Change> getLatestChangesForParent( Path parent )
+    {
+        ArrayList<Change> changes = new ArrayList<Change>();
+
+        List<Change> c = m_childChanges.get(parent);
+        
+        if( c != null )
+            changes.addAll( c );
+        
+        return changes;
     }
     
     /**
@@ -127,8 +138,26 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
         
         m_changes.add(c);
         
-        if( m_useHashMap )
-            m_latest.put( c.getPath(), c );
+        m_latest.put( c.getPath(), c );
+        
+        if( !c.getPath().isRoot() )
+        {
+            try
+            {
+                List<Change> pc = m_childChanges.get( c.getPath().getParentPath() );
+                if( pc == null )
+                {
+                    pc = new ArrayList<Change>();
+                    m_childChanges.put( c.getPath().getParentPath(), pc );
+                }
+            
+                pc.add( c );
+            }
+            catch( InvalidPathException e )
+            {
+                throw new IllegalStateException("Cannot add path "+c.getPath());
+            }
+        }
         
         return true;
     }
@@ -158,10 +187,29 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
         if( m_changes.size() > 0 )
         {
             c = m_changes.remove(0);
-            if( m_useHashMap )
+            m_latest.remove( c.getPath() );
+            
+            if( !c.getPath().isRoot() )
             {
-                m_latest.remove( c.getPath() );
+                try
+                {
+                    Path parent = c.getPath().getParentPath();
+                
+                    List<Change> pc = m_childChanges.get( parent );
+                
+                    pc.remove( c ); // FIXME: SLow.
+                    
+                    if( pc.isEmpty() )
+                    {
+                        m_childChanges.remove( parent );
+                    }
+                }
+                catch( InvalidPathException e )
+                {
+                    throw new IllegalStateException("Cannot remove "+c.getPath());
+                }
             }
+            
         }
         return c;
     }
@@ -176,6 +224,7 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
         int numChanges = m_changes.size();
         m_changes.clear();
         m_latest.clear();
+        m_childChanges.clear();
         return numChanges;
     }
 
@@ -186,7 +235,7 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
      */
     public Iterator<Change> iterator()
     {
-        return m_changes.iterator();
+        return new ForwardIterator();
     }
 
     /**
@@ -206,7 +255,7 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
      *  
      *  @return True, if there are no changes.
      */
-    public boolean isEmpty()
+    public final boolean isEmpty()
     {
         return m_changes.isEmpty();
     }
@@ -223,12 +272,12 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
             m_position = m_changes.size()-1;
         }
         
-        public boolean hasNext()
+        public final boolean hasNext()
         {
             return m_position > 0;
         }
 
-        public ItemImpl next()
+        public final ItemImpl next()
         {
             return m_changes.get(m_position--).getItem();
         }
@@ -239,7 +288,36 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
         }
         
     }
-    
+
+    private class ForwardIterator implements Iterator<Change>
+    {
+        int m_position;
+        
+        protected ForwardIterator()
+        {
+            m_position = 0;
+        }
+        
+        public final boolean hasNext()
+        {
+            return m_position < m_changes.size();
+        }
+
+        public final Change next()
+        {
+            return m_changes.get(m_position++);
+        }
+
+        public void remove()
+        {
+            if( m_position == 0 ) throw new IllegalStateException();
+            
+            Change c = m_changes.remove( --m_position );
+            m_latest.remove( c.getPath() );
+        }
+        
+    }
+
     /**
      *  Dumps the store contents for debugging to System.out.
      */
@@ -268,7 +346,7 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
     /**
      *  Stores a single change.
      */
-    public static class Change
+    public static final class Change
     {
         private ItemState m_state;
         private ItemImpl  m_item;
@@ -299,7 +377,7 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
          *  
          *  @return The Item.
          */
-        public ItemImpl getItem()
+        public final ItemImpl getItem()
         {
             return m_item;
         }
@@ -309,7 +387,7 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
          *  
          *  @return The ItemState.
          */
-        public ItemState getState()
+        public final ItemState getState()
         {
             return m_state;
         }
@@ -319,7 +397,7 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
          *  
          *  @return The Path.
          */
-        public Path getPath()
+        public final Path getPath()
         {
             return m_path;
         }
@@ -329,7 +407,7 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
          *  
          *  @return The ValueContainer, or null, if the Change concerned a Node.
          */
-        public ValueContainer getValue()
+        public final ValueContainer getValue()
         {
             return m_valueContainer;
         }

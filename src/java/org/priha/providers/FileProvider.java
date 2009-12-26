@@ -26,6 +26,7 @@ import java.util.logging.Logger;
 
 import javax.jcr.*;
 
+import org.priha.core.ItemType;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.core.binary.FileBinarySource;
@@ -487,15 +488,31 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     /**
      *  A Node exists only if it has a primaryType.info in the directory.
      */
-    public boolean nodeExists(WorkspaceImpl ws, Path path)
+    public boolean itemExists(WorkspaceImpl ws, Path path, ItemType type)
     {
-        m_hitCount[Count.NodeExists.ordinal()]++;
+        m_hitCount[Count.ItemExists.ordinal()]++;
 
         File nodeDir;
         try
         {
-            nodeDir = getNodeDir( ws, path );
-            File propFile = new File( nodeDir, mangleName("jcr:primaryType.info") );
+            File propFile;
+            
+            if( type == ItemType.NODE )
+            {
+                nodeDir = getNodeDir( ws, path );
+                
+                propFile = new File( nodeDir, mangleName("jcr:primaryType.info") );
+            }
+            else if( type == ItemType.PROPERTY )
+            {
+                nodeDir = getNodeDir( ws, path.getParentPath() );
+                
+                propFile = new File( nodeDir, makeFilename( path.getLastComponent(), ".info" ) );
+            }
+            else
+            {
+                throw new IllegalArgumentException("Type "+type.name()+" not supported");
+            }
             
             return propFile.exists();
         }

@@ -29,6 +29,7 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 import javax.sql.rowset.serial.SerialBlob;
 
+import org.priha.core.ItemType;
 import org.priha.core.JCRConstants;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
@@ -664,26 +665,48 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
 
     }
 
-    public boolean nodeExists(WorkspaceImpl ws, Path path) throws RepositoryException
+    public boolean itemExists(WorkspaceImpl ws, Path path, ItemType type) throws RepositoryException
     {
         PoolableConnection pc = getConnection();
         try
         {
+            int resultcount;
+                       
             Connection c = pc.getConnection();
-            PreparedStatement ps = c.prepareStatement("SELECT COUNT(*) AS rowcount FROM workspaces,nodes WHERE "+
-                                                      "nodes.workspace = workspaces.id " +
-                                                      "AND workspaces.name = ? "+
-                                                      "AND workspaces.id = nodes.workspace "+
-                                                      "AND path = ? ");
+            
+            if( type == ItemType.NODE )
+            {
+                PreparedStatement ps = c.prepareStatement("SELECT COUNT(*) AS rowcount FROM workspaces,nodes WHERE "+
+                                                          "nodes.workspace = workspaces.id " +
+                                                          "AND workspaces.name = ? "+
+                                                          "AND workspaces.id = nodes.workspace "+
+                                                          "AND path = ? ");
         
-            ps.setString(1, ws.getName());
-            ps.setString(2, path.toString());
+                ps.setString(1, ws.getName());
+                ps.setString(2, path.toString());
         
-            ResultSet rs = ps.executeQuery();
+                ResultSet rs = ps.executeQuery();
         
-            rs.next();
-            int resultcount = rs.getInt("rowcount");
+                rs.next();
+                resultcount = rs.getInt("rowcount");
+            }
+            else if( type == ItemType.PROPERTY )
+            {
+                PreparedStatement ps = c.prepareStatement("SELECT COUNT(*) AS rowcount FROM propertyvalues WHERE parent = ? AND name = ?");
+                
+                ps.setLong(1, getNodeId(c, ws, path.getParentPath()));
+                ps.setString(2, path.getLastComponent().toString() );
 
+                ResultSet rs = ps.executeQuery();
+                
+                rs.next();
+                resultcount = rs.getInt("rowcount");
+            }
+            else
+            {
+                throw new IllegalArgumentException();
+            }
+            
             //System.out.println("Search for "+path+ "="+(resultcount != 0));
 
             return resultcount != 0;
@@ -691,6 +714,11 @@ public class JdbcProvider implements RepositoryProvider, PoolableFactory
         catch( SQLException e )
         {
             log.log(Level.SEVERE, "Creation of SQL query failed", e );
+        }
+        catch( PathNotFoundException e )
+        {
+            // So da parent path was not found. The result is teh obviousness.
+            return false;
         }
         finally
         {

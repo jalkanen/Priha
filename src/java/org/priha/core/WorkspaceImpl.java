@@ -515,7 +515,7 @@ public class WorkspaceImpl
      */
     public boolean nodeExists(Path path) throws RepositoryException
     {
-        return m_providerManager.nodeExists(this, path);
+        return m_providerManager.itemExists(this, path, ItemType.NODE);
     }
 
 }

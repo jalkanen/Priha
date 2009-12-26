@@ -492,7 +492,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     {
         List<Path> ls = new ArrayList<Path>();
         
-        ls.addAll(m_session.m_provider.getProperties(getInternalPath()));
+        ls.addAll(m_session.m_provider.listProperties(getInternalPath()));
         
         return new LazyPropertyIteratorImpl( getSession(), ls );
     }

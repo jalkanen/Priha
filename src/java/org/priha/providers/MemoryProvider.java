@@ -21,6 +21,7 @@ import java.util.*;
 
 import javax.jcr.*;
 
+import org.priha.core.ItemType;
 import org.priha.core.JCRConstants;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
@@ -143,9 +144,29 @@ public class MemoryProvider implements RepositoryProvider
         return Arrays.asList( new String[] { m_workspace } );
     }
 
-    public boolean nodeExists(WorkspaceImpl ws, Path path)
+    public boolean itemExists(WorkspaceImpl ws, Path path, ItemType type) throws RepositoryException
     {
-        return m_nodePaths.containsKey(path);
+        switch(type)
+        {
+            case NODE:
+                return m_nodePaths.containsKey(path);
+                
+            case PROPERTY:
+                Path parent = path.getParentPath();
+                
+                TreeNode node = m_nodePaths.get( parent );
+                
+                if( node != null )
+                {
+                    return node.properties.containsKey( path.getLastComponent() );
+                }
+                break;
+                
+            default:
+                throw new IllegalArgumentException("Type "+type.name()+" not supported");
+        }
+        
+        return false;
     }
 
     public void open(RepositoryImpl rep, Credentials credentials, String workspaceName)

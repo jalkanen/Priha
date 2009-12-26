@@ -23,6 +23,7 @@ import java.util.Properties;
 
 import javax.jcr.*;
 
+import org.priha.core.ItemType;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
 import org.priha.nodetype.QNodeDefinition;
@@ -150,14 +151,15 @@ public interface RepositoryProvider
         throws PathNotFoundException, RepositoryException;
     
     /**
-     *  Returns true, if the Node exists.
+     *  Returns true, if the Item exists and is of given type.
      *  
      *  @param ws The workspace in which the existence of the Node is checked.
      *  @param path The path to the Node.
-     *  @return True, if the node exists.  False otherwise (like when it's actually a Property)
-     * @throws RepositoryException 
+     *  @param type Type to check for
+     *  @return True, if the item exists.  False otherwise (like when it's actually of a different type)
+     *  @throws RepositoryException 
      */
-    public boolean nodeExists( WorkspaceImpl ws, Path path ) throws RepositoryException;
+    public boolean itemExists( WorkspaceImpl ws, Path path, ItemType type ) throws RepositoryException;
     
     /**
      *  Lists all the Nodes from the repository which belong to this parent.

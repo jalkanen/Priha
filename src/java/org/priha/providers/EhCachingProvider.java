@@ -31,6 +31,7 @@ import net.sf.ehcache.*;
 import net.sf.ehcache.constructs.blocking.LockTimeoutException;
 import net.sf.ehcache.management.ManagementService;
 
+import org.priha.core.ItemType;
 import org.priha.core.ProviderManager;
 import org.priha.core.RepositoryImpl;
 import org.priha.core.WorkspaceImpl;
@@ -409,12 +410,15 @@ public class EhCachingProvider implements RepositoryProvider
         m_realProvider.move(ws, srcpath, destpath);
     }
 */
-    public boolean nodeExists(WorkspaceImpl ws, Path path) throws RepositoryException
+    public boolean itemExists(WorkspaceImpl ws, Path path, ItemType type) throws RepositoryException
     {
         if( m_valueCache.isKeyInCache( getNid(ws,path) ) )
             return true;
         
-        return m_realProvider.nodeExists(ws, path);
+        if( m_valueCache.isKeyInCache( getVid( ws, path ) ))
+            return true;
+        
+        return m_realProvider.itemExists(ws, path,type);
     }
 
     public void putPropertyValue(StoreTransaction tx, Path path, ValueContainer vc ) throws RepositoryException

@@ -34,7 +34,7 @@ public class PerformanceTest extends TestCase
 {
     /** The size of a million can be configured here. ;-) */
     
-    private static final int DEFAULT_ITERATIONS = 2000;
+    private static final int DEFAULT_ITERATIONS = 1000;
     private int m_iterations = DEFAULT_ITERATIONS;
     
     private static final int BLOB_SIZE = 1024*10;

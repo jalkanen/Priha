@@ -58,7 +58,7 @@ public class SessionProvider
         m_source  = source;
         m_workspace = session.getWorkspace();
         
-        m_changedItems = new ChangeStore(true);
+        m_changedItems = new ChangeStore();
         
         m_fetchedItems = new SizeLimitedHashMap<PathRef,ItemImpl>(DEFAULT_CACHESIZE);
         m_uuidMap      = new SizeLimitedHashMap<String,NodeImpl>(DEFAULT_CACHESIZE);
@@ -238,13 +238,13 @@ public class SessionProvider
         //
         Set<Path> res = new LinkedHashSet<Path>();
         
-        for( Change c : m_changedItems )
+        for( Change c : m_changedItems.getLatestChangesForParent(parentpath) )
         {
             ItemImpl ni = c.getItem();
             if( ni.isNode() )
             {
                 Path path = ni.getInternalPath();
-                if( parentpath.isParentOf(path) && !res.contains(path) )
+                if( !res.contains(path) && c.getState() != ItemState.REMOVED )
                 {
                     res.add( path );
                 }
@@ -276,17 +276,17 @@ public class SessionProvider
         return m_source.listWorkspaces();
     }
 
-    public boolean nodeExists(Path path) throws RepositoryException
+    public boolean itemExists(Path path, ItemType type) throws RepositoryException
     {
         Change c = m_changedItems.getLatestChange(path);
 
-        if( c != null && c.getItem().isNode() ) 
+        if( c != null && ((type == ItemType.NODE && c.getItem().isNode()) || (type == ItemType.PROPERTY && !c.getItem().isNode()) ) )
         {
             if( c.getState() == ItemState.REMOVED || c.getState() == ItemState.MOVED ) return false;
             return true;
         }
         
-        return m_source.nodeExists(m_workspace, path);
+        return m_source.itemExists(m_workspace, path, type);
     }
 /*
     public void open( Credentials credentials, String workspaceName)
@@ -389,7 +389,7 @@ public class SessionProvider
                                 break;
                         
                             case REMOVED:
-                                if( !m_source.nodeExists( m_workspace, change.getPath() ) )
+                                if( !m_source.itemExists( m_workspace, change.getPath(), ItemType.NODE ) )
                                 {
                                     throw new InvalidItemStateException("The item has been removed by some other Session "+ii.getInternalPath());
                                 }
@@ -671,7 +671,7 @@ public class SessionProvider
         
     }
     
-    public Collection<? extends Path> getProperties(Path path) throws RepositoryException
+    public Collection<? extends Path> listProperties(Path path) throws RepositoryException
     {
         LinkedHashSet<Path> result = new LinkedHashSet<Path>();
         
@@ -705,16 +705,21 @@ public class SessionProvider
         
         //
         //  Now, we need to collate the properties from the Node which was
-        //  found with the properties which have been changed.  We put them all in the
+        //  found with the properties which have been added.  We put them all in the
         //  same hashmap and rely on the fact that there can't be two items with 
         //  the same key.
         //
-        for( Iterator<ItemImpl> i = m_changedItems.values(); i.hasNext(); )
+        for( Change c : m_changedItems.getLatestChangesForParent(path) )
         {
-            ItemImpl ii = i.next();
-            if( ii.isNode() == false && ii.getInternalPath().getParentPath().equals(path) )
+            ItemImpl ii = c.getItem();
+            if( ii.isNode() == false && (c.getState() != ItemState.REMOVED && c.getState() != ItemState.MOVED ) )
             {
-                result.add( ii.getInternalPath() );
+                Path p = ii.getInternalPath();
+                
+                if( p.getParentPath().equals(path) )            
+                {
+                    result.add( p );
+                }
             }
         }
         
@@ -772,7 +777,7 @@ public class SessionProvider
      */
     public boolean nodeExistsInRepository( Path path ) throws RepositoryException
     {
-        return m_source.nodeExists( m_workspace, path );
+        return m_source.itemExists( m_workspace, path, ItemType.NODE );
     }
 
     /**

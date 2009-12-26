@@ -1,5 +1,14 @@
 2009-12-26  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.7.0
+        
+        * Optimized itemExists() by changing RepositoryProvider
+        interface to allow checking for Properties too.
+        
+        * Optimized ChangeStore by allowing filtering by parent
+        path as well.  This greatly improves the efficiency of
+        listing changes to a Node's children or properties.
+        
         * 0.6.7
 
         * Some additional speedups by removing inefficient code from
