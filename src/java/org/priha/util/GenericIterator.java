@@ -20,6 +20,7 @@ package org.priha.util;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.NoSuchElementException;
 
 /**
  *  Provides a base class for the different Iterators that JCR defines.
@@ -54,6 +55,8 @@ public abstract class GenericIterator implements Iterator
 
     public void skip(long skipNum)
     {
+        if( m_position+skipNum > m_size ) throw new NoSuchElementException();
+        
         m_iterator = m_list.listIterator(m_position+(int)skipNum);
         m_position = m_position+(int)skipNum;
     }
