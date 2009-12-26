@@ -98,3 +98,28 @@ FileProvider, with Ehcache              14        4804          43         221  
 JdbcProvider, no cache                   1        4453          33         111       14830        5447          11         112        3142        3870         183     3290572      786117      747306
 JdbcProvider, with Ehcache             571        4421          35         107        4183        5619          11         109        3509        3921         195     3313538      786630      546656
 Jackrabbit                            0.26        3780         186         269        3584       22193         737         355        4958       40819         501      607558     2275791      849284
+
+
+Testsuite: org.priha.core.PerformanceTest
+Tests run: 7, Failures: 0, Errors: 0, Time elapsed: 2,356.826 sec
+------------- Standard Output ---------------
+Test results.  The number is operations/seconds - larger means faster.
+Blob size 10 kB
+Repository size 10000 nodes
+Priha version 0.7.0-svn
+Jackrabbit version 1.6.0
+                                 FirstSess   LargeRead LargeRemove   LargeSave  NewSession    RandRead      Remove        Save
+MemoryProvider, no cache                 2       31866    48289350        1516       27958       30019    36065278        1273
+FileProvider, no cache                  82        4974         230         199       10017        4552         193         208
+FileProvider, with Ehcache               9        5422         274         220        3349        5534         200         217
+JdbcProvider, no cache                0.20        4739          39         111       15101        5246          36         110
+JdbcProvider, with Ehcache             434        4441          40         117        4262        5400          37         117
+Jackrabbit                            0.25        7078         194         274        3673       19114         719         346
+
+                                   SeqRead        UUID      Update      exists     getItem getProperty    propUUID
+MemoryProvider, no cache         209248797       29384        6227      818628     2848365      761666      389615
+FileProvider, no cache                1764        3154         579       32819     2653480      764525      736396
+FileProvider, with Ehcache            2426        4046         610       31990     2671378      754926      742737
+JdbcProvider, no cache                3104        4030        1272       17466     2597055      755972      731350
+JdbcProvider, with Ehcache            3396        4051        1548       16157     2660070      765454      737974
+Jackrabbit                            4495       39499         487       42460      412058     2206883      773435
