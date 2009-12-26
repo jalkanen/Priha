@@ -1,0 +1,27 @@
+Optimizations that could be done:
+
+* FileProvider.mangleName() is called several times - should really call 
+  just once per file name resolve
+* itemExists() should really not call the provider twice; have an 
+  Provider.itemExists(Workspace, Path, ItemType?)
+* SessionProvider.getProperties() iterates way too much
+* FileProvider.remove() should not be calling getPropertyInfo()
+* NodeImpl.hasProperty() should use itemExists() and not load via
+  SessionImpl.hasProperty()
+* ProviderManager.getItem() is calling loadNode() twice
+* ProviderManager.loadNode() is slow, so it should be avoided when
+  getting property values
+* Some new thinking is needed - a single getItem() needs four calls
+  into the repo in case of properties: one failed loadNode(),
+  then a loadNode() [which calls getPropertyValue()], then a 
+  getPropertyValue() for the actual value.
+* Since Node/PropertyDefinitions are really only needed at
+  setProperty()/addNode(), perhaps they could be loaded lazily?
+* SessionProvider.listNodes() calls getInternalPath() way too
+  often
+
+Optimizations which have been done:
+* GenericIterator.skip() is really slow; should actually use the
+  underlying iterator to do the skipping. DONE
+* SessionProvider.getProperties() should really only get the item names, 
+  not the items. DONE
