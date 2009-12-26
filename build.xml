@@ -292,7 +292,7 @@
 		Needs svn and gpg binaries in the shell path.
 	
 	  -->
-	<target name="dist-install" depends="">
+	<target name="dist-install" depends="srczip,dist">
         <java classpath="build" outputproperty="version" classname="org.priha.Release" 
               args="-versiononly">
         </java>   
