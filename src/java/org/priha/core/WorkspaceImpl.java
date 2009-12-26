@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.UUID;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.jcr.*;
@@ -39,8 +38,7 @@ import org.priha.path.InvalidPathException;
 import org.priha.path.Path;
 import org.priha.path.PathFactory;
 import org.priha.query.PrihaQueryManager;
-import org.priha.util.PropertyIteratorImpl;
-import org.priha.version.VersionManager;
+import org.priha.util.LazyPropertyIteratorImpl;
 import org.priha.xml.XMLImport;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -312,7 +310,7 @@ public class WorkspaceImpl
             copy( srcSession, child.getPath(), destAbsPath + "/" + relPath, preserveUUIDs );
         }
         
-        for( PropertyIteratorImpl pi = srcnode.getProperties(); pi.hasNext(); )
+        for( LazyPropertyIteratorImpl pi = srcnode.getProperties(); pi.hasNext(); )
         {
             PropertyImpl p = pi.nextProperty();
 

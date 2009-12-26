@@ -57,10 +57,7 @@ import org.priha.nodetype.QPropertyDefinition;
 import org.priha.path.InvalidPathException;
 import org.priha.path.Path;
 import org.priha.path.PathFactory;
-import org.priha.util.LazyNodeIteratorImpl;
-import org.priha.util.PropertyIteratorImpl;
-import org.priha.util.QName;
-import org.priha.util.TextUtil;
+import org.priha.util.*;
 import org.priha.version.VersionHistoryImpl;
 import org.priha.version.VersionImpl;
 import org.priha.version.VersionManager;
@@ -491,13 +488,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return m_primaryType.new Impl(m_session);
     }
 
-    public PropertyIteratorImpl getProperties() throws RepositoryException
+    public LazyPropertyIteratorImpl getProperties() throws RepositoryException
     {
-        List<PropertyImpl> ls = new ArrayList<PropertyImpl>();
+        List<Path> ls = new ArrayList<Path>();
         
-        ls.addAll( m_session.m_provider.getProperties(getInternalPath()) );
+        ls.addAll(m_session.m_provider.getProperties(getInternalPath()));
         
-        return new PropertyIteratorImpl( ls );
+        return new LazyPropertyIteratorImpl( getSession(), ls );
     }
 
     public PropertyIterator getProperties(String namePattern) throws RepositoryException
@@ -2171,7 +2168,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //
             NodeImpl fn = v.addNode("jcr:frozenNode","nt:frozenNode");
 
-            for( PropertyIteratorImpl pi = getProperties(); pi.hasNext(); )
+            for( LazyPropertyIteratorImpl pi = getProperties(); pi.hasNext(); )
             {
                 PropertyImpl p = pi.nextProperty();
                 

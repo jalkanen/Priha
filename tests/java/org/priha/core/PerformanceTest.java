@@ -34,10 +34,10 @@ public class PerformanceTest extends TestCase
 {
     /** The size of a million can be configured here. ;-) */
     
-    private static final int DEFAULT_ITERATIONS = 100;
+    private static final int DEFAULT_ITERATIONS = 2000;
     private int m_iterations = DEFAULT_ITERATIONS;
     
-    private static final int BLOB_SIZE = 1024*100;
+    private static final int BLOB_SIZE = 1024*10;
     private int m_blobsize = BLOB_SIZE;
     
     private static final int NODENAMELEN = 16;
@@ -392,7 +392,7 @@ public class PerformanceTest extends TestCase
                 
                 Perf.start("exists");
                 
-                for( int i = 0; i < m_readIters*10; i++ )
+                for( int i = 0; i < m_readIters; i++ )
                 {
                     if( i % 2 == 0 )
                     {
@@ -408,7 +408,7 @@ public class PerformanceTest extends TestCase
                     }
                 }
                 
-                Perf.stop(m_readIters*10);
+                Perf.stop(m_readIters);
             }
             finally
             {

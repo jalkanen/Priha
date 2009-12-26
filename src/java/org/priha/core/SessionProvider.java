@@ -241,9 +241,13 @@ public class SessionProvider
         for( Change c : m_changedItems )
         {
             ItemImpl ni = c.getItem();
-            if( parentpath.isParentOf(ni.getInternalPath()) && ni.isNode() && !res.contains(ni.getInternalPath()) )
+            if( ni.isNode() )
             {
-                res.add( ni.getInternalPath() );
+                Path path = ni.getInternalPath();
+                if( parentpath.isParentOf(path) && !res.contains(path) )
+                {
+                    res.add( path );
+                }
             }
         }
         
@@ -667,9 +671,9 @@ public class SessionProvider
         
     }
     
-    public Collection<? extends PropertyImpl> getProperties(Path path) throws RepositoryException
+    public Collection<? extends Path> getProperties(Path path) throws RepositoryException
     {
-        HashMap<QName,PropertyImpl> result = new HashMap<QName,PropertyImpl>();
+        LinkedHashSet<Path> result = new LinkedHashSet<Path>();
         
         //
         //  Find the node first
@@ -684,7 +688,7 @@ public class SessionProvider
             
             for( QName pName : propertyNames )
             {
-                result.put( pName, (PropertyImpl)m_source.getItem( m_workspace, path.resolve(pName) ) );
+                result.add( path.resolve(pName) );
             }
         }
         catch( RepositoryException e )
@@ -710,11 +714,11 @@ public class SessionProvider
             ItemImpl ii = i.next();
             if( ii.isNode() == false && ii.getInternalPath().getParentPath().equals(path) )
             {
-                result.put( ii.getInternalPath().getLastComponent(), (PropertyImpl) ii );
+                result.add( ii.getInternalPath() );
             }
         }
         
-        return result.values();
+        return result;
     }
 
     public void putProperty(NodeImpl impl, PropertyImpl property) throws RepositoryException

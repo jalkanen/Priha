@@ -1,3 +1,11 @@
+2009-12-26  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.6.7
+
+        * Some additional speedups by removing inefficient code from
+        GenericIterator.skip() and SessionProvider.listNodes() and
+        switching to a lazy properties iterator.
+
 2009-12-24  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.6.6
