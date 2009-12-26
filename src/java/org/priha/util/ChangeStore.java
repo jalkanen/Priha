@@ -314,6 +314,28 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
             
             Change c = m_changes.remove( --m_position );
             m_latest.remove( c.getPath() );
+            
+            if( !c.getPath().isRoot() )
+            {
+                try
+                {
+                    Path parent = c.getPath().getParentPath();
+                
+                    List<Change> pc = m_childChanges.get( parent );
+                
+                    pc.remove( c ); // FIXME: SLow.
+                    
+                    if( pc.isEmpty() )
+                    {
+                        m_childChanges.remove( parent );
+                    }
+                }
+                catch( InvalidPathException e )
+                {
+                    throw new IllegalStateException("Cannot remove "+c.getPath());
+                }
+            }
+
         }
         
     }
