@@ -84,6 +84,7 @@ public class AbstractVersionTest extends AbstractJCRTest {
         try {
             versionableNode = createVersionableNode(testRootNode, nodeName1, versionableNodeType);
         } catch (RepositoryException e) {
+            e.printStackTrace();
             fail("Failed to create versionable test node." + e.getMessage());
         }
         try {

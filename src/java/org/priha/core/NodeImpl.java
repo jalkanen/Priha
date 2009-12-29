@@ -935,7 +935,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     }
 
 
-    private PropertyImpl prepareProperty( String name, Object value ) throws PathNotFoundException, RepositoryException
+    protected PropertyImpl prepareProperty( String name, Object value ) throws PathNotFoundException, RepositoryException
     {
         return prepareProperty( m_session.toQName(name), value );
     }
@@ -951,7 +951,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
      *  @throws PathNotFoundException
      *  @throws RepositoryException
      */
-    private PropertyImpl prepareProperty( QName name, Object value ) throws PathNotFoundException, RepositoryException
+    protected PropertyImpl prepareProperty( QName name, Object value ) throws PathNotFoundException, RepositoryException
     {
         PropertyImpl prop = null;
 
@@ -1961,9 +1961,17 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                                 isSessionScoped );
       
         m_session.addLockToken( lock.getToken() );
-        setProperty("jcr:lockOwner", lock.getLockOwner());
-        setProperty("jcr:lockIsDeep", isDeep);
         
+        boolean isSuper = m_session.setSuper(true);
+        try
+        {
+            setProperty("jcr:lockOwner", lock.getLockOwner());
+            setProperty("jcr:lockIsDeep", isDeep);
+        }
+        finally
+        {
+            m_session.setSuper(isSuper);
+        }
         save();
       
         m_lockManager.addLock( lock );
@@ -2137,7 +2145,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 setProperty( "nt:versionHistory", vh );
         
             v.setProperty( JCR_PREDECESSORS, getProperty(JCR_PREDECESSORS).getValues() );
-            v.addMixin( "mix:referenceable" );
+            //v.addMixin( "mix:referenceable" );
             v.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
             v.setProperty( JCR_SUCCESSORS, new Value[0], PropertyType.REFERENCE );
             

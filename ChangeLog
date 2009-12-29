@@ -1,5 +1,11 @@
 2009-12-26  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * Minor changes in the versioning code; introduced AbstractVersion
+        to catch a bunch of unmodifiable methods.  As versioning is
+        still disabled, no version bump here.
+
+2009-12-26  Janne Jalkanen <jalkanen@ecyrd.com>
+
         * 0.7.0
         
         * Optimized itemExists() by changing RepositoryProvider

@@ -29,14 +29,13 @@ import javax.jcr.version.VersionHistory;
 import javax.jcr.version.VersionIterator;
 
 import org.priha.core.JCRConstants;
-import org.priha.core.NodeImpl;
 import org.priha.core.SessionImpl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
 import org.priha.nodetype.QNodeTypeManager;
 import org.priha.path.Path;
 
-public class VersionHistoryImpl extends NodeImpl implements VersionHistory
+public class VersionHistoryImpl extends AbstractVersion implements VersionHistory
 {
     public static VersionHistoryImpl getInstance( SessionImpl session, Path path )
         throws RepositoryException

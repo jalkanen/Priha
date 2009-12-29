@@ -20,17 +20,21 @@ package org.priha.version;
 import java.util.Calendar;
 
 import javax.jcr.*;
+import javax.jcr.lock.Lock;
 import javax.jcr.lock.LockException;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 
-import org.priha.core.NodeImpl;
+import org.priha.core.PropertyImpl;
 import org.priha.core.SessionImpl;
+import org.priha.core.locks.QLock.Impl;
 import org.priha.nodetype.QNodeDefinition;
 import org.priha.nodetype.QNodeType;
 import org.priha.path.Path;
+import org.priha.util.QName;
 
 /**
  *  Implements a JCR Version.  The JCR specification is slightly ambiguous on
@@ -38,7 +42,7 @@ import org.priha.path.Path;
  *  array, but we will return an empty array if no such beast exists.
  */
 public class VersionImpl
-    extends NodeImpl
+    extends AbstractVersion
     implements Version
 {
     public VersionImpl( SessionImpl session, Path path, QNodeType primaryType, QNodeDefinition nDef, boolean initDefaults )
@@ -134,5 +138,6 @@ public class VersionImpl
         }
         return result;
     }
+
 
 }

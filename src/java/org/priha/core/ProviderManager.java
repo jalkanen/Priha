@@ -464,7 +464,7 @@ public class ProviderManager implements ItemStore
             }
         }
         
-        throw new ItemNotFoundException("Could not locate a node by this UUID");
+        throw new ItemNotFoundException("Could not locate a node by this UUID: "+uuid);
     }
  
     
