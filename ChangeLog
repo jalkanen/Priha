@@ -1,6 +1,8 @@
 2010-01-01  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * Implemented Version labels.
+        
+        * Implemented first version of Node.restore().
 
 2009-12-26  Janne Jalkanen <jalkanen@ecyrd.com>
 

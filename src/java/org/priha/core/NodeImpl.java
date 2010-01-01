@@ -69,6 +69,8 @@ import org.priha.version.VersionManager;
  */
 public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 {
+    private static final String JCR_FROZENUUID = "jcr:frozenUuid";
+    private static final String JCR_FROZENNODE = "jcr:frozenNode";
     private static final String JCR_PREDECESSORS = "jcr:predecessors";
     private static final String JCR_SUCCESSORS   = "jcr:successors";
 
@@ -1463,13 +1465,18 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
     
     public void remove() throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
-        remove(false);
+        remove(false,true);
+    }
+    
+    public void removeNodeOnly() throws VersionException, LockException, ConstraintViolationException, RepositoryException
+    {
+        remove(false,false);
     }
     
     /**
      *  If isRemoving = true, will remove subnodes without question.
      */
-    private void remove(boolean isRemoving) throws VersionException, LockException, ConstraintViolationException, RepositoryException
+    private void remove(boolean isRemoving,boolean removeVersionHistory) throws VersionException, LockException, ConstraintViolationException, RepositoryException
     {
         if( getState() == ItemState.REMOVED )
         {
@@ -1517,7 +1524,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //
         //  Remove version history
         //
-        if( isNodeType( "mix:versionable" ) )
+        if( removeVersionHistory && isNodeType( "mix:versionable" ) )
         {
             //
             //  Version histories cannot be removed unless you have a
@@ -1556,7 +1563,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
 //            System.out.println("REMOVING "+nd.getPath());
             
-            nd.remove(true);
+            nd.remove(true,removeVersionHistory);
         }
 
         
@@ -2136,9 +2143,13 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             VersionHistoryImpl vh = getVersionHistory();
         
             int version = 0;
-            if( !getBaseVersion().getName().equals("jcr:rootVersion") )
-                version = Integer.parseInt( getBaseVersion().getName() );
-        
+            try
+            {
+                if( !getBaseVersion().getName().equals("jcr:rootVersion") )
+                    version = Integer.parseInt( getBaseVersion().getName() );
+            }
+            catch( ItemNotFoundException e ) {} // There's not yet a base version.
+            
             VersionImpl v = (VersionImpl) vh.addNode( Integer.toString( ++version ), "nt:version" );
         
             if(!hasProperty("nt:versionHistory"))
@@ -2179,7 +2190,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             //
             //  Store the contents into the frozen node of the Version node. 
             //
-            NodeImpl fn = v.addNode("jcr:frozenNode","nt:frozenNode");
+            NodeImpl fn = v.addNode(JCR_FROZENNODE,"nt:frozenNode");
 
             for( LazyPropertyIteratorImpl pi = getProperties(); pi.hasNext(); )
             {
@@ -2191,7 +2202,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 }
                 else if( p.getQName().equals( JCRConstants.Q_JCR_UUID ) )
                 {
-                    fn.setProperty( "jcr:frozenUuid", p.getValue() );
+                    fn.setProperty( JCR_FROZENUUID, p.getValue() );
                 }
                 else if( p.getQName().equals( JCRConstants.Q_JCR_MIXINTYPES ) )
                 {
@@ -2328,9 +2339,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             InvalidItemStateException,
             RepositoryException
     {
-//      TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-
+        Version v = getVersionHistory().getVersion(versionName);
+        
+        restore( v, removeExisting );
     }
 
     public void restore(Version version, boolean removeExisting)
@@ -2340,9 +2351,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             LockException,
             RepositoryException
     {
-//      TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-        
+        restore( version, null, removeExisting );
     }
 
     public void restore(Version version, String relPath, boolean removeExisting)
@@ -2355,9 +2364,81 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                      InvalidItemStateException,
                      RepositoryException
     {
-//      TODO Auto-generated method stub
-
-        throw new UnsupportedRepositoryOperationException();
+        if( m_session.hasPendingChanges() )
+            throw new InvalidItemStateException("Can only restore when Session does not have pending changes.");
+        
+        if( isLockedWithoutToken() )
+            throw new LockException("Lock prevents restore");
+        
+        if( getVersionHistory().getRootVersion().isSame(version) )
+        {
+            throw new VersionException("You cannot restore the root version");
+        }
+        
+        if( !version.getContainingHistory().getUUID().equals(getVersionHistory().getUUID()) )
+        {
+            throw new VersionException("Cannot restore a Version which is not a part of the version history of this Node");
+        }
+        NodeImpl frozenNode = (NodeImpl)version.getNode(JCR_FROZENNODE);
+        NodeImpl existing = null;
+        NodeImpl parent = getParent();
+        String   name   = getName();
+        
+        try
+        {
+            existing = m_session.getNodeByUUID( frozenNode.getProperty(JCR_FROZENUUID).getString() );
+            
+            if( !removeExisting )
+                throw new ItemExistsException("Node by given UUID already exists, and cannot be removed.");
+        }
+        
+        catch( ItemNotFoundException e ) {}
+        
+        boolean isSuper = m_session.setSuper(true);
+        
+        try
+        {
+            if( existing != null )
+            {
+                existing.removeNodeOnly();
+            }
+            else
+            {
+                this.removeNodeOnly();
+            }
+        
+            existing = parent.addNode( name, frozenNode.getProperty("jcr:frozenPrimaryType").getString() );
+            
+            //
+            //  Restore properties
+            //
+            for( LazyPropertyIteratorImpl pi = frozenNode.getProperties(); pi.hasNext(); )
+            {
+                PropertyImpl p = pi.nextProperty();
+                
+                if( p.getQName().equals(JCRConstants.Q_JCR_PRIMARYTYPE ) ) continue;
+                else if( p.getName().equals(JCR_FROZENUUID))
+                {
+                    existing.setProperty("jcr:uuid", p.getValue().toString());
+                }
+                else if( p.getName().equals("jcr:frozenMixinTypes") )
+                {
+                    existing.setProperty("jcr:mixinTypes", p.getValues() );
+                }
+                else if( p.getDefinition().isMultiple() )
+                    existing.setProperty(p.getName(), p.getValues());
+                else
+                    existing.setProperty(p.getName(), p.getValue());
+            }
+            
+            existing.setProperty("jcr:isCheckedOut", false);
+            
+            m_session.save();
+        }
+        finally
+        {
+            m_session.setSuper(isSuper);
+        }
     }
 
     public void restoreByLabel(String versionLabel, boolean removeExisting)
@@ -2368,9 +2449,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 InvalidItemStateException,
                 RepositoryException
     {
-//      TODO Auto-generated method stub
-        throw new UnsupportedRepositoryOperationException();
-
+        Version v = getVersionHistory().getVersionByLabel(versionLabel);
+        
+        restore( v, removeExisting );
     }
 
 
