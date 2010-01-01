@@ -37,6 +37,8 @@ import org.priha.path.Path;
 
 public class VersionHistoryImpl extends AbstractVersion implements VersionHistory
 {
+    private static final String JCR_VERSIONLABELS = "jcr:versionLabels";
+
     public static VersionHistoryImpl getInstance( SessionImpl session, Path path )
         throws RepositoryException
     {
@@ -55,9 +57,44 @@ public class VersionHistoryImpl extends AbstractVersion implements VersionHistor
         super(session, path, primaryType, nDef, initDefaults);
     }
 
-    public void addVersionLabel(String arg0, String arg1, boolean arg2) throws VersionException, RepositoryException
+    /**
+     *  Adds a Version Label.  The labels are stored as Properties of the VersionHistory's "jcr:versionLabels" Node.
+     *  Each Property is named
+     */
+    public void addVersionLabel(String versionName, String label, boolean moveLabel) throws VersionException, RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("addVersionLabel()");
+        SessionImpl session = m_session.getRepository().superUserLogin( m_session.getWorkspace().getName() );
+        
+        try
+        {
+            VersionHistory me = (VersionHistory)session.getItem(getInternalPath());
+            
+            if( me.hasVersionLabel(label) && !moveLabel )
+            {
+                throw new VersionException("Attempted to add a new label to a versionhistory, but it already existed.");
+            }
+            
+            Node labels;
+            
+            try
+            {
+                labels = me.getNode(JCR_VERSIONLABELS);
+            }
+            catch( PathNotFoundException e )
+            {
+                labels = me.addNode(JCR_VERSIONLABELS);
+            }
+            
+            String uuid = me.getVersion(versionName).getUUID();
+            
+            labels.setProperty( label, uuid );
+            
+            session.save();
+        }
+        finally
+        {
+            session.logout();
+        }
     }
 
     public VersionIterator getAllVersions() throws RepositoryException
@@ -97,7 +134,7 @@ public class VersionHistoryImpl extends AbstractVersion implements VersionHistor
 
     public Version getVersionByLabel(String versionLabel) throws RepositoryException
     {
-        Node n = getNode("jcr:versionLabels");
+        Node n = getNode(JCR_VERSIONLABELS);
 
         Property p = n.getProperty(versionLabel);
         
@@ -109,21 +146,59 @@ public class VersionHistoryImpl extends AbstractVersion implements VersionHistor
     public String[] getVersionLabels() throws RepositoryException
     {
         ArrayList<String> result = new ArrayList<String>();
-        Node n = getNode("jcr:versionLabels");
         
-        for( PropertyIterator pi = n.getProperties(); pi.hasNext(); )
+        try
         {
-            Property p = pi.nextProperty();
+            Node n = getNode(JCR_VERSIONLABELS);
+        
+            for( PropertyIterator pi = n.getProperties(); pi.hasNext(); )
+            {
+                Property p = pi.nextProperty();
             
-            result.add( p.getName() );
+                if( p.getName().contains(":") ) continue; // Let's skip all namespaced beasts here.
+                
+                result.add( p.getName() );
+            }
         }
+        catch( PathNotFoundException e ) {}
 
         return result.toArray(new String[result.size()]);
     }
 
-    public String[] getVersionLabels(Version arg0) throws VersionException, RepositoryException
+    public String[] getVersionLabels(Version v) throws VersionException, RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("getVersionLabels(Version)");
+        ArrayList<String> res = new ArrayList<String>();
+
+        try
+        {
+            if( !v.getContainingHistory().getUUID().equals(getUUID()) )
+            {
+                throw new VersionException("This version does not belong to this history.");
+            }
+        }
+        catch( UnsupportedRepositoryOperationException e )
+        {
+        }
+        
+        try
+        {
+            String uuid = v.getUUID();
+        
+            Node labels = getNode(JCR_VERSIONLABELS);
+        
+            for( PropertyIterator pi = labels.getProperties(); pi.hasNext(); )
+            {
+                Property p = pi.nextProperty();
+            
+                if( p.getName().contains(":") ) continue; // Let's skip all namespaced beasts here.
+            
+                if( p.getValue().getString().equals(uuid) )
+                    res.add( p.getName() );
+            }
+        }
+        catch( PathNotFoundException e ) {}
+        
+        return res.toArray(new String[0]);
     }
 
     public String getVersionableUUID() throws RepositoryException
@@ -198,9 +273,33 @@ public class VersionHistoryImpl extends AbstractVersion implements VersionHistor
         super.remove();
     }
 
-    public void removeVersionLabel(String arg0) throws VersionException, RepositoryException
+    public void removeVersionLabel(String label) throws VersionException, RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("removeVersionLabel(String)");
+        SessionImpl session = m_session.getRepository().superUserLogin(m_session.getWorkspace().getName());
+        
+        try
+        {
+            //
+            //  Any PathNotFoundException from these gets turned into a VersionException
+            //
+            VersionHistory me = (VersionHistory) session.getItem(getInternalPath());
+            
+            Node labels = me.getNode(JCR_VERSIONLABELS);
+            
+            Property p = labels.getProperty(label);
+            
+            p.remove();
+            
+            session.save();
+        }
+        catch( PathNotFoundException e ) 
+        {
+            throw new VersionException("Label "+label+" does not exist for this version history.");
+        }
+        finally
+        {
+            session.logout();
+        }
     }
 
 }

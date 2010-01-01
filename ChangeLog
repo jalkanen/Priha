@@ -1,3 +1,7 @@
+2010-01-01  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * Implemented Version labels.
+
 2009-12-26  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * Minor changes in the versioning code; introduced AbstractVersion

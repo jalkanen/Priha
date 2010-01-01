@@ -390,7 +390,7 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
             if( !item.isNode() )
             {
                 m_valueContainer = ((PropertyImpl)item).getValueContainer();
-                if( m_valueContainer.isEmpty() ) throw new IllegalArgumentException("Null value in valuecontainer for "+m_path);
+                if( m_valueContainer.isEmpty() && newState != ItemState.REMOVED ) throw new IllegalArgumentException("Null value in valuecontainer for "+m_path);
             }
         }
         

@@ -2143,9 +2143,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
             if(!hasProperty("nt:versionHistory"))
                 setProperty( "nt:versionHistory", vh );
-        
+
+            //
+            //  Set up version properties
+            //
             v.setProperty( JCR_PREDECESSORS, getProperty(JCR_PREDECESSORS).getValues() );
-            //v.addMixin( "mix:referenceable" );
             v.setProperty( "jcr:uuid", UUID.randomUUID().toString() );
             v.setProperty( JCR_SUCCESSORS, new Value[0], PropertyType.REFERENCE );
             
@@ -2153,6 +2155,9 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         
             PropertyImpl preds = v.getProperty(JCR_PREDECESSORS);
 
+            //
+            //  Set up successors and predecessors
+            //
             for( Value val : preds.getValues() )
             {
                 String uuid = val.getString();
@@ -2206,6 +2211,46 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
                 }
             }
             
+            for( NodeIterator ni = getNodes(); ni.hasNext(); )
+            {
+                NodeImpl n = (NodeImpl)ni.nextNode();
+                
+                switch( n.getDefinition().getOnParentVersion() )
+                {
+                    case OnParentVersionAction.ABORT:
+                        throw new VersionException("Child node "+n.getPath()+" prevented versioning, as it has OnParentVersionAction ABORT");
+                        
+                    case OnParentVersionAction.COMPUTE:
+                        throw new RepositoryException("COMPUTE child nodes not supported for path "+getPath());
+                        
+                    case OnParentVersionAction.COPY:
+                        m_session.getWorkspace().copy(m_session, n.getPath(), fn.getPath(), false);
+                        break;
+                        
+                    case OnParentVersionAction.IGNORE:
+                        // Ignore, yay
+                        break;
+                        
+                    case OnParentVersionAction.INITIALIZE:
+                        throw new RepositoryException("INITIALIZE child nodes not supported for path "+getPath());
+                        
+                    case OnParentVersionAction.VERSION:
+                        
+                        if( n.hasMixinType("mix:versionable") )
+                        {
+                            NodeImpl vc = fn.addNode( n.getName(), "nt:versionedChild" );
+                            vc.setProperty("jcr:childVersionHistory", n.getVersionHistory());
+                        }
+                        else
+                        {
+                            // FIXME: Does not stop at versionable nodes
+                            m_session.getWorkspace().copy(m_session, n.getPath(), fn.getPath()+"/"+n.getName(), true);                            
+                        }
+                        
+                        break;
+                }
+            }
+            
             vh.save();
             save();
             // FIXME: Here.
@@ -2220,11 +2265,11 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public void checkout() throws UnsupportedRepositoryOperationException, LockException, RepositoryException
     {
-        if( isCheckedOut() ) return; // Nothing happens
-        
         if( !isNodeType( "mix:versionable" ) )
             throw new UnsupportedRepositoryOperationException("Not versionable (8.2.6)");
 
+        if( isCheckedOut() ) return; // Nothing happens
+        
         boolean isSuper = getSession().setSuper( true );
         
         try
@@ -2263,9 +2308,16 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 
     public VersionImpl getBaseVersion() throws UnsupportedRepositoryOperationException, RepositoryException
     {
-        String bvUuid = getProperty( Q_JCR_BASEVERSION ).getString();
+        try
+        {
+            String bvUuid = getProperty( Q_JCR_BASEVERSION ).getString();
         
-        return (VersionImpl) getSession().getNodeByUUID( bvUuid );
+            return (VersionImpl) getSession().getNodeByUUID( bvUuid );
+        }
+        catch( PathNotFoundException e )
+        {
+            throw new UnsupportedRepositoryOperationException("This is not a versioned node.");
+        }
     }
 
     public void restore(String versionName, boolean removeExisting)
