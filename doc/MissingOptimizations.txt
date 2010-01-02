@@ -4,7 +4,6 @@ Optimizations that could be done:
   just once per file name resolve
 * itemExists() should really not call the provider twice; have an 
   Provider.itemExists(Workspace, Path, ItemType?)
-* SessionProvider.getProperties() iterates way too much
 * FileProvider.remove() should not be calling getPropertyInfo()
 * NodeImpl.hasProperty() should use itemExists() and not load via
   SessionImpl.hasProperty()
@@ -19,9 +18,14 @@ Optimizations that could be done:
   setProperty()/addNode(), perhaps they could be loaded lazily?
 * SessionProvider.listNodes() calls getInternalPath() way too
   often
+* PropertyImpl.remove() ends up loading property value into memory
+  before removing it.
+* PathManager.getPathRef() is probably locking too often.s
 
 Optimizations which have been done:
 * GenericIterator.skip() is really slow; should actually use the
   underlying iterator to do the skipping. DONE
 * SessionProvider.getProperties() should really only get the item names, 
   not the items. DONE
+* SessionProvider.getProperties() iterates way too much. DONE
+  
