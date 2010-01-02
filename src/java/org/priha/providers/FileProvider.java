@@ -71,6 +71,10 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private Map<String,UUIDObjectStore<Path[]>> m_references = new HashMap<String, UUIDObjectStore<Path[]>>();
     private Map<String,UUIDObjectStore<Path>>   m_uuids      = new HashMap<String, UUIDObjectStore<Path>>();
         
+    private Map<String,String> m_mangledNames = new Hashtable<String, String>();
+    private long m_cacheMisses = 0;
+    private long m_cacheHits   = 0;
+
     public FileProvider() throws RepositoryException
     {
         resetCounts();
@@ -394,6 +398,8 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         //
         File lockFile = new File(m_root, LOCKFILE);
         lockFile.delete();
+        
+        log.finer("Manglename cache hits = "+m_cacheHits+", misses = "+m_cacheMisses);
     }
 
     public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
@@ -1291,10 +1297,21 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
      *  @return The mangled name.
      */
     
-    // TODO: This method is extremely speed-critical
     // TODO: Protect against windows special names (CON) etc.
-    protected static String mangleName( String name )
+    protected String mangleName( String name )
     {
+        //
+        //  Check the internal cache first.
+        //
+        String cached = m_mangledNames.get(name);
+        
+        if( cached != null ) 
+        {
+            m_cacheHits++;
+            return cached;
+        }
+        
+        m_cacheMisses++;
         StringBuilder sb = new StringBuilder(name.length()+32);
         
         int len = name.length();
@@ -1331,7 +1348,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
            
         }
         
-        return sb.toString();
+        String result = sb.toString();
+        
+        m_mangledNames.put(name, result);
+        
+        return result;
     }
 
     // FIXME: FileProvider does not support recovery.  Bummer.
