@@ -34,6 +34,7 @@ import org.priha.core.PerformanceTest.Perf;
 public class MultiThreadTest extends TestCase
 {
     private static final int NUM_THREADS = 10;
+    private static final int NUM_ITERS   = 100;
     
     Vector<String> propertyPaths = new Vector<String>();
     Vector<String> uuids         = new Vector<String>();
@@ -124,8 +125,9 @@ public class MultiThreadTest extends TestCase
         private Repository m_repo;
         private Session m_session;
         public  String  m_result = null;
-        private int     m_numItems = 10;
-
+        private int     m_numItems = 20;
+        private int     m_readIters = NUM_ITERS;
+        
         public TestThread( RepositoryImpl rep )
         {
             m_repo = rep;
@@ -185,7 +187,7 @@ public class MultiThreadTest extends TestCase
         {
             Random rand = new Random();
             
-            for( int i = 0; i < 500; i++ )
+            for( int i = 0; i < m_readIters; i++ )
             {
                 Thread.sleep( rand.nextInt(20) );
                 
@@ -211,7 +213,7 @@ public class MultiThreadTest extends TestCase
         {
             Random rand = new Random();
             
-            for( int i = 0; i < 5000; i++ )
+            for( int i = 0; i < m_readIters; i++ )
             {
                 //Thread.sleep( rand.nextInt(20) );
                 
