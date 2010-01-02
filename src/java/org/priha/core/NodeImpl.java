@@ -1850,7 +1850,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         return true;
     }
 
-    boolean hasMixinType(String mixinType)
+    public boolean hasMixinType(String mixinType)
     {
         try
         {

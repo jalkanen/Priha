@@ -20,7 +20,6 @@ package org.priha.xml;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -28,6 +27,7 @@ import java.util.logging.Logger;
 
 import javax.jcr.*;
 import javax.jcr.nodetype.ConstraintViolationException;
+import javax.jcr.version.VersionException;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
@@ -70,6 +70,30 @@ public class XMLImport extends DefaultHandler
     {
         if( !session.getRootNode().hasNode(startPath.toString()) )
             throw new PathNotFoundException("The parent path "+startPath+" does not exist, so cannot import to it!");
+        
+        NodeImpl parent = (NodeImpl)session.getItem(startPath);
+        
+        if( parent.hasMixinType("mix:versionable") )
+        {
+            if( !parent.isCheckedOut() )
+            {
+                throw new VersionException("Cannot import to a checked in node");
+            }
+        }
+        else
+        {
+            NodeImpl p = parent.getParent();
+            while( !p.getInternalPath().isRoot() && !p.hasMixinType("mix:versionable") )
+            {
+                p = p.getParent();
+            }
+            
+            if( !p.getInternalPath().isRoot() && !p.isCheckedOut() )
+            {
+                throw new VersionException("Cannot import to a non-versionable child of a checked-in node");
+            }
+        }
+        
         
         m_session = session;
         m_immediateCommit = immediateCommit;

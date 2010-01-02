@@ -1,5 +1,11 @@
 2010-01-02  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * Fixed XML import tests for versioning by properly checking for
+        checked-in Nodes in XMLImport.  You may test Versioning, but
+        the TCK tests are disabled.  You can turn them on by editing
+        Release.DESCRIPTORS and setting Repository.OPTION_VERSIONING_SUPPORTED
+        to STR_TRUE.
+
         * 0.7.1
         
         * FileProvider speedup - added internal cache for mangleName().

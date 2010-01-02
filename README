@@ -14,7 +14,6 @@ to use it correctly in the presence of a Finnish person, would probably get you
 a free beer and plenty of questions.
 
 
-
 GOALS
 =====
 
@@ -44,9 +43,6 @@ The goals of the project are:
 The anti-goals (i.e. the things I don't particularly want to pay attention
 to, because they are not useful (yet) in JSPWiki context) are:
 
-    * Class 1 or Class 2 compliancy.  If we happen to pass the TCK, that's
-    great.  But it will happen by accident.
-      
     * Transactions support
     
     * HA or clustering support.  These should be left to an industrial-scale
