@@ -70,7 +70,7 @@ public final class Release
     /**
      *  E.g. "alpha" or "beta".
      */
-    public static final String POSTFIX       = "alpha";
+    public static final String POSTFIX       = "svn";
 
     /**
      *  The version string of the form version.revision.minorrevision.  At
