@@ -65,7 +65,7 @@ public final class Release
     /**
      *  The current minor revision.
      */
-    public static final int    MINORREVISION = 1;
+    public static final int    MINORREVISION = 2;
 
     /**
      *  E.g. "alpha" or "beta".
@@ -104,7 +104,7 @@ public final class Release
         Repository.OPTION_TRANSACTIONS_SUPPORTED, STR_FALSE,
         Repository.OPTION_VERSIONING_SUPPORTED,   STR_FALSE,
         Repository.OPTION_LOCKING_SUPPORTED,      STR_TRUE,
-        Repository.OPTION_OBSERVATION_SUPPORTED,  STR_FALSE,
+        Repository.OPTION_OBSERVATION_SUPPORTED,  STR_TRUE,
         Repository.OPTION_QUERY_SQL_SUPPORTED,    STR_FALSE,
         Repository.QUERY_XPATH_POS_INDEX,         STR_FALSE,
         Repository.QUERY_XPATH_DOC_ORDER,         STR_FALSE

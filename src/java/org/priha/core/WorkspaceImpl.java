@@ -33,6 +33,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.priha.core.locks.LockManager;
 import org.priha.core.namespace.NamespaceRegistryImpl;
+import org.priha.core.observation.ObservationManagerImpl;
 import org.priha.nodetype.QNodeTypeManager;
 import org.priha.path.InvalidPathException;
 import org.priha.path.Path;
@@ -404,10 +405,9 @@ public class WorkspaceImpl
     /**
      *  Unsupported at the moment.
      */
-    public ObservationManager getObservationManager() throws UnsupportedRepositoryOperationException, RepositoryException
+    public ObservationManagerImpl.Impl getObservationManager() throws UnsupportedRepositoryOperationException, RepositoryException
     {
-        throw new UnsupportedRepositoryOperationException("Workspace.getObservationManager()");
-        // TODO Auto-generated method stub
+        return ObservationManagerImpl.getInstance(this);
     }
 
     /**

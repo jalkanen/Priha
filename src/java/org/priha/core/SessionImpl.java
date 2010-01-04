@@ -80,6 +80,8 @@ public class SessionImpl implements Session, NamespaceMapper
     
     private ValueFactoryImpl m_valueFactory = new ValueFactoryImpl(this);
     
+    private String         m_sessionId = UUID.randomUUID().toString();
+    
     protected SessionProvider m_provider;
    
     public SessionImpl( RepositoryImpl rep, Credentials creds, String name )
@@ -100,6 +102,11 @@ public class SessionImpl implements Session, NamespaceMapper
         }
     }
 
+    public String getId()
+    {
+        return m_sessionId;
+    }
+    
     public boolean setSuper(boolean value)
     {
         boolean oldval = m_isSuperSession;

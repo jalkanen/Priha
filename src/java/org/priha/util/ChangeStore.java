@@ -433,5 +433,10 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
         {
             return m_valueContainer;
         }
+        
+        public String toString()
+        {
+            return m_state.toString()+" "+m_item.getInternalPath();
+        }
     }
 }

@@ -342,6 +342,7 @@ public class SessionProvider
         StoreTransaction tx = m_source.storeStarted( m_workspace );
         boolean succeeded = false;
         
+        List<Change> changesDone = new ArrayList<Change>();
         try
         {
             Change change;
@@ -456,7 +457,8 @@ public class SessionProvider
                             case UNDEFINED:
                                 throw new IllegalStateException("A Property should not at this stage be UNDEFINED! "+change.getPath());
                         }
-                    }                
+                    }
+                    changesDone.add( change );
                 }
                 else
                 {
@@ -505,6 +507,9 @@ public class SessionProvider
             }
             m_source.storeFinished( tx );
             succeeded = true;
+            
+            m_workspace.getObservationManager().fireEvent( changesDone );
+            
         }
         finally
         {
