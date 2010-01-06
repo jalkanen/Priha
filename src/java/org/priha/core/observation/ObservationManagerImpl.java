@@ -1,9 +1,6 @@
 package org.priha.core.observation;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Logger;
 
 import javax.jcr.AccessDeniedException;
@@ -11,12 +8,12 @@ import javax.jcr.ItemNotFoundException;
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.observation.*;
+import javax.jcr.observation.EventListener;
 
-import org.priha.core.NodeImpl;
-import org.priha.core.SessionImpl;
-import org.priha.core.WorkspaceImpl;
+import org.priha.core.*;
 import org.priha.path.Path;
 import org.priha.path.PathFactory;
+import org.priha.util.ChangeStore;
 import org.priha.util.GenericIterator;
 import org.priha.util.ChangeStore.Change;
 
@@ -30,78 +27,135 @@ public class ObservationManagerImpl
 {
     private static ObservationManagerImpl c_manager = new ObservationManagerImpl();
     
-    private ArrayList<EventListenerWrapper> m_listeners = new ArrayList<EventListenerWrapper>();
+    private Map<String,List<EventListenerWrapper>> m_listeners = new HashMap<String,List<EventListenerWrapper>>();
     
     private Logger log = Logger.getLogger(ObservationManagerImpl.class.getName());
     
+    /**
+     *  Adds an event listener for a particular Session.
+     *  
+     * @param session
+     * @param listener
+     * @param eventTypes
+     * @param absPath
+     * @param isDeep
+     * @param uuid
+     * @param nodeTypeName
+     * @param noLocal
+     * @throws RepositoryException
+     */
     public void addEventListener(SessionImpl session, EventListener listener, int eventTypes, Path absPath, 
                                  boolean isDeep, String[] uuid, String[] nodeTypeName, boolean noLocal)
         throws RepositoryException
     {
         EventListenerWrapper elw = new EventListenerWrapper(session,listener,eventTypes,absPath,isDeep,uuid,nodeTypeName,noLocal);
         
-        m_listeners.add(elw);
+        List<EventListenerWrapper> list = m_listeners.get(session.getWorkspace().getName());
+        
+        if( list == null )
+            list = new ArrayList<EventListenerWrapper>();
+        
+        list.add( elw );
+        
+        m_listeners.put(session.getWorkspace().getName(), list);
     }
 
+    /**
+     *  Lists EventListeners for a given Session.
+     *  
+     * @param session
+     * @return
+     * @throws RepositoryException
+     */
     public EventListenerIterator getRegisteredEventListeners(SessionImpl session) throws RepositoryException
     {
         List<EventListener> list = new ArrayList<EventListener>();
         
-        for( Iterator<EventListenerWrapper> i = m_listeners.iterator() ; i.hasNext(); )
+        List<EventListenerWrapper> l = m_listeners.get(session.getWorkspace().getName());
+        
+        if( l != null )
         {
-            EventListenerWrapper elw = i.next();
-            if( elw.getSessionId().equals(session.getId()) ) 
+            for( Iterator<EventListenerWrapper> i = l.iterator() ; i.hasNext(); )
             {
-                list.add( elw.getListener() );
+                EventListenerWrapper elw = i.next();
+                if( elw.getSessionId().equals(session.getId()) ) 
+                {
+                    list.add( elw.getListener() );
+                }
             }
         }
-        
         return new Iter(list);
     }
 
+    /**
+     *  Removes an Event listener (for any session)
+     * @param listener
+     * @throws RepositoryException
+     */
     public void removeEventListener(EventListener listener) throws RepositoryException
     {
-        for( Iterator<EventListenerWrapper> i = m_listeners.iterator() ; i.hasNext(); )
+        for( List<EventListenerWrapper> le : m_listeners.values() )
         {
-            if( i.next().getListener() == listener ) 
+            for( Iterator<EventListenerWrapper> i = le.iterator() ; i.hasNext(); )
             {
-                i.remove();
-                return;
+                if( i.next().getListener() == listener ) 
+                {
+                    i.remove();
+                    return;
+                }
             }
         }
     }
     
-    public void fireEvent( SessionImpl srcSession, List<Change> changes )
+    public void fireEvent( SessionImpl srcSession, ChangeStore changes )
     {
-        for( Iterator<EventListenerWrapper> i = m_listeners.iterator() ; i.hasNext(); )
-        {
-            EventListenerWrapper elw = i.next();
+        List<EventListenerWrapper> l = m_listeners.get(srcSession.getWorkspace().getName());
 
-            // Fire the event
+        if( l != null )
+        {
+            for( Iterator<EventListenerWrapper> i = l.iterator() ; i.hasNext(); )
+            {
+                EventListenerWrapper elw = i.next();
+
+                // Fire the event
             
-            try
-            {
-                elw.getListener().onEvent( new EventIteratorImpl(filterEvents(srcSession,elw,changes)) );
-            }
-            catch( Exception e )
-            {
-                log.warning("Unable to fire event "+ e.getMessage());
-            }
-        }        
+                try
+                {
+                    elw.getListener().onEvent( new EventIteratorImpl(filterEvents(srcSession,elw,changes)) );
+                }
+                catch( Exception e )
+                {
+                    log.warning("Unable to fire event "+ e.getMessage());
+                }
+            }        
+        }
     }
 
-    private List<Event> filterEvents( SessionImpl session, EventListenerWrapper elw, List<Change> changes ) throws ItemNotFoundException, AccessDeniedException, RepositoryException
+    private List<Event> filterEvents( SessionImpl session, EventListenerWrapper elw, ChangeStore changes ) throws ItemNotFoundException, AccessDeniedException, RepositoryException
     {
         ArrayList<Event> list = new ArrayList<Event>();
 
         for( Change c : changes )
         {
             System.out.println(c);
+            
             // Session filtering
             if( elw.isNoLocal() && session.getId().equals(elw.getSessionId()) )
             {
                 continue;
             }
+
+            // Tags filtering
+            
+            if( !c.getItem().isNode() )
+            {
+                if( ((PropertyImpl)c.getItem()).isTransient() ) continue;
+            }
+            
+            // Internal tags filtering
+            
+            if( c.getPath().getLastComponent().equals(NodeImpl.Q_PRIHA_TMPMOVE) )
+                continue;
             
             // Path filtering
             if( elw.getAbsPath() != null )
@@ -155,6 +209,15 @@ public class ObservationManagerImpl
                 if( !success ) continue;
             }
 
+            // Transient changes filtering. Priha will actually list all the events, both additions and removals
+            // so we need to filter out the ones which result in no change in the repository.
+            
+            if( c.getState() != ItemState.REMOVED )
+            {
+                if( changes.getLatestChange(c.getPath()).getState() == ItemState.REMOVED )
+                    continue;
+            }
+            
             // EventType filtering
             int eventType = -1;
             
@@ -215,64 +278,6 @@ public class ObservationManagerImpl
         public Event nextEvent()
         {
             return (Event) super.next();
-        }
-    }
-    
-    private static class EventImpl implements Event
-    {
-        SessionImpl m_session;
-        int m_eventType;
-        Path m_path;
-        
-        public EventImpl(SessionImpl s, int eventType, Path path)
-        {
-            m_session = s;
-            m_eventType = eventType;
-            m_path = path;
-        }
-        
-        public String getPath() throws RepositoryException
-        {
-            return m_path.toString(m_session);
-        }
-
-        public int getType()
-        {
-            return m_eventType;
-        }
-
-        public String getUserID()
-        {
-            return m_session.getUserID();
-        }
-
-        public String toString()
-        {
-            return getEventString(m_eventType) + " " + m_path.toString();
-        }
-
-        private String getEventString(int type)
-        {
-            switch( type )
-            {
-                case NODE_ADDED:
-                    return "NODE_ADDED";
-                    
-                case NODE_REMOVED:
-                    return "NODE_REMOVED";
-                    
-                case PROPERTY_ADDED:
-                    return "PROPERTY_ADDED";
-                    
-                case PROPERTY_CHANGED:
-                    return "PROPERTY_CHANGED";
-                    
-                case PROPERTY_REMOVED:
-                    return "PROPERTY_REMOVED";
-                    
-                default:
-                    return "UNKNOWN";
-            }
         }
     }
     
@@ -392,9 +397,9 @@ public class ObservationManagerImpl
             ObservationManagerImpl.this.removeEventListener(listener);
         }
         
-        public void fireEvent( List<Change> change )
+        public void fireEvents( ChangeStore changes )
         {
-            ObservationManagerImpl.this.fireEvent( m_session, change );
+            ObservationManagerImpl.this.fireEvent( m_session, changes );
         }
     }
 

@@ -56,25 +56,20 @@ public class FastPropertyStore
     public static Properties load(FileInputStream in) throws IOException
     {
         Properties props = new Properties();
-        
+/*        
         FileChannel fc = in.getChannel();
         
-        //MappedByteBuffer bb = fc.map(MapMode.READ_ONLY, 0, fc.size() );
-
-        ByteBuffer ba = ByteBuffer.allocate( (int) fc.size() );
+        ByteBuffer ba = ByteBuffer.allocate( Math.max( (int)fc.size(), 8*1024 ) ); // at least 8kB
         fc.read( ba );
         
         String c = new String( ba.array(), "UTF-8" );
+  */      
         
-        /*
-        BufferedReader i = new BufferedReader(new InputStreamReader( in,"UTF-8" ));
-        */
-        /*
         ByteArrayOutputStream ba = new ByteArrayOutputStream();
         FileUtil.copyContents( in, ba );
         
         String c = new String( ba.toByteArray(), "UTF-8" );
-        */
+        
         BufferedStringReader i = new BufferedStringReader(c);
         
         String line;

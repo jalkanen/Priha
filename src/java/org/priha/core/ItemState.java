@@ -33,5 +33,6 @@ public enum ItemState
     REMOVED,
     MOVED,
     UPDATED,
-    UNDEFINED
+    UNDEFINED,
+    REORDERED
 }

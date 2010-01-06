@@ -20,6 +20,7 @@ package org.priha.util;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
@@ -81,7 +82,8 @@ public class FileUtil
     }
 
     /**
-     *  Reads in file contents.
+     *  Reads in file contents and assumes it's a String.  This method is fastest
+     *  up until 4-8 kB in size.
      *
      *  @param input The InputStream to read from.
      *  @param encoding The encoding to assume at first.
@@ -92,11 +94,13 @@ public class FileUtil
     public static String readContents( InputStream input, String encoding )
         throws IOException
     {
+        ByteBuffer bbuf;
+    
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         FileUtil.copyContents( input, out );
 
-        ByteBuffer     bbuf        = ByteBuffer.wrap( out.toByteArray() );
-
+        bbuf = ByteBuffer.wrap( out.toByteArray() );        
+        
         Charset        cset        = Charset.forName( encoding );
         CharsetDecoder csetdecoder = cset.newDecoder();
 

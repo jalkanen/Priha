@@ -176,6 +176,44 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
         return null;
     }
     
+    public boolean remove( Change c )
+    {
+        if( m_changes.remove(c) )
+        {
+            internalRemove(c);
+            
+            return true;
+        }
+        
+        return false;
+    }
+
+    private void internalRemove(Change c)
+    {
+        m_latest.remove(c.getPath());
+        
+        if( !c.getPath().isRoot() )
+        {
+            try
+            {
+                Path parent = c.getPath().getParentPath();
+            
+                List<Change> pc = m_childChanges.get( parent );
+        
+                pc.remove( c ); // FIXME: repeated with remove().
+            
+                if( pc.isEmpty() )
+                {
+                    m_childChanges.remove( parent );
+                }        
+            }
+            catch( InvalidPathException e )
+            {
+                throw new IllegalStateException("Cannot remove "+c.getPath());
+            }
+        }
+    }
+    
     /**
      *  Removes the first change from the change list.
      *  
@@ -187,29 +225,7 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
         if( m_changes.size() > 0 )
         {
             c = m_changes.remove(0);
-            m_latest.remove( c.getPath() );
-            
-            if( !c.getPath().isRoot() )
-            {
-                try
-                {
-                    Path parent = c.getPath().getParentPath();
-                
-                    List<Change> pc = m_childChanges.get( parent );
-                
-                    pc.remove( c ); // FIXME: SLow.
-                    
-                    if( pc.isEmpty() )
-                    {
-                        m_childChanges.remove( parent );
-                    }
-                }
-                catch( InvalidPathException e )
-                {
-                    throw new IllegalStateException("Cannot remove "+c.getPath());
-                }
-            }
-            
+            internalRemove(c);   
         }
         return c;
     }
@@ -258,6 +274,14 @@ public class ChangeStore implements Iterable<ChangeStore.Change>
     public final boolean isEmpty()
     {
         return m_changes.isEmpty();
+    }
+    
+    public void addAll( ChangeStore store )
+    {
+        for( Change c : store )
+        {
+            add( c );
+        }
     }
     
     /**

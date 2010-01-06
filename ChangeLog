@@ -1,3 +1,15 @@
+2010-01-07  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.7.3
+        
+        * Optimization of ProviderManager.loadNode() and Item.enterState().
+        Especially the latter helps reading quite a lot.
+        
+        * EhCacheProvider.exists() was confusing Nodes with Properties
+        sometimes.
+        
+        * ObservationManager now correctly sends events for Node reordering.
+        
 2010-01-04  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.7.2

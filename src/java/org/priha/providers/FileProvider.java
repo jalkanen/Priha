@@ -597,7 +597,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             
             out = new FileOutputStream( f );
         
-            copyContents( in, out );
+            FileUtil.copyContents( in, out );
         }
         finally
         {
@@ -1369,55 +1369,11 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
         return new BaseStoreTransaction(ws);
     }
 
-    
-    /**
-     *  Just copies all characters from <i>in</i> to <i>out</i>.
-     */
-    private static void copyContents( InputStream in, OutputStream out )
-        throws IOException
-    {
-        byte[] buf = new byte[BUFFER_SIZE];
-        int bytesRead = 0;
-
-        while ((bytesRead = in.read(buf)) > 0) 
-        {
-            out.write(buf, 0, bytesRead);
-        }
-
-        out.flush();
-    }
-    
-    private static void copyContents(Reader in, Writer out)
-        throws IOException
-    {
-        char[] buf = new char[BUFFER_SIZE];
-        int bytesRead = 0;
-
-        while ((bytesRead = in.read(buf)) > 0) 
-        {
-            out.write(buf, 0, bytesRead);
-        }
-
-        out.flush();
-    }
-
 
     private String readContentsAsString( File file )
         throws IOException
     {
-        Reader in = new InputStreamReader( new FileInputStream(file), "UTF-8" );
-        
-        try
-        {
-            StringWriter out = new StringWriter();
-            copyContents( in, out );  
-        
-            return out.toString();
-        }
-        finally
-        {
-            in.close();
-        }
+        return FileUtil.readContents(new FileInputStream(file), "UTF-8");
     }
     
 

@@ -69,6 +69,9 @@ import org.priha.version.VersionManager;
  */
 public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
 {
+    private static final String PRIHA_TMPMOVE = "priha:tmpmove";
+    public static final QName  Q_PRIHA_TMPMOVE = QName.valueOf("{"+RepositoryManager.NS_PRIHA+"}tmpmove");
+    
     private static final String JCR_FROZENUUID = "jcr:frozenUuid";
     private static final String JCR_FROZENNODE = "jcr:frozenNode";
     private static final String JCR_PREDECESSORS = "jcr:predecessors";
@@ -824,7 +827,6 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         {
             m_lockManager.removeLock( lock );
         }
-        
 
         //
         //  Now the not-so-fun thing; we must make sure that also any SNS's are rearranged appropriately.
@@ -840,7 +842,7 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
             if( srcChildRelPath.indexOf('[') != -1 || hasNode(srcChildRelPath+"[2]" ) )
             {
                 // Yes, we are moving a SNS so this needs reordering.
-                Path tmpPath = getInternalPath().resolve( m_session, "priha:tmpmove" );
+                Path tmpPath = getInternalPath().resolve( m_session, PRIHA_TMPMOVE );
                 
                 // First, store the old version
                 m_session.internalMove( srcPath, 
@@ -934,6 +936,8 @@ public class NodeImpl extends ItemImpl implements Node, Comparable<Node>
         //
         enterState( ItemState.UPDATED );
         m_childOrder = newOrder;
+        // TODO: Also for thingies.
+        m_session.m_provider.m_changedItems.add( ItemState.REORDERED, getNode(srcChildRelPath) );
     }
 
 

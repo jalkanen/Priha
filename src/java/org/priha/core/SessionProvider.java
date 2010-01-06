@@ -27,7 +27,8 @@ import javax.jcr.nodetype.NodeType;
 import org.priha.nodetype.QNodeType;
 import org.priha.path.*;
 import org.priha.providers.StoreTransaction;
-import org.priha.util.*;
+import org.priha.util.ChangeStore;
+import org.priha.util.QName;
 import org.priha.util.ChangeStore.Change;
 import org.priha.version.VersionManager;
 
@@ -342,7 +343,8 @@ public class SessionProvider
         StoreTransaction tx = m_source.storeStarted( m_workspace );
         boolean succeeded = false;
         
-        List<Change> changesDone = new ArrayList<Change>();
+        ChangeStore changesDone = new ChangeStore();
+        
         try
         {
             Change change;
@@ -376,6 +378,8 @@ public class SessionProvider
                                     
                                     m_source.reorderNodes( tx, change.getPath(), childOrder );
                                     ni.setChildOrder(null); // Rely again on the repository order.
+                                    
+                                    
                                 }
                                 
                                 ni.postSave();
@@ -410,6 +414,24 @@ public class SessionProvider
                                 toberemoved.add( change.getPath() );
 //                                m_source.remove(tx, change.getPath());
                                 clearAllCaches( ni, null );
+                                break;
+                                
+                            case REORDERED:
+                                // Reordering has been done by UPDATED, so we just fire some extra events here.
+
+                                Change oldChange;
+                                
+                                while( (oldChange = changesDone.getLatestChange(change.getPath())) != null )
+                                {
+                                    if( (oldChange.getState() == ItemState.NEW || oldChange.getState() == ItemState.REMOVED ) || oldChange.getState() == ItemState.MOVED )
+                                    {
+                                        changesDone.remove(oldChange);
+                                    }
+                                }
+                                
+                                changesDone.add( ItemState.REMOVED, ni );
+                                changesDone.add( ItemState.NEW, ni );
+                                                           
                                 break;
                                 
                             case UNDEFINED:
@@ -508,7 +530,7 @@ public class SessionProvider
             m_source.storeFinished( tx );
             succeeded = true;
             
-            m_workspace.getObservationManager().fireEvent( changesDone );
+            m_workspace.getObservationManager().fireEvents( changesDone );
             
         }
         finally
@@ -840,10 +862,21 @@ public class SessionProvider
         return c_sessionPathManager;
     }
 
+    /**
+     *  Get the current modified state of a Path.
+     *  
+     *  @param path
+     *  @return Null, if the state does not exist in the change log. 
+     */
+    public ItemState getState( Path path )
+    {
+        Change c = m_changedItems.getLatestChange( path );
+        
+        return c != null ? c.getState() : null;       
+    }
+    
     public ItemState getState( PathRef m_path ) throws PathNotFoundException
     {
-        Change c = m_changedItems.getLatestChange( getPath(m_path) );
-        
-        return c != null ? c.getState() : null;
+        return getState( getPathManager().getPath(m_path) );
     }
 }
