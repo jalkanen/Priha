@@ -109,7 +109,7 @@ public class EhCachingProvider implements RepositoryProvider
         
         if( myCache == null )
         {
-            myCache = new Cache(cacheName, size, false, true, 30, 20);
+            myCache = new Cache(cacheName, size, false, true, 3000, 2000);
 
             //
             //  For some completely unfathomable reason, the BlockingCache blocks
@@ -214,12 +214,7 @@ public class EhCachingProvider implements RepositoryProvider
         
         m_realProvider.addNode(tx, path,def);
     }
-/*
-    public void copy(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
-    {
-        m_realProvider.copy(ws, srcpath, destpath);
-    }
-*/
+
     /*
      *  UUIDs are fairly safe because even if the Node was deleted, SessionImpl will
      *  attempt to fetch the Node itself based on the Path, so that will fail then.
@@ -392,31 +387,19 @@ public class EhCachingProvider implements RepositoryProvider
     {
         return m_realProvider.listWorkspaces();
     }
-/*
-    public void move(WorkspaceImpl ws, Path srcpath, Path destpath) throws RepositoryException
-    {
-        //
-        //  We need to make sure UUID mapping is still okay.
-        //
-        
-        Element e = m_valueCache.get( getRUid(ws,srcpath) );
-        if( e != null )
-        {
-            String uuid = (String)e.getValue();
-            m_valueCache.remove( uuid );
-            m_valueCache.remove( getRUid(ws,srcpath) );
-        }
-        
-        m_realProvider.move(ws, srcpath, destpath);
-    }
-*/
+
     public boolean itemExists(WorkspaceImpl ws, Path path, ItemType type) throws RepositoryException
     {
-        if( m_valueCache.isKeyInCache( getNid(ws,path) ) )
-            return true;
-        
-        if( m_valueCache.isKeyInCache( getVid( ws, path ) ))
-            return true;
+        if( type == ItemType.NODE )
+        {
+            if( m_valueCache.isKeyInCache( getNid(ws,path) ) )
+                return true;
+        }
+        else
+        {
+            if( m_valueCache.isKeyInCache( getVid( ws, path ) ) )
+                return true;
+        }
         
         return m_realProvider.itemExists(ws, path,type);
     }
