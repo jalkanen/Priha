@@ -470,18 +470,40 @@ public class ProviderManager implements ItemStore
     
     public ItemImpl getItem(WorkspaceImpl ws, Path path) throws InvalidPathException, RepositoryException
     {
-        try
+        //
+        // TODO: Not sure yet whether this optimization really makes sense.  It appears to
+        //       work slightly faster, since it does not incur the overhead of two loadNodes() 
+        //
+        if( false )
         {
-            NodeImpl ni = loadNode( ws, path );
+            try
+            {
+                NodeImpl ni = loadNode( ws, path );
             
-            return ni;
+                return ni;
+            }
+            catch( RepositoryException e )
+            {
+                if( path.isRoot() ) throw e; // Otherwise we just get a relatively unclear "root has no parent"
+            
+                NodeImpl ni = loadNode( ws, path.getParentPath() );
+            
+                return loadProperty( ws, ni, path, path.getLastComponent() );
+            }
         }
-        catch( RepositoryException e )
+        else
         {
-            if( path.isRoot() ) throw e; // Otherwise we just get a relatively unclear "root has no parent"
-            
+        
+            if( itemExists( ws, path, ItemType.NODE ) )
+            {
+                return loadNode( ws, path );
+            }
+        
+            if( path.isRoot() )
+                throw new PathNotFoundException();
+        
             NodeImpl ni = loadNode( ws, path.getParentPath() );
-            
+        
             return loadProperty( ws, ni, path, path.getLastComponent() );
         }
     }
