@@ -125,9 +125,18 @@ public abstract class ItemImpl implements Item
                 //
                 sp.m_changedItems.add( state, this );
                 
-                if( !getInternalPath().isRoot() && !getParent().isModified() ) 
+                Path path = getInternalPath();
+                if( !path.isRoot() )
                 {
-                    getParent().enterState(ItemState.UPDATED);
+                    //
+                    //  We try to avoid calling getParent(), since it causes hits to the database.
+                    //
+                    Path parent = getInternalPath().getParentPath();
+                    
+                    if( sp.getState(parent) == null )
+                    {
+                        getParent().enterState(ItemState.UPDATED);
+                    }
                 }
                 break;
                     
