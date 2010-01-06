@@ -1373,7 +1373,15 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
     private String readContentsAsString( File file )
         throws IOException
     {
-        return FileUtil.readContents(new FileInputStream(file), "UTF-8");
+        FileInputStream fis = new FileInputStream(file);
+        try
+        {
+            return FileUtil.readContents(fis, "UTF-8");
+        }
+        finally
+        {
+            if( fis != null ) fis.close();
+        }
     }
     
 
