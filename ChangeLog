@@ -1,5 +1,18 @@
 2010-01-07  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.7.4
+        
+        * The "I think I optimized something but I've got a flu" -release.
+        
+        * Session Item cache is now configurable (and slightly bigger by default)
+        
+        * SessionProvider.itemExists() is now slightly smarter when checking
+        for cached items.
+        
+        * Allowed overriding priha.properties from system properties.
+        
+2010-01-07  Janne Jalkanen <jalkanen@ecyrd.com>
+
         * 0.7.3
         
         * Optimization of ProviderManager.loadNode() and Item.enterState().

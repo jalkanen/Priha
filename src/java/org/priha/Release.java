@@ -65,7 +65,7 @@ public final class Release
     /**
      *  The current minor revision.
      */
-    public static final int    MINORREVISION = 3;
+    public static final int    MINORREVISION = 4;
 
     /**
      *  E.g. "alpha" or "beta".

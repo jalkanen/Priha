@@ -36,6 +36,9 @@ import org.priha.util.FileUtil;
 /**
  *  Provides the main Repository class for Priha. You may use this
  *  by simply instantiating it with a suitable Properties object.
+ *  <p>
+ *  Any property may be overridden also from the command line using
+ *  a system property.
  */
 public class RepositoryImpl implements Repository
 {
@@ -102,12 +105,16 @@ public class RepositoryImpl implements Repository
     
     public String getProperty(String key)
     {
-        return m_properties.getProperty(key);
+        String prop = System.getProperty(key, m_properties.getProperty(key));
+        
+        return prop;
     }
 
     public String getProperty( String key, String defValue )
     {
-        return m_properties.getProperty(key,defValue);
+        String prop = System.getProperty( key, m_properties.getProperty(key,defValue) );
+        
+        return prop;
     }
     
     protected ProviderManager getProviderManager() throws ConfigurationException

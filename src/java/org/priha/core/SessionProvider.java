@@ -47,8 +47,11 @@ public class SessionProvider
     
     // FIXME: Should probably be elsewhere
     private static PathManager c_sessionPathManager = new PathManager();
- 
-    private static final int   DEFAULT_CACHESIZE = 1000;
+     
+    private static final String PROP_SESSIONCACHESIZE = "priha.session.cacheSize";
+    private static final String PROP_MAXITEMSIZE = "priha.session.maxCachedItemSize";
+    
+    private int m_maxItemSize;
     
     private Map<PathRef,ItemImpl> m_fetchedItems;
     private Map<String,NodeImpl>  m_uuidMap;
@@ -60,9 +63,18 @@ public class SessionProvider
         m_workspace = session.getWorkspace();
         
         m_changedItems = new ChangeStore();
+    
+        //
+        //  The listed defaults here just exist so that something sane would be there.  The defaults
+        //  are really read from the priha_defaults.properties or user settings.
+        //
+        int cacheSize = Integer.parseInt(session.getRepository().getProperty( PROP_SESSIONCACHESIZE, "1000" ));
+        m_maxItemSize = Integer.parseInt(session.getRepository().getProperty( PROP_MAXITEMSIZE, "2048") );
         
-        m_fetchedItems = new SizeLimitedHashMap<PathRef,ItemImpl>(DEFAULT_CACHESIZE);
-        m_uuidMap      = new SizeLimitedHashMap<String,NodeImpl>(DEFAULT_CACHESIZE);
+        m_fetchedItems = new SizeLimitedHashMap<PathRef,ItemImpl>(cacheSize);
+        m_uuidMap      = new SizeLimitedHashMap<String,NodeImpl>(cacheSize);
+        
+        log.fine("Initialized SessionProvider with session cache size of "+cacheSize+" items, of max "+m_maxItemSize+" bytes");
     }
     
     /**
@@ -75,6 +87,31 @@ public class SessionProvider
     {
         if( ii != null )   m_fetchedItems.remove( ii.getPathReference() );
         if( uuid != null ) m_uuidMap.remove( uuid );        
+    }
+    
+    /**
+     *  Puts a single Item into the internal caches.
+     *  
+     *  @param ii Item to cache
+     *  @param uuid UUID, or may be null.
+     */
+    private final void cache( final ItemImpl ii, final String uuid )
+    {
+        if( ii instanceof PropertyImpl )
+        {
+            //
+            //  Don't cache very large objects.
+            //
+            if( ((PropertyImpl)ii).getValueContainer().getSize() > m_maxItemSize ) 
+                return;
+        }
+        
+        m_fetchedItems.put(ii.getPathReference(), ii);
+        
+        if( uuid != null )
+        {
+            m_uuidMap.put(uuid, (NodeImpl) ii);
+        }
     }
     
     /**
@@ -132,7 +169,7 @@ public class SessionProvider
         
         ii = m_source.getItem(m_workspace, path);
         
-        if( ii != null ) m_fetchedItems.put( ii.getPathReference(), ii );
+        if( ii != null ) cache( ii, null );
         
         return ii;
     }
@@ -172,8 +209,7 @@ public class SessionProvider
             
             if( ii != null ) 
             {
-                m_fetchedItems.put( ii.getPathReference(), ii );
-                m_uuidMap.put( uuid, ii );
+                cache( ii, uuid );
             }
         }
         
@@ -287,16 +323,14 @@ public class SessionProvider
             return true;
         }
         
+        ItemImpl ii = m_fetchedItems.get(getPathManager().getPathRef(path));
+        
+        if( ii != null && ((type == ItemType.NODE && ii.isNode()) || (type == ItemType.PROPERTY && !ii.isNode())) )
+            return true;
+        
         return m_source.itemExists(m_workspace, path, type);
     }
-/*
-    public void open( Credentials credentials, String workspaceName)
-        throws RepositoryException,
-               NoSuchWorkspaceException
-    {
-        m_source.open(credentials, workspaceName);
-    }
-*/
+
     public void remove(ItemImpl item) throws RepositoryException
     {
         m_changedItems.add( item.getState(), item );
@@ -390,7 +424,7 @@ public class SessionProvider
                                 toberemoved.remove( change.getPath() ); // In case it's there
                                 m_source.addNode( tx, ni );
                                 ni.postSave();
-                                m_fetchedItems.put( ni.getPathReference(), ni );
+                                cache(ni,null);
                                 break;
                         
                             case REMOVED:
@@ -459,7 +493,7 @@ public class SessionProvider
                                 pi.preSave();
                                 m_source.putProperty( tx, change.getPath(), change.getValue() );
                                 pi.postSave();
-                                m_fetchedItems.put( pi.getPathReference(), pi );
+                                cache(pi,null);
                                 toberemoved.remove( change.getPath() ); // In case it's there
                                 break;
                                 
@@ -828,7 +862,7 @@ public class SessionProvider
          */
         public SizeLimitedHashMap(int maxSize)
         {
-            super();
+            super( 16, 0.75f, true );
             m_maxSize = maxSize;
         }
         
@@ -837,7 +871,7 @@ public class SessionProvider
          */
         public SizeLimitedHashMap()
         {
-            super();
+            this(MAX_SIZE);
         }
         
         /**
