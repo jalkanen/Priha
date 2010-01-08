@@ -149,3 +149,29 @@ FileProvider, with Ehcache            3087        4110        1374       31125  
 JdbcProvider, no cache                 463        3838         307       14888     2952266      736530      567148
 JdbcProvider, with Ehcache             468        4305         346       14300     2764363      762076      568895
 Jackrabbit                            4386       33998         332       34246      579779     1930375      530741
+
+
+Testsuite: org.priha.core.PerformanceTest
+Tests run: 7, Failures: 0, Errors: 0, Time elapsed: 2,438.397 sec
+------------- Standard Output ---------------
+Test results.  The number is operations/seconds - larger means faster.
+Blob size 10 kB
+Repository size 10000 nodes
+Priha version 0.7.4-svn
+Jackrabbit version 1.6.0
+                                 FirstSess   LargeRead LargeRemove   LargeSave  NewSession    RandRead      Remove        Save
+MemoryProvider, no cache                 2       60495    20336984        1658       12823      129625    11566002        1260
+FileProvider, no cache                  30       27795         230         214        7965       37024         154         182
+FileProvider, with Ehcache              10       22919         237         219        2950       34314         173         188
+JdbcProvider, no cache                0.04       21848          33         120       11051       37722          30         119
+JdbcProvider, with Ehcache             342       18046          36         118        3794       35667          35         123
+Jackrabbit                            0.20        6710         167         185        2933       20612         572         253
+
+
+                                   SeqRead        UUID      Update      exists     getItem getProperty    propUUID
+MemoryProvider, no cache          97700139      101065       13434      455003     2888165      704576      405119
+FileProvider, no cache                2279       19398        1042       31940     2644728      724237      650177
+FileProvider, with Ehcache            1630       20096        1345       28945     2767973      718113      597347
+JdbcProvider, no cache                 469       20058         405       12854     2756507      750959      639016
+JdbcProvider, with Ehcache             490       20384         420       15052     2618564      689566      613951
+Jackrabbit                            4468       31918         315       41138      538651      488527      904535
