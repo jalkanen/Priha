@@ -144,4 +144,10 @@ public class CalendarValueImpl extends ValueImpl implements Value, Serializable
         return "Null value";
         
     }
+    
+    @Override
+    public long getSize()
+    {
+        return 112; // Roughly, is missing Timezone info
+    }
 }

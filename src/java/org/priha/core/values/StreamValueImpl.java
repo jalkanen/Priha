@@ -168,4 +168,17 @@ public class StreamValueImpl extends ValueImpl implements Value
         checkStream();
         return Boolean.parseBoolean( getString() );
     }
+    
+    @Override
+    public long getSize()
+    {
+        try
+        {
+            return m_value.getLength();
+        }
+        catch (IOException e)
+        {
+            return -1;
+        }
+    }
 }

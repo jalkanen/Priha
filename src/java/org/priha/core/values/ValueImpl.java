@@ -143,6 +143,17 @@ public abstract class ValueImpl implements Value, Cloneable, Comparable<ValueImp
     }
     
     /**
+     *  Returns the approximate size of this object in bytes.  If not determinable,
+     *  returns -1;
+     *   
+     *  @return
+     */
+    public long getSize()
+    {
+        return -1;
+    }
+
+    /**
      *  By default, does String comparison, which means it may fail.  Subclasses are expected
      *  to override.
      */

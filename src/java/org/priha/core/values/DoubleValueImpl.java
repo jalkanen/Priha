@@ -114,4 +114,10 @@ public class DoubleValueImpl extends ValueImpl implements Value, Serializable
     {
         return m_value.toString();
     }
+    
+    @Override
+    public long getSize()
+    {
+        return 8;
+    }
 }

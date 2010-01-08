@@ -107,4 +107,17 @@ public class LongValueImpl extends ValueImpl implements Value, Serializable
     {
         return m_value.toString();
     }
+
+    @Override
+    public long getSize()
+    {
+        return 8;
+    }
+
+    @Override
+    protected Object clone() throws CloneNotSupportedException
+    {
+        // TODO Auto-generated method stub
+        return super.clone();
+    }
 }

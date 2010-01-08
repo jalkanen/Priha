@@ -78,4 +78,10 @@ public abstract class NodeValueImpl extends ValueImpl implements Value, Serializ
     {
         return m_value.toString();
     }
+    
+    @Override
+    public long getSize()
+    {
+        return m_value.length() * 2;
+    }
 }

@@ -91,6 +91,18 @@ public class QNameValue extends QValue implements Serializable
                 return "Conversion failed for "+m_value;
             }
         }
+        
+        @Override
+        public long getSize()
+        {
+            long lp = 0, nm = 0, pr = 0;
+            
+            if( m_value.getLocalPart() != null ) lp = m_value.getLocalPart().length();
+            if( m_value.getNamespaceURI() != null ) lp = m_value.getNamespaceURI().length();
+            if( m_value.getPrefix() != null ) lp = m_value.getPrefix().length();
+            
+            return (lp+nm+pr) * 2;
+        }
     }
 
     @Override
@@ -104,5 +116,7 @@ public class QNameValue extends QValue implements Serializable
     {
         return m_value.toString();
     }
+    
+
 }
 

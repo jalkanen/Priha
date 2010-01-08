@@ -131,4 +131,10 @@ public class StringValueImpl extends ValueImpl implements Value, Serializable
         // TODO Auto-generated method stub
         return super.clone();
     }
+    
+    @Override
+    public long getSize()
+    {
+        return m_value.length() * 2;
+    }
 }
