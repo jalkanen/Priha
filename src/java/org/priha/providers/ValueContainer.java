@@ -167,4 +167,38 @@ public class ValueContainer
     {
         return m_value == null;
     }
+
+    private long m_cachedSize;
+    
+    /**
+     *  Calculates the rough size of this object in bytes.
+     *  
+     *  @return
+     */
+    public long getSize()
+    {
+        if( m_cachedSize != -1 ) return m_cachedSize;
+        
+        if( m_value != null )
+        {
+            if( m_multiple )
+            {
+                long size = 0;
+                for( ValueImpl v : (ValueImpl[]) m_value )
+                {
+                    long sz = v.getSize();
+                    if( sz < 0 ) { size = -1; break; }
+                    size += sz;
+                }
+                
+                m_cachedSize = size;
+            }
+            else
+            {
+                m_cachedSize = ((ValueImpl)m_value).getSize();
+            }
+        }
+        
+        return m_cachedSize;
+    }
 }
