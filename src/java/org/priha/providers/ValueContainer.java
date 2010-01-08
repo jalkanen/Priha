@@ -168,7 +168,7 @@ public class ValueContainer
         return m_value == null;
     }
 
-    private long m_cachedSize;
+    private long m_cachedSize = -1;
     
     /**
      *  Calculates the rough size of this object in bytes.
