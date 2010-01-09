@@ -123,6 +123,11 @@ public class LockManager
         return lm;
     }
 
+    public void logout()
+    {
+        m_session = null;
+    }
+    
     public synchronized void expireSessionLocks( SessionImpl session )
     {
         for( Iterator<Map.Entry<Path,QLock>> i = m_locks.entrySet().iterator(); i.hasNext(); )

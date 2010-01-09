@@ -45,9 +45,6 @@ public class SessionProvider
     
     ChangeStore        m_changedItems; // TODO: Back to private
     
-    // FIXME: Should probably be elsewhere
-    private static PathManager c_sessionPathManager = new PathManager();
-     
     private static final String PROP_SESSIONCACHESIZE = "priha.session.cacheSize";
     private static final String PROP_MAXITEMSIZE = "priha.session.maxCachedItemSize";
     
@@ -174,9 +171,13 @@ public class SessionProvider
         return ii;
     }
     
-    public void close()
+    public void logout()
     {
-        m_source.close( m_workspace );
+        m_changedItems.clear();
+        m_fetchedItems.clear();
+        m_uuidMap.clear();
+        m_workspace = null;
+        m_source = null;
     }
 
     public void copy(Path srcpath, Path destpath) throws RepositoryException
@@ -888,12 +889,12 @@ public class SessionProvider
    
     public Path getPath( PathRef p ) throws PathNotFoundException
     {
-        return c_sessionPathManager.getPath( p );
+        return RepositoryImpl.getPathManager().getPath( p );
     }
 
     public PathManager getPathManager()
     {
-        return c_sessionPathManager;
+        return RepositoryImpl.getPathManager();
     }
 
     /**

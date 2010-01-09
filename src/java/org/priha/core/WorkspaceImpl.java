@@ -505,6 +505,8 @@ public class WorkspaceImpl
     public void logout()
     {
         m_providerManager.close(this);
+        LockManager lm = LockManager.getInstance( this );
+        lm.logout();
     }
 
     /**

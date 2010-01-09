@@ -788,7 +788,7 @@ public class FileProvider implements RepositoryProvider, PerformanceReporter
             value = vf.createValue( new FileBinarySource(propFile) );
         }
         else
-            throw new RepositoryException("Cannot deserialize property type "+propType);
+            throw new RepositoryException("Cannot deserialize property type "+propType+" for file "+propFile.getAbsolutePath());
 
         return value;
     }

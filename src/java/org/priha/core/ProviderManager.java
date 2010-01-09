@@ -528,6 +528,12 @@ public class ProviderManager implements ItemStore
     {
         ProviderInfo pi = getProviderInfo( tx.getWorkspace(), path );
         
+        //
+        //  Minor sanity check, as this could cause problems in the providers.
+        //
+        if( value.getType() == PropertyType.UNDEFINED )
+            throw new ValueFormatException("Trying to save an UNDEFINED property type: "+path.toString(tx.getWorkspace().getSession()));
+        
         ValueContainer vc = value.deepClone(tx.getWorkspace().getSession());
         try
         {
@@ -543,6 +549,7 @@ public class ProviderManager implements ItemStore
 
     public void stop()
     {
+        log.fine("Shutting down all providers...");
         for( ProviderInfo pi : m_providers )
         {
             try
@@ -555,6 +562,10 @@ public class ProviderManager implements ItemStore
                 pi.lock.writeLock().unlock();
             }
         }
+        
+        m_providers  = null;
+        m_repository = null;
+        m_workspaceAccess.clear();
     }
 
     public Collection<? extends PropertyImpl> getReferences(WorkspaceImpl ws, String uuid) throws RepositoryException

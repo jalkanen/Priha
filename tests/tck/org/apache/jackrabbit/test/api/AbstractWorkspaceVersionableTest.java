@@ -17,6 +17,7 @@
 package org.apache.jackrabbit.test.api;
 
 import javax.jcr.Node;
+import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.nodetype.NoSuchNodeTypeException;
 import javax.jcr.nodetype.NodeType;
@@ -41,7 +42,7 @@ abstract class AbstractWorkspaceVersionableTest extends AbstractWorkspaceCopyBet
         // assert that this repository supports versioning
         try {
             NodeType versionableNt = ntMgr.getNodeType(mixVersionable);
-            if (versionableNt == null) {
+            if (versionableNt == null||superuser.getRepository().getDescriptor(Repository.OPTION_VERSIONING_SUPPORTED).equals("false")) {
                 throw new NotExecutableException("Repository does not support versioning: mixin nodetype '" + mixVersionable + "' is missing.");
             }
         } catch (NoSuchNodeTypeException e) {

@@ -1,5 +1,11 @@
 2010-01-07  Janne Jalkanen <jalkanen@ecyrd.com>
 
+        * 0.7.5
+        
+        * Fixed a number of memory leaks.
+
+2010-01-07  Janne Jalkanen <jalkanen@ecyrd.com>
+
         * 0.7.4
         
         * The "I think I optimized something but I've got a flu" -release.

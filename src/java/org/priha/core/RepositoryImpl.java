@@ -30,6 +30,7 @@ import javax.jcr.*;
 
 import org.priha.Release;
 import org.priha.core.namespace.NamespaceRegistryImpl;
+import org.priha.path.PathManager;
 import org.priha.util.ConfigurationException;
 import org.priha.util.FileUtil;
 
@@ -45,7 +46,8 @@ public class RepositoryImpl implements Repository
     public static final String   DEFAULT_WORKSPACE = "default";
 
     private static NamespaceRegistryImpl c_namespaceRegistry = new NamespaceRegistryImpl();
-
+    private static PathManager c_pathManager = new PathManager();
+    
     private RepositoryState m_state = RepositoryState.DEAD; 
     
     /**
@@ -63,7 +65,7 @@ public class RepositoryImpl implements Repository
 
     private SessionManager  m_sessionManager;
     private ProviderManager m_providerManager;
-    
+
     /**
      *  Create a new Repository using the given properties.  Any property which is not
      *  set will be read from the default properties (priha_default.properties).
@@ -129,6 +131,11 @@ public class RepositoryImpl implements Repository
         }
         
         return m_providerManager;
+    }
+    
+    protected static PathManager getPathManager()
+    {
+        return c_pathManager;
     }
     
     protected SessionManager getSessionManager()
@@ -261,6 +268,7 @@ public class RepositoryImpl implements Repository
         
         m_providerManager = null;
         m_sessionManager  = null;
+        c_pathManager.close();
         
         m_state = RepositoryState.DEAD;
     }

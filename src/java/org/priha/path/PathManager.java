@@ -132,4 +132,10 @@ public class PathManager
             return m_path;
         }
     }
+
+    public void close()
+    {
+        m_pathMap.clear();
+        m_reversePathMap.clear();
+    }
 }

@@ -287,9 +287,10 @@ public class PropertyImpl extends ItemImpl implements Property, Comparable<Prope
                 // This is the difficult bit.  The system could not figure out an explicit
                 // node type for this Property (based on the parent node), and the
                 // values array is empty, so we can't use that one either.  So we do the
-                // only thing we can - tell the user that he's being stupid.
+                // only thing we can - assume something.
                 //
                 
+                propertyType = PropertyType.STRING;
                 //throw new ValueFormatException("Cannot add an empty Value array when there is no explicit type defined in the parent Node."+getInternalPath());
             }
         }
