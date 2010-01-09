@@ -19,6 +19,8 @@ package org.priha.core.binary;
 
 import java.io.*;
 
+import org.priha.util.FileUtil;
+
 /**
  *  Represents a BinarySource which is backed by a File on the
  *  Filesystem itself.
@@ -26,6 +28,20 @@ import java.io.*;
 public class FileBinarySource implements BinarySource
 {
     private File m_file;
+    
+    /**
+     * Creates a temporary file for the given InputStream.
+     */
+    public FileBinarySource( InputStream in ) throws IOException
+    {
+        m_file = File.createTempFile("priha", "bin");
+        
+        OutputStream out = new FileOutputStream(m_file);
+        
+        FileUtil.copyContents(in, out);
+        
+        out.close();
+    }
     
     public FileBinarySource( File f )
     {
