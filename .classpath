@@ -7,7 +7,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3.8.1"/>
 	<classpathentry exported="true" kind="lib" path="tests/etc"/>
 	<classpathentry kind="lib" path="etc"/>
-	<classpathentry kind="lib" path="lib/jcr-1.0.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib/hector-0.6.0-10.jar"/>
 	<classpathentry kind="lib" path="lib/libthrift-r917130.jar"/>

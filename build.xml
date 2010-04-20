@@ -29,7 +29,7 @@
 	
 	<path id="path.build">
 		<fileset dir="lib">
-		          <include name="*.jar" />
+		          <include name="**/*.jar" />
 		          <exclude name="jackrabbit*" />
 		</fileset>
 		      
@@ -50,21 +50,13 @@
     	<path refid="path.build"/>
      
     	<pathelement path="tests/build" />
-
-    	<!-- Jackrabbit is only included if it has been installed with maven -->
-    	<fileset dir="${user.home}">
-        	<include name=".maven/repository/org.apache.jackrabbit/jars/*-1.6.*.jar"/>
-          	<include name=".m2/repository/commons-collections/**/*3.2.jar"/>
-        	<include name=".m2/repository/org/apache/lucene/lucene-core/2.2.0/*.jar"/>
-          	<include name=".m2/repository/org/apache/derby/derby/10.2.1.6/*.jar"/>
-       	</fileset>
     </path>
    
 	<!-- ================================= 
           target: resolve              
          ================================= -->
 	<target name="resolve" description="--> retrieve dependencies with ivy" depends="init-ivy">
-	     <ivy:retrieve />
+	     <ivy:retrieve pattern="lib/ivy/[type]/[artifact]-[revision].[ext]" sync="true"/>
 	</target>
 
     <!-- ================================= 

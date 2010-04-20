@@ -26,6 +26,8 @@
 	</info>
 	
 	<dependencies>
+	    <dependency org="javax.jcr" name="jcr" rev="1.0"/>
+	    
 	    <!-- These are for Cassandra deployment -->
         <dependency org="org.perf4j" name="perf4j" rev="0.9.12"/>
         <dependency org="commons-lang" name="commons-lang" rev="2.4"/>
@@ -42,6 +44,8 @@
         
         <dependency org="org.slf4j" name="slf4j-api" rev="1.5.3"/>
         <dependency org="org.slf4j" name="slf4j-simple" rev="1.5.3"/>
+        
+        <dependency org="org.apache.jackrabbit" name="jackrabbit-core" rev="1.6.1"/>
         
         <!-- The versions don't matter probably much. -->
         <dependency org="hsqldb" name="hsqldb" rev="1.8.0.10"/>
