@@ -8,13 +8,12 @@
 	<classpathentry exported="true" kind="lib" path="tests/etc"/>
 	<classpathentry kind="lib" path="etc"/>
 	<classpathentry kind="lib" path="lib/jcr-1.0.jar"/>
-	<classpathentry kind="lib" path="lib/javax.servlet.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-api-1.5.3.jar"/>
-	<classpathentry kind="lib" path="lib/slf4j-simple-1.5.3.jar"/>
-	<classpathentry kind="lib" path="lib/ehcache-1.6.0.jar"/>
-	<classpathentry kind="lib" path="lib/concurrent-1.3.4.jar"/>
-	<classpathentry kind="lib" path="lib/hsqldb-1.8.0.10.jar"/>
-	<classpathentry kind="lib" path="lib/h2-1.1.118.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/hector-0.6.0-10.jar"/>
+	<classpathentry kind="lib" path="lib/libthrift-r917130.jar"/>
+	<classpathentry kind="lib" path="lib/apache-cassandra-0.6.0-rc1.jar"/>
+	<classpathentry kind="lib" path="tests/lib/high-scale-lib.jar"/>
+	<classpathentry kind="lib" path="tests/lib/clhm-production.jar"/>
+	<classpathentry kind="con" path="org.apache.ivyde.eclipse.cpcontainer.IVYDE_CONTAINER/?ivyXmlPath=ivy.xml&amp;confs=*"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>

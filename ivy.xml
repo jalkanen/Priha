@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.    
+-->
+<ivy-module version="2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:noNamespaceSchemaLocation="http://ant.apache.org/ivy/schemas/ivy.xsd">
+    <info
+        organisation="priha.org"
+        module="priha"
+        status="integration">
+	</info>
+	
+	<dependencies>
+	    <!-- These are for Cassandra deployment -->
+        <dependency org="org.perf4j" name="perf4j" rev="0.9.12"/>
+        <dependency org="commons-lang" name="commons-lang" rev="2.4"/>
+        <dependency org="commons-collections" name="commons-collections" rev="3.2.1"/>
+        <dependency org="com.googlecode.json-simple" name="json-simple" rev="1.1"/>
+        <dependency org="log4j" name="log4j" rev="1.2.14"/>
+        <dependency org="commons-pool" name="commons-pool" rev="1.5.3"/>
+        <dependency org="com.google.collections" name="google-collections" rev="1.0"/>
+        
+        <!-- Other dependencies -->
+        <dependency org="javax.servlet" name="servlet-api" rev="2.4"/>
+        <dependency org="net.sf.ehcache" name="ehcache" rev="1.6.2"/>
+        <dependency org="concurrent" name="concurrent" rev="1.3.4"/> <!-- Doug Lea's -->
+        
+        <dependency org="org.slf4j" name="slf4j-api" rev="1.5.3"/>
+        <dependency org="org.slf4j" name="slf4j-simple" rev="1.5.3"/>
+        
+        <!-- The versions don't matter probably much. -->
+        <dependency org="hsqldb" name="hsqldb" rev="1.8.0.10"/>
+        <dependency org="com.h2database" name="h2" rev="1.1.118"/>
+        
+        <!-- Dumb dependencies which probably get fetched 'cos I don't know how to use configurations
+             properly yet. -->
+        <exclude org="org.hibernate" module="hibernate"/>
+        <exclude module="aspectjweaver"/>
+        <exclude module="aspectjrt"/>
+        <exclude module="spring"/>
+        <exclude module="cglib"/>
+        <exclude module="dom4j"/>
+        <exclude module="jsr305"/>
+    </dependencies>
+    
+</ivy-module>

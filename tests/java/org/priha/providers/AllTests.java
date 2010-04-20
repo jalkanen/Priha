@@ -31,6 +31,7 @@ public class AllTests extends AbstractTest
         
         suite.addTest( FileProviderTest.suite() );
         suite.addTest( JdbcProviderTest.suite() );
+        suite.addTest( CassandraProviderTest.suite() );
         
         return suite;
     }
