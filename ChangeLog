@@ -1,3 +1,10 @@
+2010-04-21  Janne Jalkanen <jalkanen@ecyrd.com>
+
+        * 0.7.6
+        
+        * Changed configuration to use Apache Ivy and moved project source
+        code repo to GitHub.
+        
 2010-01-07  Janne Jalkanen <jalkanen@ecyrd.com>
 
         * 0.7.5
