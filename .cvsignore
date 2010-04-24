@@ -1,6 +1,0 @@
-repository
-*.log
-repository.xml
-*.properties
-build
-*.script
