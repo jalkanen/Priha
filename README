@@ -67,6 +67,23 @@ That's it!
 
 See doc/Configuration.txt for further information about how Priha is configured.
 
+
+COMPILATION
+===========
+
+Priha uses Apache Ant to compile, and Apache Ivy for managing dependencies.  Ivy will
+be downloaded automatically if you don't have it already installed.
+
+To compile, run "ant".  This creates the JAR file under /build.
+
+To run the full test suite, run "ant jcrtests".  This will create a test report in
+/tests/reports.
+
+If you use Eclipse, the use of IvyDE is highly recommended. Otherwise you will need
+to install the dependencies manually with Ant first, then tweak the classpath within
+Eclipse.
+
+
 LICENSE
 =======
 
