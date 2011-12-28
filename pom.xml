@@ -1,0 +1,210 @@
+<!--
+    Maven is one of the big mysteries of humankind.  In fact, it's amazing that anyone
+    ever gets anything done with it.  To make your task easier, I'm documenting some
+    really useful goals for you here to use.
+
+    mvn eclipse:eclipse - Create an Eclipse project out, ready for importing.
+
+    mvn clean install - Cleans and compiles and installs it into your local repository (e.g. ~/.m2/...)
+                        The $project/target -subdirectory will contain the built artifacts.
+
+    mvn deploy - Deploys the project to the configured site (see the distributionManagement section below).
+
+    Don't forget that you can always use "-o" switch for offline use.
+ -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.priha</groupId>
+  <artifactId>priha</artifactId>
+  <version>0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <description>Priha is a simple JSR-170 implementation with no external dependencies.</description>
+  <name>priha</name>
+  <url>https://github.com/jalkanen/priha</url>
+
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>http://github.com/jalkanen/priha</url>
+    <connection>git://github.com/jalkanen/priha.git</connection>
+    <developerConnection>scm:git:git@github.com:jalkanen/priha.git</developerConnection>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>jalkanen</id>
+      <name>Janne Jalkanen</name>
+      <email>jalkanen@ecyrd.com</email>
+      <url>http://www.ecyrd.com/</url>
+    </developer>
+  </developers>
+
+  <issueManagement>
+    <system>Github</system>
+    <url>https://github.com/jalkanen/priha/issues</url>
+  </issueManagement>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+
+    <!--  The only hard dependency against the API library. -->
+    <dependency>
+      <groupId>javax.jcr</groupId>
+      <artifactId>jcr</artifactId>
+      <version>1.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <version>2.4</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>net.sf.ehcache</groupId>
+      <artifactId>ehcache</artifactId>
+      <version>1.6.2</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <!-- These are then the dependencies for running our unit tests. -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.8.2</version>
+      <scope>test</scope>
+    </dependency>
+
+  </dependencies>
+
+  <!--  Define build dependencies, like the source version. -->
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>2.3.2</version>
+        <configuration>
+          <source>1.5</source>
+          <target>1.5</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.2</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>javacc-maven-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <id>javacc</id>
+            <goals>
+              <goal>javacc</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+     <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>javacc-maven-plugin</artifactId>
+        <version>2.6</version>
+        <executions>
+          <execution>
+            <id>jjtree-javacc</id>
+            <goals>
+              <goal>jjtree-javacc</goal>
+            </goals>
+            <configuration>
+              <!-- options for JJTree and JavaCC go here -->
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <executions>
+            <execution>
+                <id>attach-sources</id>
+                <goals>
+                    <goal>jar</goal>
+                </goals>
+            </execution>
+        </executions>
+    </plugin>
+
+    <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <executions>
+            <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                    <goal>jar</goal>
+                </goals>
+            </execution>
+        </executions>
+    </plugin>
+
+    </plugins>
+
+     <extensions>
+      <!-- Enabling the use of FTP -->
+      <extension>
+        <groupId>org.apache.maven.wagon</groupId>
+         <artifactId>wagon-ssh-external</artifactId>
+         <version>1.0-beta-6</version>
+      </extension>
+    </extensions>
+
+  </build>
+
+  <!-- We'd like to use the sonatype parent because we upload to Sonatype repo. -->
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
+
+
+  <!--  This is for pushing for my own repo. -->
+<!--
+  <distributionManagement>
+    <downloadUrl>http://www.ecyrd.com/mvn</downloadUrl>
+    <repository>
+      <uniqueVersion>false</uniqueVersion>
+      <id>ecyrd-maven-repo</id>
+      <name>Ecyrd.com testing repo</name>
+      <url>scpexe://www.ecyrd.com/p/web/www-data/www.ecyrd.com/htdocs/mvn/</url>
+      <layout>default</layout>
+    </repository>
+  </distributionManagement>
+-->
+
+</project>

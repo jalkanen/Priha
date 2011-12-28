@@ -33,29 +33,29 @@
  *
  * xpath-grammar.xml:
  * ------------------
- * Copyright (c) 2002 W3C(r) (http://www.w3.org/) (MIT (http://www.lcs.mit.edu/), 
- * INRIA (http://www.inria.fr/), Keio (http://www.keio.ac.jp/)), 
+ * Copyright (c) 2002 W3C(r) (http://www.w3.org/) (MIT (http://www.lcs.mit.edu/),
+ * INRIA (http://www.inria.fr/), Keio (http://www.keio.ac.jp/)),
  * All Rights Reserved.
  * See http://www.w3.org/Consortium/Legal/ipr-notice-20000612#Copyright.
- * W3C liability 
- * (http://www.w3.org/Consortium/Legal/ipr-notice-20000612#Legal_Disclaimer), 
- * trademark 
- * (http://www.w3.org/Consortium/Legal/ipr-notice-20000612#W3C_Trademarks), 
- * document use 
- * (http://www.w3.org/Consortium/Legal/copyright-documents-19990405), 
- * and software licensing rules 
- * (http://www.w3.org/Consortium/Legal/copyright-software-19980720) 
+ * W3C liability
+ * (http://www.w3.org/Consortium/Legal/ipr-notice-20000612#Legal_Disclaimer),
+ * trademark
+ * (http://www.w3.org/Consortium/Legal/ipr-notice-20000612#W3C_Trademarks),
+ * document use
+ * (http://www.w3.org/Consortium/Legal/copyright-documents-19990405),
+ * and software licensing rules
+ * (http://www.w3.org/Consortium/Legal/copyright-software-19980720)
  * apply.
  */
 options {
 
-	  
+
           STATIC = false;
 	   MULTI=false;
 	   VISITOR=true ;     // invokes the JJTree Visitor support
 	   NODE_SCOPE_HOOK=false;
 	   NODE_USES_PARSER=true;
-	
+
 }
 
 
@@ -63,25 +63,25 @@ options {
 
 
 	package org.priha.query.aqt.xpath;
-	
-import java.io.*;		
+
+import java.io.*;
 import java.util.Stack;
 import java.util.Vector;
 
 public class XPath {
-      
+
 
       boolean m_isMatchPattern = false;
       boolean isStep = false;
 
 		  Stack binaryTokenStack = new Stack();
-		  
+
 		  public Node createNode(int id) {
 			  return null;
 		  }
-		  
-		  
-		  
+
+
+
 		  public static void main(String args[])
 		     throws Exception
 		  {
@@ -146,9 +146,9 @@ public class XPath {
 			  try
 			  {
 			      System.err.println("Type Expression: ");
-			      String input =  dinput.readLine(); 
+			      String input =  dinput.readLine();
 			      if(null == input || input.trim().length() == 0)
-			        break;  
+			        break;
 			      XPath parser = new XPath(new java.io.StringBufferInputStream(input));
           SimpleNode tree;
           if(isMatchParser)
@@ -169,19 +169,19 @@ public class XPath {
 			  {
 			  	System.err.println(e.getMessage());
 			  }
-		    }		    
+		    }
 		  }
 		}
 
     PARSER_END(XPath)
 
-	
+
 
 TOKEN_MGR_DECLS : {
   private Stack stateStack = new Stack();
   // private Vector persistentLexStates  = new Vector();
   static final int PARENMARKER = 2000;
-  
+
   /**
    * Push the current state onto the state stack.
    */
@@ -190,7 +190,7 @@ TOKEN_MGR_DECLS : {
     // System.err.println("pushing: "+curLexState); printLinePos();
     stateStack.addElement(new Integer(curLexState));
   }
-  
+
   /**
    * Push the given state onto the state stack.
    * @param state Must be a valid state.
@@ -199,7 +199,7 @@ TOKEN_MGR_DECLS : {
   {
     stateStack.push(new Integer(state));
   }
-  
+
   /**
    * Pop the state on the state stack, and switch to that state.
    */
@@ -216,7 +216,7 @@ TOKEN_MGR_DECLS : {
       printLinePos();
     SwitchTo(nextState);
   }
-  
+
   /**
    * Push the given state onto the state stack.
    * @param state Must be a valid state.
@@ -233,8 +233,8 @@ TOKEN_MGR_DECLS : {
   }
 
   /**
-   * Push a parenthesis state.  This pushes, in addition to the 
-   * lexical state value, a special marker that lets 
+   * Push a parenthesis state.  This pushes, in addition to the
+   * lexical state value, a special marker that lets
    * resetParenStateOrSwitch(int state)
    * know if it should pop and switch.  Used for the comma operator.
    */
@@ -263,7 +263,7 @@ TOKEN_MGR_DECLS : {
 		  QueryList()<EOF>
 		  { return jjtThis ; }
 		}
-      
+
 <DEFAULT>
 TOKEN :
 {
@@ -332,7 +332,7 @@ TOKEN :
 <DEFAULT, OPERATOR, KINDTEST, NAMESPACEDECL, XMLSPACE_DECL, SINGLETYPE, ITEMTYPE, NAMESPACEKEYWORD, VARNAME, OCCURRENCEINDICATOR, CLOSEKINDTEST, XQUERYVERSION>
 SKIP:
 {
-  <<skip_>>
+  <skip_>
 }
 
 TOKEN :
@@ -2015,7 +2015,7 @@ void OrExpr() #OrExpr(> 1) :
 {}
 {
   AndExpr() (<Or>
-        
+
          {binaryTokenStack.push(token);}
 			 AndExpr()
 		{
@@ -2037,7 +2037,7 @@ void AndExpr() #AndExpr(> 1) :
 {}
 {
   ComparisonExpr() (<And>
-        
+
          {binaryTokenStack.push(token);}
 			 ComparisonExpr()
 		{
@@ -2078,7 +2078,7 @@ void RangeExpr() #RangeExpr(> 1) :
 {}
 {
   AdditiveExpr() (<To>
-        
+
          {binaryTokenStack.push(token);}
 			 AdditiveExpr()
 		{
@@ -2100,10 +2100,10 @@ void AdditiveExpr() #AdditiveExpr(> 1) :
 {}
 {
   MultiplicativeExpr() ((<Plus>
-        
+
          {binaryTokenStack.push(token);}
 			 | <Minus>
-        
+
          {binaryTokenStack.push(token);}
 			) MultiplicativeExpr()
 		{
@@ -2125,16 +2125,16 @@ void MultiplicativeExpr() #MultiplicativeExpr(> 1) :
 {}
 {
   UnionExpr() ((<Multiply>
-        
+
          {binaryTokenStack.push(token);}
 			 | <Div>
-        
+
          {binaryTokenStack.push(token);}
 			 | <Idiv>
-        
+
          {binaryTokenStack.push(token);}
 			 | <Mod>
-        
+
          {binaryTokenStack.push(token);}
 			) UnionExpr()
 		{
@@ -2156,10 +2156,10 @@ void UnionExpr() #UnionExpr(> 1) :
 {}
 {
   IntersectExceptExpr() ((<Union>
-        
+
          {binaryTokenStack.push(token);}
 			 | <Vbar>
-        
+
          {binaryTokenStack.push(token);}
 			) IntersectExceptExpr()
 		{
@@ -2181,10 +2181,10 @@ void IntersectExceptExpr() #IntersectExceptExpr(> 1) :
 {}
 {
   InstanceofExpr() ((<Intersect>
-        
+
          {binaryTokenStack.push(token);}
 			 | <Except>
-        
+
          {binaryTokenStack.push(token);}
 			) InstanceofExpr()
 		{
@@ -2242,22 +2242,22 @@ void GeneralComp()  #void :
 {}
 {
   (<Equals>
-        
+
          {binaryTokenStack.push(token);}
 			 | <NotEquals>
-        
+
          {binaryTokenStack.push(token);}
 			 | <Lt>
-        
+
          {binaryTokenStack.push(token);}
 			 | <LtEquals>
-        
+
          {binaryTokenStack.push(token);}
 			 | <Gt>
-        
+
          {binaryTokenStack.push(token);}
 			 | <GtEquals>
-        
+
          {binaryTokenStack.push(token);}
 			)
 }
@@ -2266,22 +2266,22 @@ void ValueComp()  #void :
 {}
 {
   (<FortranEq>
-        
+
          {binaryTokenStack.push(token);}
 			 | <FortranNe>
-        
+
          {binaryTokenStack.push(token);}
 			 | <FortranLt>
-        
+
          {binaryTokenStack.push(token);}
 			 | <FortranLe>
-        
+
          {binaryTokenStack.push(token);}
 			 | <FortranGt>
-        
+
          {binaryTokenStack.push(token);}
 			 | <FortranGe>
-        
+
          {binaryTokenStack.push(token);}
 			)
 }
@@ -2290,13 +2290,13 @@ void NodeComp()  #void :
 {}
 {
   (<Is>
-        
+
          {binaryTokenStack.push(token);}
 			 | <LtLt>
-        
+
          {binaryTokenStack.push(token);}
 			 | <GtGt>
-        
+
          {binaryTokenStack.push(token);}
 			)
 }
