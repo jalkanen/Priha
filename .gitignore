@@ -1,4 +1,7 @@
 /repository
 /repository.xml
 /target
+/.project
+/.settings
+/.classpath
 *~
