@@ -3,20 +3,21 @@
 
     Copyright (C) 2007-2009 Janne Jalkanen (Janne.Jalkanen@iki.fi)
 
-    Licensed under the Apache License, Version 2.0 (the "License"); 
+    Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at 
-    
-      http://www.apache.org/licenses/LICENSE-2.0 
-      
-    Unless required by applicable law or agreed to in writing, software 
-    distributed under the License is distributed on an "AS IS" BASIS, 
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. 
-    See the License for the specific language governing permissions and 
-    limitations under the License. 
+    You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
  */
 package org.priha.nodetype;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -50,7 +51,7 @@ import org.xml.sax.SAXException;
 
 /**
  *  This class is essentially a singleton per repository.
- *  
+ *
  *  @author jalkanen
  *
  */
@@ -88,8 +89,8 @@ public class QNodeTypeManager
 
         return c_instance;
     }
-    
-    
+
+
     public static synchronized Impl getManager(WorkspaceImpl ws)
         throws RepositoryException
     {
@@ -105,6 +106,11 @@ public class QNodeTypeManager
         try
         {
             in = getClass().getClassLoader().getResourceAsStream( "org/priha/nodetype/builtin_nodetypes.xml" );
+
+            if( in == null )
+            {
+                throw new FileNotFoundException("Could not locate the builtin_nodetypes.xml file - your classpath or JAR file is broken...");
+            }
 
             Document doc = builder.parse( in );
 
@@ -154,7 +160,7 @@ public class QNodeTypeManager
     {
         XPath xpath = XPathFactory.newInstance().newXPath();
         NamespaceMapper nsm = RepositoryImpl.getGlobalNamespaceRegistry();
-        
+
         String name = getStringProperty( xpath, "name", node );
         log.finest( "Loading nodetype "+name );
 
@@ -256,15 +262,15 @@ public class QNodeTypeManager
                 if( child.getNodeType() == Node.ELEMENT_NODE && child.getNodeName().equals(expression) )
                     return child.getTextContent();
             }
-        
-            return null;        
+
+            return null;
         }
         else
         {
             return xpath.evaluate(expression, node);
         }
     }
-    
+
     private QPropertyDefinition parsePropertyDefinition( QNodeType parent, Node node ) throws XPathExpressionException, RepositoryException
     {
         XPath xpath = XPathFactory.newInstance().newXPath();
@@ -287,13 +293,13 @@ public class QNodeTypeManager
         pdi.m_onParentVersion  = OnParentVersionAction.valueFromName( onParentVersion );
 
         String valueConstraints = getStringProperty( xpath, "valueConstraints", node );
-        
+
         pdi.m_valueConstraints = parseList( valueConstraints );
-        
+
         String defaultValue = getStringProperty( xpath, "defaultValues", node );
-        
+
         pdi.m_defaults = parseList(defaultValue);
-        
+
         return pdi;
     }
 
@@ -313,7 +319,7 @@ public class QNodeTypeManager
         {
             String[] types = requiredType.split( "[\\[\\] ,]" );
             ArrayList<QNodeType> list = new ArrayList<QNodeType>();
-            
+
             for( int i = 0; i < types.length; i++ )
             {
                 // The split operation might end up with empty thingies
@@ -327,14 +333,14 @@ public class QNodeTypeManager
                         list.add( getNodeType( requiredQType ) );
                 }
             }
-            
+
             nd.m_requiredPrimaryTypes = list.toArray( new QNodeType[0] );
         }
         else
         {
             throw new ConfigurationException("Mandatory element 'requiredPrimaryTypes' is missing for "+name);
         }
-        
+
         String defaultType = getStringProperty( xpath, "defaultPrimaryType", node );
 
         if( defaultType != null && defaultType.length() > 0 )
@@ -356,7 +362,7 @@ public class QNodeTypeManager
 
         return nd;
     }
-    
+
     /**
      *  Finds a node definition from the complete array of all definitions
      *
@@ -412,10 +418,10 @@ public class QNodeTypeManager
 
         return result;
     }
-    
+
     /**
      *  Find a QNodeType by this QName.
-     *  
+     *
      *  @param qn QName to look for
      *  @return A QNodeType corresponding to this QName
      *  @throws NoSuchNodeTypeException If it could not be located.
@@ -423,7 +429,7 @@ public class QNodeTypeManager
     public QNodeType getNodeType( QName qn ) throws NoSuchNodeTypeException
     {
         if( qn == null ) throw new NoSuchNodeTypeException("No null node type");
-        
+
         QNodeType n = m_primaryTypes.get(qn);
         if( n == null )
         {
@@ -443,13 +449,13 @@ public class QNodeTypeManager
     {
         private SessionImpl      m_mapper;
         private QNodeTypeManager m_mgr;
-        
+
         public Impl( QNodeTypeManager qm, SessionImpl nsm )
         {
             m_mgr    = qm;
             m_mapper = nsm;
         }
-        
+
         public NodeTypeIterator getAllNodeTypes() throws RepositoryException
         {
             List<NodeType> ls = new ArrayList<NodeType>();
@@ -475,18 +481,18 @@ public class QNodeTypeManager
             {
                 ls.add( qnt.new Impl(m_mapper) );
             }
-            
+
             return new NodeTypeIteratorImpl(ls);
         }
 
         public QNodeType.Impl getNodeType(String nodeTypeName) throws NoSuchNodeTypeException, RepositoryException
         {
             QName qn = m_mapper.toQName( nodeTypeName );
-            
+
             QNodeType qnt = m_mgr.getNodeType(qn);
-            
+
             return qnt.new Impl(m_mapper);
-            
+
         }
 
         public NodeTypeIterator getPrimaryNodeTypes() throws RepositoryException
